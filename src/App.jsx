@@ -1,788 +1,766 @@
-import { useState, useEffect, useReducer, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Replace these with your Supabase project values from:
-// supabase.com → your project → Settings → API
 const SUPABASE_URL = "https://szcogfyrhlrsxnwepnea.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y29nZnlyaGxyc3hud2VwbmVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODY1MzEsImV4cCI6MjA5NDA2MjUzMX0.oU60PfFsb0QHmn1qKasNKIxS8G30xhiMDxAPtMQTNT4";
 
-
-// ─── SUPABASE CLIENT (no npm needed — using REST directly) ────────────────────
 const sb = {
-  headers: {
-    "Content-Type": "application/json",
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+  h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
+  async signIn(e, p) { return (await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p }) })).json(); },
+  async signUp(e, p, n) {
+    const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
+    if (d.access_token) await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) });
+    return d;
   },
-  authHeaders: (token) => ({
-    "Content-Type": "application/json",
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${token}`,
-  }),
-
-  async signIn(email, password) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST", headers: sb.headers,
-      body: JSON.stringify({ email, password }),
-    });
-    return r.json();
-  },
-
-  async signUp(email, password, full_name) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-      method: "POST", headers: sb.headers,
-      body: JSON.stringify({ email, password, data: { full_name } }),
-    });
-    const data = await r.json();
-    if (data.access_token && data.user) {
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_SERVICE_KEY,
-          "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
-          "Prefer": "return=representation",
-        },
-        body: JSON.stringify({ id: data.user.id, full_name, role: "agent" }),
-      });
-    }
-    return data;
-  },
-
-  async signOut(token) {
-    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-      method: "POST", headers: sb.authHeaders(token),
-    });
-  },
-
-  async get(token, table, query = "") {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
-      headers: { ...sb.authHeaders(token), "Prefer": "return=representation" },
-    });
-    return r.json();
-  },
-
-  async post(token, table, body) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: "POST",
-      headers: { ...sb.authHeaders(token), "Prefer": "return=representation" },
-      body: JSON.stringify(body),
-    });
-    return r.json();
-  },
-
-  async patch(token, table, id, body) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: "PATCH",
-      headers: { ...sb.authHeaders(token), "Prefer": "return=representation" },
-      body: JSON.stringify(body),
-    });
-    return r.json();
-  },
+  async signOut(t) { await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) }); },
+  async get(t, table, q = "") { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) })).json(); },
+  async post(t, table, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
+  async patch(t, table, id, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
+  async del(t, table, id) { await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "DELETE", headers: sb.h(t) }); },
 };
 
-// ─── AUTH CONTEXT ─────────────────────────────────────────────────────────────
-const AuthContext = createContext(null);
-const useAuth = () => useContext(AuthContext);
+const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+const today = () => new Date().toISOString().split("T")[0];
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
-const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0a0c10; --bg2: #111318; --bg3: #181b22;
-    --border: #1f2430; --border2: #2a2f3d;
-    --text: #e2e8f0; --text2: #8892a4; --text3: #4a5568;
-    --amber: #f6a623; --amber2: #fbbf24;
-    --green: #34d399; --red: #f87171; --blue: #60a5fa;
-    --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f4f5f7;--white:#fff;--border:#e2e5e9;--border2:#d0d5dd;
+    --text:#1a1d23;--text2:#6b7280;--text3:#9ca3af;
+    --green:#0d9f6e;--green-bg:#ecfdf5;--red:#dc2626;--red-bg:#fef2f2;--red-lt:#fee2e2;
+    --blue:#2563eb;--blue-bg:#eff6ff;--amber:#d97706;--amber-bg:#fffbeb;
+    --purple:#7c3aed;--purple-bg:#f5f3ff;
+    --qb:#2ca01c;--qb-dark:#1a3a2a;
+    --sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+    --sh:0 1px 3px rgba(0,0,0,.08);--sh2:0 4px 16px rgba(0,0,0,.1);
   }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); }
-  .app { display: flex; height: 100vh; overflow: hidden; }
-
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
   /* AUTH */
-  .auth-wrap {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: var(--bg);
-    background-image: radial-gradient(ellipse at 20% 50%, rgba(246,166,35,0.04) 0%, transparent 60%),
-                      radial-gradient(ellipse at 80% 20%, rgba(96,165,250,0.04) 0%, transparent 50%);
-  }
-  .auth-card {
-    width: 100%; max-width: 380px; background: var(--bg2);
-    border: 1px solid var(--border); border-radius: 12px; padding: 36px 32px;
-    margin: 16px;
-  }
-  .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-  .logo-mark { width: 36px; height: 36px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; color: #000; font-size: 16px; }
-  .auth-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
-  .auth-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
-  .auth-field { margin-bottom: 14px; }
-  .auth-field label { display: block; font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 6px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
-  .auth-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--text); font-family: var(--sans); outline: none; transition: border 0.15s; }
-  .auth-field input:focus { border-color: var(--amber); }
-  .auth-btn { width: 100%; padding: 11px; background: var(--amber); color: #000; font-weight: 600; font-size: 14px; border: none; border-radius: 8px; cursor: pointer; margin-top: 6px; font-family: var(--sans); transition: background 0.15s; }
-  .auth-btn:hover { background: var(--amber2); }
-  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .auth-toggle { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text2); }
-  .auth-toggle span { color: var(--amber); cursor: pointer; }
-  .auth-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); border-radius: 6px; padding: 10px 14px; font-size: 12px; color: var(--red); margin-bottom: 14px; }
-
+  .aw{min-height:100vh;display:flex}
+  .al{width:420px;background:var(--qb-dark);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px;color:#fff}
+  .ar{flex:1;display:flex;align-items:center;justify-content:center;padding:48px}
+  .ac{width:100%;max-width:400px}
+  .ab-wrap{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+  .ab-icon{width:44px;height:44px;background:var(--qb);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:18px}
+  .ab-name{font-size:22px;font-weight:700}
+  .ab-sub{font-size:12px;color:var(--text3)}
+  .ah{font-size:26px;font-weight:700;margin-bottom:6px}
+  .as{font-size:14px;color:var(--text2);margin-bottom:24px}
+  .af{margin-bottom:14px}
+  .af label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+  .af input{width:100%;background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--text);font-family:var(--sans);outline:none;transition:border .15s}
+  .af input:focus{border-color:var(--qb);box-shadow:0 0 0 3px rgba(44,160,28,.1)}
+  .abtn{width:100%;padding:12px;background:var(--qb);color:#fff;font-weight:600;font-size:15px;border:none;border-radius:8px;cursor:pointer;font-family:var(--sans)}
+  .abtn:hover{background:#248a16}.abtn:disabled{opacity:.5}
+  .atog{text-align:center;margin-top:18px;font-size:13px;color:var(--text2)}
+  .atog span{color:var(--qb);cursor:pointer;font-weight:500}
+  .aerr{background:var(--red-bg);border:1px solid var(--red-lt);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px}
+  .al-feat{margin-top:28px;display:flex;flex-direction:column;gap:10px}
+  .al-fi{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,.85)}
+  .al-dot{width:7px;height:7px;background:var(--qb);border-radius:50%;flex-shrink:0}
   /* LAYOUT */
-  .sidebar {
-    width: 220px; min-width: 220px; background: var(--bg2);
-    border-right: 1px solid var(--border); display: flex; flex-direction: column;
-  }
-  .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-  .logo-text { font-weight: 600; font-size: 15px; }
-  .logo-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; }
-  .nav-section { padding: 16px 0 8px; flex: 1; }
-  .nav-label { font-size: 9px; font-weight: 600; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; padding: 0 18px 8px; font-family: var(--mono); }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; font-size: 13px; color: var(--text2); cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; }
-  .nav-item:hover { color: var(--text); background: var(--bg3); }
-  .nav-item.active { color: var(--amber); border-left-color: var(--amber); background: rgba(246,166,35,0.06); }
-  .nav-bottom { padding: 16px 18px; border-top: 1px solid var(--border); }
-  .user-pill { display: flex; align-items: center; gap: 10px; }
-  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; flex-shrink: 0; }
-  .user-name { font-size: 12px; font-weight: 500; flex: 1; }
-  .signout-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 2px; }
-  .signout-btn:hover { color: var(--red); }
-
-  /* MOBILE NAV */
-  .mobile-nav {
-    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-    background: var(--bg2); border-top: 1px solid var(--border);
-    padding: 8px 0 env(safe-area-inset-bottom, 8px);
-  }
-  .mobile-nav-inner { display: flex; justify-content: space-around; }
-  .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 12px; cursor: pointer; color: var(--text3); flex: 1; }
-  .mobile-nav-item.active { color: var(--amber); }
-  .mobile-nav-icon { font-size: 18px; }
-  .mobile-nav-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
-
-  /* TOPBAR */
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: var(--bg2); flex-shrink: 0; }
-  .topbar-title { font-size: 16px; font-weight: 600; }
-  .role-badge { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 4px; background: rgba(246,166,35,0.12); color: var(--amber); text-transform: uppercase; }
-
-  .content { flex: 1; overflow-y: auto; padding: 20px; }
-
-  /* CARDS & PANELS */
-  .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-  .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
-  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .kpi-card.green::before { background: var(--green); }
-  .kpi-card.red::before { background: var(--red); }
-  .kpi-card.blue::before { background: var(--blue); }
-  .kpi-card.amber::before { background: var(--amber); }
-  .kpi-label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-  .kpi-value { font-size: 20px; font-weight: 600; font-family: var(--mono); }
-  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
-  .panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .panel-title { font-size: 13px; font-weight: 600; }
-
+  .app{display:flex;flex-direction:column;min-height:100vh}
+  .tnav{background:var(--qb-dark);height:52px;display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .tnav-brand{display:flex;align-items:center;gap:10px;margin-right:20px}
+  .tnav-logo{width:32px;height:32px;background:var(--qb);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
+  .tnav-name{font-size:15px;font-weight:700;color:#fff}
+  .tnav-co{font-size:10px;color:rgba(255,255,255,.4)}
+  .tnav-search{flex:1;max-width:380px;margin:0 16px;position:relative}
+  .tnav-search input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:7px 14px 7px 30px;font-size:13px;color:#fff;font-family:var(--sans);outline:none}
+  .tnav-search input::placeholder{color:rgba(255,255,255,.4)}
+  .si{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;color:rgba(255,255,255,.4)}
+  .tnav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .tnav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 12px;font-size:12px;color:#fff;cursor:pointer;font-family:var(--sans)}
+  .tnav-btn:hover{background:rgba(255,255,255,.18)}
+  .tnav-av{width:30px;height:30px;border-radius:50%;background:var(--qb);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .mnav{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;overflow-x:auto}
+  .mnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 14px;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);font-size:11px;font-weight:600;white-space:nowrap;transition:all .15s;text-transform:uppercase;letter-spacing:.4px}
+  .mnav-item:hover{color:var(--text)}
+  .mnav-item.active{color:var(--qb);border-bottom-color:var(--qb)}
+  .mnav-icon{font-size:17px}
+  .content{flex:1;padding:24px 20px;max-width:1300px;margin:0 auto;width:100%}
+  /* CARDS */
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);margin-bottom:20px;overflow:hidden}
+  .ch{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .ct{font-size:14px;font-weight:600}
+  .cs{font-size:12px;color:var(--text3)}
+  /* KPI */
+  .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+  .kpi{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:var(--sh)}
+  .ki{font-size:22px;margin-bottom:8px}
+  .kl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .kv{font-size:21px;font-weight:700;font-family:var(--mono)}
+  .ks{font-size:11px;color:var(--text3);margin-top:2px}
   /* TABLE */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 500px; }
-  th { text-align: left; font-size: 10px; font-weight: 600; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  /* MOBILE CARDS (instead of table rows on small screens) */
-  .card-list { display: none; }
-
-  /* FORM */
-  .form-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group.full { grid-column: 1 / -1; }
-  label { font-size: 11px; font-weight: 500; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
-  input, select, textarea { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 9px 12px; font-size: 14px; color: var(--text); font-family: var(--sans); outline: none; transition: border 0.15s; width: 100%; }
-  input:focus, select:focus, textarea:focus { border-color: var(--amber); }
-  select option { background: var(--bg3); }
-  .form-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
-
+  .tw{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;border-bottom:1px solid var(--border);background:#fafbfc;white-space:nowrap}
+  td{padding:11px 16px;font-size:13px;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfc}
+  /* BADGE */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%}
+  .bg-green{background:var(--green-bg);color:var(--green)}.bg-green::before{background:var(--green)}
+  .bg-red{background:var(--red-bg);color:var(--red)}.bg-red::before{background:var(--red)}
+  .bg-amber{background:var(--amber-bg);color:var(--amber)}.bg-amber::before{background:var(--amber)}
+  .bg-blue{background:var(--blue-bg);color:var(--blue)}.bg-blue::before{background:var(--blue)}
+  .bg-purple{background:var(--purple-bg);color:var(--purple)}.bg-purple::before{background:var(--purple)}
+  .bg-gray{background:var(--bg);color:var(--text2)}.bg-gray::before{background:var(--text3)}
   /* BUTTONS */
-  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: var(--sans); }
-  .btn-primary { background: var(--amber); color: #000; }
-  .btn-primary:hover { background: var(--amber2); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
-  .btn-ghost:hover { color: var(--text); }
-  .btn-sm { padding: 5px 10px; font-size: 11px; }
-
-  /* BADGES */
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; font-family: var(--mono); text-transform: uppercase; }
-  .badge-green { background: rgba(52,211,153,0.12); color: var(--green); }
-  .badge-red { background: rgba(248,113,113,0.12); color: var(--red); }
-  .badge-amber { background: rgba(246,166,35,0.12); color: var(--amber); }
-  .badge-blue { background: rgba(96,165,250,0.12); color: var(--blue); }
-  .badge-gray { background: rgba(255,255,255,0.06); color: var(--text2); }
-
-  .mono { font-family: var(--mono); }
-  .text-right { text-align: right; }
-  .text-green { color: var(--green); }
-  .text-red { color: var(--red); }
-  .text-amber { color: var(--amber); }
-  .text-muted { color: var(--text2); }
-
-  /* LOADING */
-  .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text3); font-family: var(--mono); font-size: 12px; gap: 8px; }
-  .spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.6s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* REPORTS */
-  .report-header-row { font-size: 10px; font-weight: 600; color: var(--amber); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px 6px; }
-  .report-row { display: flex; justify-content: space-between; padding: 7px 16px; font-size: 13px; }
-  .report-row.indent { padding-left: 28px; color: var(--text2); }
-  .report-row.subtotal { border-top: 1px solid var(--border); font-weight: 600; }
-  .report-row.total { border-top: 2px solid var(--border2); font-weight: 700; font-size: 14px; padding: 12px 16px; }
-
+  .btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);display:inline-flex;align-items:center;gap:6px}
+  .bp{background:var(--qb);color:#fff}.bp:hover{background:#248a16}.bp:disabled{opacity:.4;cursor:not-allowed}
+  .bo{background:#fff;color:var(--text);border:1px solid var(--border2)}.bo:hover{border-color:var(--qb);color:var(--qb)}
+  .bd{background:var(--red-bg);color:var(--red);border:1px solid var(--red-lt)}.bd:hover{background:var(--red-lt)}
+  .bsm{padding:5px 12px;font-size:12px}
+  /* FORM */
+  .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px 20px}
+  .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:18px 20px}
+  .fgrp{display:flex;flex-direction:column;gap:5px}
+  .fgrp.full{grid-column:1/-1}
+  .fgrp label{font-size:12px;font-weight:500;color:var(--text2)}
+  .fgrp input,.fgrp select,.fgrp textarea{background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border .15s;width:100%}
+  .fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{border-color:var(--qb);box-shadow:0 0 0 3px rgba(44,160,28,.08)}
+  .ff{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:#fafbfc}
+  /* 2/3 COL */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+  /* CONTACT CARD */
+  .contact-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--sh);cursor:pointer;transition:all .15s}
+  .contact-card:hover{border-color:var(--qb);box-shadow:var(--sh2)}
+  .cc-avatar{width:44px;height:44px;border-radius:50%;background:var(--qb);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin-bottom:12px}
+  .cc-name{font-size:15px;font-weight:600;margin-bottom:4px}
+  .cc-detail{font-size:12px;color:var(--text2);margin-bottom:2px}
+  /* TABS */
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--qb);border-bottom-color:var(--qb)}
+  /* PO LINE */
+  .po-line{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 28px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border)}
+  .po-totals{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 28px;gap:8px;padding:10px 16px;background:#fafbfc}
+  /* PAGE HEADER */
+  .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .pt{font-size:22px;font-weight:700}
+  .pgreet{font-size:22px;font-weight:700}
+  .psub{font-size:13px;color:var(--text2);margin-top:2px;margin-bottom:20px}
+  /* QUICK ACTIONS */
+  .qa{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+  .qa-lbl{font-size:12px;color:var(--text2)}
+  .qa-btn{background:#fff;border:1px solid var(--border2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;font-family:var(--sans);transition:all .15s}
+  .qa-btn:hover{border-color:var(--qb);color:var(--qb)}
+  /* INV SUMMARY */
+  .is{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .ic{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--sh)}
+  .ic-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .ic-total{font-size:26px;font-weight:700;font-family:var(--mono);margin-bottom:12px}
+  .ic-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-bottom:10px;display:flex}
+  .ic-seg{height:100%;border-radius:4px}
+  .ic-bd{display:flex;gap:16px}
+  .ic-bd-lbl{font-size:11px;color:var(--text3);margin-bottom:2px}
+  .ic-bd-val{font-size:14px;font-weight:600;font-family:var(--mono)}
+  /* REPORT */
+  .rs-title{font-size:11px;font-weight:700;color:var(--qb);text-transform:uppercase;letter-spacing:1px;padding:12px 20px 6px}
+  .rrow{display:flex;justify-content:space-between;padding:7px 20px;font-size:13px}
+  .rrow:hover{background:#fafbfc}
+  .rrow.indent{padding-left:36px;color:var(--text2)}
+  .rrow.subtotal{border-top:1px solid var(--border);font-weight:600}
+  .rrow.total{border-top:2px solid var(--border2);font-weight:700;font-size:15px;padding:12px 20px;background:#fafbfc}
   /* JE */
-  .je-line { display: grid; grid-template-columns: 2fr 1fr 1fr 28px; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--border); }
-  .je-totals { display: grid; grid-template-columns: 2fr 1fr 1fr 28px; gap: 8px; padding: 10px 16px; background: var(--bg3); }
-  .icon-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; border-radius: 4px; font-size: 13px; }
-  .icon-btn:hover { color: var(--red); }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .mobile-nav { display: block; }
-    .content { padding: 16px 14px 80px; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .kpi-value { font-size: 17px; }
-    .table-wrap table { min-width: 0; }
-    .hide-mobile { display: none; }
-    .form-row { grid-template-columns: 1fr; }
-    .je-line { grid-template-columns: 1fr 1fr 1fr 28px; }
+  .je-l{display:grid;grid-template-columns:2fr 1fr 1fr 30px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border)}
+  .je-t{display:grid;grid-template-columns:2fr 1fr 1fr 30px;gap:8px;padding:10px 16px;background:#fafbfc}
+  .ib{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:5px;font-size:13px}
+  .ib:hover{color:var(--red);background:var(--red-bg)}
+  /* MOBILE NAV */
+  .mnav-mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:#fff;border-top:1px solid var(--border);padding:6px 0 env(safe-area-inset-bottom,6px);box-shadow:0 -4px 12px rgba(0,0,0,.08)}
+  .mnav-mob-inner{display:flex}
+  .mnav-mob-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 0;cursor:pointer;color:var(--text3);flex:1}
+  .mnav-mob-item.active{color:var(--qb)}
+  .mnav-mob-icon{font-size:19px}
+  .mnav-mob-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  /* MISC */
+  .mono{font-family:var(--mono)}.tr{text-align:right}.tg{color:var(--green)}.tr-c{color:var(--red)}.tm{color:var(--text2)}
+  .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-size:13px;gap:10px}
+  .spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--qb);border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:var(--blue-bg);color:var(--blue)}
+  .divider{height:1px;background:var(--border);margin:8px 0}
+  @media(max-width:768px){
+    .al{display:none}.tnav-search{display:none}.mnav{display:none}.mnav-mob{display:block}
+    .content{padding:16px 14px 80px}.kgrid{grid-template-columns:1fr 1fr;gap:10px}
+    .is{grid-template-columns:1fr}.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr}
+    .g4{grid-template-columns:1fr 1fr}.hm{display:none}.kv{font-size:17px}
+    .fg{grid-template-columns:1fr}.fg3{grid-template-columns:1fr}
+    .po-line{grid-template-columns:2fr 1fr 1fr 1fr 1fr 28px}
   }
-  @media (min-width: 769px) { .mobile-nav { display: none; } }
-  @media (min-width: 1100px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
-
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  @media(min-width:769px){.mnav-mob{display:none!important}}
+  ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 `;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-
-// ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
-function AuthScreen({ onAuth }) {
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function Auth({ onAuth }) {
   const [mode, setMode] = useState("signin");
-  const [form, setForm] = useState({ email: "", password: "", full_name: "" });
+  const [f, setF] = useState({ email: "", password: "", full_name: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handle = async () => {
-    setLoading(true); setError("");
+  const [err, setErr] = useState("");
+  const go = async () => {
+    setLoading(true); setErr("");
     try {
-      let data;
-      if (mode === "signin") {
-        data = await sb.signIn(form.email, form.password);
-      } else {
-        data = await sb.signUp(form.email, form.password, form.full_name);
-      }
-      if (data.access_token) {
-        onAuth({ token: data.access_token, user: data.user });
-      } else {
-        setError(data.msg || data.error_description || "Authentication failed. Check your credentials.");
-      }
-    } catch (e) {
-      setError("Network error. Check your Supabase URL and key.");
-    }
+      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name);
+      if (d.access_token) onAuth({ token: d.access_token, user: d.user });
+      else setErr(d.msg || d.error_description || "Authentication failed.");
+    } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
-
   return (
-    <div className="auth-wrap">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div className="logo-mark">L</div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 16 }}>LedgerOS</div>
-            <div style={{ fontSize: 10, color: "var(--text3)", fontFamily: "var(--mono)" }}>Field Accounting</div>
+    <div className="aw">
+      <div className="al">
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10, lineHeight: 1.3 }}>Smart Accounting for Your Business</h2>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,.7)", lineHeight: 1.6 }}>Invoices, stock, customers and suppliers — all in one place.</p>
+          <div className="al-feat">
+            {["Customer & Supplier management", "Stock & Inventory tracking", "Purchase Orders & Credit Notes", "VAT invoices & financial reports"].map(f => <div key={f} className="al-fi"><div className="al-dot" />{f}</div>)}
           </div>
         </div>
-        <div className="auth-title">{mode === "signin" ? "Sign in" : "Create account"}</div>
-        <div className="auth-sub">{mode === "signin" ? "Access your accounting dashboard" : "Join your team on LedgerOS"}</div>
-        {error && <div className="auth-error">{error}</div>}
-        {mode === "signup" && (
-          <div className="auth-field">
-            <label>Full Name</label>
-            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="Jane Smith" />
-          </div>
-        )}
-        <div className="auth-field">
-          <label>Email</label>
-          <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="you@company.com" />
-        </div>
-        <div className="auth-field">
-          <label>Password</label>
-          <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••"
-            onKeyDown={e => e.key === "Enter" && handle()} />
-        </div>
-        <button className="auth-btn" onClick={handle} disabled={loading}>
-          {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
-        </button>
-        <div className="auth-toggle">
-          {mode === "signin" ? <>No account? <span onClick={() => setMode("signup")}>Sign up</span></> : <>Have an account? <span onClick={() => setMode("signin")}>Sign in</span></>}
+      </div>
+      <div className="ar">
+        <div className="ac">
+          <div className="ab-wrap"><div className="ab-icon">L</div><div><div className="ab-name">LedgerOS</div><div className="ab-sub">Business Accounting</div></div></div>
+          <div className="ah">{mode === "signin" ? "Welcome back" : "Create account"}</div>
+          <div className="as">{mode === "signin" ? "Sign in to your dashboard" : "Join your team on LedgerOS"}</div>
+          {err && <div className="aerr">{err}</div>}
+          {mode === "signup" && <div className="af"><label>Full Name</label><input value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" /></div>}
+          <div className="af"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@company.com" /></div>
+          <div className="af"><label>Password</label><input type="password" value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && go()} /></div>
+          <button className="abtn" onClick={go} disabled={loading}>{loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}</button>
+          <div className="atog">{mode === "signin" ? <>No account? <span onClick={() => setMode("signup")}>Sign up free</span></> : <>Have account? <span onClick={() => setMode("signin")}>Sign in</span></>}</div>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({ accounts, invoices }) {
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard({ accounts, invoices, contacts, products, profile, setPage }) {
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
-  const outstanding = invoices.filter(i => i.status === "pending" || i.status === "overdue").reduce((s, i) => s + i.amount, 0);
-
+  const net = revenue - expenses;
+  const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
+  const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
+  const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  const lowStock = products.filter(p => p.stock_qty <= p.reorder_level);
+  const name = profile?.full_name?.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return (
     <div>
-      <div className="kpi-grid">
-        <div className="kpi-card green"><div className="kpi-label">Revenue</div><div className="kpi-value">{fmt(revenue)}</div><div className="kpi-sub">YTD</div></div>
-        <div className="kpi-card red"><div className="kpi-label">Expenses</div><div className="kpi-value">{fmt(expenses)}</div><div className="kpi-sub">YTD</div></div>
-        <div className="kpi-card amber"><div className="kpi-label">Net Profit</div><div className="kpi-value">{fmt(revenue - expenses)}</div><div className="kpi-sub">YTD</div></div>
-        <div className="kpi-card blue"><div className="kpi-label">Cash</div><div className="kpi-value">{fmt(cash)}</div><div className="kpi-sub">Current balance</div></div>
+      <div className="pgreet">{greeting}, {name}! 👋</div>
+      <div className="psub">Here's your business overview for today.</div>
+      <div className="qa">
+        <span className="qa-lbl">Quick actions:</span>
+        {[["➕ New Invoice", "invoices"], ["👥 Add Customer", "contacts"], ["📦 Add Product", "inventory"], ["🛒 Purchase Order", "purchases"]].map(([l, p]) => <button key={l} className="qa-btn" onClick={() => setPage(p)}>{l}</button>)}
       </div>
-
-      <div className="panel">
-        <div className="panel-header">
-          <div className="panel-title">Outstanding Invoices</div>
-          <span className="badge badge-amber">{fmt(outstanding)}</span>
+      <div className="kgrid">
+        <div className="kpi"><div className="ki">💰</div><div className="kl">Revenue</div><div className="kv" style={{ color: "var(--green)" }}>{fmt(revenue)}</div><div className="ks">Year to date</div></div>
+        <div className="kpi"><div className="ki">📤</div><div className="kl">Expenses</div><div className="kv" style={{ color: "var(--red)" }}>{fmt(expenses)}</div><div className="ks">Year to date</div></div>
+        <div className="kpi"><div className="ki">📈</div><div className="kl">Net Profit</div><div className="kv" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div><div className="ks">{net >= 0 ? "↑ Profitable" : "↓ Loss"}</div></div>
+        <div className="kpi"><div className="ki">🏦</div><div className="kl">Cash Balance</div><div className="kv">{fmt(cash)}</div><div className="ks">Current balance</div></div>
+      </div>
+      <div className="g3" style={{ marginBottom: 20 }}>
+        <div className="kpi"><div className="kl">Customers</div><div className="kv">{contacts.filter(c => c.type === "customer" || c.type === "both").length}</div><div className="ks">Total active</div></div>
+        <div className="kpi"><div className="kl">Suppliers</div><div className="kv">{contacts.filter(c => c.type === "supplier" || c.type === "both").length}</div><div className="ks">Total active</div></div>
+        <div className="kpi"><div className="kl">Low Stock Items</div><div className="kv" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div><div className="ks">{lowStock.length > 0 ? "Need reordering" : "All stocked"}</div></div>
+      </div>
+      <div className="is">
+        <div className="ic">
+          <div className="ic-lbl">Invoices owed to you</div>
+          <div className="ic-total" style={{ color: "var(--green)" }}>{fmt(unpaid)}</div>
+          <div className="ic-bar"><div className="ic-seg" style={{ width: `${overdue / (unpaid || 1) * 100}%`, background: "var(--red)" }} /><div className="ic-seg" style={{ width: `${(unpaid - overdue) / (unpaid || 1) * 100}%`, background: "var(--green)" }} /></div>
+          <div className="ic-bd"><div><div className="ic-bd-lbl" style={{ color: "var(--red)" }}>● Overdue</div><div className="ic-bd-val" style={{ color: "var(--red)" }}>{fmt(overdue)}</div></div><div><div className="ic-bd-lbl" style={{ color: "var(--green)" }}>● Not yet due</div><div className="ic-bd-val" style={{ color: "var(--green)" }}>{fmt(unpaid - overdue)}</div></div></div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
-            <tbody>
-              {invoices.filter(i => i.status !== "paid" && i.status !== "draft").slice(0, 5).map(inv => (
-                <tr key={inv.id}>
-                  <td style={{ fontWeight: 500 }}>{inv.customer}</td>
-                  <td className="mono">{fmt(inv.amount)}</td>
-                  <td><span className={`badge ${inv.status === "overdue" ? "badge-red" : "badge-amber"}`}>{inv.status}</span></td>
-                </tr>
-              ))}
-              {invoices.filter(i => i.status !== "paid" && i.status !== "draft").length === 0 &&
-                <tr><td colSpan={3} style={{ textAlign: "center", color: "var(--text3)", fontSize: 12 }}>No outstanding invoices</td></tr>}
-            </tbody>
-          </table>
+        <div className="ic">
+          <div className="ic-lbl">Paid invoices</div>
+          <div className="ic-total" style={{ color: "var(--blue)" }}>{fmt(paid)}</div>
+          <div className="ic-bar"><div className="ic-seg" style={{ width: "100%", background: "var(--blue)" }} /></div>
+          <div className="ic-bd"><div><div className="ic-bd-lbl">Invoices paid</div><div className="ic-bd-val">{invoices.filter(i => i.status === "paid").length}</div></div><div><div className="ic-bd-lbl">Avg value</div><div className="ic-bd-val">{fmt(paid / (invoices.filter(i => i.status === "paid").length || 1))}</div></div></div>
         </div>
       </div>
+      {lowStock.length > 0 && (
+        <div className="card">
+          <div className="ch"><div className="ct">⚠️ Low Stock Alert</div><button className="btn bo bsm" onClick={() => setPage("inventory")}>View inventory</button></div>
+          <div className="tw"><table><thead><tr><th>Product</th><th>In Stock</th><th>Reorder Level</th><th>Status</th></tr></thead><tbody>
+            {lowStock.slice(0, 5).map(p => <tr key={p.id}><td style={{ fontWeight: 500 }}>{p.name}</td><td className="mono">{p.stock_qty} {p.unit}</td><td className="mono">{p.reorder_level} {p.unit}</td><td><span className="badge bg-red">Low Stock</span></td></tr>)}
+          </tbody></table></div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── INVOICES ────────────────────────────────────────────────────────────────
-function Invoices({ invoices, setInvoices, token, userId }) {
+// ── CONTACTS ──────────────────────────────────────────────────────────────────
+function Contacts({ contacts, setContacts, token, userId }) {
+  const [tab, setTab] = useState("customer");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ customer: "", description: "", amount: "", invoice_date: "", due_date: "", status: "draft" });
+  const [selected, setSelected] = useState(null);
+  const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
 
-  const handleAdd = async () => {
-    if (!form.customer || !form.amount) return;
-    setSaving(true);
-    const num = `INV-${String(invoices.length + 1).padStart(3, "0")}`;
-    const data = await sb.post(token, "invoices", {
-      ...form, amount: parseFloat(form.amount),
-      invoice_number: num, created_by: userId,
-    });
-    if (data[0]) setInvoices(prev => [data[0], ...prev]);
-    setForm({ customer: "", description: "", amount: "", invoice_date: "", due_date: "", status: "draft" });
+  const filtered = contacts.filter(c => c.type === tab || c.type === "both");
+
+  const save = async () => {
+    if (!f.name) return; setSaving(true);
+    const data = await sb.post(token, "contacts", { ...f, created_by: userId });
+    if (data[0]) setContacts(prev => [data[0], ...prev]);
+    setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
     setShowForm(false); setSaving(false);
   };
 
-  const markPaid = async (id) => {
-    await sb.patch(token, "invoices", id, { status: "paid" });
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid" } : i));
-  };
-
   return (
     <div>
-      <div className="panel">
-        <div className="panel-header">
-          <div className="panel-title">Invoices</div>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>+ New</button>
-        </div>
+      <div className="ph"><div className="pt">Customers & Suppliers</div><button className="btn bp" onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }}>➕ Add {tab === "customer" ? "Customer" : "Supplier"}</button></div>
+      <div className="tabs">
+        {[["customer", "👥 Customers"], ["supplier", "🏭 Suppliers"]].map(([k, l]) => <div key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}
+      </div>
 
-        {showForm && (
-          <div style={{ borderBottom: "1px solid var(--border)", background: "var(--bg3)" }}>
-            <div className="form-body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Customer</label>
-                  <input value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} placeholder="Customer name" />
-                </div>
-                <div className="form-group">
-                  <label>Amount ($)</label>
-                  <input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="0.00" />
-                </div>
-                <div className="form-group">
-                  <label>Invoice Date</label>
-                  <input type="date" value={form.invoice_date} onChange={e => setForm({ ...form, invoice_date: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label>Due Date</label>
-                  <input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label>Status</label>
-                  <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Services rendered..." />
-                </div>
-              </div>
-            </div>
-            <div className="form-footer">
-              <button className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
-                {saving ? "Saving..." : "Create Invoice"}
-              </button>
-            </div>
+      {showForm && (
+        <div className="card">
+          <div className="ch"><div className="ct">New {f.type === "customer" ? "Customer" : "Supplier"}</div></div>
+          <div className="fg">
+            <div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div>
+            <div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business or person name" /></div>
+            <div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div>
+            <div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div>
+            <div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} placeholder="Street address" /></div>
+            <div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} placeholder="City" /></div>
+            <div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} placeholder="SW1A 1AA" /></div>
+            <div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div>
+            <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any additional notes..." /></div>
           </div>
-        )}
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice</th><th>Customer</th><th className="hide-mobile">Due</th>
-                <th>Amount</th><th>Status</th><th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map(inv => (
-                <tr key={inv.id}>
-                  <td className="mono text-amber" style={{ fontSize: 11 }}>{inv.invoice_number}</td>
-                  <td style={{ fontWeight: 500 }}>{inv.customer}</td>
-                  <td className="mono text-muted hide-mobile" style={{ fontSize: 11 }}>{fmtDate(inv.due_date)}</td>
-                  <td className="mono">{fmt(inv.amount)}</td>
-                  <td><span className={`badge ${inv.status === "paid" ? "badge-green" : inv.status === "overdue" ? "badge-red" : inv.status === "pending" ? "badge-amber" : "badge-gray"}`}>{inv.status}</span></td>
-                  <td>{inv.status !== "paid" && <button className="btn btn-ghost btn-sm" onClick={() => markPaid(inv.id)}>Paid</button>}</td>
-                </tr>
-              ))}
-              {invoices.length === 0 && <tr><td colSpan={6} style={{ textAlign: "center", color: "var(--text3)", fontSize: 12, padding: 24 }}>No invoices yet</td></tr>}
-            </tbody>
-          </table>
+          <div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Contact"}</button></div>
         </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+        {filtered.map(c => (
+          <div key={c.id} className="contact-card" onClick={() => setSelected(selected?.id === c.id ? null : c)}>
+            <div className="cc-avatar">{c.name[0].toUpperCase()}</div>
+            <div className="cc-name">{c.name}</div>
+            {c.email && <div className="cc-detail">📧 {c.email}</div>}
+            {c.phone && <div className="cc-detail">📞 {c.phone}</div>}
+            {c.city && <div className="cc-detail">📍 {c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}
+            {c.vat_number && <div style={{ marginTop: 8 }}><span className="tag">VAT: {c.vat_number}</span></div>}
+          </div>
+        ))}
+        {filtered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)" }}>No {tab}s yet — add your first one!</div>}
       </div>
     </div>
   );
 }
 
-// ─── JOURNAL ENTRY ────────────────────────────────────────────────────────────
-function JournalEntry({ accounts, token, userId }) {
-  const [lines, setLines] = useState([{ account_id: "", account_name: "", debit: "", credit: "" }, { account_id: "", account_name: "", debit: "", credit: "" }]);
-  const [desc, setDesc] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [entries, setEntries] = useState([]);
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
+function Inventory({ products, setProducts, token, userId }) {
+  const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [f, setF] = useState({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
 
-  useEffect(() => {
-    sb.get(token, "journal_entries", "order=created_at.desc&limit=20").then(data => {
-      if (Array.isArray(data)) setEntries(data);
-    });
-  }, [token]);
+  const save = async () => {
+    if (!f.name) return; setSaving(true);
+    const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price) || 0, sale_price: parseFloat(f.sale_price) || 0, vat_rate: parseFloat(f.vat_rate) || 20, stock_qty: parseFloat(f.stock_qty) || 0, reorder_level: parseFloat(f.reorder_level) || 0, created_by: userId });
+    if (data[0]) setProducts(prev => [data[0], ...prev]);
+    setF({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
+    setShowForm(false); setSaving(false);
+  };
 
-  const totalDebit = lines.reduce((a, l) => a + (parseFloat(l.debit) || 0), 0);
-  const totalCredit = lines.reduce((a, l) => a + (parseFloat(l.credit) || 0), 0);
-  const balanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
+  const lowStock = products.filter(p => p.stock_qty <= p.reorder_level);
+
+  return (
+    <div>
+      <div className="ph"><div className="pt">Stock & Inventory</div><button className="btn bp" onClick={() => setShowForm(!showForm)}>➕ Add Product</button></div>
+      <div className="g4" style={{ marginBottom: 20 }}>
+        <div className="kpi"><div className="kl">Total Products</div><div className="kv">{products.length}</div></div>
+        <div className="kpi"><div className="kl">Low Stock</div><div className="kv" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div>
+        <div className="kpi"><div className="kl">Stock Value</div><div className="kv">{fmt(products.reduce((s, p) => s + p.stock_qty * p.cost_price, 0))}</div></div>
+        <div className="kpi"><div className="kl">Retail Value</div><div className="kv">{fmt(products.reduce((s, p) => s + p.stock_qty * p.sale_price, 0))}</div></div>
+      </div>
+
+      {showForm && (
+        <div className="card">
+          <div className="ch"><div className="ct">New Product</div></div>
+          <div className="fg3">
+            <div className="fgrp"><label>Product Code</label><input value={f.code} onChange={e => setF({ ...f, code: e.target.value })} placeholder="SKU001" /></div>
+            <div className="fgrp"><label>Product Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Product name" /></div>
+            <div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({ ...f, category: e.target.value })} placeholder="e.g. Vapes, Pods..." /></div>
+            <div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({ ...f, unit: e.target.value })}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div>
+            <div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({ ...f, cost_price: e.target.value })} placeholder="0.00" /></div>
+            <div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({ ...f, sale_price: e.target.value })} placeholder="0.00" /></div>
+            <div className="fgrp"><label>VAT Rate (%)</label><select value={f.vat_rate} onChange={e => setF({ ...f, vat_rate: e.target.value })}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div>
+            <div className="fgrp"><label>Stock Quantity</label><input type="number" value={f.stock_qty} onChange={e => setF({ ...f, stock_qty: e.target.value })} placeholder="0" /></div>
+            <div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({ ...f, reorder_level: e.target.value })} placeholder="0" /></div>
+            <div className="fgrp full"><label>Description</label><input value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Product description..." /></div>
+          </div>
+          <div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="tw"><table>
+          <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
+          <tbody>
+            {products.map(p => (
+              <tr key={p.id}>
+                <td className="mono tm" style={{ fontSize: 12 }}>{p.code || "—"}</td>
+                <td style={{ fontWeight: 500 }}>{p.name}</td>
+                <td className="tm">{p.category || "—"}</td>
+                <td className="mono hm">{fmt(p.cost_price)}</td>
+                <td className="mono">{fmt(p.sale_price)}</td>
+                <td><span className="tag">{p.vat_rate}%</span></td>
+                <td className="mono">{p.stock_qty} {p.unit}</td>
+                <td><span className={`badge ${p.stock_qty <= p.reorder_level ? "bg-red" : p.stock_qty <= p.reorder_level * 2 ? "bg-amber" : "bg-green"}`}>{p.stock_qty <= p.reorder_level ? "Low Stock" : p.stock_qty <= p.reorder_level * 2 ? "Running Low" : "In Stock"}</span></td>
+              </tr>
+            ))}
+            {products.length === 0 && <tr><td colSpan={8} className="empty">No products yet — add your first product!</td></tr>}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  );
+}
+
+// ── PURCHASE ORDERS ───────────────────────────────────────────────────────────
+function Purchases({ contacts, products, token, userId }) {
+  const [pos, setPOs] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [lines, setLines] = useState([{ product_id: "", product_name: "", qty: "", unit_cost: "", vat_rate: "20" }]);
+  const [f, setF] = useState({ supplier_id: "", supplier_name: "", order_date: today(), expected_date: "", notes: "" });
+
+  useEffect(() => { sb.get(token, "purchase_orders", "order=created_at.desc").then(d => Array.isArray(d) && setPOs(d)); }, [token]);
+
+  const suppliers = contacts.filter(c => c.type === "supplier" || c.type === "both");
 
   const updateLine = (i, field, val) => {
     const next = [...lines];
-    if (field === "account_id") {
-      const acc = accounts.find(a => a.id === val);
-      next[i] = { ...next[i], account_id: val, account_name: acc?.name || "" };
-    } else {
-      next[i] = { ...next[i], [field]: val };
-    }
+    if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, product_name: p?.name || "", unit_cost: p?.cost_price || "", vat_rate: String(p?.vat_rate || 20) }; }
+    else next[i] = { ...next[i], [field]: val };
     setLines(next);
   };
 
-  const handlePost = async () => {
-    if (!balanced || !desc) return;
-    setSaving(true);
-    const entryData = await sb.post(token, "journal_entries", { description: desc, entry_date: date, created_by: userId });
-    if (entryData[0]) {
-      const entryId = entryData[0].id;
-      for (const line of lines) {
-        if (line.account_id) {
-          await sb.post(token, "journal_lines", {
-            entry_id: entryId, account_id: line.account_id,
-            account_name: line.account_name,
-            debit: parseFloat(line.debit) || 0,
-            credit: parseFloat(line.credit) || 0,
-          });
-        }
-      }
-      setEntries(prev => [entryData[0], ...prev]);
-      setLines([{ account_id: "", account_name: "", debit: "", credit: "" }, { account_id: "", account_name: "", debit: "", credit: "" }]);
-      setDesc(""); setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+  const lineTotal = (l) => (parseFloat(l.qty) || 0) * (parseFloat(l.unit_cost) || 0);
+  const total = lines.reduce((s, l) => s + lineTotal(l), 0);
+  const vatTotal = lines.reduce((s, l) => s + lineTotal(l) * (parseFloat(l.vat_rate) || 0) / 100, 0);
+
+  const save = async () => {
+    if (!f.supplier_id) return; setSaving(true);
+    const num = `PO-${String(pos.length + 1).padStart(3, "0")}`;
+    const sup = suppliers.find(s => s.id === f.supplier_id);
+    const po = await sb.post(token, "purchase_orders", { ...f, po_number: num, supplier_name: sup?.name, total: total + vatTotal, created_by: userId });
+    if (po[0]) {
+      for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty) || 0, unit_cost: parseFloat(l.unit_cost) || 0, vat_rate: parseFloat(l.vat_rate) || 0, total: lineTotal(l) });
+      setPOs(prev => [po[0], ...prev]);
     }
-    setSaving(false);
+    setLines([{ product_id: "", product_name: "", qty: "", unit_cost: "", vat_rate: "20" }]);
+    setF({ supplier_id: "", supplier_name: "", order_date: today(), expected_date: "", notes: "" });
+    setShowForm(false); setSaving(false);
   };
+
+  const updateStatus = async (id, status) => { await sb.patch(token, "purchase_orders", id, { status }); setPOs(prev => prev.map(p => p.id === id ? { ...p, status } : p)); };
 
   return (
     <div>
-      <div className="panel">
-        <div className="panel-header">
-          <div>
-            <div className="panel-title">New Journal Entry</div>
+      <div className="ph"><div className="pt">Purchase Orders</div><button className="btn bp" onClick={() => setShowForm(!showForm)}>➕ New PO</button></div>
+
+      {showForm && (
+        <div className="card">
+          <div className="ch"><div className="ct">New Purchase Order</div></div>
+          <div className="fg">
+            <div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({ ...f, supplier_id: e.target.value })}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+            <div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({ ...f, order_date: e.target.value })} /></div>
+            <div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({ ...f, expected_date: e.target.value })} /></div>
+            <div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
           </div>
-          <span className={`badge ${balanced ? "badge-green" : "badge-red"}`}>
-            {balanced ? "✓ Balanced" : "Unbalanced"}
-          </span>
-        </div>
-        <div className="form-body" style={{ paddingBottom: 0 }}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Description</label>
-              <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Transaction description..." />
+          <div style={{ borderTop: "1px solid var(--border)" }}>
+            <div className="po-line" style={{ background: "#fafbfc" }}>
+              {["Product", "Qty", "Unit Cost", "VAT %", "Total", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase" }}>{h}</span>)}
             </div>
-            <div className="form-group">
-              <label>Date</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-          </div>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <div style={{ minWidth: 480 }}>
-            <div className="je-line" style={{ borderBottom: "1px solid var(--border)", paddingBottom: 6 }}>
-              <span style={{ fontSize: 10, color: "var(--text3)", fontFamily: "var(--mono)", textTransform: "uppercase" }}>Account</span>
-              <span style={{ fontSize: 10, color: "var(--text3)", fontFamily: "var(--mono)", textTransform: "uppercase" }}>Debit</span>
-              <span style={{ fontSize: 10, color: "var(--text3)", fontFamily: "var(--mono)", textTransform: "uppercase" }}>Credit</span>
-              <span />
-            </div>
-            {lines.map((line, i) => (
-              <div key={i} className="je-line">
-                <select value={line.account_id} onChange={e => updateLine(i, "account_id", e.target.value)}>
-                  <option value="">Select account...</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
-                </select>
-                <input className="mono" type="number" placeholder="0.00" value={line.debit} onChange={e => updateLine(i, "debit", e.target.value)} />
-                <input className="mono" type="number" placeholder="0.00" value={line.credit} onChange={e => updateLine(i, "credit", e.target.value)} />
-                <button className="icon-btn" onClick={() => lines.length > 2 && setLines(lines.filter((_, idx) => idx !== i))}>✕</button>
+            {lines.map((l, i) => (
+              <div key={i} className="po-line">
+                <select value={l.product_id} onChange={e => updateLine(i, "product_id", e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+                <input type="number" className="mono" placeholder="0" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
+                <input type="number" className="mono" placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i, "unit_cost", e.target.value)} />
+                <select value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select>
+                <span className="mono" style={{ fontWeight: 600 }}>{fmt(lineTotal(l))}</span>
+                <button className="ib" onClick={() => lines.length > 1 && setLines(lines.filter((_, j) => j !== i))}>✕</button>
               </div>
             ))}
-            <div className="je-totals">
-              <button className="btn btn-ghost btn-sm" onClick={() => setLines([...lines, { account_id: "", account_name: "", debit: "", credit: "" }])}>+ Add Line</button>
-              <span className={`mono ${balanced ? "text-green" : "text-red"}`} style={{ fontSize: 13, fontWeight: 600 }}>{fmt(totalDebit)}</span>
-              <span className={`mono ${balanced ? "text-green" : "text-red"}`} style={{ fontSize: 13, fontWeight: 600 }}>{fmt(totalCredit)}</span>
-              <span />
+            <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc" }}>
+              <button className="btn bo bsm" onClick={() => setLines([...lines, { product_id: "", product_name: "", qty: "", unit_cost: "", vat_rate: "20" }])}>+ Add Line</button>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4 }}>Subtotal: {fmt(total)} | VAT: {fmt(vatTotal)}</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>Total: {fmt(total + vatTotal)}</div>
+              </div>
             </div>
           </div>
+          <div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Create PO"}</button></div>
         </div>
-        <div className="form-footer">
-          {saved && <span style={{ color: "var(--green)", fontSize: 12 }}>✓ Posted</span>}
-          <button className="btn btn-primary" onClick={handlePost} disabled={!balanced || !desc || saving} style={{ opacity: (!balanced || !desc) ? 0.4 : 1 }}>
-            {saving ? "Posting..." : "Post Entry"}
-          </button>
-        </div>
-      </div>
+      )}
 
-      <div className="panel">
-        <div className="panel-header"><div className="panel-title">Recent Entries</div></div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Description</th><th className="hide-mobile">Posted</th></tr></thead>
-            <tbody>
-              {entries.map(e => (
-                <tr key={e.id}>
-                  <td className="mono text-muted" style={{ fontSize: 11 }}>{fmtDate(e.entry_date)}</td>
-                  <td style={{ fontSize: 12 }}>{e.description}</td>
-                  <td className="mono text-muted hide-mobile" style={{ fontSize: 11 }}>{fmtDate(e.created_at)}</td>
-                </tr>
-              ))}
-              {entries.length === 0 && <tr><td colSpan={3} style={{ textAlign: "center", color: "var(--text3)", fontSize: 12, padding: 24 }}>No entries yet</td></tr>}
-            </tbody>
-          </table>
-        </div>
+      <div className="card">
+        <div className="tw"><table>
+          <thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th className="hm">Expected</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {pos.map(po => (
+              <tr key={po.id}>
+                <td className="mono" style={{ color: "var(--qb)", fontSize: 12 }}>{po.po_number}</td>
+                <td style={{ fontWeight: 500 }}>{po.supplier_name}</td>
+                <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(po.order_date)}</td>
+                <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(po.expected_date)}</td>
+                <td className="mono">{fmt(po.total)}</td>
+                <td><span className={`badge ${po.status === "received" ? "bg-green" : po.status === "sent" ? "bg-blue" : po.status === "cancelled" ? "bg-red" : "bg-gray"}`}>{po.status}</span></td>
+                <td>
+                  {po.status === "draft" && <button className="btn bo bsm" onClick={() => updateStatus(po.id, "sent")}>Mark Sent</button>}
+                  {po.status === "sent" && <button className="btn bp bsm" onClick={() => updateStatus(po.id, "received")}>Mark Received</button>}
+                </td>
+              </tr>
+            ))}
+            {pos.length === 0 && <tr><td colSpan={7} className="empty">No purchase orders yet</td></tr>}
+          </tbody>
+        </table></div>
       </div>
     </div>
   );
 }
 
-// ─── ACCOUNTS ────────────────────────────────────────────────────────────────
-function Accounts({ accounts }) {
-  const types = ["Asset", "Liability", "Equity", "Revenue", "Expense"];
-  const colorMap = { Asset: "badge-green", Liability: "badge-red", Equity: "badge-blue", Revenue: "badge-amber", Expense: "badge-gray" };
+// ── CREDIT NOTES ──────────────────────────────────────────────────────────────
+function CreditNotes({ contacts, invoices, token, userId }) {
+  const [cns, setCNs] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState({ customer_id: "", customer_name: "", invoice_id: "", reason: "", amount: "", issue_date: today() });
+
+  useEffect(() => { sb.get(token, "credit_notes", "order=created_at.desc").then(d => Array.isArray(d) && setCNs(d)); }, [token]);
+
+  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+
+  const save = async () => {
+    if (!f.customer_id || !f.amount) return; setSaving(true);
+    const num = `CN-${String(cns.length + 1).padStart(3, "0")}`;
+    const cust = customers.find(c => c.id === f.customer_id);
+    const data = await sb.post(token, "credit_notes", { ...f, cn_number: num, customer_name: cust?.name, amount: parseFloat(f.amount), created_by: userId });
+    if (data[0]) setCNs(prev => [data[0], ...prev]);
+    setF({ customer_id: "", customer_name: "", invoice_id: "", reason: "", amount: "", issue_date: today() });
+    setShowForm(false); setSaving(false);
+  };
+
+  const updateStatus = async (id, status) => { await sb.patch(token, "credit_notes", id, { status }); setCNs(prev => prev.map(c => c.id === id ? { ...c, status } : c)); };
 
   return (
-    <div className="panel">
-      <div className="panel-header"><div className="panel-title">Chart of Accounts</div><span className="text-muted" style={{ fontSize: 12 }}>{accounts.length} accounts</span></div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Code</th><th>Name</th><th className="hide-mobile">Type</th><th className="text-right">Balance</th></tr></thead>
+    <div>
+      <div className="ph"><div className="pt">Credit Notes</div><button className="btn bp" onClick={() => setShowForm(!showForm)}>➕ New Credit Note</button></div>
+
+      {showForm && (
+        <div className="card">
+          <div className="ch"><div className="ct">New Credit Note</div></div>
+          <div className="fg">
+            <div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({ ...f, customer_id: e.target.value })}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({ ...f, invoice_id: e.target.value })}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div>
+            <div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({ ...f, amount: e.target.value })} placeholder="0.00" /></div>
+            <div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({ ...f, issue_date: e.target.value })} /></div>
+            <div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} placeholder="Reason for credit note..." /></div>
+          </div>
+          <div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Issue Credit Note"}</button></div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="tw"><table>
+          <thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            {types.map(type => {
-              const group = accounts.filter(a => a.type === type);
-              if (!group.length) return null;
-              return group.map((a, i) => (
-                <tr key={a.id}>
-                  <td className="mono text-muted" style={{ fontSize: 11 }}>{a.code}</td>
-                  <td style={{ fontWeight: 500 }}>{a.name}</td>
-                  <td className="hide-mobile"><span className={`badge ${colorMap[a.type]}`}>{a.type}</span></td>
-                  <td className={`mono text-right ${a.type === "Expense" || a.type === "Liability" ? "text-red" : "text-green"}`}>{fmt(a.balance)}</td>
-                </tr>
-              ));
-            })}
+            {cns.map(cn => (
+              <tr key={cn.id}>
+                <td className="mono" style={{ color: "var(--purple)", fontSize: 12 }}>{cn.cn_number}</td>
+                <td style={{ fontWeight: 500 }}>{cn.customer_name}</td>
+                <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(cn.issue_date)}</td>
+                <td className="mono tr-c">{fmt(cn.amount)}</td>
+                <td className="tm">{cn.reason}</td>
+                <td><span className={`badge ${cn.status === "applied" ? "bg-green" : cn.status === "issued" ? "bg-blue" : "bg-gray"}`}>{cn.status}</span></td>
+                <td>{cn.status === "draft" && <button className="btn bo bsm" onClick={() => updateStatus(cn.id, "issued")}>Issue</button>}{cn.status === "issued" && <button className="btn bp bsm" onClick={() => updateStatus(cn.id, "applied")}>Apply</button>}</td>
+              </tr>
+            ))}
+            {cns.length === 0 && <tr><td colSpan={7} className="empty">No credit notes yet</td></tr>}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
 }
 
-// ─── REPORTS ──────────────────────────────────────────────────────────────────
+// ── INVOICES ──────────────────────────────────────────────────────────────────
+function Invoices({ invoices, setInvoices, contacts, token, userId }) {
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState({ customer: "", description: "", amount: "", invoice_date: today(), due_date: "", status: "draft" });
+
+  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+
+  const save = async () => {
+    if (!f.customer || !f.amount) return; setSaving(true);
+    const num = `INV-${String(invoices.length + 1).padStart(3, "0")}`;
+    const data = await sb.post(token, "invoices", { ...f, amount: parseFloat(f.amount), invoice_number: num, created_by: userId });
+    if (data[0]) setInvoices(prev => [data[0], ...prev]);
+    setF({ customer: "", description: "", amount: "", invoice_date: today(), due_date: "", status: "draft" });
+    setShowForm(false); setSaving(false);
+  };
+
+  const markPaid = async (id) => { await sb.patch(token, "invoices", id, { status: "paid" }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid" } : i)); };
+  const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
+
+  return (
+    <div>
+      <div className="ph"><div className="pt">Invoices</div><button className="btn bp" onClick={() => setShowForm(!showForm)}>➕ New Invoice</button></div>
+      <div className="g3">
+        <div className="kpi"><div className="kl">Paid</div><div className="kv tg">{fmt(totals.paid)}</div></div>
+        <div className="kpi"><div className="kl">Pending</div><div className="kv" style={{ color: "var(--amber)" }}>{fmt(totals.pending)}</div></div>
+        <div className="kpi"><div className="kl">Overdue</div><div className="kv tr-c">{fmt(totals.overdue)}</div></div>
+      </div>
+      {showForm && (
+        <div className="card">
+          <div className="ch"><div className="ct">New Invoice</div></div>
+          <div className="fg">
+            <div className="fgrp"><label>Customer *</label>
+              <select value={f.customer} onChange={e => setF({ ...f, customer: e.target.value })}>
+                <option value="">Select or type name...</option>
+                {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({ ...f, amount: e.target.value })} placeholder="0.00" /></div>
+            <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
+            <div className="fgrp"><label>Due Date</label><input type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
+            <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
+            <div className="fgrp"><label>Description</label><input value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Services rendered..." /></div>
+          </div>
+          <div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Create Invoice"}</button></div>
+        </div>
+      )}
+      <div className="card">
+        <div className="tw"><table>
+          <thead><tr><th>Invoice #</th><th>Customer</th><th className="hm">Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {invoices.map(inv => <tr key={inv.id}><td className="mono" style={{ color: "var(--qb)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontWeight: 500 }}>{inv.customer}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono">{fmt(inv.amount)}</td><td><span className={`badge ${inv.status === "paid" ? "bg-green" : inv.status === "overdue" ? "bg-red" : inv.status === "pending" ? "bg-amber" : "bg-gray"}`}>{inv.status}</span></td><td>{inv.status !== "paid" && <button className="btn bo bsm" onClick={() => markPaid(inv.id)}>Mark paid</button>}</td></tr>)}
+            {invoices.length === 0 && <tr><td colSpan={6} className="empty">No invoices yet</td></tr>}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  );
+}
+
+// ── REPORTS ───────────────────────────────────────────────────────────────────
 function Reports({ accounts }) {
   const revenue = accounts.filter(a => a.type === "Revenue");
   const expenses = accounts.filter(a => a.type === "Expense");
   const totalRev = revenue.reduce((s, a) => s + a.balance, 0);
   const totalExp = expenses.reduce((s, a) => s + a.balance, 0);
   const net = totalRev - totalExp;
-
+  const [tab, setTab] = useState("pl");
   return (
-    <div className="panel">
-      <div className="panel-header"><div className="panel-title">Profit & Loss</div></div>
-      <div className="report-header-row">Revenue</div>
-      {revenue.map(a => <div key={a.id} className="report-row indent"><span>{a.name}</span><span className="mono text-green">{fmt(a.balance)}</span></div>)}
-      <div className="report-row subtotal"><span>Total Revenue</span><span className="mono text-green">{fmt(totalRev)}</span></div>
-      <div style={{ height: 8 }} />
-      <div className="report-header-row">Expenses</div>
-      {expenses.map(a => <div key={a.id} className="report-row indent"><span>{a.name}</span><span className="mono text-red">{fmt(a.balance)}</span></div>)}
-      <div className="report-row subtotal"><span>Total Expenses</span><span className="mono text-red">{fmt(totalExp)}</span></div>
-      <div className="report-row total">
-        <span>Net {net >= 0 ? "Income" : "Loss"}</span>
-        <span className={`mono ${net >= 0 ? "text-green" : "text-red"}`}>{fmt(Math.abs(net))}</span>
+    <div>
+      <div className="pt" style={{ marginBottom: 20 }}>Financial Reports</div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        {[["pl", "Profit & Loss"], ["bs", "Balance Sheet"]].map(([k, l]) => <button key={k} className={`btn ${tab === k ? "bp" : "bo"}`} onClick={() => setTab(k)}>{l}</button>)}
       </div>
+      {tab === "pl" && <div className="card"><div className="ch"><div className="ct">Profit & Loss</div><div className="cs">Year to date</div></div><div className="rs-title">Income</div>{revenue.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tg">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Income</span><span className="mono tg">{fmt(totalRev)}</span></div><div style={{ height: 8 }} /><div className="rs-title">Expenses</div>{expenses.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tr-c">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Expenses</span><span className="mono tr-c">{fmt(totalExp)}</span></div><div className="rrow total"><span>Net {net >= 0 ? "Profit" : "Loss"}</span><span className={`mono ${net >= 0 ? "tg" : "tr-c"}`}>{fmt(Math.abs(net))}</span></div></div>}
+      {tab === "bs" && <div className="g2">{[["Assets & Liabilities", [["Asset", "tg"], ["Liability", "tr-c"]]], ["Equity", [["Equity", "tg"]]]].map(([title, groups]) => <div key={title} className="card"><div className="ch"><div className="ct">{title}</div></div>{groups.map(([type, cls]) => <span key={type}><div className="rs-title">{type}</div>{accounts.filter(a => a.type === type).map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className={`mono ${cls}`}>{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total {type}</span><span className={`mono ${cls}`}>{fmt(accounts.filter(a => a.type === type).reduce((s, a) => s + a.balance, 0))}</span></div></span>)}</div>)}</div>}
     </div>
   );
 }
 
-// ─── NAV CONFIG ──────────────────────────────────────────────────────────────
+// ── APP SHELL ─────────────────────────────────────────────────────────────────
 const NAV = [
-  { id: "dashboard", label: "Overview", icon: "▦" },
-  { id: "invoices", label: "Invoices", icon: "◈" },
-  { id: "journal", label: "Journal", icon: "⊞" },
-  { id: "accounts", label: "Accounts", icon: "◎" },
-  { id: "reports", label: "Reports", icon: "▣" },
+  { id: "dashboard", label: "Home", icon: "🏠" },
+  { id: "invoices", label: "Invoices", icon: "🧾" },
+  { id: "contacts", label: "Contacts", icon: "👥" },
+  { id: "inventory", label: "Inventory", icon: "📦" },
+  { id: "purchases", label: "Purchases", icon: "🛒" },
+  { id: "credits", label: "Credits", icon: "📋" },
+  { id: "reports", label: "Reports", icon: "📊" },
 ];
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
+const MOBILE_NAV = [
+  { id: "dashboard", label: "Home", icon: "🏠" },
+  { id: "invoices", label: "Invoices", icon: "🧾" },
+  { id: "contacts", label: "Contacts", icon: "👥" },
+  { id: "inventory", label: "Stock", icon: "📦" },
+  { id: "reports", label: "Reports", icon: "📊" },
+];
+
 export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [accounts, setAccounts] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!auth) return;
-    setLoading(true);
+    if (!auth) return; setLoading(true);
     Promise.all([
       sb.get(auth.token, "accounts", "order=code.asc"),
       sb.get(auth.token, "invoices", "order=created_at.desc"),
+      sb.get(auth.token, "contacts", "order=name.asc"),
+      sb.get(auth.token, "products", "order=name.asc"),
       sb.get(auth.token, "profiles", `id=eq.${auth.user.id}`),
-    ]).then(([accs, invs, profs]) => {
+    ]).then(([accs, invs, cnts, prods, profs]) => {
       if (Array.isArray(accs)) setAccounts(accs);
       if (Array.isArray(invs)) setInvoices(invs);
+      if (Array.isArray(cnts)) setContacts(cnts);
+      if (Array.isArray(prods)) setProducts(prods);
       if (Array.isArray(profs) && profs[0]) setProfile(profs[0]);
       setLoading(false);
     });
   }, [auth]);
 
-  const handleSignOut = async () => {
-    await sb.signOut(auth.token);
-    setAuth(null); setAccounts([]); setInvoices([]); setProfile(null);
-  };
+  const signOut = async () => { await sb.signOut(auth.token); setAuth(null); };
+  const initials = (profile?.full_name || auth?.user?.email || "U")[0]?.toUpperCase();
 
-  if (!auth) return (
-    <>
-      <style>{styles}</style>
-      <AuthScreen onAuth={setAuth} />
-    </>
-  );
-
-  const initials = (profile?.full_name || auth.user.email || "U")[0].toUpperCase();
+  if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} /></>;
 
   return (
     <>
-      <style>{styles}</style>
+      <style>{CSS}</style>
       <div className="app">
-        {/* Desktop Sidebar */}
-        <aside className="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-mark">L</div>
-            <div><div className="logo-text">LedgerOS</div><div className="logo-sub">Accounting</div></div>
+        <nav className="tnav">
+          <div className="tnav-brand"><div className="tnav-logo">L</div><div><div className="tnav-name">LedgerOS</div><div className="tnav-co">Business Accounting</div></div></div>
+          <div className="tnav-search"><span className="si">🔍</span><input placeholder="Search transactions, contacts..." /></div>
+          <div className="tnav-right">
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,.5)" }}>{profile?.role?.toUpperCase()}</span>
+            <button className="tnav-btn" onClick={signOut}>Sign out</button>
+            <div className="tnav-av">{initials}</div>
           </div>
-          <div className="nav-section">
-            <div className="nav-label">Navigation</div>
-            {NAV.map(n => (
-              <div key={n.id} className={`nav-item ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
-                <span>{n.icon}</span>{n.label}
-              </div>
-            ))}
-          </div>
-          <div className="nav-bottom">
-            <div className="user-pill">
-              <div className="avatar">{initials}</div>
-              <div>
-                <div className="user-name">{profile?.full_name || auth.user.email}</div>
-                <div style={{ fontSize: 10, color: "var(--text3)", fontFamily: "var(--mono)" }}>{profile?.role || "agent"}</div>
-              </div>
-              <button className="signout-btn" onClick={handleSignOut} title="Sign out">⏻</button>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <div className="main">
-          <div className="topbar">
-            <div className="topbar-title">{NAV.find(n => n.id === page)?.label}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span className="role-badge">{profile?.role || "agent"}</span>
-              <div className="avatar">{initials}</div>
-            </div>
-          </div>
-          <div className="content">
-            {loading ? (
-              <div className="loading"><div className="spinner" />Loading data...</div>
-            ) : (
-              <>
-                {page === "dashboard" && <Dashboard accounts={accounts} invoices={invoices} />}
-                {page === "invoices" && <Invoices invoices={invoices} setInvoices={setInvoices} token={auth.token} userId={auth.user.id} />}
-                {page === "journal" && <JournalEntry accounts={accounts} token={auth.token} userId={auth.user.id} />}
-                {page === "accounts" && <Accounts accounts={accounts} />}
-                {page === "reports" && <Reports accounts={accounts} />}
-              </>
-            )}
-          </div>
+        </nav>
+        <nav className="mnav">
+          {NAV.map(n => <div key={n.id} className={`mnav-item ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}><span className="mnav-icon">{n.icon}</span><span>{n.label}</span></div>)}
+        </nav>
+        <div className="content">
+          {loading ? <div className="loading"><div className="spin" />Loading your data...</div> : <>
+            {page === "dashboard" && <Dashboard accounts={accounts} invoices={invoices} contacts={contacts} products={products} profile={profile} setPage={setPage} />}
+            {page === "invoices" && <Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} token={auth.token} userId={auth.user.id} />}
+            {page === "contacts" && <Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} />}
+            {page === "inventory" && <Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
+            {page === "purchases" && <Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
+            {page === "credits" && <CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
+            {page === "reports" && <Reports accounts={accounts} />}
+          </>}
         </div>
-
-        {/* Mobile Bottom Nav */}
-        <nav className="mobile-nav">
-          <div className="mobile-nav-inner">
-            {NAV.map(n => (
-              <div key={n.id} className={`mobile-nav-item ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
-                <span className="mobile-nav-icon">{n.icon}</span>
-                <span className="mobile-nav-label">{n.label}</span>
-              </div>
-            ))}
+        <nav className="mnav-mob">
+          <div className="mnav-mob-inner">
+            {MOBILE_NAV.map(n => <div key={n.id} className={`mnav-mob-item ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}><span className="mnav-mob-icon">{n.icon}</span><span className="mnav-mob-lbl">{n.label}</span></div>)}
           </div>
         </nav>
       </div>
