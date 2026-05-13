@@ -1,3 +1,5 @@
+import Analytics from "./Analytics.jsx";
+import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect } from "react";
 
 const SUPABASE_URL = "https://szcogfyrhlrsxnwepnea.supabase.co";
@@ -688,6 +690,8 @@ const NAV = [
   { id: "purchases", label: "Purchases", icon: "🛒" },
   { id: "credits", label: "Credits", icon: "📋" },
   { id: "reports", label: "Reports", icon: "📊" },
+  { id: "analytics", label: "Analytics", icon: "📉" },
+  { id: "import", label: "Import", icon: "📥" },
 ];
 
 const MOBILE_NAV = [
@@ -696,6 +700,8 @@ const MOBILE_NAV = [
   { id: "contacts", label: "Contacts", icon: "👥" },
   { id: "inventory", label: "Stock", icon: "📦" },
   { id: "reports", label: "Reports", icon: "📊" },
+  { id: "analytics", label: "Analytics", icon: "📉" },
+  { id: "import", label: "Import", icon: "📥" },
 ];
 
 export default function App() {
@@ -756,6 +762,8 @@ export default function App() {
             {page === "purchases" && <Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
             {page === "credits" && <CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
             {page === "reports" && <Reports accounts={accounts} />}
+            {page === "analytics" && <Analytics invoices={invoices} products={products} contacts={contacts} />}
+            {page === "import" && <CSVImport token={auth.token} contacts={contacts} setContacts={setContacts} products={products} setProducts={setProducts} />}
           </>}
         </div>
         <nav className="mnav-mob">
