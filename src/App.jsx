@@ -26,16 +26,16 @@ const today = () => new Date().toISOString().split("T")[0];
 
 // ── COMPANY DETAILS (edit these) ──────────────────────────────────────────────
 const COMPANY = {
-  name: "Arkham Retail Ltd",
-  address: "2 Fieldhead Street, Fieldhead Business Centre",
-  city: "Bradford",
-  postcode: "BD7 1LW",
-  phone: "07448208411",
-  email: "arkhamretail@gmail.com",
-  vatNumber: "GB462229106",
-  bankName: "Tide Bank",
-  sortCode: "04-06-05",
-  accountNumber: "23058246",
+  name: "Your Business Name Ltd",
+  address: "123 Business Street",
+  city: "London",
+  postcode: "EC1A 1BB",
+  phone: "020 1234 5678",
+  email: "sales@yourbusiness.co.uk",
+  vatNumber: "GB123456789",
+  bankName: "Barclays Bank",
+  sortCode: "20-00-00",
+  accountNumber: "12345678",
 };
 
 const CSS = `
@@ -552,8 +552,49 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   );
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ accounts, invoices, contacts, products, profile, setPage }) {
+// ── AGENT DASHBOARD ──────────────────────────────────────────────────────────
+function AgentDashboard({ invoices, contacts, profile, setPage }) {
+  const myInvoices = invoices.filter(i => i.created_by === profile?.id);
+  const myPaid = myInvoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  const myPending = myInvoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
+  const myOverdue = myInvoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
+  const myCustomers = contacts.filter(c => c.created_by === profile?.id);
+  const name = profile?.full_name?.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  return (
+    <div>
+      <div className="pgreet">{greeting}, {name}! 👋</div>
+      <div className="psub">Your personal sales dashboard.</div>
+      <div className="qa">
+        <span className="qa-lbl">Quick actions:</span>
+        {[["➕ New Invoice", "invoices"], ["👥 Add Customer", "contacts"]].map(([l, p]) => <button key={l} className="qa-btn" onClick={() => setPage(p)}>{l}</button>)}
+      </div>
+      <div className="kgrid">
+        <div className="kpi"><div className="ki">🧾</div><div className="kl">My Invoices</div><div className="kv">{myInvoices.length}</div><div className="ks">Total raised</div></div>
+        <div className="kpi"><div className="ki">💰</div><div className="kl">My Sales</div><div className="kv" style={{ color: "var(--green)" }}>{fmt(myPaid)}</div><div className="ks">Paid invoices</div></div>
+        <div className="kpi"><div className="ki">⏳</div><div className="kl">Pending</div><div className="kv" style={{ color: "var(--amber)" }}>{fmt(myPending)}</div><div className="ks">Awaiting payment</div></div>
+        <div className="kpi"><div className="ki">👥</div><div className="kl">My Customers</div><div className="kv">{myCustomers.length}</div><div className="ks">Total added</div></div>
+      </div>
+      {myOverdue > 0 && <div style={{ background: "var(--red-bg)", border: "1px solid var(--red-lt)", borderRadius: 10, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}><span style={{ fontSize: 20 }}>⚠️</span><div><div style={{ fontWeight: 600, color: "var(--red)" }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--text2)", marginTop: 2 }}>Please follow up with your customers</div></div></div>}
+      <div className="card">
+        <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}>View all</button></div>
+        <div className="tw"><table>
+          <thead><tr><th>Invoice #</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {myInvoices.slice(0, 8).map(inv => <tr key={inv.id}><td className="mono" style={{ color: "var(--qb)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontWeight: 500 }}>{inv.customer}</td><td className="mono">{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "bg-green" : inv.status === "overdue" ? "bg-red" : inv.status === "pending" ? "bg-amber" : "bg-gray")}>{inv.status}</span></td></tr>)}
+            {myInvoices.length === 0 && <tr><td colSpan={4} className="empty">No invoices yet — create your first one!</td></tr>}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  );
+}
+
+// ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+function Dashboard({ accounts, invoices, contacts, products, profile, setPage, allProfiles }) {
+  const isAdmin = profile?.role === "admin";
+  if (!isAdmin) return <AgentDashboard invoices={invoices} contacts={contacts} profile={profile} setPage={setPage} />;
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
@@ -589,6 +630,34 @@ function Dashboard({ accounts, invoices, contacts, products, profile, setPage })
         <div className="ic"><div className="ic-lbl">Paid invoices</div><div className="ic-total" style={{ color: "var(--blue)" }}>{fmt(paid)}</div><div className="ic-bar"><div className="ic-seg" style={{ width: "100%", background: "var(--blue)" }} /></div><div className="ic-bd"><div><div className="ic-bd-lbl">Invoices paid</div><div className="ic-bd-val">{invoices.filter(i => i.status === "paid").length}</div></div><div><div className="ic-bd-lbl">Average value</div><div className="ic-bd-val">{fmt(paid / (invoices.filter(i => i.status === "paid").length || 1))}</div></div></div></div>
       </div>
       {lowStock.length > 0 && <div className="card"><div className="ch"><div className="ct">⚠️ Low Stock Alert</div><button className="btn bo bsm" onClick={() => setPage("inventory")}>View inventory</button></div><div className="tw"><table><thead><tr><th>Product</th><th>In Stock</th><th>Reorder Level</th></tr></thead><tbody>{lowStock.slice(0, 5).map(p => <tr key={p.id}><td style={{ fontWeight: 500 }}>{p.name}</td><td className="mono">{p.stock_qty} {p.unit}</td><td className="mono">{p.reorder_level} {p.unit}</td></tr>)}</tbody></table></div></div>}
+      <div className="card">
+        <div className="ch"><div className="ct">🏆 Agent Leaderboard</div><div className="cs">Ranked by total sales</div></div>
+        <div className="tw"><table>
+          <thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total Sales</th><th>Paid</th><th>Performance</th></tr></thead>
+          <tbody>
+            {allProfiles.filter(p => p.id).map((agent, i) => {
+              const agentInvoices = invoices.filter(inv => inv.created_by === agent.id);
+              const agentTotal = agentInvoices.reduce((s, inv) => s + inv.amount, 0);
+              const agentPaid = agentInvoices.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
+              const maxTotal = Math.max(...allProfiles.map(a => invoices.filter(inv => inv.created_by === a.id).reduce((s, inv) => s + inv.amount, 0)), 1);
+              return (
+                <tr key={agent.id}>
+                  <td><div style={{ width: 24, height: 24, borderRadius: '50%', background: i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#b45309' : 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i < 3 ? '#fff' : 'var(--text2)' }}>{i + 1}</div></td>
+                  <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--qb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>{(agent.full_name || agent.id)[0].toUpperCase()}</div><div><div style={{ fontWeight: 600 }}>{agent.full_name || 'Unknown'}</div><div style={{ fontSize: 11, color: 'var(--text3)' }}>{agent.role}</div></div></div></td>
+                  <td className="mono">{agentInvoices.length}</td>
+                  <td className="mono tg">{fmt(agentTotal)}</td>
+                  <td className="mono">{fmt(agentPaid)}</td>
+                  <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}><div style={{ width: agentTotal / maxTotal * 100 + '%', height: '100%', background: 'var(--qb)', borderRadius: 3 }} /></div><span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 32 }}>{Math.round(agentTotal / maxTotal * 100)}%</span></div></td>
+                </tr>
+              );
+            }).sort((a, b) => {
+              const aTotal = invoices.filter(inv => inv.created_by === allProfiles[allProfiles.indexOf(allProfiles.find(p => p.id === a.key))]?.id).reduce((s, inv) => s + inv.amount, 0);
+              return 0;
+            })}
+            {allProfiles.length === 0 && <tr><td colSpan={6} className="empty">No agents yet</td></tr>}
+          </tbody>
+        </table></div>
+      </div>
     </div>
   );
 }
@@ -758,6 +827,7 @@ export default function App() {
   const [contacts, setContacts] = useState([]);
   const [products, setProducts] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [allProfiles, setAllProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -768,12 +838,13 @@ export default function App() {
       sb.get(auth.token, "contacts", "order=name.asc"),
       sb.get(auth.token, "products", "order=name.asc"),
       sb.get(auth.token, "profiles", `id=eq.${auth.user.id}`),
-    ]).then(([accs, invs, cnts, prods, profs]) => {
+    ]).then(([accs, invs, cnts, prods, profs, allProfs]) => {
       if (Array.isArray(accs)) setAccounts(accs);
       if (Array.isArray(invs)) setInvoices(invs);
       if (Array.isArray(cnts)) setContacts(cnts);
       if (Array.isArray(prods)) setProducts(prods);
       if (Array.isArray(profs) && profs[0]) setProfile(profs[0]);
+      if (Array.isArray(allProfs)) setAllProfiles(allProfs);
       setLoading(false);
     });
   }, [auth]);
@@ -801,7 +872,7 @@ export default function App() {
         </nav>
         <div className="content">
           {loading ? <div className="loading"><div className="spin" />Loading your data...</div> : <>
-            {page === "dashboard" && <Dashboard accounts={accounts} invoices={invoices} contacts={contacts} products={products} profile={profile} setPage={setPage} />}
+            {page === "dashboard" && <Dashboard accounts={accounts} invoices={invoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} />}
             {page === "invoices" && <Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
             {page === "contacts" && <Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} />}
             {page === "inventory" && <Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
