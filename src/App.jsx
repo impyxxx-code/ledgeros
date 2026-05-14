@@ -24,7 +24,18 @@ const sb = {
   async signIn(e, p) { return (await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p }) })).json(); },
   async signUp(e, p, n) {
     const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
-    if (d.access_token) await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) });
+    if (d.access_token && d.user) {
+      // Try to create profile, retry if needed
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { 
+          method: "POST", 
+          headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, 
+          body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) 
+        });
+      } catch(err) {
+        console.log("Profile creation failed, will retry on login");
+      }
+    }
     return d;
   },
   async signOut(t) { await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) }); },
@@ -1662,10 +1673,23 @@ export default function App() {
       sb.get(auth.token, "profiles", "order=full_name.asc"),
     ]).then(([accs,invs,cnts,prods,profs,allProfs]) => {
       if (Array.isArray(accs)) setAccounts(accs);
-      if (Array.isArray(invs)) setInvoices(invs);
-      if (Array.isArray(cnts)) setContacts(cnts);
+      const userProfile = Array.isArray(profs) && profs[0] ? profs[0] : null;
+      if (userProfile) setProfile(userProfile);
+      // Agents only see their own invoices
+      if (Array.isArray(invs)) {
+        const filteredInvs = userProfile?.role === "admin" 
+          ? invs 
+          : invs.filter(i => i.created_by === auth.user.id);
+        setInvoices(filteredInvs);
+      }
+      // Agents only see their own contacts
+      if (Array.isArray(cnts)) {
+        const filteredCnts = userProfile?.role === "admin"
+          ? cnts
+          : cnts.filter(c => c.created_by === auth.user.id);
+        setContacts(filteredCnts);
+      }
       if (Array.isArray(prods)) setProducts(prods);
-      if (Array.isArray(profs)&&profs[0]) setProfile(profs[0]);
       if (Array.isArray(allProfs)) setAllProfiles(allProfs);
       setLoading(false);
     });
