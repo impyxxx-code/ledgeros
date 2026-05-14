@@ -654,7 +654,11 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 }
 
 // ── AGENT DASHBOARD ───────────────────────────────────────────────────────────
-function AgentDashboard({ invoices, contacts, profile, setPage }) {
+function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token }) {
+  const [viewInvoice, setViewInvoice] = useState(null);
+  const [payingId, setPayingId] = useState(null);
+  const [payMethod, setPayMethod] = useState({});
+
   const myInv = invoices.filter(i => i.created_by === profile?.id);
   const myPaid = myInv.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   const myPending = myInv.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
@@ -663,8 +667,15 @@ function AgentDashboard({ invoices, contacts, profile, setPage }) {
   const name = profile?.full_name?.split(" ")[0] || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  const markPaid = async (id, method) => {
+    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
+    setPayingId(null);
+  };
   return (
     <div>
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
@@ -691,9 +702,9 @@ function AgentDashboard({ invoices, contacts, profile, setPage }) {
 }
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
-function Dashboard({ accounts, invoices, contacts, products, profile, setPage, allProfiles }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} contacts={contacts} profile={profile} setPage={setPage} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
@@ -1743,7 +1754,7 @@ export default function App() {
               <div className="loading"><div className="spin" /><span>Loading your data...</span></div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
