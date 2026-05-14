@@ -405,9 +405,7 @@ const handlePrint = () => {
     `);
     w.document.close();
   };
-   };
-
-  const buildWaMsg = () => encodeURIComponent(
+ const buildWaMsg = () => encodeURIComponent(
     `*VAT Invoice — ${COMPANY.name}*\n\nInvoice: *${invoice.invoice_number}*\nCustomer: ${invoice.customer}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
     lines.map(l => `${l.description} x${l.qty} — ${fmt(l.qty * l.unit_price)}`).join("\n") +
     `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\n*Total Due: ${fmt(total)}*\n\nPayment to:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAcc No: ${COMPANY.accountNumber}\nRef: ${invoice.invoice_number}\n\nThank you for your business! 🙏`
