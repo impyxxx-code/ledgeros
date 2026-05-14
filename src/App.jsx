@@ -998,16 +998,16 @@ function CustomerStatement({ contacts, invoices, token }) {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="ch"><div className="ct">Select Customer</div></div>
         <div style={{ padding: 20 }}>
-          <div style={{ position: "relative", maxWidth: 400 }}>
+          <div style={{ position: "relative", maxWidth: 500 }}>
             <input
               style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }}
-              placeholder="Search customers..."
+              placeholder="Search customers by name..."
               value={query}
               onChange={e => { setQuery(e.target.value); setShowDropdown(true); }}
               onFocus={() => setShowDropdown(true)}
             />
             {showDropdown && filtered.length > 0 && (
-              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, maxHeight: 240, overflowY: "auto", marginTop: 4 }}>
+              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 200, maxHeight: 300, overflowY: "auto", marginTop: 4 }}>
                 {filtered.map(c => (
                   <div key={c.id} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "0.5px solid var(--border)", fontSize: 13 }}
                     onMouseDown={() => { setSelectedContact(c); setQuery(c.name); setShowDropdown(false); }}>
