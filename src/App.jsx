@@ -325,8 +325,16 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
   const savedPhone = customerContact?.phone || "";
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
- const handlePrint = () => {
-    const w = window.open("", "_blank");
+const handlePrint = () => {
+    const html = `<!DOCTYPE html><html><head><title>${invoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}.co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.6;margin-bottom:20px}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2563eb}.inv-title{font-size:36px;font-weight:900;color:#ddd;text-align:right}.inv-num{font-size:14px;font-weight:700;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.meta-val{font-size:12px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#2563eb;color:#fff}th{padding:8px 10px;font-size:10px;text-transform:uppercase;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:8px 10px;border-bottom:1px solid #f1f5f9}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #000;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}.bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.bank-val{font-size:12px;font-weight:600}.footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div><div><div class="inv-title">INVOICE</div><div class="inv-num">${invoice.invoice_number}</div></div></div><div class="meta"><div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${invoice.customer}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${invoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)}</div></div><div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(subtotal)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(total)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div></div><div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${invoice.invoice_number} · All goods remain property of ${COMPANY.name} until payment received in full.</div></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${invoice.invoice_number}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
     w.document.write(`
       <!DOCTYPE html><html><head>
       <title>${invoice.invoice_number}</title>
@@ -392,7 +400,7 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
         <div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div>
       </div>
       <div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${invoice.invoice_number} · All goods remain property of ${COMPANY.name} until payment received in full.</div>
-      <script>window.onload=function(){window.print();}<\/script>
+    <script>window.focus();<\/script>
       </body></html>
     `);
     w.document.close();
@@ -500,7 +508,7 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
               {savedPhone && !showWaInput && <button className="btn bwa" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />WhatsApp {savedPhone}</button>}
               <button className="btn" style={{ background: "#128C7E", color: "#fff" }} onClick={() => { setShowWaInput(true); setWaNumber(""); }}><i className="ti ti-brand-whatsapp" />{savedPhone ? "Different number" : "WhatsApp"}</button>
               <button className="btn bo" onClick={handleEmail}><i className="ti ti-mail" />Email</button>
-              <button className="btn bo" onClick={handlePrint}><i className="ti ti-download" />Download PDF</button>
+             <button className="btn bo" onClick={() => { onClose(); setTimeout(handlePrint, 300); }}><i className="ti ti-printer" />Print Invoice</button>
             </div>
           </div>
         </div>
