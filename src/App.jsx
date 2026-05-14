@@ -383,7 +383,20 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
       </table>
       <div class="totals">
         <div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(subtotal)}</span></div>
-        <div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vatTotal)
+        <div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vatTotal)}</span></div>
+        <div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(total)}</span></div>
+      </div>
+      <div class="bank">
+        <div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div>
+        <div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div>
+        <div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div>
+      </div>
+      <div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${invoice.invoice_number} · All goods remain property of ${COMPANY.name} until payment received in full.</div>
+      <script>window.onload=function(){window.print();}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  };
    };
 
   const buildWaMsg = () => encodeURIComponent(
