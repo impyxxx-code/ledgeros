@@ -692,9 +692,31 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
       {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><i className="ti ti-alert-triangle" style={{ color: "#fff", fontSize: 20 }} /></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: .7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
         <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button></div>
-        <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-          {myInv.slice(0, 8).map(inv => <tr key={inv.id}><td style={{ fontWeight: 500 }}>{inv.customer}</td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="mono">{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span></td></tr>)}
-          {myInv.length === 0 && <tr><td colSpan={4} className="empty">No invoices yet — create your first one!</td></tr>}
+        <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+          {myInv.slice(0, 8).map(inv => (
+            <tr key={inv.id}>
+              <td style={{ fontWeight: 500 }}>{inv.customer}</td>
+              <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
+              <td className="mono">{fmt(inv.amount)}</td>
+              <td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td>
+              <td><div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>
+                {inv.status !== "paid" && (payingId === inv.id ? (
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none" }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
+                      <option value="cash">💵 Cash</option>
+                      <option value="bank">🏦 Bank</option>
+                      <option value="card">💳 Card</option>
+                      <option value="cheque">📝 Cheque</option>
+                    </select>
+                    <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
+                    <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
+                  </div>
+                ) : <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>)}
+              </div></td>
+            </tr>
+          ))}
+          {myInv.length === 0 && <tr><td colSpan={5} className="empty">No invoices yet — create your first one!</td></tr>}
         </tbody></table></div>
       </div>
     </div>
