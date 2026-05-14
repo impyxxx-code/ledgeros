@@ -800,7 +800,15 @@ function Dashboard({ accounts, invoices, contacts, products, profile, setPage, a
 function Invoices({ invoices, setInvoices, contacts, products, token, userId }) {
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
-  const markPaid = async (id) => { await sb.patch(token, "invoices", id, { status: "paid" }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid" } : i)); };
+  const [payingId, setPayingId] = useState(null);
+  const [payMethod, setPayMethod] = useState({});
+
+  const markPaid = async (id, method) => {
+    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
+    setPayingId(null);
+    setPayMethod(prev => ({ ...prev, [id]: "" }));
+  };
   const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
   return (
     <div>
@@ -811,7 +819,22 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
       {showForm && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
       <div className="card">
         <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th className="hm">Date</th><th className="hm">Due</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {invoices.map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span></td><td><div style={{ display: "flex", gap: 6 }}><button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>{inv.status !== "paid" && <button className="btn bp bsm" onClick={() => markPaid(inv.id)}>Paid</button>}</div></td></tr>)}
+          {invoices.map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td><td><div style={{ display: "flex", gap: 6 }}><button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>{inv.status !== "paid" && payingId === inv.id ? (
+                      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                        <select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }}
+                          value={payMethod[inv.id] || "cash"}
+                          onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
+                          <option value="cash">💵 Cash</option>
+                          <option value="bank">🏦 Bank</option>
+                          <option value="card">💳 Card</option>
+                          <option value="cheque">📝 Cheque</option>
+                        </select>
+                        <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
+                        <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
+                      </div>
+                    ) : (
+                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                    )}</div></td></tr>)}
           {invoices.length === 0 && <tr><td colSpan={7} className="empty">No invoices yet — create your first VAT invoice!</td></tr>}
         </tbody></table></div>
       </div>
