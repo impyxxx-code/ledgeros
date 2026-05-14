@@ -1,6 +1,8 @@
-import Analytics from "./Analytics.jsx";
+Dimport Analytics from "./Analytics.jsx";
 import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect, useRef } from "react";
+
+
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://szcogfyrhlrsxnwepnea.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -17,7 +19,7 @@ const COMPANY = {
   accountNumber: "23058246",
 };
 
-const LOGO = "data:image/jpeg;base64,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";
+const LOGO = "data:image/jpeg;base64,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";
 
 const sb = {
   h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
@@ -25,16 +27,9 @@ const sb = {
   async signUp(e, p, n) {
     const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
     if (d.access_token && d.user) {
-      // Try to create profile, retry if needed
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { 
-          method: "POST", 
-          headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, 
-          body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) 
-        });
-      } catch(err) {
-        console.log("Profile creation failed, will retry on login");
-      }
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) });
+      } catch(err) { console.log("Profile creation failed, will retry on login"); }
     }
     return d;
   },
@@ -61,7 +56,6 @@ const CSS = `
   --red:#ef4444;--red-lt:#fee2e2;--red-dk:#991b1b;
   --amber:#f59e0b;--amber-lt:#fef3c7;--amber-dk:#92400e;
   --purple:#8b5cf6;--purple-lt:#ede9fe;--purple-dk:#5b21b6;
-  --qb:#2563eb;--qb-dark:#0f172a;
   --sh:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
   --sh2:0 4px 16px rgba(15,23,42,.08),0 2px 4px rgba(15,23,42,.04);
   --sh3:0 20px 60px rgba(15,23,42,.15),0 4px 16px rgba(15,23,42,.08);
@@ -70,12 +64,8 @@ const CSS = `
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
 .app{display:flex;min-height:100vh}
-
-/* ── SIDEBAR ── */
 .sidebar{width:240px;min-width:240px;background:var(--sidebar);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
 .sidebar-logo{display:flex;align-items:center;gap:10px;padding:4px 8px 28px}
-.logo-box{width:32px;height:32px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center}
-.logo-box i{color:#fff;font-size:17px}
 .logo-text{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.4px}
 .nav-section{margin-bottom:28px}
 .nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.2px;padding:0 10px 10px}
@@ -93,11 +83,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .signout-btn{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;padding:4px;border-radius:6px;transition:color .15s}
 .signout-btn:hover{color:var(--red)}
 .signout-btn i{font-size:16px}
-
-/* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
-
-/* ── TOPBAR ── */
 .topbar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--border)}
 .search-wrap{position:relative;flex:1;max-width:360px}
 .search-wrap i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px}
@@ -111,11 +97,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .tb-notif::after{content:'';position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid var(--white)}
 .tb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;cursor:pointer;box-shadow:0 0 0 2px var(--white),0 0 0 3px rgba(99,102,241,.3)}
 .tb-role{font-size:11px;font-weight:600;background:var(--blue-lt);color:var(--blue);padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
-
-/* ── CONTENT ── */
 .content{flex:1;padding:28px;overflow-y:auto;max-width:1400px;width:100%;margin:0 auto}
-
-/* ── WELCOME ── */
 .welcome-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px}
 .welcome-h{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.5px}
 .welcome-sub{font-size:13px;color:var(--text2);margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -126,8 +108,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .qa-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
 .qa-btn.primary:hover{background:var(--blue-dk)}
 .qa-btn i{font-size:15px}
-
-/* ── KPI CARDS ── */
 .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .kpi{background:var(--white);border:0.5px solid var(--border);border-radius:var(--rl);padding:20px 22px;box-shadow:var(--sh);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;border-top:2px solid transparent}
 .kpi:hover{box-shadow:var(--sh2);transform:translateY(-2px);border-color:var(--border2)}
@@ -138,17 +118,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .kpi-val{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.6px;margin-bottom:4px}
 .kpi-label{font-size:12px;color:var(--text3);font-weight:500;margin-bottom:12px}
 .spark{height:40px;width:100%}
-
-/* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:0 1px 4px rgba(15,23,42,.06);overflow:hidden;margin-bottom:20px}
 .ch{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:#fafbfc}
 .ct{font-size:14px;font-weight:600;color:var(--text)}
 .cs{font-size:12px;color:var(--text3)}
-.period-sel{display:flex;gap:3px;background:#f8fafc;border:0.5px solid var(--border);border-radius:var(--r);padding:3px}
-.psel{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;color:var(--text3);border:none;background:none;transition:all .15s;font-family:var(--sans)}
-.psel.active{background:var(--white);color:var(--text);box-shadow:var(--sh)}
-
-/* ── TABLE ── */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:10px 18px;border-bottom:1px solid var(--border);background:#f8fafc;white-space:nowrap}
@@ -156,8 +129,6 @@ td{padding:12px 18px;font-size:13px;border-bottom:1px solid #f1f5f9}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8fafc;transition:background .1s}
 .c-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
-
-/* ── BADGES ── */
 .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;width:fit-content;white-space:nowrap}
 .badge::before{content:'';width:5px;height:5px;border-radius:50%}
 .b-green{background:var(--green-lt);color:var(--green-dk)}.b-green::before{background:var(--green)}
@@ -166,17 +137,13 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .b-blue{background:var(--blue-lt);color:#1e40af}.b-blue::before{background:var(--blue)}
 .b-purple{background:var(--purple-lt);color:var(--purple-dk)}.b-purple::before{background:var(--purple)}
 .b-gray{background:#f1f5f9;color:var(--text2)}.b-gray::before{background:var(--text3)}
-
-/* ── BUTTONS ── */
 .btn{padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);display:inline-flex;align-items:center;gap:7px}
-.bp{background:var(--blue);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3)}.bp:hover{background:var(--blue-dk);box-shadow:0 2px 6px rgba(37,99,235,.4)}.bp:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:var(--blue);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3)}.bp:hover{background:var(--blue-dk)}.bp:disabled{opacity:.4;cursor:not-allowed}
 .bo{background:var(--white);color:var(--text);border:0.5px solid var(--border2)}.bo:hover{border-color:var(--blue);color:var(--blue)}
 .bd{background:var(--red-lt);color:var(--red-dk);border:0.5px solid #fca5a5}
 .bwa{background:#25D366;color:#fff}.bwa:hover{background:#20BA5A}
 .bsm{padding:5px 12px;font-size:12px}
 .btn i{font-size:15px}
-
-/* ── FORM ── */
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px 22px}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:20px 22px}
 .fgrp{display:flex;flex-direction:column;gap:6px}
@@ -185,14 +152,10 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .fgrp input,.fgrp select,.fgrp textarea{background:var(--white);border:0.5px solid var(--border2);border-radius:var(--r);padding:9px 12px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:all .15s;width:100%}
 .fgrp input:focus,.fgrp select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
 .ff{padding:14px 22px;border-top:0.5px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:#fafbfc;flex-wrap:wrap}
-
-/* ── GRID LAYOUTS ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
 .g23{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
-
-/* ── ACTIVITY ── */
 .act-item{display:flex;align-items:flex-start;gap:14px;padding:14px 22px;border-bottom:0.5px solid var(--border);transition:background .15s}
 .act-item:last-child{border-bottom:none}
 .act-item:hover{background:#fafbfc}
@@ -200,15 +163,10 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .act-icon i{font-size:17px}
 .act-title{font-size:13px;font-weight:500;color:var(--text)}
 .act-sub{font-size:12px;color:var(--text3);margin-top:2px}
-.act-time{font-size:11px;color:var(--text3);margin-top:3px}
 .act-amt{font-size:13px;font-weight:600;margin-left:auto;flex-shrink:0;padding-top:2px}
-
-/* ── PAGE HEADER ── */
 .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .pt{font-size:22px;font-weight:700;letter-spacing:-.4px}
 .psub{font-size:13px;color:var(--text2);margin-top:3px}
-
-/* ── CONTACT CARDS ── */
 .contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
 .contact-card{background:var(--white);border:0.5px solid var(--border);border-radius:var(--rl);padding:20px;box-shadow:var(--sh);cursor:pointer;transition:all .2s}
 .contact-card:hover{border-color:var(--blue);box-shadow:var(--sh2);transform:translateY(-1px)}
@@ -216,14 +174,10 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .cc-name{font-size:15px;font-weight:600;margin-bottom:5px}
 .cc-detail{font-size:12px;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .cc-detail i{font-size:13px;color:var(--text3)}
-
-/* ── INVOICE MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
 .modal{background:var(--white);border-radius:var(--rxl);width:100%;max-width:740px;max-height:92vh;overflow-y:auto;box-shadow:var(--sh3)}
 .modal-header{padding:18px 24px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10;border-radius:var(--rxl) var(--rxl) 0 0}
 .modal-actions{padding:16px 24px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;position:sticky;bottom:0;background:var(--white);border-radius:0 0 var(--rxl) var(--rxl)}
-
-/* ── VAT INVOICE ── */
 .inv-doc{padding:36px}
 .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
 .inv-co-name{font-size:22px;font-weight:800;color:var(--blue);letter-spacing:-.4px;margin-bottom:6px}
@@ -248,8 +202,6 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .inv-bank-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px;background:#f8fafc;padding:14px;border-radius:var(--r);border:0.5px solid var(--border)}
 .inv-bank-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .inv-bank-val{font-size:13px;font-weight:600;color:var(--text)}
-
-/* ── LINE ITEMS FORM ── */
 .il-header{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;gap:10px;padding:10px 18px;background:#fafbfc;border-bottom:0.5px solid var(--border)}
 .il-line{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;gap:10px;align-items:center;padding:10px 18px;border-bottom:0.5px solid var(--border)}
 .il-input{background:var(--white);border:0.5px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;width:100%;transition:border .15s}
@@ -257,19 +209,13 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .ib{background:none;border:none;color:var(--text3);cursor:pointer;padding:5px;border-radius:6px;font-size:14px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .ib:hover{color:var(--red);background:var(--red-lt)}
 .ib i{font-size:15px}
-
-/* ── REPORTS ── */
 .rs-title{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;padding:14px 22px 8px}
 .rrow{display:flex;justify-content:space-between;padding:8px 22px;font-size:13px;transition:background .15s}
 .rrow:hover{background:#fafbfc}
 .rrow.indent{padding-left:40px;color:var(--text2)}
 .rrow.subtotal{border-top:0.5px solid var(--border);font-weight:600}
 .rrow.total{border-top:2px solid var(--border2);font-weight:700;font-size:16px;padding:14px 22px;background:#fafbfc}
-
-/* ── JOURNAL ── */
 .po-line{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 30px;gap:10px;align-items:center;padding:10px 18px;border-bottom:0.5px solid var(--border)}
-
-/* ── MISC ── */
 .mono{font-variant-numeric:tabular-nums}
 .tr{text-align:right}
 .tg{color:var(--green)}
@@ -289,42 +235,28 @@ tr:hover td{background:#f8fafc;transition:background .1s}
 .tab{padding:11px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-
-/* ── MOBILE ── */
 .mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--white);border-top:0.5px solid var(--border);padding:6px 0 env(safe-area-inset-bottom,6px);box-shadow:0 -4px 20px rgba(15,23,42,.08)}
 .mob-nav-inner{display:flex}
 .mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;color:var(--text3);flex:1;transition:color .15s}
 .mob-nav-item.active{color:var(--blue)}
 .mob-nav-item i{font-size:20px}
 .mob-nav-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-
 @media(max-width:768px){
-  .sidebar{display:none}
-  .mob-nav{display:block}
+  .sidebar{display:none}.mob-nav{display:block}
   .content{padding:16px 14px 80px}
   .kgrid{grid-template-columns:1fr 1fr;gap:12px}
-  .g2{grid-template-columns:1fr}
-  .g3{grid-template-columns:1fr}
+  .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
-  .g23{grid-template-columns:1fr}
   .hm{display:none}
   .kpi-val{font-size:20px}
-  .fg{grid-template-columns:1fr}
-  .fg3{grid-template-columns:1fr}
+  .fg,.fg3{grid-template-columns:1fr}
   .il-line{grid-template-columns:2fr 1fr 1fr 1fr 30px}
   .il-header{grid-template-columns:2fr 1fr 1fr 1fr 30px}
   .topbar-search{display:none}
   .inv-header{flex-direction:column;gap:16px}
-  .inv-meta{grid-template-columns:1fr}
-  .inv-bank-grid{grid-template-columns:1fr}
+  .inv-meta,.inv-bank-grid{grid-template-columns:1fr}
 }
 @media(min-width:769px){.mob-nav{display:none!important}}
-
-@media print{
-  .modal-header,.modal-actions,.sidebar,.topbar,.mob-nav{display:none!important}
-  .modal-overlay{position:static!important;background:none!important;padding:0!important}
-  .modal{box-shadow:none!important;max-height:none!important}
-}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
@@ -381,7 +313,6 @@ function Auth({ onAuth }) {
 
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
 function InvoiceModal({ invoice, onClose, contacts = [] }) {
-  const invRef = useRef();
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
 
@@ -390,21 +321,75 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
   const vatTotal = lines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
   const total = subtotal + vatTotal;
 
-  // Find saved customer phone number
   const customerContact = contacts.find(c => c.name === invoice.customer);
   const savedPhone = customerContact?.phone || "";
 
-  const handlePrint = () => window.print();
+  // ── jsPDF invoice generation ──────────────────────────────────────────────
+ const handlePrint = () => {
+    const w = window.open("", "_blank");
+    w.document.write(`
+      <!DOCTYPE html><html><head>
+      <title>${invoice.invoice_number}</title>
+      <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}
+        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #2563eb}
+        .co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}
+        .co-detail{font-size:10px;color:#64748b;line-height:1.6}
+        .inv-title{font-size:36px;font-weight:900;color:#e2e8f0;text-align:right}
+        .inv-num{font-size:14px;font-weight:700;text-align:right}
+        .meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}
+        .meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+        .meta-val{font-size:12px;font-weight:600}
+        table{width:100%;border-collapse:collapse;margin-bottom:20px}
+        thead tr{background:#2563eb;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        th{padding:8px 10px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left}
+        th:last-child,td:last-child{text-align:right}
+        td{padding:8px 10px;border-bottom:1px solid #f1f5f9}
+        tr:nth-child(even) td{background:#fafbfc}
+        .totals{width:260px;margin-left:auto;margin-bottom:20px}
+        .tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}
+        .tot-row.balance{border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}
+        .bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+        .bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}
+        .bank-val{font-size:12px;font-weight:600}
+        .footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}
+      </style>
+      </head><body>
+      <div class="header">
+        <div>
+          <div class="co-name">${COMPANY.name}</div>
+          <div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div>
+        </div>
+        <div>
+          <div class="inv-title">INVOICE</div>
+          <div class="inv-num">${invoice.invoice_number}</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${invoice.customer}</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div class="meta-lbl">Invoice #</div><div class="meta-val">${invoice.invoice_number}</div></div>
+          <div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div>
+          <div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)}</div></div>
+          <div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>
+          ${lines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+      <div class="totals">
+        <div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(subtotal)}</span></div>
+        <div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vatTotal)
+   };
 
   const buildWaMsg = () => encodeURIComponent(
-    `*VAT Invoice — ${COMPANY.name}*\n\n` +
-    `Invoice: *${invoice.invoice_number}*\n` +
-    `Customer: ${invoice.customer}\n` +
-    `Date: ${fmtDate(invoice.invoice_date)}\n` +
-    `Due: ${fmtDate(invoice.due_date)}\n\n` +
+    `*VAT Invoice — ${COMPANY.name}*\n\nInvoice: *${invoice.invoice_number}*\nCustomer: ${invoice.customer}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
     lines.map(l => `${l.description} x${l.qty} — ${fmt(l.qty * l.unit_price)}`).join("\n") +
-    `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\n*Total Due: ${fmt(total)}*\n\n` +
-    `Payment to:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAcc No: ${COMPANY.accountNumber}\nRef: ${invoice.invoice_number}\n\nThank you for your business! 🙏`
+    `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\n*Total Due: ${fmt(total)}*\n\nPayment to:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAcc No: ${COMPANY.accountNumber}\nRef: ${invoice.invoice_number}\n\nThank you for your business! 🙏`
   );
 
   const sendWhatsApp = (number) => {
@@ -416,15 +401,13 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
   const handleEmail = () => {
     const subject = encodeURIComponent(`Invoice ${invoice.invoice_number} — ${COMPANY.name}`);
     const body = encodeURIComponent(
-      `Dear ${invoice.customer},\n\nPlease find your invoice details below.\n\n` +
-      `Invoice: ${invoice.invoice_number}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
+      `Dear ${invoice.customer},\n\nPlease find your invoice details below.\n\nInvoice: ${invoice.invoice_number}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
       lines.map(l => `${l.description} (x${l.qty}) — ${fmt(l.qty * l.unit_price)}`).join("\n") +
-      `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\nTotal Due: ${fmt(total)}\n\n` +
-      `Payment Details:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAccount: ${COMPANY.accountNumber}\nReference: ${invoice.invoice_number}\n\n` +
-      `Thank you for your business.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
+      `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\nTotal Due: ${fmt(total)}\n\nPayment Details:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAccount: ${COMPANY.accountNumber}\nReference: ${invoice.invoice_number}\n\nThank you for your business.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
     );
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
+
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
@@ -435,7 +418,7 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
           </div>
           <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Close</button>
         </div>
-        <div className="inv-doc" ref={invRef}>
+        <div className="inv-doc">
           <div className="inv-header">
             <div>
               <img src={LOGO} alt={COMPANY.name} style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 12, borderRadius: 8 }} />
@@ -495,29 +478,16 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
             {showWaInput && (
               <div style={{ display: "flex", gap: 8, alignItems: "center", background: "#f0fdf4", border: "0.5px solid #86efac", borderRadius: "var(--r)", padding: "10px 14px" }}>
                 <i className="ti ti-brand-whatsapp" style={{ color: "#25D366", fontSize: 18 }} />
-                <input
-                  style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }}
-                  placeholder="Enter WhatsApp number e.g. 07700 900000"
-                  value={waNumber}
-                  onChange={e => setWaNumber(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && waNumber && sendWhatsApp(waNumber)}
-                  autoFocus
-                />
+                <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }} placeholder="Enter WhatsApp number e.g. 07700 900000" value={waNumber} onChange={e => setWaNumber(e.target.value)} onKeyDown={e => e.key === "Enter" && waNumber && sendWhatsApp(waNumber)} autoFocus />
                 <button className="btn bwa bsm" onClick={() => sendWhatsApp(waNumber)} disabled={!waNumber}>Send</button>
                 <button className="btn bo bsm" onClick={() => setShowWaInput(false)}>Cancel</button>
               </div>
             )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              {savedPhone && !showWaInput && (
-                <button className="btn bwa" onClick={() => sendWhatsApp(savedPhone)}>
-                  <i className="ti ti-brand-whatsapp" />WhatsApp {savedPhone}
-                </button>
-              )}
-              <button className="btn" style={{ background: "#128C7E", color: "#fff" }} onClick={() => { setShowWaInput(true); setWaNumber(""); }}>
-                <i className="ti ti-brand-whatsapp" />{savedPhone ? "Different number" : "WhatsApp"}
-              </button>
+              {savedPhone && !showWaInput && <button className="btn bwa" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />WhatsApp {savedPhone}</button>}
+              <button className="btn" style={{ background: "#128C7E", color: "#fff" }} onClick={() => { setShowWaInput(true); setWaNumber(""); }}><i className="ti ti-brand-whatsapp" />{savedPhone ? "Different number" : "WhatsApp"}</button>
               <button className="btn bo" onClick={handleEmail}><i className="ti ti-mail" />Email</button>
-              <button className="btn bo" onClick={handlePrint}><i className="ti ti-printer" />Print / PDF</button>
+              <button className="btn bo" onClick={handlePrint}><i className="ti ti-download" />Download PDF</button>
             </div>
           </div>
         </div>
@@ -531,38 +501,22 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const ref = useRef();
-
-  const filtered = items.filter(i => 
-    (i[displayKey] || "").toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 8);
-
+  const filtered = items.filter(i => (i[displayKey] || "").toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div style={{ position: "relative" }}>
-        <input
-          style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "9px 36px 9px 12px", fontSize: 13, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", width: "100%", transition: "border .15s" }}
-          placeholder={placeholder}
-          value={query}
-          onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-        />
+        <input style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "9px 36px 9px 12px", fontSize: 13, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", width: "100%", transition: "border .15s" }} placeholder={placeholder} value={query} onChange={e => { setQuery(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} />
         <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text3)", fontSize: 14 }}>⌄</span>
       </div>
       {open && filtered.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, maxHeight: 280, overflowY: "auto", marginTop: 4 }}>
           {filtered.map((item, i) => (
-            <div key={i}
-              style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, borderBottom: "0.5px solid var(--border)", transition: "background .1s" }}
-              onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-              onMouseDown={() => { onSelect(item); setQuery(item[displayKey]); setOpen(false); }}
-            >
+            <div key={i} style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, borderBottom: "0.5px solid var(--border)", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} onMouseDown={() => { onSelect(item); setQuery(item[displayKey]); setOpen(false); }}>
               <div style={{ fontWeight: 500 }}>{item[displayKey]}</div>
               {item.city && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.city}{item.postcode ? ` · ${item.postcode}` : ""}</div>}
               {item.category && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.category} · {item.code || ""}</div>}
@@ -570,11 +524,7 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
           ))}
         </div>
       )}
-      {open && query && filtered.length === 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, padding: "12px 14px", fontSize: 13, color: "var(--text3)", marginTop: 4 }}>
-          No results found for "{query}"
-        </div>
-      )}
+      {open && query && filtered.length === 0 && <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, padding: "12px 14px", fontSize: 13, color: "var(--text3)", marginTop: 4 }}>No results found for "{query}"</div>}
     </div>
   );
 }
@@ -596,31 +546,19 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const total = subtotal + vatTotal;
   const save = async () => {
     if (!f.customer) return; setSaving(true);
-    // Get current invoice count for sequential numbering
     const existing = await sb.get(token, "invoices", "select=id");
     const count = Array.isArray(existing) ? existing.length + 1 : 1;
     const invoice_number = `INV-${String(count).padStart(4, "0")}`;
-    const inv = await sb.post(token, "invoices", { 
-      customer: f.customer,
-      invoice_date: f.invoice_date,
-      due_date: f.due_date || null,
-      status: f.status,
-      notes: f.notes || null,
-      amount: total, 
-      subtotal, 
-      vat_total: vatTotal, 
-      invoice_number, 
-      created_by: userId 
-    });
+    const inv = await sb.post(token, "invoices", { customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || null, status: f.status, notes: f.notes || null, amount: total, subtotal, vat_total: vatTotal, invoice_number, created_by: userId });
     if (inv[0]) onSave({ ...inv[0], lines });
-    else { alert("Failed to save invoice. Please try again."); }
+    else alert("Failed to save invoice. Please try again.");
     setSaving(false); onClose();
   };
   return (
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Cancel</button></div>
       <div className="fg">
-        <div className="fgrp"><label>Customer * <span style={{color:"var(--text3)",fontWeight:400}}>— type to search</span></label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({...f, customer: c.name})} /></div>
+        <div className="fgrp"><label>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} /></div>
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp"><label>Due Date</label><input type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
@@ -658,7 +596,6 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
-
   const myInv = invoices.filter(i => i.created_by === profile?.id);
   const myPaid = myInv.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   const myPending = myInv.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
@@ -667,7 +604,6 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const name = profile?.full_name?.split(" ")[0] || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
@@ -704,10 +640,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                 {inv.status !== "paid" && (payingId === inv.id ? (
                   <div style={{ display: "flex", gap: 4 }}>
                     <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none" }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
-                      <option value="cash">💵 Cash</option>
-                      <option value="bank">🏦 Bank</option>
-                      <option value="card">💳 Card</option>
-                      <option value="cheque">📝 Cheque</option>
+                      <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
                     </select>
                     <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
                     <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
@@ -751,19 +684,17 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         </div>
       </div>
       <div className="kgrid">
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div><span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>↑ 18.4%</span></div><div className="kpi-val">{fmt(revenue)}</div><div className="kpi-label">Total Revenue</div><svg className="spark" viewBox="0 0 120 40" style={{ display: "block" }}><polyline points="0,32 20,26 40,28 60,18 80,20 100,12 120,8" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,32 20,26 40,28 60,18 80,20 100,12 120,8 120,40 0,40" fill="#dbeafe" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--red-lt)" }}><i className="ti ti-arrow-up-right" style={{ color: "var(--red)" }} /></div><span className="kpi-badge" style={{ background: "var(--red-lt)", color: "var(--red-dk)" }}>↑ 4.2%</span></div><div className="kpi-val">{fmt(expenses)}</div><div className="kpi-label">Total Expenses</div><svg className="spark" viewBox="0 0 120 40" style={{ display: "block" }}><polyline points="0,22 20,28 40,20 60,24 80,18 100,22 120,16" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,22 20,28 40,20 60,24 80,18 100,22 120,16 120,40 0,40" fill="#fee2e2" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--green-lt)" }}><i className="ti ti-trending-up" style={{ color: "var(--green)" }} /></div><span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>↑ 28.4%</span></div><div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div><div className="kpi-label">Net Profit</div><svg className="spark" viewBox="0 0 120 40" style={{ display: "block" }}><polyline points="0,34 20,28 40,22 60,20 80,14 100,10 120,6" fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,34 20,28 40,22 60,20 80,14 100,10 120,6 120,40 0,40" fill="#d1fae5" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><i className="ti ti-building-bank" style={{ color: "var(--purple)" }} /></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>Stable</span></div><div className="kpi-val">{fmt(cash)}</div><div className="kpi-label">Cash Balance</div><svg className="spark" viewBox="0 0 120 40" style={{ display: "block" }}><polyline points="0,20 20,18 40,22 60,16 80,18 100,14 120,16" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,20 20,18 40,22 60,16 80,18 100,14 120,16 120,40 0,40" fill="#ede9fe" opacity=".5" /></svg></div>
+        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div><span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>↑ 18.4%</span></div><div className="kpi-val">{fmt(revenue)}</div><div className="kpi-label">Total Revenue</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,32 20,26 40,28 60,18 80,20 100,12 120,8" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,32 20,26 40,28 60,18 80,20 100,12 120,8 120,40 0,40" fill="#dbeafe" opacity=".5" /></svg></div>
+        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--red-lt)" }}><i className="ti ti-arrow-up-right" style={{ color: "var(--red)" }} /></div><span className="kpi-badge" style={{ background: "var(--red-lt)", color: "var(--red-dk)" }}>↑ 4.2%</span></div><div className="kpi-val">{fmt(expenses)}</div><div className="kpi-label">Total Expenses</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,22 20,28 40,20 60,24 80,18 100,22 120,16" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,22 20,28 40,20 60,24 80,18 100,22 120,16 120,40 0,40" fill="#fee2e2" opacity=".5" /></svg></div>
+        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--green-lt)" }}><i className="ti ti-trending-up" style={{ color: "var(--green)" }} /></div><span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>↑ 28.4%</span></div><div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div><div className="kpi-label">Net Profit</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,34 20,28 40,22 60,20 80,14 100,10 120,6" fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,34 20,28 40,22 60,20 80,14 100,10 120,6 120,40 0,40" fill="#d1fae5" opacity=".5" /></svg></div>
+        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><i className="ti ti-building-bank" style={{ color: "var(--purple)" }} /></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>Stable</span></div><div className="kpi-val">{fmt(cash)}</div><div className="kpi-label">Cash Balance</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,20 20,18 40,22 60,16 80,18 100,14 120,16" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,20 20,18 40,22 60,16 80,18 100,14 120,16 120,40 0,40" fill="#ede9fe" opacity=".5" /></svg></div>
       </div>
       <div className="g23">
-        <div>
-          <div className="g3" style={{ marginBottom: 0 }}>
-            <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Customers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "customer" || c.type === "both").length}</div></div>
-            <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Suppliers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "supplier" || c.type === "both").length}</div></div>
-            <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Low Stock</div><div className="kpi-val" style={{ fontSize: 28, color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div>
-          </div>
-        </div>
+        <div><div className="g3" style={{ marginBottom: 0 }}>
+          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Customers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "customer" || c.type === "both").length}</div></div>
+          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Suppliers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "supplier" || c.type === "both").length}</div></div>
+          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Low Stock</div><div className="kpi-val" style={{ fontSize: 28, color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div>
+        </div></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ background: "var(--white)", border: "0.5px solid var(--border)", borderRadius: "var(--rl)", padding: "18px 22px", boxShadow: "var(--sh)" }}>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".5px" }}>Invoices owed</div>
@@ -797,11 +728,11 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         </div>
         <div className="card">
           <div className="ch"><div className="ct">Activity Feed</div></div>
-          {invoices.slice(0, 4).map((inv, i) => (
+          {invoices.slice(0, 4).map((inv) => (
             <div key={inv.id} className="act-item">
-              <div className="act-icon" style={{ background: inv.status === "paid" ? "var(--green-lt)" : inv.status === "overdue" ? "var(--red-lt)" : "var(--blue-lt)" }}><i className={"ti " + (inv.status === "paid" ? "ti-circle-check" : "ti-file-invoice")} style={{ color: inv.status === "paid" ? "var(--green)" : inv.status === "overdue" ? "var(--red)" : "var(--blue)" }} /></div>
+              <div className="act-icon" style={{ background: inv.status === "paid" ? "var(--green-lt)" : "var(--blue-lt)" }}><i className={"ti " + (inv.status === "paid" ? "ti-circle-check" : "ti-file-invoice")} style={{ color: inv.status === "paid" ? "var(--green)" : "var(--blue)" }} /></div>
               <div style={{ flex: 1 }}><div className="act-title">{inv.status === "paid" ? "Invoice paid" : "Invoice raised"}</div><div className="act-sub">{inv.customer} · {inv.invoice_number}</div></div>
-              <span className="act-amt" style={{ color: inv.status === "paid" ? "var(--green)" : "var(--text2)" }}>{inv.status === "paid" ? "+" : ""}{fmt(inv.amount)}</span>
+              <span className="act-amt" style={{ color: inv.status === "paid" ? "var(--green)" : "var(--text2)" }}>{fmt(inv.amount)}</span>
             </div>
           ))}
           {lowStock.slice(0, 2).map(p => (
@@ -846,12 +777,10 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
-
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
-    setPayingId(null);
-    setPayMethod(prev => ({ ...prev, [id]: "" }));
+    setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
   const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
   return (
@@ -863,22 +792,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
       {showForm && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
       <div className="card">
         <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th className="hm">Date</th><th className="hm">Due</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {invoices.map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td><td><div style={{ display: "flex", gap: 6 }}><button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>{inv.status !== "paid" && payingId === inv.id ? (
-                      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                        <select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }}
-                          value={payMethod[inv.id] || "cash"}
-                          onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
-                          <option value="cash">💵 Cash</option>
-                          <option value="bank">🏦 Bank</option>
-                          <option value="card">💳 Card</option>
-                          <option value="cheque">📝 Cheque</option>
-                        </select>
-                        <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
-                        <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
-                      </div>
-                    ) : (
-                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
-                    )}</div></td></tr>)}
+          {invoices.map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td><td><div style={{ display: "flex", gap: 6 }}><button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>{inv.status !== "paid" && payingId === inv.id ? (<div style={{ display: "flex", gap: 4, alignItems: "center" }}><select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}><option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option></select><button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button><button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button></div>) : (<button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>)}</div></td></tr>)}
           {invoices.length === 0 && <tr><td colSpan={7} className="empty">No invoices yet — create your first VAT invoice!</td></tr>}
         </tbody></table></div>
       </div>
@@ -967,7 +881,7 @@ function Purchases({ contacts, products, token, userId }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Purchase Orders</div><div className="psub">Order stock from your suppliers</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New PO</button></div>
-      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%",fontVariantNumeric:"tabular-nums"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%",fontVariantNumeric:"tabular-nums"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><i className="ti ti-x" /></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><i className="ti ti-plus" />Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
+      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><i className="ti ti-x" /></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><i className="ti ti-plus" />Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
       <div className="card"><div className="tw"><table><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{po.status==="sent"&&<button className="btn bp bsm" onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}</td></tr>)}
         {pos.length===0&&<tr><td colSpan={6} className="empty">No purchase orders yet</td></tr>}
@@ -1017,48 +931,31 @@ function Reports({ accounts }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Financial Reports</div><div className="psub">Profit & Loss and Balance Sheet</div></div></div>
-      <div style={{display:"flex",gap:10,marginBottom:20}}>
-        {[["pl","Profit & Loss"],["bs","Balance Sheet"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} onClick={() => setTab(k)}>{l}</button>)}
-      </div>
+      <div style={{display:"flex",gap:10,marginBottom:20}}>{[["pl","Profit & Loss"],["bs","Balance Sheet"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} onClick={() => setTab(k)}>{l}</button>)}</div>
       {tab==="pl"&&<div className="card"><div className="ch"><div className="ct">Profit & Loss Statement</div><div className="cs">Year to date</div></div><div className="rs-title">Income</div>{revenue.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tg">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Income</span><span className="mono tg">{fmt(totalRev)}</span></div><div style={{height:12}}/><div className="rs-title">Expenses</div>{expenses.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tr-c">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Expenses</span><span className="mono tr-c">{fmt(totalExp)}</span></div><div className="rrow total"><span>Net {net>=0?"Profit":"Loss"}</span><span className={"mono "+(net>=0?"tg":"tr-c")}>{fmt(Math.abs(net))}</span></div></div>}
       {tab==="bs"&&<div className="g2">{[["Assets & Liabilities",[["Asset","tg"],["Liability","tr-c"]]],["Equity",[["Equity","tg"]]]].map(([title,groups]) => <div key={title} className="card"><div className="ch"><div className="ct">{title}</div></div>{groups.map(([type,cls]) => <span key={type}><div className="rs-title">{type}</div>{accounts.filter(a => a.type===type).map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className={"mono "+cls}>{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total {type}</span><span className={"mono "+cls}>{fmt(accounts.filter(a => a.type===type).reduce((s,a) => s+a.balance,0))}</span></div></span>)}</div>)}</div>}
     </div>
   );
 }
 
-// ── CUSTOMER STATEMENT ───────────────────────────────────────────────────────
+// ── CUSTOMER STATEMENT ────────────────────────────────────────────────────────
 function CustomerStatement({ contacts, invoices, token }) {
   const [selectedContact, setSelectedContact] = useState(null);
   const [query, setQuery] = useState("");
   const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
   const filtered = customers.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   const [showDropdown, setShowDropdown] = useState(false);
-
   const custInvoices = selectedContact ? invoices.filter(i => i.customer === selectedContact.name) : [];
   const totalOwed = custInvoices.filter(i => i.status !== "paid").reduce((s, i) => s + i.amount, 0);
   const totalPaid = custInvoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
-
   const handleWhatsApp = () => {
     if (!selectedContact) return;
-    const lines = custInvoices.map(inv =>
-      `${inv.invoice_number} — ${fmtDate(inv.invoice_date)} — ${fmt(inv.amount)} — ${inv.status.toUpperCase()}`
-    ).join("\n");
-    const msg = encodeURIComponent(
-      `*Account Statement — ${COMPANY.name}*\n` +
-      `Customer: *${selectedContact.name}*\n` +
-      `Date: ${fmtDate(new Date().toISOString())}\n\n` +
-      `${lines}\n\n` +
-      `Total Paid: ${fmt(totalPaid)}\n` +
-      `*Balance Outstanding: ${fmt(totalOwed)}*\n\n` +
-      `Please contact us at ${COMPANY.phone} for any queries.`
-    );
+    const lines = custInvoices.map(inv => `${inv.invoice_number} — ${fmtDate(inv.invoice_date)} — ${fmt(inv.amount)} — ${inv.status.toUpperCase()}`).join("\n");
+    const msg = encodeURIComponent(`*Account Statement — ${COMPANY.name}*\nCustomer: *${selectedContact.name}*\nDate: ${fmtDate(new Date().toISOString())}\n\n${lines}\n\nTotal Paid: ${fmt(totalPaid)}\n*Balance Outstanding: ${fmt(totalOwed)}*\n\nPlease contact us at ${COMPANY.phone} for any queries.`);
     const clean = (selectedContact.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
     if (clean) window.open(`https://wa.me/${clean}?text=${msg}`, "_blank");
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
-
-  const handlePrint = () => window.print();
-
   return (
     <div>
       <div className="ph"><div><div className="pt">Customer Statement</div><div className="psub">View and share full account statements</div></div></div>
@@ -1066,38 +963,21 @@ function CustomerStatement({ contacts, invoices, token }) {
         <div className="ch"><div className="ct">Select Customer</div></div>
         <div style={{ padding: 20, overflow: "visible" }}>
           <div style={{ position: "relative", maxWidth: 500 }}>
-            <input
-              style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }}
-              placeholder="Search customers by name..."
-              value={query}
-              onChange={e => { setQuery(e.target.value); setShowDropdown(true); }}
-              onFocus={() => setShowDropdown(true)}
-            />
+            <input style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="Search customers by name..." value={query} onChange={e => { setQuery(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)} />
             {showDropdown && filtered.length > 0 && (
               <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 200, maxHeight: 300, overflowY: "auto", marginTop: 4 }}>
-                {filtered.map(c => (
-                  <div key={c.id} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "0.5px solid var(--border)", fontSize: 13 }}
-                    onMouseDown={() => { setSelectedContact(c); setQuery(c.name); setShowDropdown(false); }}>
-                    <div style={{ fontWeight: 500 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--text3)" }}>{c.phone || ""} {c.city ? `· ${c.city}` : ""}</div>
-                  </div>
-                ))}
+                {filtered.map(c => <div key={c.id} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "0.5px solid var(--border)", fontSize: 13 }} onMouseDown={() => { setSelectedContact(c); setQuery(c.name); setShowDropdown(false); }}><div style={{ fontWeight: 500 }}>{c.name}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{c.phone || ""} {c.city ? `· ${c.city}` : ""}</div></div>)}
               </div>
             )}
           </div>
         </div>
       </div>
-
       {selectedContact && (
         <div className="card">
           <div className="ch">
-            <div>
-              <div className="ct">Statement — {selectedContact.name}</div>
-              <div className="cs">{selectedContact.phone || ""} {selectedContact.email ? `· ${selectedContact.email}` : ""}</div>
-            </div>
+            <div><div className="ct">Statement — {selectedContact.name}</div><div className="cs">{selectedContact.phone || ""} {selectedContact.email ? `· ${selectedContact.email}` : ""}</div></div>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn bwa bsm" onClick={handleWhatsApp}><i className="ti ti-brand-whatsapp" />Send Statement</button>
-              <button className="btn bo bsm" onClick={handlePrint}><i className="ti ti-printer" />Print</button>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, padding: "16px 20px", borderBottom: "0.5px solid var(--border)" }}>
@@ -1105,26 +985,11 @@ function CustomerStatement({ contacts, invoices, token }) {
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Total Paid</div><div style={{ fontSize: 20, fontWeight: 700, color: "var(--green)" }}>{fmt(totalPaid)}</div></div>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Balance Due</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div>
           </div>
-          <div className="tw"><table>
-            <thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th></tr></thead>
-            <tbody>
-              {custInvoices.map(inv => (
-                <tr key={inv.id}>
-                  <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
-                  <td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
-                  <td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.due_date)}</td>
-                  <td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td>
-                  <td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : "b-amber")}>{inv.status}</span></td>
-                </tr>
-              ))}
-              {custInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices found for this customer</td></tr>}
-            </tbody>
-          </table></div>
-          {custInvoices.length > 0 && (
-            <div style={{ padding: "14px 20px", borderTop: "2px solid var(--border2)", display: "flex", justifyContent: "flex-end", gap: 32 }}>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 11, color: "var(--text3)" }}>BALANCE DUE</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div>
-            </div>
-          )}
+          <div className="tw"><table><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+            {custInvoices.map(inv => <tr key={inv.id}><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : "b-amber")}>{inv.status}</span></td></tr>)}
+            {custInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices found for this customer</td></tr>}
+          </tbody></table></div>
+          {custInvoices.length > 0 && <div style={{ padding: "14px 20px", borderTop: "2px solid var(--border2)", display: "flex", justifyContent: "flex-end" }}><div style={{ textAlign: "right" }}><div style={{ fontSize: 11, color: "var(--text3)" }}>BALANCE DUE</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div></div>}
         </div>
       )}
     </div>
@@ -1138,13 +1003,7 @@ function StockAdjustment({ products, setProducts, token }) {
   const [adjustments, setAdjustments] = useState({});
   const [reasons, setReasons] = useState({});
   const [success, setSuccess] = useState(null);
-
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(query.toLowerCase()) ||
-    (p.code || "").toLowerCase().includes(query.toLowerCase()) ||
-    (p.category || "").toLowerCase().includes(query.toLowerCase())
-  );
-
+  const filtered = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || (p.code || "").toLowerCase().includes(query.toLowerCase()) || (p.category || "").toLowerCase().includes(query.toLowerCase()));
   const adjust = async (product, delta, reason) => {
     const newQty = Math.max(0, (product.stock_qty || 0) + delta);
     setSaving(product.id);
@@ -1155,82 +1014,31 @@ function StockAdjustment({ products, setProducts, token }) {
     setTimeout(() => setSuccess(null), 2000);
     setSaving(null);
   };
-
   return (
     <div>
       <div className="ph"><div><div className="pt">Stock Adjustment</div><div className="psub">Quickly update stock levels from anywhere</div></div></div>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--border)" }}>
-          <input
-            style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }}
-            placeholder="🔍  Search products by name, SKU or category..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
+          <input style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="🔍  Search products by name, SKU or category..." value={query} onChange={e => setQuery(e.target.value)} />
         </div>
-        <div className="tw"><table>
-          <thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead>
-          <tbody>
-            {filtered.slice(0, 30).map(p => {
-              const adj = adjustments[p.id] || "";
-              const delta = parseInt(adj) || 0;
-              const newQty = Math.max(0, (p.stock_qty || 0) + delta);
-              return (
-                <tr key={p.id} style={{ background: success === p.id ? "var(--green-lt)" : "transparent" }}>
-                  <td>
-                    <div style={{ fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--text3)" }}>{p.code || ""}</div>
-                  </td>
-                  <td><span className="tag">{p.category || "General"}</span></td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="mono" style={{ fontWeight: 600, fontSize: 15 }}>{p.stock_qty || 0}</span>
-                      {delta !== 0 && <span style={{ fontSize: 11, color: delta > 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>→ {newQty}</span>}
-                    </div>
-                    {p.stock_qty <= p.reorder_level && <div style={{ fontSize: 10, color: "var(--red)", fontWeight: 600, marginTop: 2 }}>LOW STOCK</div>}
-                  </td>
-                  <td>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <button style={{ width: 28, height: 28, borderRadius: 6, border: "0.5px solid var(--border2)", background: "var(--white)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}
-                        onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) - 1) }))}>−</button>
-                      <input
-                        type="number"
-                        style={{ width: 60, textAlign: "center", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "5px 6px", fontSize: 13, outline: "none", fontFamily: "var(--mono)" }}
-                        value={adj}
-                        onChange={e => setAdjustments(prev => ({ ...prev, [p.id]: e.target.value }))}
-                        placeholder="0"
-                      />
-                      <button style={{ width: 28, height: 28, borderRadius: 6, border: "0.5px solid var(--border2)", background: "var(--white)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}
-                        onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) + 1) }))}>+</button>
-                    </div>
-                  </td>
-                  <td>
-                    <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "6px 10px", fontSize: 12, outline: "none" }}
-                      value={reasons[p.id] || ""} onChange={e => setReasons(prev => ({ ...prev, [p.id]: e.target.value }))}>
-                      <option value="">Select reason...</option>
-                      <option value="stock_received">Stock Received</option>
-                      <option value="sold">Sold</option>
-                      <option value="damaged">Damaged</option>
-                      <option value="returned">Returned</option>
-                      <option value="count_adjustment">Count Adjustment</option>
-                    </select>
-                  </td>
-                  <td>
-                    {success === p.id ? (
-                      <span style={{ color: "var(--green)", fontSize: 13, fontWeight: 600 }}>✓ Updated</span>
-                    ) : (
-                      <button className={"btn bp bsm"} disabled={!adj || delta === 0 || saving === p.id}
-                        onClick={() => adjust(p, delta, reasons[p.id])}>
-                        {saving === p.id ? "..." : "Update"}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && <tr><td colSpan={6} className="empty">No products found</td></tr>}
-          </tbody>
-        </table></div>
+        <div className="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
+          {filtered.slice(0, 30).map(p => {
+            const adj = adjustments[p.id] || "";
+            const delta = parseInt(adj) || 0;
+            const newQty = Math.max(0, (p.stock_qty || 0) + delta);
+            return (
+              <tr key={p.id} style={{ background: success === p.id ? "var(--green-lt)" : "transparent" }}>
+                <td><div style={{ fontWeight: 500 }}>{p.name}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{p.code || ""}</div></td>
+                <td><span className="tag">{p.category || "General"}</span></td>
+                <td><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span className="mono" style={{ fontWeight: 600, fontSize: 15 }}>{p.stock_qty || 0}</span>{delta !== 0 && <span style={{ fontSize: 11, color: delta > 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>→ {newQty}</span>}</div>{p.stock_qty <= p.reorder_level && <div style={{ fontSize: 10, color: "var(--red)", fontWeight: 600, marginTop: 2 }}>LOW STOCK</div>}</td>
+                <td><div style={{ display: "flex", gap: 6, alignItems: "center" }}><button style={{ width: 28, height: 28, borderRadius: 6, border: "0.5px solid var(--border2)", background: "var(--white)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) - 1) }))}>−</button><input type="number" style={{ width: 60, textAlign: "center", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "5px 6px", fontSize: 13, outline: "none", fontFamily: "var(--mono)" }} value={adj} onChange={e => setAdjustments(prev => ({ ...prev, [p.id]: e.target.value }))} placeholder="0" /><button style={{ width: 28, height: 28, borderRadius: 6, border: "0.5px solid var(--border2)", background: "var(--white)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) + 1) }))}>+</button></div></td>
+                <td><select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "6px 10px", fontSize: 12, outline: "none" }} value={reasons[p.id] || ""} onChange={e => setReasons(prev => ({ ...prev, [p.id]: e.target.value }))}><option value="">Select reason...</option><option value="stock_received">Stock Received</option><option value="sold">Sold</option><option value="damaged">Damaged</option><option value="returned">Returned</option><option value="count_adjustment">Count Adjustment</option></select></td>
+                <td>{success === p.id ? <span style={{ color: "var(--green)", fontSize: 13, fontWeight: 600 }}>✓ Updated</span> : <button className="btn bp bsm" disabled={!adj || delta === 0 || saving === p.id} onClick={() => adjust(p, delta, reasons[p.id])}>{saving === p.id ? "..." : "Update"}</button>}</td>
+              </tr>
+            );
+          })}
+          {filtered.length === 0 && <tr><td colSpan={6} className="empty">No products found</td></tr>}
+        </tbody></table></div>
       </div>
     </div>
   );
@@ -1240,7 +1048,6 @@ function StockAdjustment({ products, setProducts, token }) {
 function AgentReport({ invoices, allProfiles, contacts }) {
   const [selectedAgent, setSelectedAgent] = useState("all");
   const [period, setPeriod] = useState("all");
-
   const now = new Date();
   const filterByPeriod = (inv) => {
     if (period === "all") return true;
@@ -1250,98 +1057,39 @@ function AgentReport({ invoices, allProfiles, contacts }) {
     if (period === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     return true;
   };
-
   const agentInvoices = (agentId) => invoices.filter(i => (agentId === "all" || i.created_by === agentId) && filterByPeriod(i));
-
-  const agents = allProfiles;
   const displayInvoices = agentInvoices(selectedAgent);
-
   const totalSales = displayInvoices.reduce((s, i) => s + i.amount, 0);
   const totalPaid = displayInvoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   const totalPending = displayInvoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
   const totalOverdue = displayInvoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
-
   return (
     <div>
       <div className="ph"><div><div className="pt">Sales by Agent</div><div className="psub">Detailed agent performance breakdown</div></div></div>
-
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "8px 14px", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }}
-          value={selectedAgent} onChange={e => setSelectedAgent(e.target.value)}>
+        <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "8px 14px", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }} value={selectedAgent} onChange={e => setSelectedAgent(e.target.value)}>
           <option value="all">All Agents</option>
-          {agents.map(a => <option key={a.id} value={a.id}>{a.full_name || "Unknown"}</option>)}
+          {allProfiles.map(a => <option key={a.id} value={a.id}>{a.full_name || "Unknown"}</option>)}
         </select>
         <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: "var(--r)", padding: 4 }}>
-          {[["all","All Time"],["month","This Month"],["week","This Week"],["today","Today"]].map(([k,l]) => (
-            <button key={k} style={{ padding: "5px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", background: period === k ? "var(--white)" : "transparent", color: period === k ? "var(--text)" : "var(--text3)", boxShadow: period === k ? "var(--sh)" : "none" }}
-              onClick={() => setPeriod(k)}>{l}</button>
-          ))}
+          {[["all","All Time"],["month","This Month"],["week","This Week"],["today","Today"]].map(([k,l]) => <button key={k} style={{ padding: "5px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", background: period === k ? "var(--white)" : "transparent", color: period === k ? "var(--text)" : "var(--text3)", boxShadow: period === k ? "var(--sh)" : "none" }} onClick={() => setPeriod(k)}>{l}</button>)}
         </div>
       </div>
-
       <div className="g4" style={{ marginBottom: 20 }}>
-        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Total Sales</div><div className="kpi-val">{fmt(totalSales)}</div><div className="ks">{displayInvoices.length} invoices</div></div>
+        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Total Sales</div><div className="kpi-val">{fmt(totalSales)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Collected</div><div className="kpi-val tg">{fmt(totalPaid)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Pending</div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(totalPending)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Overdue</div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div></div>
       </div>
-
-      {selectedAgent === "all" && (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="ch"><div className="ct">Agent Breakdown</div></div>
-          <div className="tw"><table>
-            <thead><tr><th>Agent</th><th>Invoices</th><th>Total Sales</th><th>Paid</th><th>Pending</th><th>Overdue</th><th>Performance</th></tr></thead>
-            <tbody>
-              {[...agents].sort((a, b) => agentInvoices(b.id).reduce((s,i) => s+i.amount,0) - agentInvoices(a.id).reduce((s,i) => s+i.amount,0)).map((agent, idx) => {
-                const agInv = agentInvoices(agent.id);
-                const agTotal = agInv.reduce((s,i) => s+i.amount,0);
-                const agPaid = agInv.filter(i => i.status==="paid").reduce((s,i) => s+i.amount,0);
-                const agPending = agInv.filter(i => i.status==="pending").reduce((s,i) => s+i.amount,0);
-                const agOverdue = agInv.filter(i => i.status==="overdue").reduce((s,i) => s+i.amount,0);
-                const maxSales = Math.max(...agents.map(a => agentInvoices(a.id).reduce((s,i) => s+i.amount,0)), 1);
-                const medals = ["🥇","🥈","🥉"];
-                return (
-                  <tr key={agent.id}>
-                    <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 16 }}>{medals[idx] || ""}</span>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name||"U")[0].toUpperCase()}</div>
-                      <div><div style={{ fontWeight: 600 }}>{agent.full_name||"Unknown"}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{agent.role}</div></div>
-                    </div></td>
-                    <td className="mono">{agInv.length}</td>
-                    <td className="mono" style={{ fontWeight: 600, color: "var(--green)" }}>{fmt(agTotal)}</td>
-                    <td className="mono tg">{fmt(agPaid)}</td>
-                    <td className="mono" style={{ color: "var(--amber)" }}>{fmt(agPending)}</td>
-                    <td className="mono tr-c">{fmt(agOverdue)}</td>
-                    <td><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 80, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}><div style={{ width: (agTotal/maxSales*100)+"%", height: "100%", background: "var(--blue)", borderRadius: 3 }} /></div><span style={{ fontSize: 11, color: "var(--text3)" }}>{Math.round(agTotal/maxSales*100)}%</span></div></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table></div>
-        </div>
-      )}
-
       <div className="card">
         <div className="ch"><div className="ct">Invoice Detail</div><div className="cs">{displayInvoices.length} records</div></div>
-        <div className="tw"><table>
-          <thead><tr><th>Invoice #</th><th>Customer</th><th>Agent</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody>
-            {displayInvoices.slice(0, 50).map(inv => {
-              const agent = allProfiles.find(a => a.id === inv.created_by);
-              return (
-                <tr key={inv.id}>
-                  <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
-                  <td style={{ fontWeight: 500 }}>{inv.customer}</td>
-                  <td style={{ fontSize: 12, color: "var(--text2)" }}>{agent?.full_name || "—"}</td>
-                  <td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
-                  <td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td>
-                  <td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
-                </tr>
-              );
-            })}
-            {displayInvoices.length === 0 && <tr><td colSpan={6} className="empty">No invoices for this period</td></tr>}
-          </tbody>
-        </table></div>
+        <div className="tw"><table><thead><tr><th>Invoice #</th><th>Customer</th><th>Agent</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+          {displayInvoices.slice(0, 50).map(inv => {
+            const agent = allProfiles.find(a => a.id === inv.created_by);
+            return <tr key={inv.id}><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontWeight: 500 }}>{inv.customer}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{agent?.full_name || "—"}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td></tr>;
+          })}
+          {displayInvoices.length === 0 && <tr><td colSpan={6} className="empty">No invoices for this period</td></tr>}
+        </tbody></table></div>
       </div>
     </div>
   );
@@ -1351,7 +1099,6 @@ function AgentReport({ invoices, allProfiles, contacts }) {
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
   const [period, setPeriod] = useState("month");
-
   const now = new Date();
   const filterByPeriod = (inv) => {
     const d = new Date(inv.invoice_date || inv.created_at);
@@ -1361,299 +1108,79 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
     if (period === "year") return d.getFullYear() === now.getFullYear();
     return true;
   };
-
   const filteredInv = invoices.filter(filterByPeriod);
   const totalSales = filteredInv.reduce((s,i) => s+i.amount, 0);
   const totalPaid = filteredInv.filter(i=>i.status==="paid").reduce((s,i) => s+i.amount, 0);
   const totalPending = filteredInv.filter(i=>i.status==="pending").reduce((s,i) => s+i.amount, 0);
   const totalOverdue = filteredInv.filter(i=>i.status==="overdue").reduce((s,i) => s+i.amount, 0);
-
-  // Monthly sales breakdown (last 12 months)
   const monthlySales = Array.from({length:12}, (_,i) => {
     const d = new Date(now.getFullYear(), now.getMonth()-11+i, 1);
     const month = d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
-    const invs = invoices.filter(inv => {
-      const id = new Date(inv.invoice_date || inv.created_at);
-      return id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear();
-    });
+    const invs = invoices.filter(inv => { const id = new Date(inv.invoice_date || inv.created_at); return id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear(); });
     return { month, total: invs.reduce((s,i)=>s+i.amount,0), paid: invs.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0), count: invs.length };
   });
-
   const maxMonthly = Math.max(...monthlySales.map(m=>m.total), 1);
-
-  // Top customers
-  const customerSales = contacts.filter(c=>c.type==="customer"||c.type==="both").map(c => ({
-    name: c.name,
-    total: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+i.amount,0),
-    count: filteredInv.filter(i=>i.customer===c.name).length,
-    paid: filteredInv.filter(i=>i.customer===c.name&&i.status==="paid").reduce((s,i)=>s+i.amount,0),
-  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
-
-  // Product performance (from invoice descriptions matching product names)
-  const productSales = products.map(p => ({
-    ...p,
-    invoiceCount: filteredInv.filter(i => i.description && i.description.toLowerCase().includes(p.name.toLowerCase())).length,
-    stockValue: (p.stock_qty||0) * (p.cost_price||0),
-    retailValue: (p.stock_qty||0) * (p.sale_price||0),
-    margin: p.sale_price > 0 ? Math.round(((p.sale_price - p.cost_price) / p.sale_price) * 100) : 0,
-  })).sort((a,b) => b.stockValue - a.stockValue);
-
-  // Category breakdown
+  const customerSales = contacts.filter(c=>c.type==="customer"||c.type==="both").map(c => ({ name: c.name, total: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+i.amount,0), count: filteredInv.filter(i=>i.customer===c.name).length, paid: filteredInv.filter(i=>i.customer===c.name&&i.status==="paid").reduce((s,i)=>s+i.amount,0) })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
   const categories = [...new Set(products.map(p=>p.category||"General"))];
-  const catData = categories.map(cat => ({
-    name: cat,
-    products: products.filter(p=>(p.category||"General")===cat).length,
-    stockValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0),
-    retailValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.sale_price||0),0),
-    lowStock: products.filter(p=>(p.category||"General")===cat && p.stock_qty<=p.reorder_level).length,
-  })).sort((a,b)=>b.retailValue-a.retailValue);
-
+  const catData = categories.map(cat => ({ name: cat, products: products.filter(p=>(p.category||"General")===cat).length, stockValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0), retailValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.sale_price||0),0), lowStock: products.filter(p=>(p.category||"General")===cat && p.stock_qty<=p.reorder_level).length })).sort((a,b)=>b.retailValue-a.retailValue);
   const totalStockValue = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
   const totalRetailValue = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.sale_price||0),0);
   const lowStockItems = products.filter(p=>p.stock_qty<=p.reorder_level);
-
+  const productSales = products.map(p => ({ ...p, stockValue: (p.stock_qty||0)*(p.cost_price||0), retailValue: (p.stock_qty||0)*(p.sale_price||0), margin: p.sale_price > 0 ? Math.round(((p.sale_price-p.cost_price)/p.sale_price)*100) : 0 })).sort((a,b)=>b.stockValue-a.stockValue);
   const periodLabels = { week:"This Week", month:"This Month", quarter:"This Quarter", year:"This Year", all:"All Time" };
-
   return (
     <div>
       <div className="ph">
         <div><div className="pt">Admin Reports</div><div className="psub">Comprehensive business analytics</div></div>
         <div style={{display:"flex",gap:6,background:"#f1f5f9",borderRadius:"var(--r)",padding:4}}>
-          {[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => (
-            <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"var(--white)":"transparent",color:period===k?"var(--text)":"var(--text3)",boxShadow:period===k?"var(--sh)":"none"}}
-              onClick={()=>setPeriod(k)}>{l}</button>
-          ))}
+          {[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"var(--white)":"transparent",color:period===k?"var(--text)":"var(--text3)",boxShadow:period===k?"var(--sh)":"none"}} onClick={()=>setPeriod(k)}>{l}</button>)}
         </div>
       </div>
-
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[["overview","📊 Overview"],["monthly","📅 Monthly Sales"],["products","📦 Product Report"],["customers","👥 Customer Report"],["agents","🏆 Agent Report"],["stock","🏭 Stock Report"]].map(([k,l]) => (
-          <button key={k} className={"btn "+(tab===k?"bp":"bo")} style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setTab(k)}>{l}</button>
-        ))}
+        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setTab(k)}>{l}</button>)}
       </div>
-
-      {tab==="overview" && (
-        <div>
-          <div className="kgrid">
-            <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--blue-lt)"}}><i className="ti ti-currency-pound" style={{color:"var(--blue)"}} /></div><span className="kpi-badge" style={{background:"var(--blue-lt)",color:"#1e40af"}}>{periodLabels[period]}</span></div><div className="kpi-val">{fmt(totalSales)}</div><div className="kpi-label">Total Sales</div><div className="ks">{filteredInv.length} invoices</div></div>
-            <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--green-lt)"}}><i className="ti ti-circle-check" style={{color:"var(--green)"}} /></div></div><div className="kpi-val tg">{fmt(totalPaid)}</div><div className="kpi-label">Collected</div><div className="ks">{filteredInv.filter(i=>i.status==="paid").length} paid</div></div>
-            <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--amber-lt)"}}><i className="ti ti-clock" style={{color:"var(--amber)"}} /></div></div><div className="kpi-val" style={{color:"var(--amber)"}}>{fmt(totalPending)}</div><div className="kpi-label">Pending</div></div>
-            <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--red-lt)"}}><i className="ti ti-alert-circle" style={{color:"var(--red)"}} /></div></div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div><div className="kpi-label">Overdue</div></div>
-          </div>
-          <div className="g2">
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Stock Value (Cost)</div><div className="kpi-val">{fmt(totalStockValue)}</div><div className="ks">{products.length} products</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Retail Value</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div><div className="ks">Potential revenue</div></div>
-          </div>
-          <div style={{marginBottom:20}} />
-          <div className="card">
-            <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
-            <div style={{padding:"20px 20px 8px"}}>
-              <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,marginBottom:8}}>
-                {monthlySales.map((m,i) => (
-                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}>
-                    <div style={{fontSize:9,color:"var(--text3)",fontFamily:"var(--mono)"}}>£{Math.round(m.total/1000)}k</div>
-                    <div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity:.85,transition:"height .5s"}} title={fmt(m.total)} />
-                    <div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"0.5px solid var(--border)",paddingTop:8}}>
-                <span>Total: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
-                <span>Best month: <strong>{monthlySales.reduce((a,b)=>a.total>b.total?a:b).month}</strong></span>
-                <span>Avg/month: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0)/12)}</strong></span>
-              </div>
+      {tab==="overview" && <div>
+        <div className="kgrid">
+          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--blue-lt)"}}><i className="ti ti-currency-pound" style={{color:"var(--blue)"}} /></div><span className="kpi-badge" style={{background:"var(--blue-lt)",color:"#1e40af"}}>{periodLabels[period]}</span></div><div className="kpi-val">{fmt(totalSales)}</div><div className="kpi-label">Total Sales</div></div>
+          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--green-lt)"}}><i className="ti ti-circle-check" style={{color:"var(--green)"}} /></div></div><div className="kpi-val tg">{fmt(totalPaid)}</div><div className="kpi-label">Collected</div></div>
+          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--amber-lt)"}}><i className="ti ti-clock" style={{color:"var(--amber)"}} /></div></div><div className="kpi-val" style={{color:"var(--amber)"}}>{fmt(totalPending)}</div><div className="kpi-label">Pending</div></div>
+          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--red-lt)"}}><i className="ti ti-alert-circle" style={{color:"var(--red)"}} /></div></div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div><div className="kpi-label">Overdue</div></div>
+        </div>
+        <div className="card">
+          <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
+          <div style={{padding:"20px 20px 8px"}}>
+            <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,marginBottom:8}}>
+              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>£{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity:.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"0.5px solid var(--border)",paddingTop:8}}>
+              <span>Total: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
+              <span>Best: <strong>{monthlySales.reduce((a,b)=>a.total>b.total?a:b).month}</strong></span>
+              <span>Avg: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0)/12)}</strong></span>
             </div>
           </div>
         </div>
-      )}
-
-      {tab==="monthly" && (
-        <div className="card">
-          <div className="ch"><div className="ct">Monthly Sales Breakdown</div><div className="cs">Last 12 months</div></div>
-          <div className="tw"><table>
-            <thead><tr><th>Month</th><th>Invoices</th><th>Total Sales</th><th>Collected</th><th>Collection Rate</th><th>vs Prev Month</th></tr></thead>
-            <tbody>
-              {[...monthlySales].reverse().map((m,i,arr) => {
-                const prev = arr[i+1];
-                const change = prev && prev.total > 0 ? ((m.total-prev.total)/prev.total*100).toFixed(1) : null;
-                return (
-                  <tr key={m.month}>
-                    <td style={{fontWeight:600}}>{m.month}</td>
-                    <td className="mono">{m.count}</td>
-                    <td className="mono" style={{fontWeight:600}}>{fmt(m.total)}</td>
-                    <td className="mono tg">{fmt(m.paid)}</td>
-                    <td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:6,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:m.total>0?(m.paid/m.total*100)+"%":"0%",height:"100%",background:"var(--green)",borderRadius:3}} /></div><span style={{fontSize:12}}>{m.total>0?Math.round(m.paid/m.total*100):0}%</span></div></td>
-                    <td>{change!==null?<span style={{color:parseFloat(change)>=0?"var(--green)":"var(--red)",fontWeight:600,fontSize:12}}>{parseFloat(change)>=0?"↑":"↓"} {Math.abs(change)}%</span>:<span style={{color:"var(--text3)",fontSize:12}}>—</span>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table></div>
+      </div>}
+      {tab==="monthly" && <div className="card"><div className="ch"><div className="ct">Monthly Sales</div><div className="cs">Last 12 months</div></div><div className="tw"><table><thead><tr><th>Month</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Rate</th></tr></thead><tbody>{[...monthlySales].reverse().map(m => <tr key={m.month}><td style={{fontWeight:600}}>{m.month}</td><td className="mono">{m.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(m.total)}</td><td className="mono tg">{fmt(m.paid)}</td><td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:6,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:m.total>0?(m.paid/m.total*100)+"%":"0%",height:"100%",background:"var(--green)",borderRadius:3}} /></div><span style={{fontSize:12}}>{m.total>0?Math.round(m.paid/m.total*100):0}%</span></div></td></tr>)}</tbody></table></div></div>}
+      {tab==="products" && <div>
+        <div className="g3" style={{marginBottom:20}}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Products</div><div className="kpi-val">{products.length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Low Stock</div><div className="kpi-val tr-c">{lowStockItems.length}</div></div>
         </div>
-      )}
-
-      {tab==="products" && (
-        <div>
-          <div className="g3" style={{marginBottom:20}}>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Products</div><div className="kpi-val">{products.length}</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Low Stock Items</div><div className="kpi-val tr-c">{lowStockItems.length}</div></div>
-          </div>
-          <div className="card" style={{marginBottom:20}}>
-            <div className="ch"><div className="ct">Sales by Category</div></div>
-            <div className="tw"><table>
-              <thead><tr><th>Category</th><th>Products</th><th>Stock Value</th><th>Retail Value</th><th>Potential Profit</th><th>Low Stock</th></tr></thead>
-              <tbody>
-                {catData.map(c => (
-                  <tr key={c.name}>
-                    <td style={{fontWeight:600}}>{c.name}</td>
-                    <td className="mono">{c.products}</td>
-                    <td className="mono">{fmt(c.stockValue)}</td>
-                    <td className="mono tg">{fmt(c.retailValue)}</td>
-                    <td className="mono" style={{color:"var(--purple)",fontWeight:600}}>{fmt(c.retailValue-c.stockValue)}</td>
-                    <td>{c.lowStock>0?<span className="badge b-red">{c.lowStock} items</span>:<span className="badge b-green">All stocked</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          </div>
-          <div className="card">
-            <div className="ch"><div className="ct">Full Product Report</div><div className="cs">{products.length} products</div></div>
-            <div className="tw"><table>
-              <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>In Stock</th><th>Cost Price</th><th>Sale Price</th><th>Margin</th><th>Stock Value</th><th>Status</th></tr></thead>
-              <tbody>
-                {productSales.map(p => (
-                  <tr key={p.id}>
-                    <td style={{fontWeight:500}}>{p.name}</td>
-                    <td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td>
-                    <td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td>
-                    <td className="mono">{p.stock_qty||0} {p.unit}</td>
-                    <td className="mono">{fmt(p.cost_price)}</td>
-                    <td className="mono">{fmt(p.sale_price)}</td>
-                    <td><span style={{color:p.margin>30?"var(--green)":p.margin>15?"var(--amber)":"var(--red)",fontWeight:600,fontSize:12}}>{p.margin}%</span></td>
-                    <td className="mono">{fmt(p.stockValue)}</td>
-                    <td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")} style={{fontSize:10}}>{p.stock_qty<=p.reorder_level?"Low":p.stock_qty<=p.reorder_level*2?"Low":"OK"}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          </div>
+        <div className="card"><div className="ch"><div className="ct">Full Product Report</div></div><div className="tw"><table><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Margin</th><th>Value</th><th>Status</th></tr></thead><tbody>{productSales.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td><td className="mono">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span style={{color:p.margin>30?"var(--green)":p.margin>15?"var(--amber)":"var(--red)",fontWeight:600,fontSize:12}}>{p.margin}%</span></td><td className="mono">{fmt(p.stockValue)}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")} style={{fontSize:10}}>{p.stock_qty<=p.reorder_level?"Low":"OK"}</span></td></tr>)}</tbody></table></div></div>
+      </div>}
+      {tab==="customers" && <div className="card"><div className="ch"><div className="ct">Customer Sales</div><div className="cs">{periodLabels[period]} · {customerSales.length} customers</div></div><div className="tw"><table><thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{customerSales.slice(0,50).map((c,i) => <tr key={c.name}><td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td><td style={{fontWeight:500}}>{c.name}</td><td className="mono">{c.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td><td className="mono tg">{fmt(c.paid)}</td><td className="mono" style={{color:c.total-c.paid>0?"var(--red)":"var(--green)"}}>{fmt(c.total-c.paid)}</td></tr>)}{customerSales.length===0&&<tr><td colSpan={6} className="empty">No sales data</td></tr>}</tbody></table></div></div>}
+      {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw"><table><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+i.amount,0); const agPaid=agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
+      {tab==="stock" && <div>
+        <div className="g4" style={{marginBottom:20}}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Cost Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Retail Value</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Potential Profit</div><div className="kpi-val" style={{color:"var(--purple)"}}>{fmt(totalRetailValue-totalStockValue)}</div></div>
         </div>
-      )}
-
-      {tab==="customers" && (
-        <div className="card">
-          <div className="ch"><div className="ct">Customer Sales Report</div><div className="cs">{periodLabels[period]} · {customerSales.length} active customers</div></div>
-          <div className="tw"><table>
-            <thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Share</th></tr></thead>
-            <tbody>
-              {customerSales.slice(0,50).map((c,i) => {
-                const outstanding = c.total - c.paid;
-                const pct = Math.round(c.total/totalSales*100);
-                return (
-                  <tr key={c.name}>
-                    <td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td>
-                    <td style={{fontWeight:500}}>{c.name}</td>
-                    <td className="mono">{c.count}</td>
-                    <td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td>
-                    <td className="mono tg">{fmt(c.paid)}</td>
-                    <td className="mono" style={{color:outstanding>0?"var(--red)":"var(--green)"}}>{fmt(outstanding)}</td>
-                    <td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:5,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:"var(--blue)",borderRadius:3}} /></div><span style={{fontSize:11,color:"var(--text3)"}}>{pct}%</span></div></td>
-                  </tr>
-                );
-              })}
-              {customerSales.length===0&&<tr><td colSpan={7} className="empty">No sales data for this period</td></tr>}
-            </tbody>
-          </table></div>
-        </div>
-      )}
-
-      {tab==="agents" && (
-        <div>
-          <div className="card" style={{marginBottom:20}}>
-            <div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div>
-            <div className="tw"><table>
-              <thead><tr><th>#</th><th>Agent</th><th>Role</th><th>Invoices</th><th>Total Sales</th><th>Collected</th><th>Pending</th><th>Performance</th></tr></thead>
-              <tbody>
-                {[...allProfiles].sort((a,b) => {
-                  const aTotal = filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0);
-                  const bTotal = filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0);
-                  return aTotal - bTotal;
-                }).map((agent,i) => {
-                  const agInv = filteredInv.filter(i=>i.created_by===agent.id);
-                  const agTotal = agInv.reduce((s,i)=>s+i.amount,0);
-                  const agPaid = agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
-                  const agPending = agInv.filter(i=>i.status!=="paid").reduce((s,i)=>s+i.amount,0);
-                  const maxT = Math.max(...allProfiles.map(a=>filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)),1);
-                  const medals=["🥇","🥈","🥉"];
-                  return (
-                    <tr key={agent.id}>
-                      <td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td>
-                      <td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td>
-                      <td><span className="badge b-blue" style={{fontSize:10}}>{agent.role}</span></td>
-                      <td className="mono">{agInv.length}</td>
-                      <td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td>
-                      <td className="mono tg">{fmt(agPaid)}</td>
-                      <td className="mono" style={{color:"var(--amber)"}}>{fmt(agPending)}</td>
-                      <td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:80,height:6,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:(agTotal/maxT*100)+"%",height:"100%",background:"var(--blue)",borderRadius:3}} /></div><span style={{fontSize:11,color:"var(--text3)"}}>{Math.round(agTotal/maxT*100)}%</span></div></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table></div>
-          </div>
-        </div>
-      )}
-
-      {tab==="stock" && (
-        <div>
-          <div className="g4" style={{marginBottom:20}}>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Products</div><div className="kpi-val">{products.length}</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Cost Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Retail Value</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div></div>
-            <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Potential Profit</div><div className="kpi-val" style={{color:"var(--purple)"}}>{fmt(totalRetailValue-totalStockValue)}</div></div>
-          </div>
-          {lowStockItems.length > 0 && (
-            <div className="card" style={{marginBottom:20}}>
-              <div className="ch"><div className="ct" style={{color:"var(--red)"}}>⚠️ Low Stock Items — {lowStockItems.length} products</div></div>
-              <div className="tw"><table>
-                <thead><tr><th>Product</th><th>Category</th><th>In Stock</th><th>Reorder At</th><th>Units Needed</th><th>Est. Cost</th></tr></thead>
-                <tbody>
-                  {lowStockItems.map(p => (
-                    <tr key={p.id}>
-                      <td style={{fontWeight:500}}>{p.name}</td>
-                      <td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td>
-                      <td className="mono tr-c" style={{fontWeight:600}}>{p.stock_qty} {p.unit}</td>
-                      <td className="mono">{p.reorder_level} {p.unit}</td>
-                      <td className="mono" style={{color:"var(--amber)",fontWeight:600}}>{Math.max(0, p.reorder_level*2 - p.stock_qty)} {p.unit}</td>
-                      <td className="mono">{fmt(Math.max(0, p.reorder_level*2-p.stock_qty)*p.cost_price)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table></div>
-            </div>
-          )}
-          <div className="card">
-            <div className="ch"><div className="ct">Full Stock Report by Category</div></div>
-            <div className="tw"><table>
-              <thead><tr><th>Category</th><th>Products</th><th>Total Units</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th><th>Low Stock</th></tr></thead>
-              <tbody>
-                {catData.map(c => (
-                  <tr key={c.name}>
-                    <td style={{fontWeight:600}}>{c.name}</td>
-                    <td className="mono">{c.products}</td>
-                    <td className="mono">{products.filter(p=>(p.category||"General")===c.name).reduce((s,p)=>s+(p.stock_qty||0),0)}</td>
-                    <td className="mono">{fmt(c.stockValue)}</td>
-                    <td className="mono tg">{fmt(c.retailValue)}</td>
-                    <td><span style={{color:c.stockValue>0?((c.retailValue-c.stockValue)/c.retailValue*100).toFixed(0)>30?"var(--green)":"var(--amber)":"var(--text3)",fontWeight:600,fontSize:12}}>{c.stockValue>0?Math.round((c.retailValue-c.stockValue)/c.retailValue*100):0}%</span></td>
-                    <td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          </div>
-        </div>
-      )}
+        {lowStockItems.length > 0 && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct" style={{color:"var(--red)"}}>⚠️ Low Stock — {lowStockItems.length} items</div></div><div className="tw"><table><thead><tr><th>Product</th><th>In Stock</th><th>Reorder At</th><th>Est. Cost to Restock</th></tr></thead><tbody>{lowStockItems.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono tr-c" style={{fontWeight:600}}>{p.stock_qty}</td><td className="mono">{p.reorder_level}</td><td className="mono">{fmt(Math.max(0,p.reorder_level*2-p.stock_qty)*p.cost_price)}</td></tr>)}</tbody></table></div></div>}
+        <div className="card"><div className="ch"><div className="ct">Stock by Category</div></div><div className="tw"><table><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th><th>Low Stock</th></tr></thead><tbody>{catData.map(c => <tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono">{c.products}</td><td className="mono">{fmt(c.stockValue)}</td><td className="mono tg">{fmt(c.retailValue)}</td><td><span style={{color:c.stockValue>0&&Math.round((c.retailValue-c.stockValue)/c.retailValue*100)>30?"var(--green)":"var(--amber)",fontWeight:600,fontSize:12}}>{c.stockValue>0?Math.round((c.retailValue-c.stockValue)/c.retailValue*100):0}%</span></td><td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td></tr>)}</tbody></table></div></div>
+      </div>}
     </div>
   );
 }
@@ -1708,14 +1235,9 @@ export default function App() {
       if (Array.isArray(accs)) setAccounts(accs);
       const userProfile = Array.isArray(profs) && profs[0] ? profs[0] : null;
       if (userProfile) setProfile(userProfile);
-      // Agents only see their own invoices
       if (Array.isArray(invs)) {
-        const filteredInvs = userProfile?.role === "admin" 
-          ? invs 
-          : invs.filter(i => i.created_by === auth.user.id);
-        setInvoices(filteredInvs);
+        setInvoices(userProfile?.role === "admin" ? invs : invs.filter(i => i.created_by === auth.user.id));
       }
-      // All users see all contacts (needed for invoice creation)
       if (Array.isArray(cnts)) setContacts(cnts);
       if (Array.isArray(prods)) setProducts(prods);
       if (Array.isArray(allProfs)) setAllProfiles(allProfs);
@@ -1753,24 +1275,19 @@ export default function App() {
             </div>
           </div>
         </aside>
-
         <div className="main">
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
               <img src={LOGO} alt="Arkham Retail" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "contain" }} />
             </div>
-            <div className="search-wrap topbar-search">
-              <i className="ti ti-search" />
-              <input className="search-input" placeholder="Search invoices, customers, products..." />
-            </div>
+            <div className="search-wrap topbar-search"><i className="ti ti-search" /><input className="search-input" placeholder="Search invoices, customers, products..." /></div>
             <div className="topbar-right">
               <span className="tb-role">{profile?.role||"agent"}</span>
-              <div className="tb-btn tb-notif" title="Notifications"><i className="ti ti-bell" /></div>
-              <div className="tb-btn" title="Settings" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
-              <div className="tb-av" title={profile?.full_name}>{initials}</div>
+              <div className="tb-btn tb-notif"><i className="ti ti-bell" /></div>
+              <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
+              <div className="tb-av">{initials}</div>
             </div>
           </div>
-
           <div className="content">
             {loading ? (
               <div className="loading"><div className="spin" /><span>Loading your data...</span></div>
@@ -1793,7 +1310,6 @@ export default function App() {
             )}
           </div>
         </div>
-
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
@@ -1803,3 +1319,4 @@ export default function App() {
     </>
   );
 }
+
