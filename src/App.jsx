@@ -995,9 +995,9 @@ function CustomerStatement({ contacts, invoices, token }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Customer Statement</div><div className="psub">View and share full account statements</div></div></div>
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, overflow: "visible" }}>
         <div className="ch"><div className="ct">Select Customer</div></div>
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: 20, overflow: "visible" }}>
           <div style={{ position: "relative", maxWidth: 500 }}>
             <input
               style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }}
