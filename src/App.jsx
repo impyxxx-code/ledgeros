@@ -496,7 +496,7 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
                 <button className="btn bo bsm" onClick={() => setShowWaInput(false)}>Cancel</button>
               </div>
             )}
-            <div style={{ display: "flex", gap: 8", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
               {savedPhone && !showWaInput && (
                 <button className="btn bwa" onClick={() => sendWhatsApp(savedPhone)}>
                   <i className="ti ti-brand-whatsapp" />WhatsApp {savedPhone}
