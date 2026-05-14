@@ -1,4 +1,4 @@
-Dimport Analytics from "./Analytics.jsx";
+import Analytics from "./Analytics.jsx";
 import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect, useRef } from "react";
 
