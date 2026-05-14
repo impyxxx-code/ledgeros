@@ -553,7 +553,7 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
               onMouseDown={() => { onSelect(item); setQuery(item[displayKey]); setOpen(false); }}
             >
               <div style={{ fontWeight: 500 }}>{item[displayKey]}</div>
-              {item.city && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.city}{item.postcode ?  : ""}</div>}
+              {item.city && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.city}{item.postcode ? ` · ${item.postcode}` : ""}</div>}
               {item.category && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.category} · {item.code || ""}</div>}
             </div>
           ))}
