@@ -1682,13 +1682,8 @@ export default function App() {
           : invs.filter(i => i.created_by === auth.user.id);
         setInvoices(filteredInvs);
       }
-      // Agents only see their own contacts
-      if (Array.isArray(cnts)) {
-        const filteredCnts = userProfile?.role === "admin"
-          ? cnts
-          : cnts.filter(c => c.created_by === auth.user.id);
-        setContacts(filteredCnts);
-      }
+      // All users see all contacts (needed for invoice creation)
+      if (Array.isArray(cnts)) setContacts(cnts);
       if (Array.isArray(prods)) setProducts(prods);
       if (Array.isArray(allProfs)) setAllProfiles(allProfs);
       setLoading(false);
