@@ -673,7 +673,60 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       created_by: userId
     });
     setCreatingDN(false);
-    setDnSaved(true);
+    setDnSaved({ dn_number, customer_name: savedInvoice.customer, delivery_date: savedInvoice.invoice_date, delivery_address: dnAddress, driver: dnDriver, notes: dnNotes, invoice_ref: savedInvoice.invoice_number, lines: JSON.stringify(dnLines) });
+  };
+
+  const buildDNHtml = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    return `<!DOCTYPE html><html><head><title>${dn.dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:16mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #0f172a}.co-name{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.7}.dn-title{font-size:32px;font-weight:900;color:#e2e8f0;text-align:right;letter-spacing:-1px}.dn-num{font-size:15px;font-weight:700;text-align:right;color:#0f172a}.meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.meta-box{background:#f8fafc;padding:14px;border-radius:6px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}.meta-val{font-size:13px;font-weight:600;color:#0f172a}.meta-val.large{font-size:16px}table{width:100%;border-collapse:collapse;margin-bottom:24px}thead tr{background:#0f172a;color:#fff}th{padding:10px 12px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left;letter-spacing:0.5px}td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:nth-child(even) td{background:#fafbfc}.qty-col{text-align:center;font-weight:700;font-size:14px}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}.sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}.sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}.footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}.ref-badge{display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;margin-top:6px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}</div></div><div style="text-align:right"><div class="dn-title">DELIVERY NOTE</div><div class="dn-num">${dn.dn_number}</div>${dn.invoice_ref ? `<div class="ref-badge">Invoice: ${dn.invoice_ref}</div>` : ""}</div></div><div class="meta"><div class="meta-box"><div class="meta-lbl">Deliver To</div><div class="meta-val large">${dn.customer_name}</div>${dn.delivery_address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${dn.delivery_address}</div>` : ""}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div><div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(dn.delivery_date)}</div></div>${dn.driver ? `<div class="meta-box" style="grid-column:1/-1"><div class="meta-lbl">Driver / Courier</div><div class="meta-val">${dn.driver}</div></div>` : ""}</div></div><table><thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead><tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description || "—"}</td><td style="color:#64748b">${l.unit || "unit"}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody></table>${dn.notes ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin-bottom:20px"><div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">Delivery Instructions</div><div style="font-size:12px;color:#78350f">${dn.notes}</div></div>` : ""}<div class="sig-section"><div><div class="sig-box"></div><div class="sig-lbl">Delivered by (Signature & Name)</div></div><div><div class="sig-box"></div><div class="sig-lbl">Received by (Signature, Name & Date)</div></div></div><div class="footer"><span>${COMPANY.name} · ${COMPANY.vatNumber}</span><span>Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>${dn.dn_number}</span></div></body></html>`;
+  };
+
+  const downloadDN = (dn) => {
+    const blob = new Blob([buildDNHtml(dn)], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${dn.dn_number}.html`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const emailDN = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const cust = contacts.find(c => c.name === dn.customer_name);
+    const subject = encodeURIComponent(`Delivery Note ${dn.dn_number} — ${COMPANY.name}`);
+    const body = encodeURIComponent(
+      `Dear ${dn.customer_name},\n\nPlease find your delivery note details below.\n\n` +
+      `Delivery Note: ${dn.dn_number}\n` +
+      (dn.invoice_ref ? `Invoice Reference: ${dn.invoice_ref}\n` : "") +
+      `Date: ${fmtDate(dn.delivery_date)}\n` +
+      (dn.driver ? `Driver: ${dn.driver}\n` : "") +
+      (dn.delivery_address ? `Delivery Address: ${dn.delivery_address}\n` : "") +
+      `\nItems:\n` +
+      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
+      (dn.notes ? `\n\nInstructions: ${dn.notes}` : "") +
+      `\n\nPlease sign and return a copy upon receipt.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
+    );
+    window.open(`mailto:${cust?.email || ""}?subject=${subject}&body=${body}`);
+  };
+
+  const whatsappDN = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const cust = contacts.find(c => c.name === dn.customer_name);
+    const msg = encodeURIComponent(
+      `*Delivery Note — ${COMPANY.name}*\n\n` +
+      `DN: *${dn.dn_number}*\n` +
+      (dn.invoice_ref ? `Invoice Ref: ${dn.invoice_ref}\n` : "") +
+      `Customer: ${dn.customer_name}\n` +
+      `Date: ${fmtDate(dn.delivery_date)}\n` +
+      (dn.driver ? `Driver: ${dn.driver}\n` : "") +
+      (dn.delivery_address ? `Address: ${dn.delivery_address}\n` : "") +
+      `\n*Items:*\n` +
+      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
+      (dn.notes ? `\n\n📋 Instructions: ${dn.notes}` : "") +
+      `\n\nPlease confirm receipt. Thank you! 🙏\n${COMPANY.phone}`
+    );
+    const phone = (cust?.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
+    if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   // ── SUCCESS SCREEN ─────────────────────────────────────────────────────────
@@ -784,12 +837,30 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "var(--rl)", padding: "18px 22px", marginBottom: 20 }}>
               <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 28, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-dk)", marginBottom: 3 }}>Delivery Note Created!</div>
-                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>You can view, download and share it from the Delivery Notes section.</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-dk)", marginBottom: 3 }}>Delivery Note {dnSaved.dn_number} Created!</div>
+                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>Download, email or WhatsApp it to your customer or driver now.</div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
-              <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Download Invoice</button>
+
+            {/* DN action buttons */}
+            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 12 }}>Delivery Note Actions</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn bo" onClick={() => downloadDN(dnSaved)}><i className="ti ti-file-download" />Download & Print</button>
+                <button className="btn bo" onClick={() => emailDN(dnSaved)}><i className="ti ti-mail" />Email</button>
+                <button className="btn bwa" onClick={() => whatsappDN(dnSaved)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
+              </div>
+            </div>
+
+            {/* Invoice action buttons */}
+            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 12 }}>Invoice Actions</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Download Invoice</button>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button className="btn bp" onClick={onClose}><i className="ti ti-check" />Done</button>
             </div>
           </div>
@@ -1580,17 +1651,39 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     const msg = encodeURIComponent(
       `*Delivery Note — ${COMPANY.name}*\n\n` +
       `DN: *${dn.dn_number}*\n` +
+      (dn.invoice_ref ? `Invoice Ref: ${dn.invoice_ref}\n` : "") +
       `Customer: ${dn.customer_name}\n` +
       `Date: ${fmtDate(dn.delivery_date)}\n` +
       (dn.driver ? `Driver: ${dn.driver}\n` : "") +
+      (dn.delivery_address ? `Address: ${dn.delivery_address}\n` : "") +
       `\n*Items:*\n` +
-      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit}`).join("\n") +
+      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
+      (dn.notes ? `\n\n📋 Instructions: ${dn.notes}` : "") +
       `\n\nPlease confirm receipt. Thank you! 🙏\n${COMPANY.phone}`
     );
     const cust = contacts.find(c => c.name === dn.customer_name);
     const phone = (cust?.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
     if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
+  const sendEmail = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const cust = contacts.find(c => c.name === dn.customer_name);
+    const subject = encodeURIComponent(`Delivery Note ${dn.dn_number} — ${COMPANY.name}`);
+    const body = encodeURIComponent(
+      `Dear ${dn.customer_name},\n\nPlease find your delivery note details below.\n\n` +
+      `Delivery Note: ${dn.dn_number}\n` +
+      (dn.invoice_ref ? `Invoice Reference: ${dn.invoice_ref}\n` : "") +
+      `Date: ${fmtDate(dn.delivery_date)}\n` +
+      (dn.driver ? `Driver: ${dn.driver}\n` : "") +
+      (dn.delivery_address ? `Delivery Address: ${dn.delivery_address}\n` : "") +
+      `\nItems:\n` +
+      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
+      (dn.notes ? `\n\nInstructions: ${dn.notes}` : "") +
+      `\n\nPlease sign and return a copy upon receipt.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
+    );
+    window.open(`mailto:${cust?.email || ""}?subject=${subject}&body=${body}`);
   };
 
   return (
@@ -1694,9 +1787,10 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-download" />Download</button>
-                      <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />Share</button>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-file-download" />Download</button>
+                      <button className="btn bo bsm" onClick={() => sendEmail(dn)}><i className="ti ti-mail" />Email</button>
+                      <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
                     </div>
                   </td>
                 </tr>
