@@ -1493,6 +1493,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
+
+  // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
@@ -1500,105 +1502,290 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
   const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  const paidCount = invoices.filter(i => i.status === "paid").length;
+  const pendingCount = invoices.filter(i => i.status === "pending").length;
+  const overdueCount = invoices.filter(i => i.status === "overdue").length;
   const lowStock = products.filter(p => p.stock_qty <= p.reorder_level);
+  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
   const name = profile?.full_name?.split(" ")[0] || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const maxAgentSales = Math.max(...allProfiles.map(a => invoices.filter(i => i.created_by === a.id).reduce((s, i) => s + i.amount, 0)), 1);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayRevenue = invoices.filter(i => i.status === "paid" && i.invoice_date === todayStr).reduce((s, i) => s + i.amount, 0);
+  const avgInvoice = paidCount > 0 ? paid / paidCount : 0;
+
+  // ── AI Insights ──
+  const insights = [
+    overdueCount > 0 && { icon: "ti-alert-circle", color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
+    lowStock.length > 0 && { icon: "ti-package-off", color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon` },
+    pendingCount > 0 && { icon: "ti-clock", color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
+    paidCount > 0 && { icon: "ti-trending-up", color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
+  ].filter(Boolean).slice(0, 3);
+
   return (
     <div>
-      <div className="welcome-row">
-        <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">↑ 18% this month</span>Revenue is trending up. Great work!</div></div>
-        <div className="quick-actions">
-          <div className="qa-btn" onClick={() => setPage("invoices")}><i className="ti ti-plus" />New Invoice</div>
-          <div className="qa-btn" onClick={() => setPage("contacts")}><i className="ti ti-user-plus" />Add Customer</div>
-          <div className="qa-btn" onClick={() => setPage("inventory")}><i className="ti ti-package" />Add Product</div>
-          <div className="qa-btn primary" onClick={() => setPage("analytics")}><i className="ti ti-chart-bar" />Analytics</div>
-        </div>
-      </div>
-      <div className="kgrid">
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div><span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>↑ 18.4%</span></div><div className="kpi-val">{fmt(revenue)}</div><div className="kpi-label">Total Revenue</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,32 20,26 40,28 60,18 80,20 100,12 120,8" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,32 20,26 40,28 60,18 80,20 100,12 120,8 120,40 0,40" fill="#dbeafe" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--red-lt)" }}><i className="ti ti-arrow-up-right" style={{ color: "var(--red)" }} /></div><span className="kpi-badge" style={{ background: "var(--red-lt)", color: "var(--red-dk)" }}>↑ 4.2%</span></div><div className="kpi-val">{fmt(expenses)}</div><div className="kpi-label">Total Expenses</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,22 20,28 40,20 60,24 80,18 100,22 120,16" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,22 20,28 40,20 60,24 80,18 100,22 120,16 120,40 0,40" fill="#fee2e2" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--green-lt)" }}><i className="ti ti-trending-up" style={{ color: "var(--green)" }} /></div><span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>↑ 28.4%</span></div><div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div><div className="kpi-label">Net Profit</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,34 20,28 40,22 60,20 80,14 100,10 120,6" fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,34 20,28 40,22 60,20 80,14 100,10 120,6 120,40 0,40" fill="#d1fae5" opacity=".5" /></svg></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><i className="ti ti-building-bank" style={{ color: "var(--purple)" }} /></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>Stable</span></div><div className="kpi-val">{fmt(cash)}</div><div className="kpi-label">Cash Balance</div><svg className="spark" viewBox="0 0 120 40"><polyline points="0,20 20,18 40,22 60,16 80,18 100,14 120,16" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /><polygon points="0,20 20,18 40,22 60,16 80,18 100,14 120,16 120,40 0,40" fill="#ede9fe" opacity=".5" /></svg></div>
-      </div>
-      <div className="g23">
-        <div><div className="g3" style={{ marginBottom: 0 }}>
-          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Customers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "customer" || c.type === "both").length}</div></div>
-          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Suppliers</div><div className="kpi-val" style={{ fontSize: 28 }}>{contacts.filter(c => c.type === "supplier" || c.type === "both").length}</div></div>
-          <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label" style={{ marginBottom: 6 }}>Low Stock</div><div className="kpi-val" style={{ fontSize: 28, color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div>
-        </div></div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ background: "var(--white)", border: "0.5px solid var(--border)", borderRadius: "var(--rl)", padding: "18px 22px", boxShadow: "var(--sh)" }}>
-            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".5px" }}>Invoices owed</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "var(--green)", marginBottom: 10 }}>{fmt(unpaid)}</div>
-            <div style={{ height: 8, background: "var(--border)", borderRadius: 4, overflow: "hidden", display: "flex" }}>
-              <div style={{ width: `${overdue / (unpaid || 1) * 100}%`, background: "var(--red)", borderRadius: 4 }} />
-              <div style={{ width: `${(unpaid - overdue) / (unpaid || 1) * 100}%`, background: "var(--green)", borderRadius: 4 }} />
-            </div>
-            <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-              <div><div style={{ fontSize: 11, color: "var(--red)", marginBottom: 1 }}>● Overdue</div><div style={{ fontSize: 14, fontWeight: 600, color: "var(--red)" }}>{fmt(overdue)}</div></div>
-              <div><div style={{ fontSize: 11, color: "var(--green)", marginBottom: 1 }}>● Not yet due</div><div style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>{fmt(unpaid - overdue)}</div></div>
-            </div>
-          </div>
-          <div style={{ background: "var(--white)", border: "0.5px solid var(--border)", borderRadius: "var(--rl)", padding: "18px 22px", boxShadow: "var(--sh)" }}>
-            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".5px" }}>Paid invoices</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "var(--blue)", marginBottom: 10 }}>{fmt(paid)}</div>
-            <div style={{ display: "flex", gap: 16 }}>
-              <div><div style={{ fontSize: 11, color: "var(--text3)" }}>Total paid</div><div style={{ fontSize: 14, fontWeight: 600 }}>{invoices.filter(i => i.status === "paid").length}</div></div>
-              <div><div style={{ fontSize: 11, color: "var(--text3)" }}>Average</div><div style={{ fontSize: 14, fontWeight: 600 }}>{fmt(paid / (invoices.filter(i => i.status === "paid").length || 1))}</div></div>
-            </div>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.5px", color: "var(--text)", marginBottom: 4 }}>{greeting}, {name} 👋</div>
+          <div style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ background: "var(--green-lt)", color: "var(--green-dk)", padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 600 }}>● Live</span>
+            {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </div>
         </div>
-      </div>
-      <div className="g23">
-        <div className="card">
-          <div className="ch"><div className="ct">Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button></div>
-          <div className="tw"><table><thead><tr><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-            {invoices.slice(0, 6).map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><div><div style={{ fontWeight: 500 }}>{inv.customer}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number}</div></div></div></td><td className="hm" style={{ fontSize: 12, color: "var(--text3)" }}>{fmtDate(inv.invoice_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span></td></tr>)}
-            {invoices.length === 0 && <tr><td colSpan={4} className="empty">No invoices yet</td></tr>}
-          </tbody></table></div>
-        </div>
-        <div className="card">
-          <div className="ch"><div className="ct">Activity Feed</div></div>
-          {invoices.slice(0, 4).map((inv) => (
-            <div key={inv.id} className="act-item">
-              <div className="act-icon" style={{ background: inv.status === "paid" ? "var(--green-lt)" : "var(--blue-lt)" }}><i className={"ti " + (inv.status === "paid" ? "ti-circle-check" : "ti-file-invoice")} style={{ color: inv.status === "paid" ? "var(--green)" : "var(--blue)" }} /></div>
-              <div style={{ flex: 1 }}><div className="act-title">{inv.status === "paid" ? "Invoice paid" : "Invoice raised"}</div><div className="act-sub">{inv.customer} · {inv.invoice_number}</div></div>
-              <span className="act-amt" style={{ color: inv.status === "paid" ? "var(--green)" : "var(--text2)" }}>{fmt(inv.amount)}</span>
-            </div>
-          ))}
-          {lowStock.slice(0, 2).map(p => (
-            <div key={p.id} className="act-item">
-              <div className="act-icon" style={{ background: "var(--amber-lt)" }}><i className="ti ti-alert-triangle" style={{ color: "var(--amber)" }} /></div>
-              <div style={{ flex: 1 }}><div className="act-title">Low stock alert</div><div className="act-sub">{p.name} · {p.stock_qty} {p.unit} left</div></div>
-            </div>
-          ))}
-          {invoices.length === 0 && lowStock.length === 0 && <div className="empty">No recent activity</div>}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="qa-btn" onClick={() => setPage("invoices")}><i className="ti ti-plus" />New Invoice</button>
+          <button className="qa-btn" onClick={() => setPage("contacts")}><i className="ti ti-user-plus" />Add Customer</button>
+          <button className="qa-btn" onClick={() => setPage("delivery-notes")}><i className="ti ti-truck-delivery" />Delivery</button>
+          <button className="qa-btn primary" onClick={() => setPage("analytics")}><i className="ti ti-chart-bar" />Analytics</button>
         </div>
       </div>
-      <div className="card">
-        <div className="ch"><div className="ct">🏆 Agent Leaderboard</div><div className="cs">Ranked by total sales</div></div>
-        <div className="tw"><table><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total Sales</th><th>Paid</th><th className="hm">Performance</th></tr></thead><tbody>
-          {[...allProfiles].sort((a, b) => invoices.filter(i => i.created_by === b.id).reduce((s, i) => s + i.amount, 0) - invoices.filter(i => i.created_by === a.id).reduce((s, i) => s + i.amount, 0)).map((agent, i) => {
-            const agentInv = invoices.filter(inv => inv.created_by === agent.id);
-            const agentTotal = agentInv.reduce((s, inv) => s + inv.amount, 0);
-            const agentPaid = agentInv.filter(inv => inv.status === "paid").reduce((s, inv) => s + inv.amount, 0);
-            const pct = Math.round(agentTotal / maxAgentSales * 100);
-            const medals = ["🥇","🥈","🥉"];
-            return (
-              <tr key={agent.id}>
-                <td><span style={{ fontSize: 16 }}>{medals[i] || i + 1}</span></td>
-                <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div><div><div style={{ fontWeight: 600 }}>{agent.full_name || "Unknown"}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{agent.role}</div></div></div></td>
-                <td className="mono">{agentInv.length}</td>
-                <td className="mono" style={{ color: "var(--green)", fontWeight: 600 }}>{fmt(agentTotal)}</td>
-                <td className="mono">{fmt(agentPaid)}</td>
-                <td className="hm"><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ flex: 1, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", minWidth: 80 }}><div style={{ width: pct + "%", height: "100%", background: "var(--blue)", borderRadius: 3, transition: "width .5s" }} /></div><span style={{ fontSize: 12, color: "var(--text3)", minWidth: 36 }}>{pct}%</span></div></td>
-              </tr>
-            );
-          })}
-          {allProfiles.length === 0 && <tr><td colSpan={6} className="empty">No agents yet</td></tr>}
-        </tbody></table></div>
+
+      {/* ── AI Insights strip ── */}
+      {insights.length > 0 && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+          {insights.map((ins, i) => (
+            <div key={i} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i className={`ti ${ins.icon}`} style={{ color: ins.color, fontSize: 16 }} />
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{ins.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── KPI Row 1 ── */}
+      <div className="kgrid" style={{ marginBottom: 14 }}>
+        {/* Revenue */}
+        <div className="kpi" style={{ "--kpi-accent": "var(--blue)" }}>
+          <div className="kpi-top">
+            <div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div>
+            <span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>Total</span>
+          </div>
+          <div className="kpi-val">{fmt(revenue)}</div>
+          <div className="kpi-label">Total Revenue</div>
+          <svg className="spark" viewBox="0 0 120 40">
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563eb" stopOpacity=".3"/><stop offset="100%" stopColor="#2563eb" stopOpacity="0"/></linearGradient></defs>
+            <polygon points="0,32 20,26 40,28 60,18 80,20 100,12 120,8 120,40 0,40" fill="url(#g1)" />
+            <polyline points="0,32 20,26 40,28 60,18 80,20 100,12 120,8" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </div>
+        {/* Paid */}
+        <div className="kpi" style={{ "--kpi-accent": "var(--green)" }}>
+          <div className="kpi-top">
+            <div className="kpi-icon" style={{ background: "var(--green-lt)" }}><i className="ti ti-circle-check" style={{ color: "var(--green)" }} /></div>
+            <span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>{paidCount} invoices</span>
+          </div>
+          <div className="kpi-val tg">{fmt(paid)}</div>
+          <div className="kpi-label">Collected Revenue</div>
+          <svg className="spark" viewBox="0 0 120 40">
+            <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity=".3"/><stop offset="100%" stopColor="#10b981" stopOpacity="0"/></linearGradient></defs>
+            <polygon points="0,34 20,28 40,22 60,20 80,14 100,10 120,6 120,40 0,40" fill="url(#g2)" />
+            <polyline points="0,34 20,28 40,22 60,20 80,14 100,10 120,6" fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </div>
+        {/* Outstanding */}
+        <div className="kpi" style={{ "--kpi-accent": "var(--amber)" }}>
+          <div className="kpi-top">
+            <div className="kpi-icon" style={{ background: "var(--amber-lt)" }}><i className="ti ti-clock" style={{ color: "var(--amber)" }} /></div>
+            <span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>{pendingCount + overdueCount} open</span>
+          </div>
+          <div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(unpaid)}</div>
+          <div className="kpi-label">Outstanding</div>
+          <div style={{ marginTop: 8, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", display: "flex" }}>
+              <div style={{ width: `${overdue / (unpaid || 1) * 100}%`, background: "var(--red)", transition: "width .5s" }} />
+              <div style={{ flex: 1, background: "var(--amber)", opacity: .6 }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
+            <div style={{ fontSize: 11, color: "var(--red)", fontWeight: 600 }}>↑ {fmt(overdue)} overdue</div>
+          </div>
+        </div>
+        {/* Net Profit */}
+        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }}>
+          <div className="kpi-top">
+            <div className="kpi-icon" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }} /></div>
+            <span className="kpi-badge" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: net >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>{net >= 0 ? "Profit" : "Loss"}</span>
+          </div>
+          <div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div>
+          <div className="kpi-label">Net Position</div>
+          <svg className="spark" viewBox="0 0 120 40">
+            <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7c3aed" stopOpacity=".3"/><stop offset="100%" stopColor="#7c3aed" stopOpacity="0"/></linearGradient></defs>
+            <polygon points="0,20 20,18 40,22 60,16 80,18 100,14 120,16 120,40 0,40" fill="url(#g3)" />
+            <polyline points="0,20 20,18 40,22 60,16 80,18 100,14 120,16" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Stat pills row ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }}>
+        {[
+          { label: "Customers", val: customers.length, icon: "ti-users", color: "var(--blue)" },
+          { label: "Products", val: products.length, icon: "ti-package", color: "var(--purple)" },
+          { label: "Low Stock", val: lowStock.length, icon: "ti-alert-triangle", color: lowStock.length > 0 ? "var(--red)" : "var(--green)" },
+          { label: "Cash", val: fmt(cash), icon: "ti-building-bank", color: "var(--green)" },
+          { label: "Today's Sales", val: fmt(todayRevenue), icon: "ti-sun", color: "var(--amber)" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 16 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-.3px" }}>{s.val}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Main content: Invoices + Activity ── */}
+      <div className="g23" style={{ marginBottom: 0 }}>
+        {/* Recent invoices */}
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div className="ch">
+            <div><div className="ct">Recent Invoices</div><div className="cs">{invoices.length} total · {paidCount} paid · {pendingCount} pending</div></div>
+            <button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button>
+          </div>
+          <div className="tw">
+            <table>
+              <thead><tr><th>Customer</th><th className="hm">Invoice</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                {invoices.slice(0, 8).map(inv => (
+                  <tr key={inv.id} style={{ cursor: "pointer" }}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                        <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div>
+                          <div style={{ fontSize: 11, color: "var(--text3)" }}>{fmtDate(inv.invoice_date)}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hm" style={{ fontSize: 12, color: "var(--blue)", fontWeight: 600 }}>{inv.invoice_number}</td>
+                    <td className="mono" style={{ fontWeight: 700 }}>{fmt(inv.amount)}</td>
+                    <td>
+                      <span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>
+                    </td>
+                  </tr>
+                ))}
+                {invoices.length === 0 && <tr><td colSpan={4} className="empty">No invoices yet — create your first one</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Activity + Quick stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Revenue breakdown mini card */}
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", boxShadow: "var(--sh)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Revenue Breakdown</div>
+            {[
+              { label: "Collected", val: paid, total: revenue, color: "var(--green)" },
+              { label: "Pending", val: unpaid - overdue, total: revenue, color: "var(--amber)" },
+              { label: "Overdue", val: overdue, total: revenue, color: "var(--red)" },
+            ].map(r => (
+              <div key={r.label} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: "var(--text2)" }}>{r.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: r.color }}>{fmt(r.val)}</span>
+                </div>
+                <div style={{ height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(r.val / (revenue || 1) * 100, 100)}%`, background: r.color, borderRadius: 3, transition: "width .6s var(--ease)" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Activity feed */}
+          <div className="card" style={{ marginBottom: 0, flex: 1 }}>
+            <div className="ch"><div className="ct">Activity Feed</div><div className="cs">Latest events</div></div>
+            {[
+              ...invoices.slice(0, 4).map(inv => ({
+                key: inv.id, type: inv.status === "paid" ? "paid" : "invoice",
+                icon: inv.status === "paid" ? "ti-circle-check" : "ti-file-invoice",
+                color: inv.status === "paid" ? "var(--green)" : "var(--blue)",
+                bg: inv.status === "paid" ? "var(--green-lt)" : "var(--blue-lt)",
+                title: inv.status === "paid" ? "Payment received" : "Invoice created",
+                sub: `${inv.customer} · ${inv.invoice_number}`,
+                amt: fmt(inv.amount), amtColor: inv.status === "paid" ? "var(--green)" : "var(--text2)"
+              })),
+              ...lowStock.slice(0, 2).map(p => ({
+                key: p.id, type: "stock",
+                icon: "ti-alert-triangle", color: "var(--amber)", bg: "var(--amber-lt)",
+                title: "Low stock alert",
+                sub: `${p.name} · ${p.stock_qty} ${p.unit || "units"} remaining`,
+                amt: null
+              }))
+            ].slice(0, 5).map(item => (
+              <div key={item.key} className="act-item">
+                <div className="act-icon" style={{ background: item.bg }}>
+                  <i className={`ti ${item.icon}`} style={{ color: item.color }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="act-title">{item.title}</div>
+                  <div className="act-sub" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</div>
+                </div>
+                {item.amt && <span className="act-amt" style={{ color: item.amtColor }}>{item.amt}</span>}
+              </div>
+            ))}
+            {invoices.length === 0 && lowStock.length === 0 && <div className="empty">No recent activity</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Agent Leaderboard ── */}
+      <div className="card" style={{ marginTop: 18 }}>
+        <div className="ch">
+          <div><div className="ct">🏆 Agent Leaderboard</div><div className="cs">Ranked by total sales value</div></div>
+          <button className="btn bo bsm" onClick={() => setPage("agent-report")}><i className="ti ti-arrow-right" />Full report</button>
+        </div>
+        <div className="tw">
+          <table>
+            <thead><tr><th>#</th><th>Agent</th><th className="hm">Invoices</th><th>Total Sales</th><th className="hm">Paid</th><th>Performance</th></tr></thead>
+            <tbody>
+              {[...allProfiles].sort((a, b) =>
+                invoices.filter(i => i.created_by === b.id).reduce((s, i) => s + i.amount, 0) -
+                invoices.filter(i => i.created_by === a.id).reduce((s, i) => s + i.amount, 0)
+              ).map((agent, i) => {
+                const agentInv = invoices.filter(inv => inv.created_by === agent.id);
+                const agentTotal = agentInv.reduce((s, inv) => s + inv.amount, 0);
+                const agentPaid = agentInv.filter(inv => inv.status === "paid").reduce((s, inv) => s + inv.amount, 0);
+                const pct = Math.round(agentTotal / maxAgentSales * 100);
+                const medals = ["🥇","🥈","🥉"];
+                const colors = ["#f59e0b","#9ca3af","#cd7f32"];
+                return (
+                  <tr key={agent.id}>
+                    <td><span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color: colors[i] || "var(--text3)" }}>{medals[i] || i + 1}</span></td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][i % 5]},${["#8b5cf6","#34d399","#fbbf24","#a78bfa","#f87171"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{agent.full_name || "Unknown"}</div>
+                          <div style={{ fontSize: 11, color: "var(--text3)", textTransform: "capitalize" }}>{agent.role}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hm mono" style={{ color: "var(--text2)" }}>{agentInv.length}</td>
+                    <td className="mono" style={{ color: "var(--green)", fontWeight: 700 }}>{fmt(agentTotal)}</td>
+                    <td className="hm mono" style={{ color: "var(--text2)" }}>{fmt(agentPaid)}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ flex: 1, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", minWidth: 60 }}>
+                          <div style={{ width: pct + "%", height: "100%", background: i === 0 ? "var(--blue)" : "var(--border2)", borderRadius: 3, transition: "width .6s var(--ease)" }} />
+                        </div>
+                        <span style={{ fontSize: 11, color: "var(--text3)", minWidth: 30, fontWeight: 600 }}>{pct}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {allProfiles.length === 0 && <tr><td colSpan={6} className="empty">No agents yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
