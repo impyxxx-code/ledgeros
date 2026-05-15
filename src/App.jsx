@@ -730,17 +730,15 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   };
 
   // Build a quick DN object from invoice for immediate printing (no DB save needed)
- const buildQuickDN = () => {
-    const dnLines = (savedInvoice.lines || []).filter(l => l.description && l.description.trim() !== "").map(l => ({
+  const buildQuickDN = () => {
+    const dnLines = (savedInvoice.lines || []).map(l => ({
       description: l.description, qty: l.qty, unit: l.unit || "unit"
     }));
-    const cust = contacts.find(c => c.name === savedInvoice.customer);
-    const autoAddress = dnAddress || [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ");
     return {
       dn_number: `DN-${savedInvoice.invoice_number.replace("INV-", "")}`,
       customer_name: savedInvoice.customer,
       delivery_date: savedInvoice.invoice_date,
-      delivery_address: autoAddress,
+      delivery_address: dnAddress,
       driver: dnDriver,
       notes: dnNotes,
       invoice_ref: savedInvoice.invoice_number,
@@ -1121,11 +1119,53 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
+
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
+
+  // Generate and download a delivery note from any invoice
+  const printDNFromInvoice = (inv) => {
+    const invLines = inv.lines || [{ description: inv.description || "See invoice", qty: 1, unit: "unit" }];
+    const dnLines = invLines.filter(l => l.description && l.description.trim() !== "").map(l => ({
+      description: l.description, qty: l.qty, unit: l.unit || "unit"
+    }));
+    const cust = contacts.find(c => c.name === inv.customer);
+    const address = [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ");
+    const dn_number = `DN-${inv.invoice_number.replace("INV-", "")}`;
+    const html = `<!DOCTYPE html><html><head><title>${dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:16mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #0f172a}.co-name{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.7}.dn-title{font-size:32px;font-weight:900;color:#e2e8f0;text-align:right;letter-spacing:-1px}.dn-num{font-size:15px;font-weight:700;text-align:right;color:#0f172a}.meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.meta-box{background:#f8fafc;padding:14px;border-radius:6px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}.meta-val{font-size:13px;font-weight:600;color:#0f172a}.large{font-size:16px}table{width:100%;border-collapse:collapse;margin-bottom:24px}thead tr{background:#0f172a;color:#fff}th{padding:10px 12px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left;letter-spacing:0.5px}td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:nth-child(even) td{background:#fafbfc}.qty-col{text-align:center;font-weight:700;font-size:14px}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}.sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}.sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}.footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}.ref-badge{display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;margin-top:6px}</style></head><body>
+    <div class="header">
+      <div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}</div></div>
+      <div style="text-align:right"><div class="dn-title">DELIVERY NOTE</div><div class="dn-num">${dn_number}</div><div class="ref-badge">Invoice: ${inv.invoice_number}</div></div>
+    </div>
+    <div class="meta">
+      <div class="meta-box"><div class="meta-lbl">Deliver To</div><div class="meta-val large">${inv.customer}</div>${address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${address}</div>` : ""}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn_number}</div></div>
+        <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(inv.invoice_date)}</div></div>
+        <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${inv.invoice_number}</div></div>
+        <div class="meta-box"><div class="meta-lbl">Status</div><div class="meta-val">${inv.status?.toUpperCase()}</div></div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
+      <tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td style="color:#64748b">${l.unit}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody>
+    </table>
+    <div class="sig-section">
+      <div><div class="sig-box"></div><div class="sig-lbl">Delivered by (Signature &amp; Name)</div></div>
+      <div><div class="sig-box"></div><div class="sig-lbl">Received by (Signature, Name &amp; Date)</div></div>
+    </div>
+    <div class="footer"><span>${COMPANY.name} · ${COMPANY.vatNumber}</span><span>Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>${dn_number}</span></div>
+    </body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${dn_number}.html`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
   return (
     <div>
@@ -1136,7 +1176,33 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
       {showForm && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
       <div className="card">
         <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th className="hm">Date</th><th className="hm">Due</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {invoices.map(inv => <tr key={inv.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td><td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td><td><div style={{ display: "flex", gap: 6 }}><button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>{inv.status !== "paid" && payingId === inv.id ? (<div style={{ display: "flex", gap: 4, alignItems: "center" }}><select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}><option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option></select><button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button><button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button></div>) : (<button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>)}</div></td></tr>)}
+          {invoices.map(inv => (
+            <tr key={inv.id}>
+              <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td>
+              <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
+              <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td>
+              <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td>
+              <td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td>
+              <td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td>
+              <td>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>
+                  <button className="btn bsm" style={{ background: "#0f172a", color: "#fff" }} onClick={() => printDNFromInvoice(inv)} title="Download Delivery Note"><i className="ti ti-truck-delivery" />DN</button>
+                  {inv.status !== "paid" && payingId === inv.id ? (
+                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      <select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
+                        <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
+                      </select>
+                      <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
+                      <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
+                    </div>
+                  ) : (
+                    <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
           {invoices.length === 0 && <tr><td colSpan={7} className="empty">No invoices yet — create your first VAT invoice!</td></tr>}
         </tbody></table></div>
       </div>
