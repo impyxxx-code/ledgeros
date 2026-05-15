@@ -2799,21 +2799,61 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
     setLoading(true);
     try {
       const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
           system: buildContext(),
           messages: [...history, { role: "user", content: userMsg }]
         })
       });
+      // Fallback: if no proxy, use built-in smart responses
+      if (!res.ok) throw new Error("no proxy");
       const data = await res.json();
       const reply = data.content?.[0]?.text || "Sorry, I couldn\'t process that. Please try again.";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: "assistant", content: "Connection error. Please try again." }]);
+      // Smart local fallback when API unavailable
+      const q = userMsg.toLowerCase();
+      const invData = invoices;
+      const prodData = products;
+      const contData = contacts;
+      
+      let reply = "";
+      if (q.includes("owe") || q.includes("most money") || q.includes("outstanding") || q.includes("unpaid")) {
+        const byCustomer = invData.filter(i => i.status !== "paid").reduce((acc, i) => { acc[i.customer] = (acc[i.customer]||0) + i.amount; return acc; }, {});
+        const sorted = Object.entries(byCustomer).sort((a,b) => b[1]-a[1]);
+        reply = sorted.length > 0
+          ? `Top customers with outstanding balances:\n\n${sorted.slice(0,5).map(([name,amt],i) => `${i+1}. ${name} — ${fmt(amt)}`).join("\n")}\n\nTotal outstanding: ${fmt(sorted.reduce((s,[,a])=>s+a,0))}`
+          : "No outstanding invoices at the moment. 🎉";
+      } else if (q.includes("overdue")) {
+        const ov = invData.filter(i => i.status === "overdue");
+        reply = ov.length > 0
+          ? `You have ${ov.length} overdue invoice${ov.length>1?"s":""}:\n\n${ov.map(i => `• ${i.customer} — ${fmt(i.amount)} (${i.invoice_number})`).join("\n")}`
+          : "No overdue invoices. 👍";
+      } else if (q.includes("low stock") || q.includes("running low") || q.includes("stock")) {
+        const low = prodData.filter(p => p.stock_qty <= (p.reorder_level||5));
+        reply = low.length > 0
+          ? `${low.length} product${low.length>1?"s":""} low on stock:\n\n${low.map(p => `• ${p.name} — ${p.stock_qty} ${p.unit||"units"} remaining`).join("\n")}`
+          : "All products are well stocked. 📦";
+      } else if (q.includes("revenue") || q.includes("total") || q.includes("sales") || q.includes("made")) {
+        const paid = invData.filter(i => i.status==="paid").reduce((s,i)=>s+i.amount,0);
+        const pending = invData.filter(i=>i.status==="pending").reduce((s,i)=>s+i.amount,0);
+        reply = `Revenue Summary:\n\n💰 Collected: ${fmt(paid)}\n⏳ Pending: ${fmt(pending)}\n📊 Total invoiced: ${fmt(paid+pending)}\n📋 Total invoices: ${invData.length}`;
+      } else if (q.includes("customer") || q.includes("top") || q.includes("best")) {
+        const top = Object.entries(invData.reduce((acc,i)=>{ acc[i.customer]=(acc[i.customer]||0)+i.amount; return acc; },{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
+        reply = top.length > 0
+          ? `Top customers by spend:\n\n${top.map(([name,amt],i)=>`${["🥇","🥈","🥉","4.","5."][i]} ${name} — ${fmt(amt)}`).join("\n")}`
+          : "No customer data yet.";
+      } else if (q.includes("paid") || q.includes("collected")) {
+        const paidInv = invData.filter(i=>i.status==="paid");
+        reply = `Paid invoices: ${paidInv.length}\nTotal collected: ${fmt(paidInv.reduce((s,i)=>s+i.amount,0))}\n\nMost recent:\n${paidInv.slice(0,3).map(i=>`• ${i.customer} ${fmt(i.amount)}`).join("\n")}`;
+      } else if (q.includes("product") || q.includes("inventory")) {
+        reply = `You have ${prodData.length} products.\n\nTop products by price:\n${prodData.sort((a,b)=>(b.sale_price||0)-(a.sale_price||0)).slice(0,5).map(p=>`• ${p.name} — ${fmt(p.sale_price||0)}`).join("\n")}`;
+      } else {
+        reply = `I can answer questions about your business data. Try asking:\n\n• "Who owes the most money?"\n• "Show overdue invoices"\n• "Which products are low on stock?"\n• "What\'s my total revenue?"\n• "Who are my top customers?"`;
+      }
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     }
     setLoading(false);
   };
