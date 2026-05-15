@@ -590,26 +590,215 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
+  const [savedInvoice, setSavedInvoice] = useState(null); // ← success state
+  const [creatingDN, setCreatingDN] = useState(false);
+  const [dnSaved, setDnSaved] = useState(false);
+  const [dnDriver, setDnDriver] = useState("");
+  const [dnAddress, setDnAddress] = useState("");
+  const [dnNotes, setDnNotes] = useState("");
+
   const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+
   const updateLine = (i, field, val) => {
     const next = [...lines];
-    if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, description: p?.name || "", unit_price: p?.sale_price || "", vat_rate: p?.vat_rate ?? 20 }; }
+    if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, description: p?.name || "", unit_price: p?.sale_price || "", vat_rate: p?.vat_rate ?? 20, unit: p?.unit || "unit" }; }
     else next[i] = { ...next[i], [field]: val };
     setLines(next);
   };
+
   const subtotal = lines.reduce((s, l) => s + ((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0)), 0);
   const vatTotal = lines.reduce((s, l) => s + ((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0) * ((parseFloat(l.vat_rate) || 0) / 100)), 0);
   const total = subtotal + vatTotal;
+
   const save = async () => {
-    if (!f.customer) return; setSaving(true);
+    if (!f.customer) return;
+    setSaving(true);
     const existing = await sb.get(token, "invoices", "select=id");
     const count = Array.isArray(existing) ? existing.length + 1 : 1;
     const invoice_number = `INV-${String(count).padStart(4, "0")}`;
-    const inv = await sb.post(token, "invoices", { customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || null, status: f.status, notes: f.notes || null, amount: total, subtotal, vat_total: vatTotal, invoice_number, created_by: userId });
-    if (inv[0]) onSave({ ...inv[0], lines });
-    else alert("Failed to save invoice. Please try again.");
-    setSaving(false); onClose();
+    const inv = await sb.post(token, "invoices", {
+      customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || null,
+      status: f.status, notes: f.notes || null,
+      amount: total, subtotal, vat_total: vatTotal, invoice_number, created_by: userId
+    });
+    if (inv[0]) {
+      const fullInv = { ...inv[0], lines };
+      onSave(fullInv);
+      // Pre-fill DN fields from customer contact
+      const cust = contacts.find(c => c.name === f.customer);
+      setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));
+      setDnNotes(f.notes || "");
+      setSavedInvoice(fullInv);
+    } else {
+      alert("Failed to save invoice. Please try again.");
+    }
+    setSaving(false);
   };
+
+  // Print the saved invoice as HTML download
+  const printInvoice = () => {
+    if (!savedInvoice) return;
+    const invLines = savedInvoice.lines || [];
+    const sub = invLines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
+    const vat = invLines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
+    const tot = sub + vat;
+    const html = `<!DOCTYPE html><html><head><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2563eb}.co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.6}.inv-title{font-size:36px;font-weight:900;color:#ddd;text-align:right}.inv-num{font-size:14px;font-weight:700;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.meta-val{font-size:12px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#2563eb;color:#fff}th{padding:8px 10px;font-size:10px;text-transform:uppercase;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:8px 10px;border-bottom:1px solid #f1f5f9}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #000;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}.bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.bank-val{font-size:12px;font-weight:600}.footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div><div><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div></div></div><div class="meta"><div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${savedInvoice.customer}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${savedInvoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(savedInvoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(savedInvoice.due_date)}</div></div><div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${invLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(sub)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vat)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(tot)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div></div><div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${savedInvoice.invoice_number}</div></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${savedInvoice.invoice_number}.html`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Create delivery note from invoice
+  const createDeliveryNote = async () => {
+    if (!savedInvoice) return;
+    setCreatingDN(true);
+    const existing = await sb.get(token, "delivery_notes", "select=id");
+    const count = Array.isArray(existing) ? existing.length + 1 : 1;
+    const dn_number = `DN-${String(count).padStart(4, "0")}`;
+    const dnLines = (savedInvoice.lines || []).map(l => ({
+      description: l.description, qty: l.qty, unit: l.unit || "unit", product_id: l.product_id || null
+    }));
+    const cust = contacts.find(c => c.name === savedInvoice.customer);
+    await sb.post(token, "delivery_notes", {
+      dn_number, customer_name: savedInvoice.customer,
+      customer_id: cust?.id || null,
+      delivery_date: savedInvoice.invoice_date,
+      delivery_address: dnAddress,
+      driver: dnDriver, notes: dnNotes,
+      status: "pending",
+      invoice_ref: savedInvoice.invoice_number,
+      lines: JSON.stringify(dnLines),
+      created_by: userId
+    });
+    setCreatingDN(false);
+    setDnSaved(true);
+  };
+
+  // ── SUCCESS SCREEN ─────────────────────────────────────────────────────────
+  if (savedInvoice) {
+    return (
+      <div className="card" style={{ marginBottom: 20 }}>
+        {/* Success header */}
+        <div style={{ background: "linear-gradient(135deg,#10b981,#059669)", padding: "24px 28px", display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <i className="ti ti-circle-check" style={{ color: "#fff", fontSize: 28 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Invoice Created Successfully!</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,.8)" }}>
+              {savedInvoice.invoice_number} · {savedInvoice.customer} · {fmt(savedInvoice.amount)}
+            </div>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        {!dnSaved && !creatingDN && (
+          <div style={{ padding: "24px 28px" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)", marginBottom: 16, textTransform: "uppercase", letterSpacing: ".5px" }}>What would you like to do next?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              {/* Print Invoice */}
+              <div onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "20px 22px", cursor: "pointer", transition: "all .15s", background: "var(--white)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--blue-lt)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "var(--white)"; }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                  <i className="ti ti-file-download" style={{ color: "var(--blue)", fontSize: 22 }} />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--blue)", marginBottom: 4 }}>Print Invoice</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Download invoice as HTML file, then print from browser</div>
+              </div>
+
+              {/* Create Delivery Note */}
+              <div onClick={() => setCreatingDN("form")} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "20px 22px", cursor: "pointer", transition: "all .15s", background: "var(--white)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "var(--white)"; }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                  <i className="ti ti-truck-delivery" style={{ color: "#0f172a", fontSize: 22 }} />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Create Delivery Note</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Generate a delivery note for the driver with all order details</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16, textAlign: "center" }}>
+              <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Done — Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* Delivery Note form */}
+        {creatingDN === "form" && (
+          <div style={{ padding: "24px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <i className="ti ti-truck-delivery" style={{ fontSize: 18, color: "#0f172a" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Delivery Note Details</div>
+                <div style={{ fontSize: 12, color: "var(--text2)" }}>Pre-filled from invoice {savedInvoice.invoice_number}</div>
+              </div>
+            </div>
+
+            {/* Pre-filled items preview */}
+            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "14px 16px", marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Items from Invoice</div>
+              {(savedInvoice.lines || []).map((l, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: i < savedInvoice.lines.length - 1 ? "0.5px solid var(--border)" : "none" }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{l.description}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Qty: {l.qty}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Additional DN fields */}
+            <div className="fg" style={{ padding: 0, marginBottom: 16 }}>
+              <div className="fgrp">
+                <label>Driver / Courier</label>
+                <input value={dnDriver} onChange={e => setDnDriver(e.target.value)} placeholder="e.g. John Smith or DPD" />
+              </div>
+              <div className="fgrp">
+                <label>Delivery Address <span style={{ color: "var(--text3)", fontWeight: 400 }}>— pre-filled from customer</span></label>
+                <input value={dnAddress} onChange={e => setDnAddress(e.target.value)} placeholder="Enter delivery address" />
+              </div>
+              <div className="fgrp full">
+                <label>Delivery Instructions / Notes</label>
+                <input value={dnNotes} onChange={e => setDnNotes(e.target.value)} placeholder="e.g. Leave at reception, call before delivery..." />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <button className="btn bo" onClick={() => setCreatingDN(false)}><i className="ti ti-arrow-left" />Back</button>
+              <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Also Print Invoice</button>
+              <button className="btn bp" onClick={createDeliveryNote} disabled={creatingDN === true}
+                style={{ background: "#0f172a" }}>
+                {creatingDN === true ? <><div className="spin" style={{ width: 14, height: 14, borderWidth: 2, marginRight: 6 }} />Creating...</> : <><i className="ti ti-truck-delivery" />Create Delivery Note</>}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* DN saved confirmation */}
+        {dnSaved && (
+          <div style={{ padding: "24px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "var(--rl)", padding: "18px 22px", marginBottom: 20 }}>
+              <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 28, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-dk)", marginBottom: 3 }}>Delivery Note Created!</div>
+                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>You can view, download and share it from the Delivery Notes section.</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Download Invoice</button>
+              <button className="btn bp" onClick={onClose}><i className="ti ti-check" />Done</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── INVOICE FORM ───────────────────────────────────────────────────────────
   return (
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Cancel</button></div>
@@ -618,6 +807,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp"><label>Due Date</label><input type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
+        <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes for this invoice..." /></div>
       </div>
       <div style={{ borderTop: "0.5px solid var(--border)" }}>
         <div className="il-header">{["Product / Description", "Qty", "Unit Price", "VAT", "Total", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>{h}</span>)}</div>
@@ -642,7 +832,12 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           </div>
         </div>
       </div>
-      <div className="ff"><button className="btn bo" onClick={onClose}>Cancel</button><button className="btn bp" onClick={save} disabled={saving || !f.customer}>{saving ? "Saving..." : "Create Invoice"}</button></div>
+      <div className="ff">
+        <button className="btn bo" onClick={onClose}>Cancel</button>
+        <button className="btn bp" onClick={save} disabled={saving || !f.customer}>
+          {saving ? <><div className="spin" style={{ width: 14, height: 14, borderWidth: 2, marginRight: 6 }} />Creating Invoice...</> : <><i className="ti ti-file-invoice" />Create Invoice</>}
+        </button>
+      </div>
     </div>
   );
 }
