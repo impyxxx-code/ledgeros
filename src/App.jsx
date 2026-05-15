@@ -2783,6 +2783,8 @@ const MOBILE_NAV = [
 export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -2848,7 +2850,71 @@ export default function App() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
               <img src={LOGO} alt="Arkham Retail" style={{ width: 110, height: 32, borderRadius: 6, objectFit: "contain" }} />
             </div>
-            <div className="search-wrap topbar-search"><i className="ti ti-search" /><input className="search-input" placeholder="Search invoices, customers, products..." /></div>
+            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
+              <i className="ti ti-search" />
+              <input
+                className="search-input"
+                placeholder="Search invoices, customers, products..."
+                value={globalSearch}
+                onChange={e => { setGlobalSearch(e.target.value); setShowSearchResults(e.target.value.length > 0); }}
+                onFocus={() => globalSearch.length > 0 && setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+              />
+              {showSearchResults && globalSearch.length > 0 && (() => {
+                const q = globalSearch.toLowerCase();
+                const invResults = invoices.filter(i => i.customer?.toLowerCase().includes(q) || i.invoice_number?.toLowerCase().includes(q)).slice(0, 4);
+                const custResults = contacts.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)).slice(0, 3);
+                const prodResults = products.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 3);
+                const total = invResults.length + custResults.length + prodResults.length;
+                return (
+                  <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", boxShadow: "var(--sh3)", zIndex: 200, overflow: "hidden", minWidth: 360 }}>
+                    {total === 0 && <div style={{ padding: "14px 16px", fontSize: 13, color: "var(--text3)" }}>No results for "{globalSearch}"</div>}
+                    {invResults.length > 0 && <>
+                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Invoices</div>
+                      {invResults.map(inv => (
+                        <div key={inv.id} onMouseDown={() => { setPage("invoices"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-file-invoice" style={{ color: "var(--blue)", fontSize: 13 }} /></div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{inv.customer}</div>
+                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount||0)}</div>
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: inv.status==="paid"?"var(--green-lt)":inv.status==="overdue"?"var(--red-lt)":"var(--amber-lt)", color: inv.status==="paid"?"var(--green-dk)":inv.status==="overdue"?"var(--red-dk)":"var(--amber-dk)" }}>{inv.status}</span>
+                        </div>
+                      ))}
+                    </>}
+                    {custResults.length > 0 && <>
+                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Customers</div>
+                      {custResults.map(c => (
+                        <div key={c.id} onMouseDown={() => { setPage("contacts"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.name?.[0]?.toUpperCase()}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{c.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{c.email || c.phone || c.type}</div>
+                          </div>
+                          <span style={{ fontSize: 10, color: "var(--text3)" }}>→ Contacts</span>
+                        </div>
+                      ))}
+                    </>}
+                    {prodResults.length > 0 && <>
+                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Products</div>
+                      {prodResults.map(p => (
+                        <div key={p.id} onMouseDown={() => { setPage("inventory"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--purple-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-package" style={{ color: "var(--purple)", fontSize: 13 }} /></div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{p.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{p.stock_qty} {p.unit||"units"} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(p.sale_price||0)}</div>
+                          </div>
+                          <span style={{ fontSize: 10, color: "var(--text3)" }}>→ Inventory</span>
+                        </div>
+                      ))}
+                    </>}
+                    <div style={{ padding: "8px 16px", fontSize: 11, color: "var(--text3)", background: "#f8fafd", borderTop: "1px solid var(--border)" }}>
+                      {total} result{total !== 1 ? "s" : ""} for "{globalSearch}"
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
             <div className="topbar-right">
               <span className="tb-role">{profile?.role||"agent"}</span>
               <div className="tb-btn tb-notif"><i className="ti ti-bell" /></div>
