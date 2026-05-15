@@ -19,7 +19,7 @@ const COMPANY = {
   accountNumber: "23058246",
 };
 
-const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8IS0tIERhcmsgYmFja2dyb3VuZCAtLT4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzBkMWYxMiIvPgoKICA8IS0tIEFSIGxldHRlcnMgLS0+CiAgPHRleHQgeD0iMzAiIHk9Ijk1IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjcyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDx0ZXh0IHg9IjEwOCIgeT0iOTUiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iNzIiIGZpbGw9IiMxZTkwZmYiPlI8L3RleHQ+CgogIDwhLS0gQmx1ZSByZWN0YW5nbGUgYmVoaW5kIEFSS0hBTSAtLT4KICA8cmVjdCB4PSIxOCIgeT0iMTA4IiB3aWR0aD0iMTY0IiBoZWlnaHQ9IjM2IiByeD0iMyIgZmlsbD0iIzFhNTZkYiIvPgoKICA8IS0tIEFSS0hBTSB0ZXh0IG9uIGJsdWUgLS0+CiAgPHRleHQgeD0iMTAwIiB5PSIxMzMiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iMjAiIGxldHRlci1zcGFjaW5nPSI0IiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5BUktIQU08L3RleHQ+CgogIDwhLS0gUkVUQUlMIExURCBiZWxvdyAtLT4KICA8dGV4dCB4PSIxMDAiIHk9IjE2NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIiBmb250LXNpemU9IjEzIiBsZXR0ZXItc3BhY2luZz0iNSIgZmlsbD0iIzIyYzU1ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UkVUQUlMIExURDwvdGV4dD4KPC9zdmc+";
+const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMTIwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjQyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMwNjBmMDkiLz4KCiAgPCEtLSBBIC0gZ3JlZW4gLS0+CiAgPHRleHQgeD0iMjAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDwhLS0gUiAtIGJsdWUgLS0+CiAgPHRleHQgeD0iNzAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMWU5MGZmIj5SPC90ZXh0PgoKICA8IS0tIFZlcnRpY2FsIGRpdmlkZXIgLS0+CiAgPHJlY3QgeD0iMTY0IiB5PSIxNiIgd2lkdGg9IjIiIGhlaWdodD0iODgiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuNSIvPgoKICA8IS0tIEFSS0hBTSAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjUyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjM0IiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iI2ZmZmZmZiI+QVJLSEFNPC90ZXh0PgoKICA8IS0tIEdyZWVuIHJ1bGUgLS0+CiAgPHJlY3QgeD0iMTgyIiB5PSI2MCIgd2lkdGg9IjIyMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjJjNTVlIi8+CgogIDwhLS0gUkVUQUlMIExURCAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjgyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGxldHRlci1zcGFjaW5nPSI2IiBmaWxsPSIjMjJjNTVlIj5SRVRBSUwgIExURDwvdGV4dD4KCiAgPCEtLSBXSE9MRVNBTEUgwrcgUkVUQUlMIC0tPgogIDx0ZXh0IHg9IjE4MiIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI0MDAiIGZvbnQtc2l6ZT0iMTAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMzUpIj5XSE9MRVNBTEUgIMK3ICBSRVRBSUw8L3RleHQ+Cjwvc3ZnPg==";
 
 const sb = {
   h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
@@ -772,7 +772,7 @@ function Auth({ onAuth }) {
     <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg)", fontFamily: "var(--sans)" }}>
       <div style={{ width: 460, background: "var(--sidebar)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 56, color: "#fff" }}>
         <div style={{ textAlign: "center", maxWidth: 320 }}>
-          <img src={LOGO} alt="Arkham Retail" style={{ width: 72, height: 72, borderRadius: 16, objectFit: "contain", background: "#fff", padding: 6, margin: "0 auto 24px", display: "block" }} />
+          <img src={LOGO} alt="Arkham Retail" style={{ width: 180, height: 52, borderRadius: 10, objectFit: "contain", margin: "0 auto 24px", display: "block" }} />
           <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, lineHeight: 1.2, letterSpacing: "-.5px" }}>Built for modern businesses</h2>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7, marginBottom: 36 }}>VAT invoices, inventory, analytics and more — all in one place.</p>
           {["VAT Invoice PDF with WhatsApp share", "Customer & Supplier management", "Stock & Inventory with low stock alerts", "Agent dashboards & leaderboard", "Daily email notifications"].map(f => (
@@ -785,7 +785,7 @@ function Auth({ onAuth }) {
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
-            <img src={LOGO} alt="Arkham Retail" style={{ width: 40, height: 40, borderRadius: 11, objectFit: "contain", background: "#f0fdf4", padding: 2 }} />
+            <img src={LOGO} alt="Arkham Retail" style={{ width: 140, height: 40, borderRadius: 8, objectFit: "contain" }} />
             <div><div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.4px" }}>LedgerOS</div><div style={{ fontSize: 12, color: "var(--text3)" }}>Business Accounting</div></div>
           </div>
           <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 6, letterSpacing: "-.4px" }}>{mode === "signin" ? "Sign in" : "Create account"}</div>
@@ -2454,9 +2454,8 @@ export default function App() {
       <style>{CSS}</style>
       <div className="app">
         <aside className="sidebar">
-          <div className="sidebar-logo">
-            <img src={LOGO} alt="Arkham Retail" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "contain", background: "#fff" }} />
-            <span className="logo-text">LedgerOS</span>
+          <div className="sidebar-logo" style={{ paddingBottom: 20 }}>
+            <img src={LOGO} alt="Arkham Retail" style={{ width: 190, height: 54, objectFit: "contain", borderRadius: 8 }} />
           </div>
           <div className="nav-section">
             <div className="nav-label">Main</div>
@@ -2477,7 +2476,7 @@ export default function App() {
         <div className="main">
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
-              <img src={LOGO} alt="Arkham Retail" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "contain" }} />
+              <img src={LOGO} alt="Arkham Retail" style={{ width: 110, height: 32, borderRadius: 6, objectFit: "contain" }} />
             </div>
             <div className="search-wrap topbar-search"><i className="ti ti-search" /><input className="search-input" placeholder="Search invoices, customers, products..." /></div>
             <div className="topbar-right">
