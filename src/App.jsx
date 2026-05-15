@@ -2753,6 +2753,149 @@ function DeliveryNotes({ contacts, products, token, userId }) {
   );
 }
 
+
+// ── AI ASSISTANT ──────────────────────────────────────────────────────────────
+function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Hi! I\'m your LedgerOS AI assistant. Ask me anything about your invoices, customers, stock or finances.\n\nTry: *\"Who owes the most money?\"* or *\"Which products are low on stock?\"*" }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const buildContext = () => {
+    const totalRevenue = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+    const outstanding = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
+    const overdue = invoices.filter(i => i.status === "overdue");
+    const lowStock = products.filter(p => p.stock_qty <= p.reorder_level);
+    const topCustomers = Object.entries(
+      invoices.reduce((acc, inv) => { acc[inv.customer] = (acc[inv.customer] || 0) + inv.amount; return acc; }, {})
+    ).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    return `You are an AI assistant for LedgerOS, a business accounting app for Arkham Retail Ltd (Bradford, UK).
+
+LIVE BUSINESS DATA:
+- Total invoices: ${invoices.length}
+- Paid revenue: £${totalRevenue.toFixed(2)}
+- Outstanding: £${outstanding.toFixed(2)}
+- Overdue invoices: ${overdue.length} (${overdue.map(i => i.customer + " £" + i.amount).join(", ") || "none"})
+- Total customers: ${contacts.filter(c => c.type === "customer" || c.type === "both").length}
+- Total products: ${products.length}
+- Low stock items: ${lowStock.length} (${lowStock.map(p => p.name + " (" + p.stock_qty + " left)").join(", ") || "none"})
+- Top customers by spend: ${topCustomers.map(([name, amt]) => name + " £" + amt.toFixed(2)).join(", ")}
+- Recent invoices: ${invoices.slice(0, 5).map(i => i.invoice_number + " " + i.customer + " £" + i.amount + " " + i.status).join("; ")}
+- Products: ${products.slice(0, 10).map(p => p.name + " (stock: " + p.stock_qty + ", price: £" + p.sale_price + ")").join("; ")}
+
+Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If asked about specific data, reference the actual numbers above. Keep responses short and actionable.`;
+  };
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setLoading(true);
+    try {
+      const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: buildContext(),
+          messages: [...history, { role: "user", content: userMsg }]
+        })
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "Sorry, I couldn\'t process that. Please try again.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Connection error. Please try again." }]);
+    }
+    setLoading(false);
+  };
+
+  const suggestions = [
+    "Who owes the most money?",
+    "Which products are low on stock?",
+    "Show me overdue invoices",
+    "What\'s my total revenue?",
+    "Who are my top customers?",
+  ];
+
+  const renderMsg = (text) => text.replace(/\*([^*]+)\*/g, "$1");
+
+  return (
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 17 }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>AI Assistant</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>Powered by Claude · Live data</div>
+        </div>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}><i className="ti ti-x" /></button>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 8, alignItems: "flex-end" }}>
+            {msg.role === "assistant" && (
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 12 }} />
+              </div>
+            )}
+            <div style={{ maxWidth: "80%", padding: "10px 13px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? "var(--blue)" : "#f4f6f9", color: msg.role === "user" ? "#fff" : "var(--text)", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {renderMsg(msg.content)}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 12 }} />
+            </div>
+            <div style={{ padding: "10px 14px", background: "#f4f6f9", borderRadius: "16px 16px 16px 4px", display: "flex", gap: 4, alignItems: "center" }}>
+              {[0,1,2].map(j => <div key={j} style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text3)", animation: "pulse 1.2s ease-in-out " + (j*0.2) + "s infinite" }} />)}
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Suggestions */}
+      {messages.length <= 1 && (
+        <div style={{ padding: "0 14px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {suggestions.map(s => (
+            <button key={s} onClick={() => { setInput(s); }} style={{ padding: "5px 10px", background: "var(--blue-lt)", border: "1px solid var(--blue-mid)", borderRadius: 20, fontSize: 11, color: "var(--blue)", cursor: "pointer", fontFamily: "var(--sans)", fontWeight: 500, whiteSpace: "nowrap" }}>{s}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexShrink: 0 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
+          placeholder="Ask anything about your business..."
+          style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
+        />
+        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !loading ? "var(--blue)" : "var(--border)", border: "none", cursor: input.trim() && !loading ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .14s" }}>
+          <i className="ti ti-send" style={{ color: input.trim() && !loading ? "#fff" : "var(--text3)", fontSize: 15 }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ── NAV CONFIG ────────────────────────────────────────────────────────────────
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "ti-home" },
@@ -2785,6 +2928,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -2862,9 +3006,26 @@ export default function App() {
               />
               {showSearchResults && globalSearch.length > 0 && (() => {
                 const q = globalSearch.toLowerCase();
-                const invResults = invoices.filter(i => i.customer?.toLowerCase().includes(q) || i.invoice_number?.toLowerCase().includes(q)).slice(0, 4);
-                const custResults = contacts.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)).slice(0, 3);
-                const prodResults = products.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 3);
+                // Natural language patterns
+                const isOverdue = q.includes("overdue") || q.includes("late") || q.includes("unpaid");
+                const isPaid = q.includes("paid") || q.includes("collected");
+                const isLowStock = q.includes("low stock") || q.includes("running low") || q.includes("out of");
+                const isCustomer = q.includes("customer") || q.includes("client");
+                const isProduct = q.includes("product") || q.includes("stock") || q.includes("inventory");
+                const isPending = q.includes("pending") || q.includes("outstanding") || q.includes("owe");
+                
+                let invResults = [];
+                if (isOverdue) invResults = invoices.filter(i => i.status === "overdue").slice(0, 5);
+                else if (isPaid) invResults = invoices.filter(i => i.status === "paid").slice(0, 4);
+                else if (isPending) invResults = invoices.filter(i => i.status === "pending" || i.status === "overdue").slice(0, 4);
+                else invResults = invoices.filter(i => i.customer?.toLowerCase().includes(q) || i.invoice_number?.toLowerCase().includes(q)).slice(0, 4);
+
+                let custResults = [];
+                if (!isProduct && !isOverdue) custResults = contacts.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || (isCustomer && (c.type === "customer" || c.type === "both"))).slice(0, 3);
+
+                let prodResults = [];
+                if (isLowStock) prodResults = products.filter(p => p.stock_qty <= p.reorder_level).slice(0, 4);
+                else if (isProduct || !isOverdue) prodResults = products.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 3);
                 const total = invResults.length + custResults.length + prodResults.length;
                 return (
                   <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", boxShadow: "var(--sh3)", zIndex: 200, overflow: "hidden", minWidth: 360 }}>
@@ -2908,8 +3069,9 @@ export default function App() {
                         </div>
                       ))}
                     </>}
-                    <div style={{ padding: "8px 16px", fontSize: 11, color: "var(--text3)", background: "#f8fafd", borderTop: "1px solid var(--border)" }}>
-                      {total} result{total !== 1 ? "s" : ""} for "{globalSearch}"
+                    <div style={{ padding: "8px 16px", fontSize: 11, color: "var(--text3)", background: "#f8fafd", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>{total} result{total !== 1 ? "s" : ""} for "{globalSearch}"</span>
+                      <span style={{ color: "var(--blue)", fontWeight: 500 }}>Try: "overdue", "low stock", "pending"</span>
                     </div>
                   </div>
                 );
@@ -2919,6 +3081,10 @@ export default function App() {
               <span className="tb-role">{profile?.role||"agent"}</span>
               <div className="tb-btn tb-notif"><i className="ti ti-bell" /></div>
               <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
+              <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
+                <i className="ti ti-sparkles" style={{ fontSize: 14 }} />
+                <span className="hm">AI</span>
+              </button>
               <div className="tb-av">{initials}</div>
             </div>
           </div>
@@ -2945,6 +3111,7 @@ export default function App() {
             )}
           </div>
         </div>
+        {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
