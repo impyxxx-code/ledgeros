@@ -730,15 +730,17 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   };
 
   // Build a quick DN object from invoice for immediate printing (no DB save needed)
-  const buildQuickDN = () => {
-    const dnLines = (savedInvoice.lines || []).map(l => ({
+ const buildQuickDN = () => {
+    const dnLines = (savedInvoice.lines || []).filter(l => l.description && l.description.trim() !== "").map(l => ({
       description: l.description, qty: l.qty, unit: l.unit || "unit"
     }));
+    const cust = contacts.find(c => c.name === savedInvoice.customer);
+    const autoAddress = dnAddress || [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ");
     return {
       dn_number: `DN-${savedInvoice.invoice_number.replace("INV-", "")}`,
       customer_name: savedInvoice.customer,
       delivery_date: savedInvoice.invoice_date,
-      delivery_address: dnAddress,
+      delivery_address: autoAddress,
       driver: dnDriver,
       notes: dnNotes,
       invoice_ref: savedInvoice.invoice_number,
