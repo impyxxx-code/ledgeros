@@ -1128,7 +1128,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 
   // Generate and download a delivery note from any invoice
   const printDNFromInvoice = (inv) => {
-    const invLines = inv.lines || [{ description: inv.description || "See invoice", qty: 1, unit: "unit" }];
+    const invLines = inv.lines && inv.lines.length > 0 
+      ? inv.lines 
+      : [{ description: `Invoice ${inv.invoice_number} — ${inv.customer}`, qty: 1, unit: "unit", note: fmt(inv.amount) }];
     const dnLines = invLines.filter(l => l.description && l.description.trim() !== "").map(l => ({
       description: l.description, qty: l.qty, unit: l.unit || "unit"
     }));
@@ -1151,7 +1153,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     </div>
     <table>
       <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
-      <tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td style="color:#64748b">${l.unit}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody>
+     <tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description}${l.note ? `<div style="font-size:10px;color:#64748b;margin-top:2px">${l.note}</div>` : ""}</td><td style="color:#64748b">${l.unit}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody>
     </table>
     <div class="sig-section">
       <div><div class="sig-box"></div><div class="sig-lbl">Delivered by (Signature &amp; Name)</div></div>
