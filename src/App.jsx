@@ -2,7 +2,7 @@ import Analytics from "./Analytics.jsx";
 import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect, useRef } from "react";
 
-
+const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://szcogfyrhlrsxnwepnea.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -325,16 +325,123 @@ function InvoiceModal({ invoice, onClose, contacts = [] }) {
   const savedPhone = customerContact?.phone || "";
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
-const handlePrint = () => {
-    const html = `<!DOCTYPE html><html><head><title>${invoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2563eb}.co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.6}.inv-title{font-size:36px;font-weight:900;color:#ddd;text-align:right}.inv-num{font-size:14px;font-weight:700;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.meta-val{font-size:12px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#2563eb;color:#fff}th{padding:8px 10px;font-size:10px;text-transform:uppercase;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:8px 10px;border-bottom:1px solid #f1f5f9}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #000;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}.bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.bank-val{font-size:12px;font-weight:600}.footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div><div><div class="inv-title">INVOICE</div><div class="inv-num">${invoice.invoice_number}</div></div></div><div class="meta"><div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${invoice.customer}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${invoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)}</div></div><div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(subtotal)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(total)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div></div><div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${invoice.invoice_number} · All goods remain property of ${COMPANY.name} until payment received in full.</div></body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${invoice.invoice_number}.html`;
-    a.click();
-   URL.revokeObjectURL(url);
+  const handlePrint = async () => {
+    if (!window.jspdf) {
+      await new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = JSPDF_URL; s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210, M = 14, cw = W - M * 2;
+    let y = 14;
+
+    // Top rule
+    doc.setFillColor(37, 99, 235);
+    doc.rect(M, y, cw, 1, "F");
+    y += 6;
+
+    // Company name
+    doc.setFontSize(16).setFont(undefined, "bold").setTextColor(37, 99, 235);
+    doc.text(COMPANY.name, M, y);
+    y += 6;
+
+    // Company details
+    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(80, 80, 80);
+    doc.text([COMPANY.address, `${COMPANY.city}, ${COMPANY.postcode}`, `Tel: ${COMPANY.phone}`, COMPANY.email, `VAT: ${COMPANY.vatNumber}`], M, y);
+
+    // INVOICE title top-right
+    doc.setFontSize(28).setFont(undefined, "bold").setTextColor(220, 220, 220);
+    doc.text("INVOICE", W - M, y - 2, { align: "right" });
+    doc.setFontSize(11).setFont(undefined, "bold").setTextColor(30, 30, 30);
+    doc.text(invoice.invoice_number, W - M, y + 10, { align: "right" });
+    y += 28;
+
+    // Meta box
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(M, y, cw, 22, 2, 2, "F");
+    doc.setFontSize(8).setTextColor(100, 100, 100).setFont(undefined, "normal");
+    doc.text("INVOICE TO", M + 4, y + 5);
+    doc.setFontSize(11).setFont(undefined, "bold").setTextColor(15, 23, 42);
+    doc.text(invoice.customer || "—", M + 4, y + 11);
+    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(100, 100, 100);
+    const metaCols = ["Invoice #", "Date", "Due Date", "Terms"];
+    const metaVals = [invoice.invoice_number, fmtDate(invoice.invoice_date), fmtDate(invoice.due_date), "Due on receipt"];
+    metaCols.forEach((c, i) => {
+      const x = M + cw / 2 + (i % 2) * (cw / 4);
+      const ry = y + (i < 2 ? 5 : 13);
+      doc.text(c, x, ry);
+      doc.setFont(undefined, "bold").setTextColor(15, 23, 42).setFontSize(9);
+      doc.text(metaVals[i], x, ry + 5);
+      doc.setFont(undefined, "normal").setTextColor(100, 100, 100).setFontSize(8);
+    });
+    y += 28;
+
+    // Table header
+    doc.setFillColor(37, 99, 235);
+    doc.rect(M, y, cw, 8, "F");
+    doc.setTextColor(255, 255, 255).setFontSize(8).setFont(undefined, "bold");
+    const tCols = ["Description", "VAT", "Qty", "Rate", "Amount"];
+    const tXs = [M + 2, M + 80, M + 100, M + 120, W - M - 2];
+    const tAligns = ["left", "left", "left", "left", "right"];
+    tCols.forEach((c, i) => doc.text(c, tXs[i], y + 5.5, { align: tAligns[i] }));
+    y += 8;
+
+    // Table rows
+    lines.forEach((l, i) => {
+      if (i % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(M, y, cw, 8, "F"); }
+      doc.setTextColor(15, 23, 42).setFont(undefined, "normal").setFontSize(9);
+      doc.text(l.description || "—", tXs[0], y + 5.5);
+      doc.setFontSize(8);
+      doc.text(`${l.vat_rate}%`, tXs[1], y + 5.5);
+      doc.text(String(l.qty), tXs[2], y + 5.5);
+      doc.text(fmt(l.unit_price), tXs[3], y + 5.5);
+      doc.setFont(undefined, "bold");
+      doc.text(fmt(l.qty * l.unit_price), tXs[4], y + 5.5, { align: "right" });
+      y += 8;
+    });
+    y += 4;
+
+    // Totals
+    const totRows = [["Subtotal", fmt(subtotal)], ["VAT Total", fmt(vatTotal)], ["Balance Due", fmt(total)]];
+    totRows.forEach(([label, val], i) => {
+      if (i === 2) {
+        doc.setFillColor(37, 99, 235);
+        doc.rect(W - M - 70, y - 1, 70, 9, "F");
+        doc.setTextColor(255, 255, 255).setFont(undefined, "bold").setFontSize(10);
+      } else {
+        doc.setTextColor(80, 80, 80).setFont(undefined, "normal").setFontSize(9);
+      }
+      doc.text(label, W - M - 68, y + 5);
+      doc.text(val, W - M - 2, y + 5, { align: "right" });
+      y += 9;
+    });
+    y += 6;
+
+    // Bank details
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(M, y, cw, 20, 2, 2, "F");
+    doc.setFontSize(9).setFont(undefined, "bold").setTextColor(15, 23, 42);
+    doc.text("Payment Details", M + 4, y + 6);
+    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(80, 80, 80);
+    doc.text(`Bank: ${COMPANY.bankName}`, M + 4, y + 12);
+    doc.text(`Sort Code: ${COMPANY.sortCode}`, M + 55, y + 12);
+    doc.text(`Account: ${COMPANY.accountNumber}`, M + 110, y + 12);
+    doc.text(`Reference: ${invoice.invoice_number}`, M + 4, y + 17);
+    y += 24;
+
+    // Footer
+    doc.setFontSize(7).setTextColor(150, 150, 150);
+    doc.text(`VAT Reg: ${COMPANY.vatNumber} · All goods remain property of ${COMPANY.name} until payment received in full.`, M, y);
+    doc.setDrawColor(37, 99, 235);
+    doc.setLineWidth(0.5);
+    doc.line(M, y + 3, W - M, y + 3);
+
+    doc.save(`${invoice.invoice_number}.pdf`);
   };
+
   const buildWaMsg = () => encodeURIComponent(
     `*VAT Invoice — ${COMPANY.name}*\n\nInvoice: *${invoice.invoice_number}*\nCustomer: ${invoice.customer}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
     lines.map(l => `${l.description} x${l.qty} — ${fmt(l.qty * l.unit_price)}`).join("\n") +
@@ -436,7 +543,7 @@ const handlePrint = () => {
               {savedPhone && !showWaInput && <button className="btn bwa" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />WhatsApp {savedPhone}</button>}
               <button className="btn" style={{ background: "#128C7E", color: "#fff" }} onClick={() => { setShowWaInput(true); setWaNumber(""); }}><i className="ti ti-brand-whatsapp" />{savedPhone ? "Different number" : "WhatsApp"}</button>
               <button className="btn bo" onClick={handleEmail}><i className="ti ti-mail" />Email</button>
-             <button className="btn bo" onClick={() => { onClose(); setTimeout(handlePrint, 300); }}><i className="ti ti-printer" />Print Invoice</button>
+              <button className="btn bo" onClick={handlePrint}><i className="ti ti-download" />Download PDF</button>
             </div>
           </div>
         </div>
@@ -1134,6 +1241,280 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   );
 }
 
+// ── DELIVERY NOTES ────────────────────────────────────────────────────────────
+function DeliveryNotes({ contacts, products, token, userId }) {
+  const [dns, setDNs] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState({ customer_id: "", delivery_date: today(), delivery_address: "", notes: "", driver: "" });
+  const [lines, setLines] = useState([{ product_id: "", description: "", qty: 1, unit: "unit" }]);
+
+  useEffect(() => {
+    sb.get(token, "delivery_notes", "order=created_at.desc")
+      .then(d => Array.isArray(d) && setDNs(d));
+  }, [token]);
+
+  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+
+  const updateLine = (i, field, val) => {
+    const next = [...lines];
+    if (field === "product_id") {
+      const p = products.find(x => x.id === val);
+      next[i] = { ...next[i], product_id: val, description: p?.name || "", unit: p?.unit || "unit" };
+    } else {
+      next[i] = { ...next[i], [field]: val };
+    }
+    setLines(next);
+  };
+
+  const save = async () => {
+    if (!f.customer_id) return;
+    setSaving(true);
+    const existing = await sb.get(token, "delivery_notes", "select=id");
+    const count = Array.isArray(existing) ? existing.length + 1 : 1;
+    const dn_number = `DN-${String(count).padStart(4, "0")}`;
+    const cust = customers.find(c => c.id === f.customer_id);
+    const data = await sb.post(token, "delivery_notes", {
+      dn_number, customer_name: cust?.name, customer_id: f.customer_id,
+      delivery_date: f.delivery_date, delivery_address: f.delivery_address || cust?.address || "",
+      notes: f.notes, driver: f.driver, status: "pending",
+      lines: JSON.stringify(lines), created_by: userId
+    });
+    if (data[0]) setDNs(prev => [{ ...data[0], lines }, ...prev]);
+    setF({ customer_id: "", delivery_date: today(), delivery_address: "", notes: "", driver: "" });
+    setLines([{ product_id: "", description: "", qty: 1, unit: "unit" }]);
+    setShowForm(false);
+    setSaving(false);
+  };
+
+  const updateStatus = async (id, status) => {
+    await sb.patch(token, "delivery_notes", id, { status });
+    setDNs(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+  };
+
+  const printDN = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const html = `<!DOCTYPE html><html><head><title>${dn.dn_number}</title><style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:Arial,sans-serif;font-size:12px;padding:16mm;color:#0f172a}
+      .header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #0f172a}
+      .co-name{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}
+      .co-detail{font-size:10px;color:#64748b;line-height:1.7}
+      .dn-title{font-size:32px;font-weight:900;color:#e2e8f0;text-align:right;letter-spacing:-1px}
+      .dn-num{font-size:15px;font-weight:700;text-align:right;color:#0f172a}
+      .meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+      .meta-box{background:#f8fafc;padding:14px;border-radius:6px;border:1px solid #e2e8f0}
+      .meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+      .meta-val{font-size:13px;font-weight:600;color:#0f172a}
+      .meta-val.large{font-size:16px}
+      table{width:100%;border-collapse:collapse;margin-bottom:24px}
+      thead tr{background:#0f172a;color:#fff}
+      th{padding:10px 12px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left;letter-spacing:0.5px}
+      td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}
+      tr:nth-child(even) td{background:#fafbfc}
+      .qty-col{text-align:center;font-weight:700;font-size:14px}
+      .sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}
+      .sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}
+      .sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
+      .footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}
+      .status-badge{display:inline-block;background:#f1f5f9;border:1.5px solid #0f172a;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+    </style></head><body>
+    <div class="header">
+      <div>
+        <div class="co-name">${COMPANY.name}</div>
+        <div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="dn-title">DELIVERY NOTE</div>
+        <div class="dn-num">${dn.dn_number}</div>
+        <div class="status-badge" style="margin-top:8px">${dn.status?.toUpperCase() || "PENDING"}</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-box">
+        <div class="meta-lbl">Deliver To</div>
+        <div class="meta-val large">${dn.customer_name}</div>
+        ${dn.delivery_address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${dn.delivery_address.replace(/\n/g, "<br>")}</div>` : ""}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
+        <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(dn.delivery_date)}</div></div>
+        ${dn.driver ? `<div class="meta-box" style="grid-column:1/-1"><div class="meta-lbl">Driver / Courier</div><div class="meta-val">${dn.driver}</div></div>` : ""}
+      </div>
+    </div>
+    <table>
+      <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
+      <tbody>
+        ${dnLines.map(l => `<tr>
+          <td style="font-weight:600">${l.description || "—"}</td>
+          <td style="color:#64748b">${l.unit || "unit"}</td>
+          <td class="qty-col">${l.qty}</td>
+          <td class="qty-col" style="color:#94a3b8">____</td>
+          <td style="text-align:center;color:#94a3b8">____</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+    ${dn.notes ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin-bottom:20px"><div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">Delivery Notes</div><div style="font-size:12px;color:#78350f">${dn.notes}</div></div>` : ""}
+    <div class="sig-section">
+      <div>
+        <div class="sig-box"></div>
+        <div class="sig-lbl">Delivered by (Signature & Name)</div>
+      </div>
+      <div>
+        <div class="sig-box"></div>
+        <div class="sig-lbl">Received by (Signature, Name & Date)</div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>${COMPANY.name} · ${COMPANY.vatNumber}</span>
+      <span>Printed: ${new Date().toLocaleDateString("en-GB")}</span>
+      <span>${dn.dn_number}</span>
+    </div>
+    </body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${dn.dn_number}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const sendWhatsApp = (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const msg = encodeURIComponent(
+      `*Delivery Note — ${COMPANY.name}*\n\n` +
+      `DN: *${dn.dn_number}*\n` +
+      `Customer: ${dn.customer_name}\n` +
+      `Date: ${fmtDate(dn.delivery_date)}\n` +
+      (dn.driver ? `Driver: ${dn.driver}\n` : "") +
+      `\n*Items:*\n` +
+      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit}`).join("\n") +
+      `\n\nPlease confirm receipt. Thank you! 🙏\n${COMPANY.phone}`
+    );
+    const cust = contacts.find(c => c.name === dn.customer_name);
+    const phone = (cust?.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
+    if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    else window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
+  return (
+    <div>
+      <div className="ph">
+        <div><div className="pt">Delivery Notes</div><div className="psub">Create and manage delivery notes</div></div>
+        <button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Delivery Note</button>
+      </div>
+
+      {/* Summary KPIs */}
+      <div className="g4" style={{ marginBottom: 20 }}>
+        {[
+          { label: "Total", val: dns.length, color: "var(--text)" },
+          { label: "Pending", val: dns.filter(d => d.status === "pending").length, color: "var(--amber)" },
+          { label: "In Transit", val: dns.filter(d => d.status === "in_transit").length, color: "var(--blue)" },
+          { label: "Delivered", val: dns.filter(d => d.status === "delivered").length, color: "var(--green)" },
+        ].map(k => (
+          <div key={k.label} className="kpi" style={{ marginBottom: 0 }}>
+            <div className="kpi-label">{k.label}</div>
+            <div className="kpi-val" style={{ color: k.color }}>{k.val}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Create form */}
+      {showForm && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="ch"><div className="ct">New Delivery Note</div><button className="btn bo bsm" onClick={() => setShowForm(false)}><i className="ti ti-x" />Cancel</button></div>
+          <div className="fg">
+            <div className="fgrp">
+              <label>Customer *</label>
+              <select value={f.customer_id} onChange={e => {
+                const cust = customers.find(c => c.id === e.target.value);
+                setF({ ...f, customer_id: e.target.value, delivery_address: [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ") });
+              }}>
+                <option value="">Select customer...</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="fgrp"><label>Delivery Date</label><input type="date" value={f.delivery_date} onChange={e => setF({ ...f, delivery_date: e.target.value })} /></div>
+            <div className="fgrp"><label>Driver / Courier</label><input value={f.driver} onChange={e => setF({ ...f, driver: e.target.value })} placeholder="e.g. John Smith or DPD" /></div>
+            <div className="fgrp"><label>Delivery Address</label><input value={f.delivery_address} onChange={e => setF({ ...f, delivery_address: e.target.value })} placeholder="Auto-filled from customer" /></div>
+            <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Special delivery instructions..." /></div>
+          </div>
+
+          {/* Line items */}
+          <div style={{ borderTop: "0.5px solid var(--border)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 30px", gap: 10, padding: "10px 18px", background: "#fafbfc", borderBottom: "0.5px solid var(--border)" }}>
+              {["Product / Description", "Qty", "Unit", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>{h}</span>)}
+            </div>
+            {lines.map((l, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 30px", gap: 10, alignItems: "center", padding: "10px 18px", borderBottom: "0.5px solid var(--border)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <select className="il-input" value={l.product_id} onChange={e => updateLine(i, "product_id", e.target.value)}>
+                    <option value="">Select product...</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                  <input className="il-input" placeholder="Or type description..." value={l.description} onChange={e => updateLine(i, "description", e.target.value)} />
+                </div>
+                <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
+                <select className="il-input" value={l.unit} onChange={e => updateLine(i, "unit", e.target.value)}>
+                  <option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option><option>pallet</option><option>carton</option>
+                </select>
+                <button className="ib" onClick={() => lines.length > 1 && setLines(lines.filter((_, j) => j !== i))}><i className="ti ti-x" /></button>
+              </div>
+            ))}
+            <div style={{ padding: "12px 18px", background: "#fafbfc", borderTop: "0.5px solid var(--border)" }}>
+              <button className="btn bo bsm" onClick={() => setLines([...lines, { product_id: "", description: "", qty: 1, unit: "unit" }])}><i className="ti ti-plus" />Add Item</button>
+            </div>
+          </div>
+          <div className="ff">
+            <button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="btn bp" onClick={save} disabled={saving || !f.customer_id}>{saving ? "Saving..." : "Create Delivery Note"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="card">
+        <div className="tw"><table>
+          <thead><tr><th>DN #</th><th>Customer</th><th className="hm">Date</th><th className="hm">Driver</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {dns.map(dn => {
+              const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+              return (
+                <tr key={dn.id}>
+                  <td className="mono" style={{ color: "var(--blue)", fontSize: 12, fontWeight: 600 }}>{dn.dn_number}</td>
+                  <td style={{ fontWeight: 500 }}>{dn.customer_name}</td>
+                  <td className="hm" style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(dn.delivery_date)}</td>
+                  <td className="hm" style={{ fontSize: 12, color: "var(--text2)" }}>{dn.driver || "—"}</td>
+                  <td style={{ fontSize: 12, color: "var(--text2)" }}>{dnLines.length} item{dnLines.length !== 1 ? "s" : ""}</td>
+                  <td>
+                    <select
+                      style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none", cursor: "pointer" }}
+                      value={dn.status || "pending"}
+                      onChange={e => updateStatus(dn.id, e.target.value)}>
+                      <option value="pending">⏳ Pending</option>
+                      <option value="in_transit">🚚 In Transit</option>
+                      <option value="delivered">✅ Delivered</option>
+                      <option value="failed">❌ Failed</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-download" />Download</button>
+                      <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />Share</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {dns.length === 0 && <tr><td colSpan={7} className="empty">No delivery notes yet — create your first one!</td></tr>}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  );
+}
+
 // ── NAV CONFIG ────────────────────────────────────────────────────────────────
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "ti-home" },
@@ -1149,6 +1530,7 @@ const NAV = [
   { id: "stock-adj", label: "Stock In/Out", icon: "ti-adjustments" },
   { id: "agent-report", label: "Agent Sales", icon: "ti-report-analytics" },
   { id: "import", label: "Import", icon: "ti-upload" },
+  { id: "delivery-notes", label: "Delivery Notes", icon: "ti-truck-delivery" },
 ];
 
 const MOBILE_NAV = [
@@ -1255,6 +1637,7 @@ export default function App() {
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} />}
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
+                {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
               </>
             )}
           </div>
@@ -1268,4 +1651,3 @@ export default function App() {
     </>
   );
 }
-
