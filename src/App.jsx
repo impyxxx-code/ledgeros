@@ -729,135 +729,155 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
+  // Build a quick DN object from invoice for immediate printing (no DB save needed)
+  const buildQuickDN = () => {
+    const dnLines = (savedInvoice.lines || []).map(l => ({
+      description: l.description, qty: l.qty, unit: l.unit || "unit"
+    }));
+    return {
+      dn_number: `DN-${savedInvoice.invoice_number.replace("INV-", "")}`,
+      customer_name: savedInvoice.customer,
+      delivery_date: savedInvoice.invoice_date,
+      delivery_address: dnAddress,
+      driver: dnDriver,
+      notes: dnNotes,
+      invoice_ref: savedInvoice.invoice_number,
+      lines: JSON.stringify(dnLines)
+    };
+  };
+
   // ── SUCCESS SCREEN ─────────────────────────────────────────────────────────
   if (savedInvoice) {
     return (
       <div className="card" style={{ marginBottom: 20 }}>
-        {/* Success header */}
-        <div style={{ background: "linear-gradient(135deg,#10b981,#059669)", padding: "24px 28px", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <i className="ti ti-circle-check" style={{ color: "#fff", fontSize: 28 }} />
+
+        {/* ── Success banner ── */}
+        <div style={{ background: "linear-gradient(135deg,#10b981,#059669)", padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <i className="ti ti-circle-check" style={{ color: "#fff", fontSize: 26 }} />
           </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Invoice Created Successfully!</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,.8)" }}>
-              {savedInvoice.invoice_number} · {savedInvoice.customer} · {fmt(savedInvoice.amount)}
-            </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 2 }}>Invoice Created Successfully!</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.8)" }}>{savedInvoice.invoice_number} · {savedInvoice.customer} · {fmt(savedInvoice.amount)}</div>
           </div>
+          <button className="btn bsm" style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }} onClick={onClose}><i className="ti ti-x" />Close</button>
         </div>
 
-        {/* Action buttons */}
-        {!dnSaved && !creatingDN && (
-          <div style={{ padding: "24px 28px" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text2)", marginBottom: 16, textTransform: "uppercase", letterSpacing: ".5px" }}>What would you like to do next?</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        {/* ── Main action screen (no DN yet) ── */}
+        {!dnSaved && (
+          <div style={{ padding: "24px 24px 20px" }}>
+
+            {/* Step label */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 16 }}>Print Documents</div>
+
+            {/* Two big print buttons */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+
               {/* Print Invoice */}
-              <div onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "20px 22px", cursor: "pointer", transition: "all .15s", background: "var(--white)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--blue-lt)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "var(--white)"; }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-                  <i className="ti ti-file-download" style={{ color: "var(--blue)", fontSize: 22 }} />
+              <button onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "var(--blue)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                  <i className="ti ti-file-invoice" style={{ color: "#fff", fontSize: 20 }} />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--blue)", marginBottom: 4 }}>Print Invoice</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Download invoice as HTML file, then print from browser</div>
-              </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--blue)", marginBottom: 3 }}>Print Invoice</div>
+                <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5 }}>Download {savedInvoice.invoice_number} as a print-ready file</div>
+              </button>
 
-              {/* Create Delivery Note */}
-              <div onClick={() => setCreatingDN("form")} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "20px 22px", cursor: "pointer", transition: "all .15s", background: "var(--white)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "var(--white)"; }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-                  <i className="ti ti-truck-delivery" style={{ color: "#0f172a", fontSize: 22 }} />
+              {/* Print Delivery Note — immediate, no DB save required */}
+              <button onClick={() => downloadDN(buildQuickDN())} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                  <i className="ti ti-truck-delivery" style={{ color: "#fff", fontSize: 20 }} />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Create Delivery Note</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>Generate a delivery note for the driver with all order details</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16, textAlign: "center" }}>
-              <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Done — Close</button>
-            </div>
-          </div>
-        )}
-
-        {/* Delivery Note form */}
-        {creatingDN === "form" && (
-          <div style={{ padding: "24px 28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <i className="ti ti-truck-delivery" style={{ fontSize: 18, color: "#0f172a" }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Delivery Note Details</div>
-                <div style={{ fontSize: 12, color: "var(--text2)" }}>Pre-filled from invoice {savedInvoice.invoice_number}</div>
-              </div>
-            </div>
-
-            {/* Pre-filled items preview */}
-            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "14px 16px", marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 10 }}>Items from Invoice</div>
-              {(savedInvoice.lines || []).map((l, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: i < savedInvoice.lines.length - 1 ? "0.5px solid var(--border)" : "none" }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{l.description}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Qty: {l.qty}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Additional DN fields */}
-            <div className="fg" style={{ padding: 0, marginBottom: 16 }}>
-              <div className="fgrp">
-                <label>Driver / Courier</label>
-                <input value={dnDriver} onChange={e => setDnDriver(e.target.value)} placeholder="e.g. John Smith or DPD" />
-              </div>
-              <div className="fgrp">
-                <label>Delivery Address <span style={{ color: "var(--text3)", fontWeight: 400 }}>— pre-filled from customer</span></label>
-                <input value={dnAddress} onChange={e => setDnAddress(e.target.value)} placeholder="Enter delivery address" />
-              </div>
-              <div className="fgrp full">
-                <label>Delivery Instructions / Notes</label>
-                <input value={dnNotes} onChange={e => setDnNotes(e.target.value)} placeholder="e.g. Leave at reception, call before delivery..." />
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
-              <button className="btn bo" onClick={() => setCreatingDN(false)}><i className="ti ti-arrow-left" />Back</button>
-              <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Also Print Invoice</button>
-              <button className="btn bp" onClick={createDeliveryNote} disabled={creatingDN === true}
-                style={{ background: "#0f172a" }}>
-                {creatingDN === true ? <><div className="spin" style={{ width: 14, height: 14, borderWidth: 2, marginRight: 6 }} />Creating...</> : <><i className="ti ti-truck-delivery" />Create Delivery Note</>}
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 3 }}>Print Delivery Note</div>
+                <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5 }}>Download DN for driver — pre-filled from this invoice</div>
               </button>
             </div>
+
+            {/* DN extra fields — driver, address, notes before printing */}
+            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 12 }}>
+                <i className="ti ti-truck-delivery" style={{ marginRight: 6 }} />Delivery Note Details <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — updates the DN print)</span>
+              </div>
+
+              {/* Items preview */}
+              <div style={{ marginBottom: 12 }}>
+                {(savedInvoice.lines || []).map((l, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: i < (savedInvoice.lines.length - 1) ? "0.5px solid var(--border)" : "none" }}>
+                    <span style={{ fontSize: 12, fontWeight: 500 }}>{l.description}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--blue)" }}>× {l.qty}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="fgrp">
+                  <label>Driver / Courier</label>
+                  <input value={dnDriver} onChange={e => setDnDriver(e.target.value)} placeholder="e.g. John Smith / DPD" />
+                </div>
+                <div className="fgrp">
+                  <label>Delivery Address</label>
+                  <input value={dnAddress} onChange={e => setDnAddress(e.target.value)} placeholder="Auto-filled from customer" />
+                </div>
+                <div className="fgrp" style={{ gridColumn: "1/-1" }}>
+                  <label>Delivery Instructions</label>
+                  <input value={dnNotes} onChange={e => setDnNotes(e.target.value)} placeholder="e.g. Leave at reception, call before delivery..." />
+                </div>
+              </div>
+            </div>
+
+            {/* Save to DB + share options */}
+            <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Save & Share</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn bp" onClick={createDeliveryNote} disabled={creatingDN === true}
+                  style={{ background: "#0f172a" }}>
+                  {creatingDN === true
+                    ? <><div className="spin" style={{ width: 13, height: 13, borderWidth: 2 }} />Saving...</>
+                    : <><i className="ti ti-device-floppy" />Save Delivery Note</>}
+                </button>
+                <button className="btn bo" onClick={() => emailDN(buildQuickDN())}><i className="ti ti-mail" />Email DN</button>
+                <button className="btn bwa" onClick={() => whatsappDN(buildQuickDN())}><i className="ti ti-brand-whatsapp" />WhatsApp DN</button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* DN saved confirmation */}
+        {/* ── DN saved confirmation ── */}
         {dnSaved && (
-          <div style={{ padding: "24px 28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "var(--rl)", padding: "18px 22px", marginBottom: 20 }}>
-              <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 28, flexShrink: 0 }} />
+          <div style={{ padding: "24px 24px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20 }}>
+              <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 26, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-dk)", marginBottom: 3 }}>Delivery Note {dnSaved.dn_number} Created!</div>
-                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>Download, email or WhatsApp it to your customer or driver now.</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--green-dk)", marginBottom: 2 }}>Delivery Note {dnSaved.dn_number} Saved!</div>
+                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>Saved to Delivery Notes. Print, email or WhatsApp below.</div>
               </div>
             </div>
 
-            {/* DN action buttons */}
-            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 12 }}>Delivery Note Actions</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="btn bo" onClick={() => downloadDN(dnSaved)}><i className="ti ti-file-download" />Download & Print</button>
-                <button className="btn bo" onClick={() => emailDN(dnSaved)}><i className="ti ti-mail" />Email</button>
-                <button className="btn bwa" onClick={() => whatsappDN(dnSaved)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              <button onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <i className="ti ti-file-invoice" style={{ color: "var(--blue)", fontSize: 20 }} />
+                  <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Print Invoice</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{savedInvoice.invoice_number}</div></div>
+                </div>
+              </button>
+              <button onClick={() => downloadDN(dnSaved)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <i className="ti ti-truck-delivery" style={{ color: "#0f172a", fontSize: 20 }} />
+                  <div><div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Print Delivery Note</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{dnSaved.dn_number}</div></div>
+                </div>
+              </button>
             </div>
 
-            {/* Invoice action buttons */}
-            <div style={{ background: "#f8fafc", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 12 }}>Invoice Actions</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="btn bo" onClick={printInvoice}><i className="ti ti-file-download" />Download Invoice</button>
-              </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              <button className="btn bo" onClick={() => emailDN(dnSaved)}><i className="ti ti-mail" />Email DN</button>
+              <button className="btn bwa" onClick={() => whatsappDN(dnSaved)}><i className="ti ti-brand-whatsapp" />WhatsApp DN</button>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
