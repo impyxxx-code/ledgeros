@@ -2936,6 +2936,7 @@ function AgentReport({ invoices, allProfiles, contacts }) {
 // ── ADMIN REPORTS SUITE ───────────────────────────────────────────────────────
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
+  const [selectedAgent, setSelectedAgent] = useState("all");
   const [period, setPeriod] = useState("month");
   const now = new Date();
   const filterByPeriod = (inv) => {
@@ -3702,7 +3703,6 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
         </button>
       </div>
       {tab === "agent-products" && (() => {
-        const [selectedAgent, setSelectedAgent] = useState("all");
         const agentData = allProfiles.map(agent => {
           const agentInvs = filteredInv.filter(i => i.created_by === agent.id);
           const productMap = {};
