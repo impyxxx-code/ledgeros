@@ -3065,7 +3065,6 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
 
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
-  const [selectedAgent, setSelectedAgent] = useState("all");
   const [period, setPeriod] = useState("month");
   const now = new Date();
   const filterByPeriod = (inv) => {
