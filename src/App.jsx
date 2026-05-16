@@ -3261,6 +3261,10 @@ export default function App() {
   const [globalSearch, setGlobalSearch] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [dismissedNotifs, setDismissedNotifs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("dismissed_notifs") || "[]"); } catch { return []; }
+  });
   const [accounts, setAccounts] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -3411,7 +3415,57 @@ export default function App() {
             </div>
             <div className="topbar-right">
               <span className="tb-role">{profile?.role||"agent"}</span>
-              <div className="tb-btn tb-notif"><i className="ti ti-bell" /></div>
+              {(() => {
+                const notifs = [
+                  ...invoices.filter(i=>i.status==="overdue").map(i=>({ id:"ov-"+i.id, type:"overdue", icon:"ti-alert-circle", color:"var(--red)", bg:"var(--red-lt)", title:"Overdue Invoice", body:`${i.customer} — ${fmt(i.amount)} overdue`, action:()=>setPage("invoices") })),
+                  ...products.filter(p=>p.stock_qty<=(p.reorder_level||5)).map(p=>({ id:"ls-"+p.id, type:"lowstock", icon:"ti-package-off", color:"var(--amber)", bg:"var(--amber-lt)", title:"Low Stock Alert", body:`${p.name} — only ${p.stock_qty} ${p.unit||"units"} left`, action:()=>setPage("inventory") })),
+                  ...invoices.filter(i=>i.status==="paid").slice(0,3).map(i=>({ id:"pd-"+i.id, type:"paid", icon:"ti-circle-check", color:"var(--green)", bg:"var(--green-lt)", title:"Payment Received", body:`${i.customer} paid ${fmt(i.amount)}`, action:()=>setPage("invoices") })),
+                ].filter(n=>!dismissedNotifs.includes(n.id));
+                const unread = notifs.length;
+                return (
+                  <div style={{position:"relative"}}>
+                    <div className={"tb-btn"+(unread>0?" tb-notif":"")} onClick={()=>setShowNotifications(v=>!v)} style={{cursor:"pointer"}}>
+                      <i className="ti ti-bell" />
+                      {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid var(--white)"}}>{unread>9?"9+":unread}</span>}
+                    </div>
+                    {showNotifications && (
+                      <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:340,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
+                        <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{fontWeight:700,fontSize:14}}>Notifications</div>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            {notifs.length>0&&<button onClick={()=>{const ids=notifs.map(n=>n.id);setDismissedNotifs(prev=>{const next=[...prev,...ids];localStorage.setItem("dismissed_notifs",JSON.stringify(next));return next;});}} style={{fontSize:11,color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--sans)"}}>Clear all</button>}
+                            <button onClick={()=>setShowNotifications(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",fontSize:16,display:"flex",alignItems:"center"}}><i className="ti ti-x" /></button>
+                          </div>
+                        </div>
+                        <div style={{maxHeight:400,overflowY:"auto"}}>
+                          {notifs.length===0?(
+                            <div style={{padding:"32px 16px",textAlign:"center",color:"var(--text3)"}}>
+                              <i className="ti ti-bell-check" style={{fontSize:32,display:"block",marginBottom:8,opacity:.4}} />
+                              <div style={{fontSize:13}}>All caught up!</div>
+                            </div>
+                          ):notifs.map(n=>(
+                            <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 16px",borderBottom:"1px solid #f0f3f8",cursor:"pointer",transition:"background .1s"}} onClick={()=>{n.action();setShowNotifications(false);}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafd"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                              <div style={{width:34,height:34,borderRadius:9,background:n.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <i className={"ti "+n.icon} style={{color:n.color,fontSize:16}} />
+                              </div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>{n.title}</div>
+                                <div style={{fontSize:12,color:"var(--text2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.body}</div>
+                              </div>
+                              <button onClick={e=>{e.stopPropagation();setDismissedNotifs(prev=>{const next=[...prev,n.id];localStorage.setItem("dismissed_notifs",JSON.stringify(next));return next;});}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",padding:4,fontSize:14,flexShrink:0,display:"flex",alignItems:"center"}}><i className="ti ti-x" /></button>
+                            </div>
+                          ))}
+                        </div>
+                        {notifs.length>0&&(
+                          <div style={{padding:"10px 16px",background:"#f8fafd",borderTop:"1px solid var(--border)",fontSize:11,color:"var(--text3)",textAlign:"center"}}>
+                            {unread} alert{unread!==1?"s":""} · Click to navigate · Dismiss to clear
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
               <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
                 <i className="ti ti-sparkles" style={{ fontSize: 14 }} />
