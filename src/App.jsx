@@ -2139,6 +2139,109 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         ))}
       </div>
 
+      {/* ── Revenue Chart Widget ── */}
+      {(() => {
+        const months = Array.from({length:6},(_,i)=>{
+          const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
+          const lbl = d.toLocaleDateString("en-GB",{month:"short"});
+          const mPaid = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status==="paid";
+          }).reduce((s,i)=>s+i.amount,0);
+          const mPending = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid";
+          }).reduce((s,i)=>s+i.amount,0);
+          return {lbl, paid: mPaid, pending: mPending};
+        });
+        const maxVal = Math.max(...months.map(m=>Math.max(m.paid,m.pending)),1);
+        const H = 100;
+        const W = 100/months.length;
+        const paidPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.paid/maxVal*H)}`).join(" ");
+        const pendPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.pending/maxVal*H)}`).join(" ");
+        const totalPaid6 = months.reduce((s,m)=>s+m.paid,0);
+        const totalPend6 = months.reduce((s,m)=>s+m.pending,0);
+        const bestMonth = months.reduce((a,b)=>b.paid>a.paid?b:a,months[0]);
+        return (
+          <div className="card" style={{marginBottom:18}}>
+            <div className="ch">
+              <div>
+                <div className="ct">Revenue Overview</div>
+                <div className="cs">6-month performance · {new Date().toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</div>
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}} />Collected
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity:.6}} />Pending
+                </div>
+                <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><i className="ti ti-arrow-right"/>Reports</button>
+              </div>
+            </div>
+            <div style={{padding:"20px 24px"}}>
+              {/* SVG Chart */}
+              <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:8,alignItems:"stretch"}}>
+                {/* Y-axis labels */}
+                <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingBottom:24,height:140}}>
+                  {[maxVal,maxVal*0.75,maxVal*0.5,maxVal*0.25,0].map((v,i)=>(
+                    <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v).replace("£","£"):"£0"}</div>
+                  ))}
+                </div>
+                {/* Chart area */}
+                <div style={{position:"relative"}}>
+                  <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{width:"100%",height:120,display:"block"}}>
+                    <defs>
+                      <linearGradient id="paidGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2563eb" stopOpacity=".25"/>
+                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0"/>
+                      </linearGradient>
+                      <linearGradient id="pendGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity=".15"/>
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    {/* Grid lines */}
+                    {[0,25,50,75,100].map(y=>(
+                      <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="var(--border)" strokeWidth="0.3" vectorEffect="non-scaling-stroke"/>
+                    ))}
+                    {/* Pending area */}
+                    <polygon points={`0,${H} ${pendPts} 100,${H}`} fill="url(#pendGrad)"/>
+                    <polyline points={pendPts} fill="none" stroke="#f59e0b" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" vectorEffect="non-scaling-stroke"/>
+                    {/* Paid area */}
+                    <polygon points={`0,${H} ${paidPts} 100,${H}`} fill="url(#paidGrad)"/>
+                    <polyline points={paidPts} fill="none" stroke="#2563eb" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>
+                    {/* Data dots */}
+                    {months.map((m,i)=>(
+                      <circle key={i} cx={i*W+W/2} cy={H-(m.paid/maxVal*H)} r="1.2" fill="#2563eb" vectorEffect="non-scaling-stroke"/>
+                    ))}
+                  </svg>
+                  {/* X-axis labels */}
+                  <div style={{display:"flex",justifyContent:"space-around",marginTop:4}}>
+                    {months.map(m=><div key={m.lbl} style={{fontSize:10,color:"var(--text3)",textAlign:"center"}}>{m.lbl}</div>)}
+                  </div>
+                </div>
+              </div>
+              {/* Summary stats */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
+                <div>
+                  <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"var(--green)"}}>{fmt(totalPaid6)}</div>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Pending</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"var(--amber)"}}>{fmt(totalPend6)}</div>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>Best Month</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.paid||0)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Main content: Invoices + Activity ── */}
       <div className="g23" style={{ marginBottom: 0 }}>
         {/* Recent invoices */}
@@ -2871,7 +2974,14 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         </div>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setTab(k)}>{l}</button>)}
+      </div>
+      {/* Scrollable tab bar — works on mobile without wrapping */}
+      <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",marginBottom:20,paddingBottom:4}}>
+        <div style={{display:"flex",gap:6,minWidth:"max-content"}}>
+          {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"]].map(([k,l]) => (
+            <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 14px",borderRadius:20,border:"1px solid "+(tab===k?"var(--blue)":"var(--border)"),background:tab===k?"var(--blue)":"var(--white)",color:tab===k?"#fff":"var(--text2)",fontSize:12,fontWeight:tab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",transition:"all .12s"}}>{l}</button>
+          ))}
+        </div>
       </div>
       {tab==="overview" && <div>
         <div className="kgrid">
