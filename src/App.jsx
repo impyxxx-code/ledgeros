@@ -804,13 +804,7 @@ function Auth({ onAuth }) {
               <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{feat}
             </div>
           ))}
-          {isMobile && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-              {["VAT Invoices", "Stock Alerts", "WhatsApp Share", "Agent Dashboards"].map(tag => (
-                <span key={tag} style={{ background: "rgba(255,255,255,.1)", color: "rgba(255,255,255,.8)", padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{tag}</span>
-              ))}
-            </div>
-          )}
+
         </div>
       </div>
 
