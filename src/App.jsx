@@ -1681,6 +1681,21 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   const todayRevenue = invoices.filter(i => i.status === "paid" && i.invoice_date === todayStr).reduce((s, i) => s + i.amount, 0);
   const avgInvoice = paidCount > 0 ? paid / paidCount : 0;
 
+  // ── Drill-down modal state ──
+  const [drill, setDrill] = useState(null); // { title, rows, cols, summary }
+
+  const openDrill = (title, rows, cols, summary) => setDrill({ title, rows, cols, summary });
+
+  const drillRevenue = () => openDrill("Total Revenue", accounts.filter(a => a.type === "Revenue").map(a => ({ name: a.name, code: a.code, value: fmt(a.balance) })), ["Account", "Code", "Balance"], `Total: ${fmt(revenue)} from ${accounts.filter(a => a.type==="Revenue").length} revenue accounts`);
+  const drillPaid = () => openDrill("Collected Revenue — Paid Invoices", invoices.filter(i => i.status === "paid").map(i => ({ name: i.customer, code: i.invoice_number, value: fmt(i.amount), extra: fmtDate(i.invoice_date) })), ["Customer", "Invoice", "Amount", "Date"], `${paidCount} paid invoices · Total: ${fmt(paid)}`);
+  const drillOutstanding = () => openDrill("Outstanding Invoices", invoices.filter(i => i.status !== "paid" && i.status !== "draft").map(i => ({ name: i.customer, code: i.invoice_number, value: fmt(i.amount), extra: i.status })), ["Customer", "Invoice", "Amount", "Status"], `${pendingCount + overdueCount} open invoices · Total owed: ${fmt(unpaid)}`);
+  const drillNet = () => openDrill("Net Position Breakdown", [...accounts.filter(a => a.type === "Revenue").map(a => ({ name: a.name, code: "Revenue", value: fmt(a.balance), extra: "+" })), ...accounts.filter(a => a.type === "Expense").map(a => ({ name: a.name, code: "Expense", value: fmt(a.balance), extra: "-" }))], ["Account", "Type", "Amount", ""], `Revenue: ${fmt(revenue)} · Expenses: ${fmt(expenses)} · Net: ${fmt(net)}`);
+  const drillCustomers = () => openDrill("All Customers", customers.map(c => ({ name: c.name, code: c.type, value: c.phone || "—", extra: c.email || "—" })), ["Name", "Type", "Phone", "Email"], `${customers.length} customers`);
+  const drillProducts = () => openDrill("All Products", products.map(p => ({ name: p.name, code: p.stock_qty + " " + (p.unit||"units"), value: fmt(p.sale_price||0), extra: p.stock_qty <= (p.reorder_level||5) ? "⚠ Low" : "✓ OK" })), ["Product", "Stock", "Price", "Status"], `${products.length} products`);
+  const drillLowStock = () => openDrill("Low Stock Alerts", lowStock.map(p => ({ name: p.name, code: p.stock_qty + " " + (p.unit||"units"), value: fmt(p.sale_price||0), extra: "Reorder: " + (p.reorder_level||5) })), ["Product", "Current Stock", "Price", "Reorder Level"], `${lowStock.length} products need restocking`);
+  const drillCash = () => openDrill("Cash & Bank Accounts", accounts.filter(a => a.type === "Asset").map(a => ({ name: a.name, code: a.code, value: fmt(a.balance), extra: a.type })), ["Account", "Code", "Balance", "Type"], `Total cash: ${fmt(cash)}`);
+  const drillToday = () => openDrill("Today's Sales", invoices.filter(i => i.status === "paid" && i.invoice_date === todayStr).map(i => ({ name: i.customer, code: i.invoice_number, value: fmt(i.amount), extra: i.payment_method || "—" })), ["Customer", "Invoice", "Amount", "Method"], `${invoices.filter(i => i.status==="paid" && i.invoice_date===todayStr).length} sales today · Total: ${fmt(todayRevenue)}`);
+
   // ── AI Insights ──
   const insights = [
     overdueCount > 0 && { icon: "ti-alert-circle", color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
@@ -1691,6 +1706,37 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 
   return (
     <div>
+      {/* ── Drill-down Modal ── */}
+      {drill && (
+        <div className="modal-overlay" onClick={() => setDrill(null)}>
+          <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{drill.title}</div>
+                <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{drill.summary}</div>
+              </div>
+              <button className="btn bo bsm" onClick={() => setDrill(null)}><i className="ti ti-x" /></button>
+            </div>
+            <div className="tw" style={{ maxHeight: 420, overflowY: "auto" }}>
+              <table>
+                <thead><tr>{drill.cols.map(c => <th key={c}>{c}</th>)}</tr></thead>
+                <tbody>
+                  {drill.rows.length === 0 && <tr><td colSpan={drill.cols.length} className="empty">No data</td></tr>}
+                  {drill.rows.map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 600 }}>{row.name}</td>
+                      {row.code !== undefined && <td style={{ color: "var(--text2)", fontSize: 12 }}>{row.code}</td>}
+                      {row.value !== undefined && <td className="mono" style={{ fontWeight: 600 }}>{row.value}</td>}
+                      {row.extra !== undefined && <td style={{ fontSize: 12, color: row.extra === "⚠ Low" ? "var(--red)" : row.extra?.startsWith("✓") ? "var(--green)" : "var(--text2)" }}>{row.extra}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
         <div>
@@ -1712,7 +1758,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       {insights.length > 0 && (
         <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
           {insights.map((ins, i) => (
-            <div key={i} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px" }}>
+            <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <i className={`ti ${ins.icon}`} style={{ color: ins.color, fontSize: 16 }} />
               </div>
@@ -1725,7 +1771,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       {/* ── KPI Row 1 ── */}
       <div className="kgrid" style={{ marginBottom: 14 }}>
         {/* Revenue */}
-        <div className="kpi" style={{ "--kpi-accent": "var(--blue)" }}>
+        <div className="kpi" style={{ "--kpi-accent": "var(--blue)" }} onClick={drillRevenue}>
           <div className="kpi-top">
             <div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div>
             <span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>Total</span>
@@ -1739,7 +1785,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </svg>
         </div>
         {/* Paid */}
-        <div className="kpi" style={{ "--kpi-accent": "var(--green)" }}>
+        <div className="kpi" style={{ "--kpi-accent": "var(--green)" }} onClick={drillPaid}>
           <div className="kpi-top">
             <div className="kpi-icon" style={{ background: "var(--green-lt)" }}><i className="ti ti-circle-check" style={{ color: "var(--green)" }} /></div>
             <span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>{paidCount} invoices</span>
@@ -1753,7 +1799,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </svg>
         </div>
         {/* Outstanding */}
-        <div className="kpi" style={{ "--kpi-accent": "var(--amber)" }}>
+        <div className="kpi" style={{ "--kpi-accent": "var(--amber)" }} onClick={drillOutstanding}>
           <div className="kpi-top">
             <div className="kpi-icon" style={{ background: "var(--amber-lt)" }}><i className="ti ti-clock" style={{ color: "var(--amber)" }} /></div>
             <span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>{pendingCount + overdueCount} open</span>
@@ -1771,7 +1817,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         {/* Net Profit */}
-        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }}>
+        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
           <div className="kpi-top">
             <div className="kpi-icon" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }} /></div>
             <span className="kpi-badge" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: net >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>{net >= 0 ? "Profit" : "Loss"}</span>
@@ -1789,13 +1835,13 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       {/* ── Stat pills row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }} className="stat-pills-grid">
         {[
-          { label: "Customers", val: customers.length, icon: "ti-users", color: "var(--blue)" },
-          { label: "Products", val: products.length, icon: "ti-package", color: "var(--purple)" },
-          { label: "Low Stock", val: lowStock.length, icon: "ti-alert-triangle", color: lowStock.length > 0 ? "var(--red)" : "var(--green)" },
-          { label: "Cash", val: fmt(cash), icon: "ti-building-bank", color: "var(--green)" },
-          { label: "Today's Sales", val: fmt(todayRevenue), icon: "ti-sun", color: "var(--amber)" },
+          { label: "Customers", val: customers.length, icon: "ti-users", color: "var(--blue)", onClick: drillCustomers },
+          { label: "Products", val: products.length, icon: "ti-package", color: "var(--purple)", onClick: drillProducts },
+          { label: "Low Stock", val: lowStock.length, icon: "ti-alert-triangle", color: lowStock.length > 0 ? "var(--red)" : "var(--green)", onClick: drillLowStock },
+          { label: "Cash", val: fmt(cash), icon: "ti-building-bank", color: "var(--green)", onClick: drillCash },
+          { label: "Today's Sales", val: fmt(todayRevenue), icon: "ti-sun", color: "var(--amber)", onClick: drillToday },
         ].map(s => (
-          <div key={s.label} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10 }}>
+          <div key={s.label} onClick={s.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 16 }} />
             </div>
@@ -1849,11 +1895,11 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", boxShadow: "var(--sh)" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Revenue Breakdown</div>
             {[
-              { label: "Collected", val: paid, total: revenue, color: "var(--green)" },
-              { label: "Pending", val: unpaid - overdue, total: revenue, color: "var(--amber)" },
-              { label: "Overdue", val: overdue, total: revenue, color: "var(--red)" },
+              { label: "Collected", val: paid, total: revenue, color: "var(--green)", onClick: drillPaid },
+              { label: "Pending", val: unpaid - overdue, total: revenue, color: "var(--amber)", onClick: drillOutstanding },
+              { label: "Overdue", val: overdue, total: revenue, color: "var(--red)", onClick: drillOutstanding },
             ].map(r => (
-              <div key={r.label} style={{ marginBottom: 10 }}>
+              <div key={r.label} onClick={r.onClick} style={{ marginBottom: 10, cursor: "pointer" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ fontSize: 12, color: "var(--text2)" }}>{r.label}</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: r.color }}>{fmt(r.val)}</span>
