@@ -2941,12 +2941,16 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
     const agentInvs = filteredInv.filter(i => i.created_by === agent.id);
     const productMap = {};
     agentInvs.forEach(inv => {
-      const lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+      let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+      // Fallback for old invoices with no lines - use invoice description or customer
+      if (!lines || lines.length === 0) {
+        lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
+      }
       lines.forEach(l => {
         if (!l.description) return;
         if (!productMap[l.description]) productMap[l.description] = { description: l.description, totalQty: 0, totalValue: 0, invoiceCount: 0 };
-        productMap[l.description].totalQty += parseFloat(l.qty) || 0;
-        productMap[l.description].totalValue += (parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0);
+        productMap[l.description].totalQty += parseFloat(l.qty) || 1;
+        productMap[l.description].totalValue += (parseFloat(l.qty)||1) * (parseFloat(l.unit_price)||0);
         productMap[l.description].invoiceCount += 1;
       });
     });
@@ -2957,7 +2961,8 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
   const globalProductMap = {};
   filteredInv.forEach(inv => {
     const agent = allProfiles.find(a => a.id === inv.created_by);
-    const lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+    let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+    if (!lines || lines.length === 0) lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
     lines.forEach(l => {
       if (!l.description) return;
       if (!globalProductMap[l.description]) globalProductMap[l.description] = { description: l.description, totalQty: 0, totalValue: 0, agents: {} };
