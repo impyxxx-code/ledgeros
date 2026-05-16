@@ -730,19 +730,41 @@ tr:hover td{background:#f8fafd}
 @media(max-width:768px){
   .sidebar{display:none}
   .mob-nav{display:block}
-  .content{padding:14px 14px 76px}
+  .content{padding:12px 12px 76px}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
-  .hm{display:none}
-  .kpi-val{font-size:20px}
+  .hm{display:none!important}
+  .kpi-val{font-size:18px}
+  .kpi{padding:14px 16px}
   .fg,.fg3{grid-template-columns:1fr}
-  .il-line{grid-template-columns:2fr 1fr 1fr 1fr 30px}
-  .il-header{grid-template-columns:2fr 1fr 1fr 1fr 30px}
-  .topbar-search{display:none}
+  .il-line{grid-template-columns:2fr 1fr 1fr 30px}
+  .il-header{grid-template-columns:2fr 1fr 1fr 30px}
+  .topbar-search{display:none!important}
   .inv-header{flex-direction:column;gap:14px}
   .inv-meta,.inv-bank-grid{grid-template-columns:1fr}
-  .modal{max-height:96vh;border-radius:16px}
+  .modal{max-height:96vh;border-radius:16px;margin:0;width:100%}
+  .modal-overlay{padding:0;align-items:flex-end}
+  td{padding:9px 10px;font-size:12px;word-break:break-word}
+  th{padding:8px 10px;font-size:10px}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:400px}
+  .ph{margin-bottom:14px}
+  .pt{font-size:17px}
+  .topbar{padding:0 12px;gap:8px;height:50px}
+  .tb-btn{width:30px;height:30px}
+  .tb-av{width:30px;height:30px;font-size:11px}
+  .content{animation:none}
+  .card{border-radius:12px}
+  .btn{padding:6px 12px;font-size:12px}
+  .bsm{padding:5px 9px;font-size:11px}
+  .quick-actions{gap:6px}
+  .qa-btn{padding:6px 12px;font-size:12px}
+  .welcome-h{font-size:18px}
+  .g23{grid-template-columns:1fr}
+  .stat-pills-grid{grid-template-columns:1fr 1fr!important}
+  .kgrid{grid-template-columns:1fr 1fr}
+  .ai-widget{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
 }
 @media(min-width:769px){.mob-nav{display:none!important}}
 
@@ -1743,7 +1765,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       </div>
 
       {/* ── Stat pills row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }} className="stat-pills-grid">
         {[
           { label: "Customers", val: customers.length, icon: "ti-users", color: "var(--blue)" },
           { label: "Products", val: products.length, icon: "ti-package", color: "var(--purple)" },
@@ -2354,12 +2376,18 @@ function AgentReport({ invoices, allProfiles, contacts }) {
       </div>
       <div className="card">
         <div className="ch"><div className="ct">Invoice Detail</div><div className="cs">{displayInvoices.length} records</div></div>
-        <div className="tw"><table><thead><tr><th>Invoice #</th><th>Customer</th><th>Agent</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+        <div className="tw"><table><thead><tr><th>Customer</th><th className="hm">Agent</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
           {displayInvoices.slice(0, 50).map(inv => {
             const agent = allProfiles.find(a => a.id === inv.created_by);
-            return <tr key={inv.id}><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontWeight: 500 }}>{inv.customer}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{agent?.full_name || "—"}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td></tr>;
+            return <tr key={inv.id}>
+              <td><div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number}</div></td>
+              <td className="hm" style={{ fontSize: 12, color: "var(--text2)", whiteSpace: "nowrap" }}>{agent?.full_name || "—"}</td>
+              <td className="hm" style={{ fontSize: 12, color: "var(--text2)", whiteSpace: "nowrap" }}>{fmtDate(inv.invoice_date)}</td>
+              <td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td>
+              <td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
+            </tr>;
           })}
-          {displayInvoices.length === 0 && <tr><td colSpan={6} className="empty">No invoices for this period</td></tr>}
+          {displayInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices for this period</td></tr>}
         </tbody></table></div>
       </div>
     </div>
@@ -3032,7 +3060,7 @@ export default function App() {
         <div className="main">
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
-              <img src={LOGO} alt="Arkham Retail" style={{ width: 110, height: 32, borderRadius: 6, objectFit: "contain" }} />
+              <img src={LOGO} alt="Arkham Retail" style={{ width: 90, height: 26, borderRadius: 6, objectFit: "contain" }} />
             </div>
             <div className="search-wrap topbar-search" style={{ position: "relative" }}>
               <i className="ti ti-search" />
