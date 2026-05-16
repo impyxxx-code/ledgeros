@@ -814,9 +814,160 @@ tr:hover td{background:#f8fafd}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#d0d7e2;border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ── Dark Mode ── */
+.dark-mode{
+  --bg:#0d1117;--bg2:#161b22;--white:#1c2128;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --border:#30363d;--border2:#3d444d;
+  --sidebar:#010409;--sidebar-border:rgba(255,255,255,.04);
+  --sidebar-hover:rgba(255,255,255,.04);
+  --blue-lt:#1c2a4a;--green-lt:#0d2818;--amber-lt:#2a1f00;
+  --red-lt:#2a0d0d;--purple-lt:#1a1535;
+}
+.dark-mode .topbar{background:rgba(22,27,34,.95)}
+.dark-mode .card{background:var(--white);border-color:var(--border)}
+.dark-mode .kpi{background:var(--white)}
+.dark-mode th{background:#161b22}
+.dark-mode tr:hover td{background:#161b22}
+.dark-mode .modal{background:#1c2128}
+.dark-mode .modal-header,.dark-mode .modal-actions{background:rgba(28,33,40,.95)}
+.dark-mode input,.dark-mode select,.dark-mode textarea{background:#161b22;border-color:var(--border);color:var(--text)}
+.dark-mode .il-input{background:#161b22;border-color:var(--border);color:var(--text)}
+.dark-mode .search-input{background:#161b22;color:var(--text)}
+.dark-mode .ff{background:#161b22}
+.dark-mode .ch{background:#1c2128}
+
+/* ── Skeleton Loader ── */
+.skel{
+  background:linear-gradient(90deg,#f0f3f8 25%,#e4e8f0 50%,#f0f3f8 75%);
+  background-size:400% 100%;
+  animation:shimmer 1.4s ease-in-out infinite;
+  border-radius:6px;display:inline-block;
+}
+.dark-mode .skel{
+  background:linear-gradient(90deg,#21262d 25%,#2d333b 50%,#21262d 75%);
+  background-size:400% 100%;
+}
+.skel-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+
+/* ── Onboarding ── */
+.onboard-overlay{position:fixed;inset:0;background:rgba(10,14,26,.7);z-index:800;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);animation:fadeIn .2s var(--ease)}
+.onboard-card{background:var(--white);border-radius:24px;padding:40px;max-width:520px;width:90%;box-shadow:var(--sh3);animation:scaleIn .25s var(--ease)}
+.onboard-step{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.onboard-step:last-child{border-bottom:none}
+.onboard-check{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+
+/* ── Empty States ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center}
+.empty-state-icon{font-size:52px;margin-bottom:16px;opacity:.25}
+.empty-state-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
+.empty-state-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:280px;margin-bottom:20px}
+
+/* ── Version badge ── */
+.version-badge{font-size:10px;color:rgba(255,255,255,.2);padding:2px 8px;border:1px solid rgba(255,255,255,.08);border-radius:20px;display:inline-block;margin-top:4px}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
+// ── Skeleton Table Rows ───────────────────────────────────────────────────────
+function SkeletonTable({ rows = 5, cols = 4 }) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>{Array(cols).fill(0).map((_, i) => <th key={i}><div className="skel" style={{ width: ["60%","40%","30%","25%"][i] || "30%", height: 12 }} /></th>)}</tr>
+      </thead>
+      <tbody>
+        {Array(rows).fill(0).map((_, r) => (
+          <tr key={r}>
+            {Array(cols).fill(0).map((_, c) => (
+              <td key={c} style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+                {c === 0 ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div className="skel" style={{ width: 30, height: 30, borderRadius: "50%" }} />
+                    <div className="skel" style={{ width: "60%", height: 13 }} />
+                  </div>
+                ) : (
+                  <div className="skel" style={{ width: ["50%","35%","45%","30%"][c] || "40%", height: 13 }} />
+                )}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ── Illustrated Empty State ───────────────────────────────────────────────────
+function EmptyState({ icon, title, sub, action, actionLabel }) {
+  const icons = {
+    invoice: "🧾", customer: "👥", product: "📦", delivery: "🚚",
+    report: "📊", stock: "🏭", search: "🔍", activity: "📋",
+    default: "✨"
+  };
+  return (
+    <div className="empty-state">
+      <div className="empty-state-icon">{icons[icon] || icons.default}</div>
+      <div className="empty-state-title">{title}</div>
+      <div className="empty-state-sub">{sub}</div>
+      {action && <button className="btn bp" onClick={action}><i className="ti ti-plus" />{actionLabel || "Get started"}</button>}
+    </div>
+  );
+}
+
+// ── Onboarding Checklist ──────────────────────────────────────────────────────
+function OnboardingChecklist({ onClose, invoices, contacts, products, setPage }) {
+  const steps = [
+    { key: "profile",  icon: "ti-user",          label: "Set up your profile",          done: true,                                     page: null },
+    { key: "customer", icon: "ti-users",          label: "Add your first customer",      done: contacts.length > 0,                      page: "contacts" },
+    { key: "product",  icon: "ti-package",        label: "Add products to inventory",    done: products.length > 0,                      page: "inventory" },
+    { key: "invoice",  icon: "ti-file-invoice",   label: "Create your first invoice",    done: invoices.length > 0,                      page: "invoices" },
+    { key: "delivery", icon: "ti-truck-delivery", label: "Send a delivery note",         done: false,                                    page: "delivery-notes" },
+    { key: "report",   icon: "ti-chart-bar",      label: "Explore Reports Suite",        done: false,                                    page: "admin-reports" },
+  ];
+  const completed = steps.filter(s => s.done).length;
+  const pct = Math.round((completed / steps.length) * 100);
+
+  return (
+    <div className="onboard-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="onboard-card">
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.5px", marginBottom: 4 }}>Get started with LedgerOS 🚀</div>
+            <div style={{ fontSize: 13, color: "var(--text2)" }}>{completed} of {steps.length} steps completed</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: 20 }}><i className="ti ti-x" /></button>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", marginBottom: 24 }}>
+          <div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg,var(--blue),#7c3aed)", borderRadius: 3, transition: "width .5s var(--ease)" }} />
+        </div>
+
+        {/* Steps */}
+        {steps.map(step => (
+          <div key={step.key} className="onboard-step" style={{ cursor: step.page ? "pointer" : "default" }} onClick={() => { if (step.page) { setPage(step.page); onClose(); } }}>
+            <div className="onboard-check" style={{ background: step.done ? "var(--green-lt)" : "var(--border)", color: step.done ? "var(--green)" : "var(--text3)" }}>
+              <i className={"ti " + (step.done ? "ti-check" : step.icon)} style={{ fontSize: 13 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: step.done ? "var(--text3)" : "var(--text)", textDecoration: step.done ? "line-through" : "none" }}>{step.label}</div>
+            </div>
+            {!step.done && step.page && <i className="ti ti-arrow-right" style={{ color: "var(--text3)", fontSize: 14 }} />}
+            {step.done && <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 18 }} />}
+          </div>
+        ))}
+
+        <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button className="btn bo" onClick={onClose}>Maybe later</button>
+          <button className="btn bp" onClick={onClose}>Let\'s go! 🎉</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Auth({ onAuth }) {
   const [mode, setMode] = useState("signin");
   const [f, setF] = useState({ email: "", password: "", full_name: "" });
@@ -876,10 +1027,23 @@ function Auth({ onAuth }) {
             <input type="password" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && go()} />
           </div>
           <button style={{ width: "100%", padding: "13px", background: "var(--blue)", color: "#fff", fontWeight: 700, fontSize: 15, border: "none", borderRadius: "var(--r)", cursor: "pointer", fontFamily: "var(--sans)", transition: "background .15s", boxShadow: "var(--sh-blue)" }} onClick={go} disabled={loading}>
-            {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
+            {loading ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><div className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />Please wait...</span> : mode === "signin" ? "Sign In →" : "Create Account →"}
           </button>
           <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text2)" }}>
             {mode === "signin" ? <>No account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signup")}>Sign up free</span></> : <>Have account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signin")}>Sign in</span></>}
+          </div>
+          {/* Trust badges */}
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+            {[
+              { icon: "ti-lock", label: "256-bit SSL" },
+              { icon: "ti-shield-check", label: "Secured by Supabase" },
+              { icon: "ti-server", label: "UK Data Storage" },
+            ].map(b => (
+              <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--text3)" }}>
+                <i className={"ti " + b.icon} style={{ fontSize: 13, color: "var(--text3)" }} />
+                <span>{b.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -2212,7 +2376,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
               </td>
             </tr>
           ))}
-          {filtered.length === 0 && <tr><td colSpan={7} className="empty">{searchQ || filterStatus !== "all" ? "No invoices match your filter" : "No invoices yet — create your first one!"}</td></tr>}
+          {filtered.length === 0 && <tr><td colSpan={7}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} /></td></tr>}
         </tbody></table></div>
       </div>
     </div>
@@ -3096,7 +3260,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                 </tr>
               );
             })}
-            {dns.length === 0 && <tr><td colSpan={7} className="empty">No delivery notes yet — create your first one!</td></tr>}
+            {dns.length === 0 && <tr><td colSpan={7}><EmptyState icon="delivery" title="No delivery notes yet" sub="Create a delivery note after generating an invoice" /></td></tr>}
           </tbody>
         </table></div>
       </div>
@@ -3322,6 +3486,8 @@ export default function App() {
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("ledgeros_dark") === "1");
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [dismissedNotifs, setDismissedNotifs] = useState(() => {
@@ -3454,6 +3620,17 @@ export default function App() {
   }, [auth]);
 
   const signOut = async () => { await sb.signOut(auth.token); setAuth(null); };
+
+  // Show onboarding for new users (first login)
+  useEffect(() => {
+    if (auth && !loading) {
+      const seen = localStorage.getItem("ledgeros_onboarded");
+      if (!seen) {
+        setTimeout(() => setShowOnboarding(true), 800);
+        localStorage.setItem("ledgeros_onboarded", "1");
+      }
+    }
+  }, [auth, loading]);
   const initials = (profile?.full_name||auth?.user?.email||"U")[0]?.toUpperCase();
 
   if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} /></>;
@@ -3461,7 +3638,7 @@ export default function App() {
   return (
     <>
       <style>{CSS}</style>
-      <div className="app">
+      <div className={"app" + (darkMode ? " dark-mode" : "")}>
         <aside className="sidebar">
           <div className="sidebar-logo" style={{ paddingBottom: 20 }}>
             <img src={LOGO} alt="Arkham Retail" style={{ width: 190, height: 54, objectFit: "contain", borderRadius: 8 }} />
@@ -3475,6 +3652,14 @@ export default function App() {
             {NAV.slice(5).map(n => <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} />{n.label}</div>)}
           </div>
           <div className="nav-bottom">
+            {/* Dark mode + version */}
+            <div style={{ padding: "6px 12px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", padding: "4px 0" }} onClick={() => { const next = !darkMode; setDarkMode(next); localStorage.setItem("ledgeros_dark", next?"1":"0"); }}>
+                <i className={"ti " + (darkMode ? "ti-sun" : "ti-moon")} style={{ color: "rgba(255,255,255,.35)", fontSize: 14 }} />
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)", fontWeight: 500 }}>{darkMode ? "Light mode" : "Dark mode"}</span>
+              </div>
+              <span className="version-badge">v2.0</span>
+            </div>
             <div className="user-row">
               <div className="user-av">{initials}</div>
               <div><div className="user-name">{profile?.full_name||auth.user.email}</div><div className="user-role">{profile?.role||"agent"}</div></div>
@@ -3571,10 +3756,11 @@ export default function App() {
               })()}
             </div>
             <div className="topbar-right">
-              <span className="tb-role">{profile?.role||"agent"}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: realtimeStatus==="live" ? "var(--green-lt)" : realtimeStatus==="offline" ? "var(--red-lt)" : "var(--amber-lt)", border: `1px solid ${realtimeStatus==="live" ? "#86efac" : realtimeStatus==="offline" ? "#fca5a5" : "#fcd34d"}` }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: realtimeStatus==="live" ? "var(--green)" : realtimeStatus==="offline" ? "var(--red)" : "var(--amber)", animation: realtimeStatus==="live" ? "pulse 2s ease-in-out infinite" : "none" }} />
-                <span style={{ fontSize: 10, fontWeight: 600, color: realtimeStatus==="live" ? "var(--green-dk)" : realtimeStatus==="offline" ? "var(--red-dk)" : "var(--amber-dk)" }} className="hm">{realtimeStatus==="live" ? "Live" : realtimeStatus==="offline" ? "Offline" : "Connecting..."}</span>
+              <span className="tb-role hm">{profile?.role||"agent"}</span>
+              {/* Live status dot */}
+              <div title={realtimeStatus==="live"?"Real-time connected":"Reconnecting..."} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: realtimeStatus==="live" ? "var(--green-lt)" : "var(--amber-lt)", border: `1px solid ${realtimeStatus==="live" ? "#86efac" : "#fcd34d"}`, cursor: "default" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: realtimeStatus==="live" ? "var(--green)" : "var(--amber)", animation: realtimeStatus==="live" ? "pulse 2s ease-in-out infinite" : "none" }} />
+                <span className="hm" style={{ fontSize: 10, fontWeight: 600, color: realtimeStatus==="live" ? "var(--green-dk)" : "var(--amber-dk)" }}>{realtimeStatus==="live" ? "Live" : "Syncing..."}</span>
               </div>
               {(() => {
                 const notifs = [
@@ -3627,6 +3813,7 @@ export default function App() {
                   </div>
                 );
               })()}
+              <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><i className="ti ti-rocket" /></div>
               <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
               <button onClick={async () => {
                 setShowActivity(v => {
@@ -3651,7 +3838,27 @@ export default function App() {
           </div>
           <div className="content">
             {loading ? (
-              <div className="loading"><div className="spin" /><span>Loading your data...</span></div>
+              <div style={{ padding: "24px 28px" }}>
+                {/* Skeleton KPI cards */}
+                <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "18px 20px", boxShadow: "var(--sh)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+                      <div className="skel" style={{ width: 38, height: 38, borderRadius: 10 }} />
+                      <div className="skel" style={{ width: 60, height: 22, borderRadius: 20 }} />
+                    </div>
+                    <div className="skel" style={{ width: "55%", height: 24, marginBottom: 8 }} />
+                    <div className="skel" style={{ width: "40%", height: 13 }} />
+                  </div>)}
+                </div>
+                {/* Skeleton table */}
+                <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", overflow: "hidden", boxShadow: "var(--sh)" }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between" }}>
+                    <div className="skel" style={{ width: 140, height: 16 }} />
+                    <div className="skel" style={{ width: 90, height: 30, borderRadius: "var(--r)" }} />
+                  </div>
+                  <SkeletonTable rows={6} cols={5} />
+                </div>
+              </div>
             ) : (
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
@@ -3672,6 +3879,7 @@ export default function App() {
             )}
           </div>
         </div>
+        {showOnboarding && <OnboardingChecklist onClose={() => setShowOnboarding(false)} invoices={invoices} contacts={contacts} products={products} setPage={setPage} />}
         {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         {showActivity && (
           <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
