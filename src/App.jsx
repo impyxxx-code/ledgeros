@@ -43,6 +43,24 @@ const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency:
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const today = () => new Date().toISOString().split("T")[0];
 
+// ── Send email via Vercel API + SendGrid ──────────────────────────────────────
+const sendEmail = async ({ to, subject, html }) => {
+  try {
+    const res = await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, subject, html })
+    });
+    const data = await res.json();
+    if (data.success) return { success: true };
+    throw new Error(data.error || "Send failed");
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+};
+
+const buildInvoiceEmailHtml = (invoice, lines, subtotal, vatTotal, total) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:20px}.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}.header{background:#0b1120;padding:28px 32px}.header-title{color:#fff;font-size:20px;font-weight:700}.header-sub{color:rgba(255,255,255,.5);font-size:12px;margin-top:2px}.body{padding:32px}.badge{background:#eff4ff;color:#2563eb;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px}.amount{font-size:32px;font-weight:800;color:#0b1120;margin:8px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.meta-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}.meta-val{font-size:13px;font-weight:600;color:#0b1120}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#2563eb;color:#fff;padding:10px 14px;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.5px}td{padding:10px 14px;border-bottom:1px solid #f0f3f8;font-size:13px}.tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.balance{border-top:2px solid #0b1120;margin-top:8px;padding-top:10px;font-size:16px;font-weight:700}.bank{background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.bank-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}.bank-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;margin-bottom:3px}.bank-val{font-size:13px;font-weight:600}.footer{background:#f8fafd;padding:16px 32px;text-align:center;font-size:11px;color:#9aa5b4;border-top:1px solid #e5e9f0}</style></head><body><div class="wrap"><div class="header"><div class="header-title">Arkham Retail Ltd</div><div class="header-sub">VAT Invoice</div></div><div class="body"><div class="badge">Invoice \${invoice.invoice_number}</div><div style="font-size:14px;color:#5c677d;margin-bottom:4px">Amount due from <strong>\${invoice.customer}</strong></div><div class="amount">\${fmt(total)}</div><div class="meta"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">\${invoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">\${fmtDate(invoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">\${fmtDate(invoice.due_date)}</div></div><div><div class="meta-lbl">Status</div><div class="meta-val">\${(invoice.status||"pending").toUpperCase()}</div></div></div><table><thead><tr><th style="width:45%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>\${lines.map(l=>\`<tr><td style="font-weight:600">\${l.description}</td><td>\${l.vat_rate===0?"Exempt":l.vat_rate+"% S"}</td><td style="text-align:right">\${l.qty}</td><td style="text-align:right">\${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">\${fmt(l.qty*l.unit_price)}</td></tr>\`).join("")}</tbody></table><div style="width:260px;margin-left:auto"><div class="tot-row"><span style="color:#5c677d">Subtotal</span><span>\${fmt(subtotal)}</span></div><div class="tot-row"><span style="color:#5c677d">VAT Total</span><span>\${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">\${fmt(total)}</span></div></div><div class="bank"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Payment Details</div><div style="font-size:12px;color:#5c677d;margin-bottom:8px">Please use the invoice number as your reference.</div><div class="bank-grid"><div><div class="bank-lbl">Bank</div><div class="bank-val">Tide Bank</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">04-06-05</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">23058246</div></div></div></div><p style="font-size:12px;color:#9aa5b4">VAT Reg: GB462229106 · All goods remain our property until payment received in full.</p></div><div class="footer">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW · ARKHAMRETAIL@GMAIL.COM</div></div></body></html>`;
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css');
@@ -990,14 +1008,23 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
     setShowWaInput(false);
   };
 
-  const handleEmail = () => {
-    const subject = encodeURIComponent(`Invoice ${invoice.invoice_number} — ${COMPANY.name}`);
-    const body = encodeURIComponent(
-      `Dear ${invoice.customer},\n\nPlease find your invoice details below.\n\nInvoice: ${invoice.invoice_number}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
-      lines.map(l => `${l.description} (x${l.qty}) — ${fmt(l.qty * l.unit_price)}`).join("\n") +
-      `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\nTotal Due: ${fmt(total)}\n\nPayment Details:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAccount: ${COMPANY.accountNumber}\nReference: ${invoice.invoice_number}\n\nThank you for your business.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
-    );
-    window.open(`mailto:?subject=${subject}&body=${body}`);
+  const [emailStatus, setEmailStatus] = useState(null); // null | "sending" | "sent" | "error"
+  const handleEmail = async () => {
+    const customerContact = contacts.find(c => c.name === invoice.customer);
+    const toEmail = customerContact?.email;
+    if (!toEmail) {
+      alert(`No email address found for ${invoice.customer}. Please add one in Customers first.`);
+      return;
+    }
+    setEmailStatus("sending");
+    const html = buildInvoiceEmailHtml(invoice, lines, subtotal, vatTotal, total);
+    const result = await sendEmail({
+      to: toEmail,
+      subject: `Invoice ${invoice.invoice_number} — ${COMPANY.name}`,
+      html
+    });
+    setEmailStatus(result.success ? "sent" : "error");
+    setTimeout(() => setEmailStatus(null), 4000);
   };
 
   // Timeline events derived from invoice data
@@ -1199,7 +1226,10 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               {savedPhone && <button className="btn bwa bsm" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />{savedPhone}</button>}
-              <button className="btn bo bsm" onClick={handleEmail}><i className="ti ti-mail" />Email</button>
+              <button className="btn bo bsm" onClick={handleEmail} disabled={emailStatus==="sending"} style={{color:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined,borderColor:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined}}>
+                <i className={"ti "+(emailStatus==="sending"?"ti-loader-2":emailStatus==="sent"?"ti-circle-check":emailStatus==="error"?"ti-alert-circle":"ti-mail")} style={{animation:emailStatus==="sending"?"spin .7s linear infinite":undefined}} />
+                {emailStatus==="sending"?"Sending...":emailStatus==="sent"?"Sent!":emailStatus==="error"?"Failed":"Email"}
+              </button>
               <button className="btn bp bsm" onClick={handlePrint}><i className="ti ti-printer" />Print</button>
             </div>
           </div>
