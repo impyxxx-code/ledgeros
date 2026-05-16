@@ -2937,8 +2937,17 @@ function AgentReport({ invoices, allProfiles, contacts }) {
 function AgentProductsReport({ invoices, allProfiles, period, filteredInv, periodLabels }) {
   const [selectedAgent, setSelectedAgent] = useState("all");
 
-  const agentData = allProfiles.map(agent => {
-    const agentInvs = filteredInv.filter(i => i.created_by === agent.id);
+  // Include ALL invoices - even those not matching a profile
+  const knownIds = new Set(allProfiles.map(a => a.id));
+  const unknownInvs = filteredInv.filter(i => !knownIds.has(i.created_by));
+  const profilesWithUnknown = unknownInvs.length > 0
+    ? [...allProfiles, { id: "unknown", full_name: "Other / Unknown" }]
+    : allProfiles;
+
+  const agentData = profilesWithUnknown.map(agent => {
+    const agentInvs = agent.id === "unknown"
+      ? unknownInvs
+      : filteredInv.filter(i => i.created_by === agent.id);
     const productMap = {};
     agentInvs.forEach(inv => {
       let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
@@ -2960,7 +2969,7 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
 
   const globalProductMap = {};
   filteredInv.forEach(inv => {
-    const agent = allProfiles.find(a => a.id === inv.created_by);
+    const agent = allProfiles.find(a => a.id === inv.created_by) || { full_name: "Other" };
     let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
     if (!lines || lines.length === 0) lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
     lines.forEach(l => {
@@ -3356,7 +3365,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         {lowStockItems.length > 0 && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct" style={{color:"var(--red)"}}>⚠️ Low Stock — {lowStockItems.length} items</div></div><div className="tw"><table><thead><tr><th>Product</th><th>In Stock</th><th>Reorder At</th><th>Est. Cost to Restock</th></tr></thead><tbody>{lowStockItems.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono tr-c" style={{fontWeight:600}}>{p.stock_qty}</td><td className="mono">{p.reorder_level}</td><td className="mono">{fmt(Math.max(0,p.reorder_level*2-p.stock_qty)*p.cost_price)}</td></tr>)}</tbody></table></div></div>}
         <div className="card"><div className="ch"><div className="ct">Stock by Category</div></div><div className="tw"><table><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th><th>Low Stock</th></tr></thead><tbody>{catData.map(c => <tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono">{c.products}</td><td className="mono">{fmt(c.stockValue)}</td><td className="mono tg">{fmt(c.retailValue)}</td><td><span style={{color:c.stockValue>0&&Math.round((c.retailValue-c.stockValue)/c.retailValue*100)>30?"var(--green)":"var(--amber)",fontWeight:600,fontSize:12}}>{c.stockValue>0?Math.round((c.retailValue-c.stockValue)/c.retailValue*100):0}%</span></td><td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td></tr>)}</tbody></table></div></div>
       </div>}
-      {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={filteredInv} periodLabels={periodLabels} />}
+      {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={period === "month" && filteredInv.length === 0 ? invoices : filteredInv} periodLabels={periodLabels} />}
     </div>
   );
 }
