@@ -2504,7 +2504,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         </div>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setTab(k)}>{l}</button>)}
+        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setTab(k)}>{l}</button>)}
       </div>
       {tab==="overview" && <div>
         <div className="kgrid">
@@ -2538,6 +2538,202 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       </div>}
       {tab==="customers" && <div className="card"><div className="ch"><div className="ct">Customer Sales</div><div className="cs">{periodLabels[period]} · {customerSales.length} customers</div></div><div className="tw"><table><thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{customerSales.slice(0,50).map((c,i) => <tr key={c.name}><td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td><td style={{fontWeight:500}}>{c.name}</td><td className="mono">{c.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td><td className="mono tg">{fmt(c.paid)}</td><td className="mono" style={{color:c.total-c.paid>0?"var(--red)":"var(--green)"}}>{fmt(c.total-c.paid)}</td></tr>)}{customerSales.length===0&&<tr><td colSpan={6} className="empty">No sales data</td></tr>}</tbody></table></div></div>}
       {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw"><table><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+i.amount,0); const agPaid=agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
+      {tab==="pl" && (() => {
+        const revenue = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
+        const vat = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+(i.vat_total||0),0);
+        const netRevenue = revenue - vat;
+        const cogs = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
+        const grossProfit = netRevenue - cogs;
+        const grossMargin = netRevenue > 0 ? Math.round((grossProfit/netRevenue)*100) : 0;
+        const expenses = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
+        const netProfit = grossProfit - expenses;
+        const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
+        return (
+          <div>
+            <div className="g4" style={{marginBottom:20}}>
+              {[{l:"Net Revenue",v:fmt(netRevenue),c:"var(--blue)"},{l:"Gross Profit",v:fmt(grossProfit),c:"var(--green)"},{l:"Net Profit",v:fmt(netProfit),c:netProfit>=0?"var(--green)":"var(--red)"},{l:"Net Margin",v:netMargin+"%",c:netProfit>=0?"var(--green)":"var(--red)"}].map(k=>(
+                <div key={k.l} className="kpi" style={{marginBottom:0}}><div className="kpi-label">{k.l}</div><div className="kpi-val" style={{color:k.c}}>{k.v}</div></div>
+              ))}
+            </div>
+            <div className="card">
+              <div className="ch"><div className="ct">Profit & Loss Statement</div><div className="cs">{periodLabels[period]}</div></div>
+              <div className="rs-title">Revenue</div>
+              <div className="rrow"><span>Gross Sales</span><span className="mono">{fmt(revenue)}</span></div>
+              <div className="rrow indent"><span>Less: VAT</span><span className="mono tr-c">({fmt(vat)})</span></div>
+              <div className="rrow subtotal"><span>Net Revenue</span><span className="mono">{fmt(netRevenue)}</span></div>
+              <div className="rs-title">Cost of Goods Sold</div>
+              <div className="rrow"><span>Stock Cost Value</span><span className="mono tr-c">({fmt(cogs)})</span></div>
+              <div className="rrow subtotal"><span style={{fontWeight:700}}>Gross Profit</span><span className="mono tg">{fmt(grossProfit)}</span></div>
+              <div className="rrow indent"><span style={{color:"var(--text3)"}}>Gross Margin</span><span style={{color:"var(--green)",fontWeight:600}}>{grossMargin}%</span></div>
+              <div className="rs-title">Operating Expenses</div>
+              {accounts.filter(a=>a.type==="Expense").map(a=>(<div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tr-c">({fmt(a.balance)})</span></div>))}
+              <div className="rrow subtotal"><span>Total Expenses</span><span className="mono tr-c">({fmt(expenses)})</span></div>
+              <div className="rrow total"><span style={{color:netProfit>=0?"var(--green)":"var(--red)"}}>Net {netProfit>=0?"Profit":"Loss"}</span><span className="mono" style={{color:netProfit>=0?"var(--green)":"var(--red)"}}>{fmt(Math.abs(netProfit))}</span></div>
+              <div className="rrow indent"><span style={{color:"var(--text3)"}}>Net Margin</span><span style={{color:netProfit>=0?"var(--green)":"var(--red)",fontWeight:600}}>{netMargin}%</span></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {tab==="aged-debtors" && (() => {
+        const nowD = new Date();
+        const unpaidInv = invoices.filter(i=>i.status!=="paid"&&i.status!=="draft"&&i.status!=="cancelled");
+        const age = inv => Math.floor((nowD - new Date(inv.due_date||inv.invoice_date)) / 86400000);
+        const buckets = [
+          {label:"Current",    color:"var(--green)", invs: unpaidInv.filter(i=>age(i)<=0)},
+          {label:"1–30 days",  color:"var(--amber)", invs: unpaidInv.filter(i=>age(i)>0&&age(i)<=30)},
+          {label:"31–60 days", color:"#f97316",      invs: unpaidInv.filter(i=>age(i)>30&&age(i)<=60)},
+          {label:"61–90 days", color:"var(--red)",   invs: unpaidInv.filter(i=>age(i)>60&&age(i)<=90)},
+          {label:"90+ days",   color:"#7f1d1d",      invs: unpaidInv.filter(i=>age(i)>90)},
+        ];
+        const total = unpaidInv.reduce((s,i)=>s+i.amount,0);
+        const customerBuckets = [...new Set(unpaidInv.map(i=>i.customer))].map(cust=>({
+          name:cust,
+          current:buckets[0].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+          d30:buckets[1].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+          d60:buckets[2].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+          d90:buckets[3].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+          d90p:buckets[4].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+          total:unpaidInv.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+        })).sort((a,b)=>b.total-a.total);
+        return (
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
+              {buckets.map(b=>(
+                <div key={b.label} className="kpi" style={{marginBottom:0}}>
+                  <div className="kpi-label" style={{fontSize:11}}>{b.label}</div>
+                  <div className="kpi-val" style={{color:b.color,fontSize:18}}>{fmt(b.invs.reduce((s,i)=>s+i.amount,0))}</div>
+                  <div style={{fontSize:11,color:"var(--text3)",marginTop:4}}>{b.invs.length} invoice{b.invs.length!==1?"s":""}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card">
+              <div className="ch"><div className="ct">Aged Debtors Report</div><div className="cs">Total outstanding: {fmt(total)}</div></div>
+              <div className="tw"><table>
+                <thead><tr><th>Customer</th><th>Current</th><th>1–30 Days</th><th className="hm">31–60 Days</th><th className="hm">61–90 Days</th><th className="hm">90+ Days</th><th>Total</th></tr></thead>
+                <tbody>
+                  {customerBuckets.map(c=>(<tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono" style={{color:"var(--green)"}}>{c.current>0?fmt(c.current):"—"}</td><td className="mono" style={{color:"var(--amber)"}}>{c.d30>0?fmt(c.d30):"—"}</td><td className="mono hm" style={{color:"#f97316"}}>{c.d60>0?fmt(c.d60):"—"}</td><td className="mono hm" style={{color:"var(--red)"}}>{c.d90>0?fmt(c.d90):"—"}</td><td className="mono hm" style={{color:"#7f1d1d"}}>{c.d90p>0?fmt(c.d90p):"—"}</td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(c.total)}</td></tr>))}
+                  {customerBuckets.length===0&&<tr><td colSpan={7} className="empty">No outstanding invoices 🎉</td></tr>}
+                </tbody>
+              </table></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {tab==="aged-creditors" && (() => {
+        const suppliers = contacts.filter(c=>c.type==="supplier"||c.type==="both");
+        const supplierAccounts = accounts.filter(a=>a.type==="Liability"||a.type==="Payable");
+        const totalOwed = supplierAccounts.reduce((s,a)=>s+a.balance,0);
+        return (
+          <div>
+            <div className="g3" style={{marginBottom:20}}>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Suppliers</div><div className="kpi-val">{suppliers.length}</div></div>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Owed</div><div className="kpi-val tr-c">{fmt(totalOwed)}</div></div>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Liability Accounts</div><div className="kpi-val">{supplierAccounts.length}</div></div>
+            </div>
+            <div className="card">
+              <div className="ch"><div className="ct">Aged Creditors Report</div><div className="cs">What you owe suppliers</div></div>
+              <div className="tw"><table>
+                <thead><tr><th>Supplier / Account</th><th>Type</th><th>Balance Owed</th><th>Status</th></tr></thead>
+                <tbody>
+                  {supplierAccounts.map(a=>(<tr key={a.id}><td style={{fontWeight:600}}>{a.name}</td><td><span className="tag" style={{fontSize:10}}>{a.type}</span></td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(a.balance)}</td><td><span className={"badge "+(a.balance>0?"b-red":"b-green")}>{a.balance>0?"Outstanding":"Clear"}</span></td></tr>))}
+                  {suppliers.filter(s=>!supplierAccounts.find(a=>a.name===s.name)).map(s=>(<tr key={s.id}><td style={{fontWeight:600}}>{s.name}</td><td><span className="tag" style={{fontSize:10}}>Supplier</span></td><td className="mono" style={{color:"var(--text3)"}}>£0.00</td><td><span className="badge b-green">Clear</span></td></tr>))}
+                  {supplierAccounts.length===0&&suppliers.length===0&&<tr><td colSpan={4} className="empty">No supplier data</td></tr>}
+                </tbody>
+              </table></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {tab==="cashflow" && (() => {
+        const cfMonths = Array.from({length:6},(_,i)=>{
+          const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
+          const lbl = d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
+          const inflow = invoices.filter(inv=>{const id=new Date(inv.invoice_date||inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status==="paid";}).reduce((s,i)=>s+i.amount,0);
+          const pending = invoices.filter(inv=>{const id=new Date(inv.invoice_date||inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid";}).reduce((s,i)=>s+i.amount,0);
+          const exp = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance/12,0);
+          return {lbl, inflow, pending, expenses:Math.round(exp), net:inflow-Math.round(exp)};
+        });
+        const totalInflow = cfMonths.reduce((s,m)=>s+m.inflow,0);
+        const totalExp = cfMonths.reduce((s,m)=>s+m.expenses,0);
+        const totalNet = totalInflow - totalExp;
+        const maxVal = Math.max(...cfMonths.map(m=>Math.max(m.inflow,m.expenses)),1);
+        return (
+          <div>
+            <div className="g3" style={{marginBottom:20}}>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":"var(--green)"}}><div className="kpi-label">6-Month Inflow</div><div className="kpi-val tg">{fmt(totalInflow)}</div></div>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":"var(--red)"}}><div className="kpi-label">6-Month Expenses</div><div className="kpi-val tr-c">{fmt(totalExp)}</div></div>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":totalNet>=0?"var(--green)":"var(--red)"}}><div className="kpi-label">Net Cash Flow</div><div className="kpi-val" style={{color:totalNet>=0?"var(--green)":"var(--red)"}}>{fmt(totalNet)}</div></div>
+            </div>
+            <div className="card">
+              <div className="ch"><div className="ct">Cash Flow — Last 6 Months</div></div>
+              <div style={{padding:"20px",display:"flex",alignItems:"flex-end",gap:10,height:160}}>
+                {cfMonths.map((m,i)=>(
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}>
+                    <div style={{width:"100%",display:"flex",gap:2,alignItems:"flex-end",justifyContent:"center"}}>
+                      <div style={{flex:1,background:"var(--green)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.inflow/maxVal)*120)+"px",opacity:.85}} />
+                      <div style={{flex:1,background:"var(--red)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.expenses/maxVal)*120)+"px",opacity:.7}} />
+                    </div>
+                    <div style={{fontSize:9,color:"var(--text3)",marginTop:4}}>{m.lbl}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="tw"><table>
+                <thead><tr><th>Month</th><th>Cash In</th><th>Pending</th><th>Expenses</th><th>Net</th></tr></thead>
+                <tbody>
+                  {cfMonths.map(m=>(<tr key={m.lbl}><td style={{fontWeight:600}}>{m.lbl}</td><td className="mono tg">{fmt(m.inflow)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(m.pending)}</td><td className="mono tr-c">{fmt(m.expenses)}</td><td className="mono" style={{fontWeight:700,color:m.net>=0?"var(--green)":"var(--red)"}}>{fmt(m.net)}</td></tr>))}
+                  <tr style={{background:"#f8fafd",fontWeight:700}}><td>TOTAL</td><td className="mono tg">{fmt(totalInflow)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(cfMonths.reduce((s,m)=>s+m.pending,0))}</td><td className="mono tr-c">{fmt(totalExp)}</td><td className="mono" style={{color:totalNet>=0?"var(--green)":"var(--red)"}}>{fmt(totalNet)}</td></tr>
+                </tbody>
+              </table></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {tab==="balance" && (() => {
+        const bAssets = accounts.filter(a=>a.type==="Asset");
+        const bLiabilities = accounts.filter(a=>a.type==="Liability"||a.type==="Payable");
+        const bEquity = accounts.filter(a=>a.type==="Equity");
+        const totalAssets = bAssets.reduce((s,a)=>s+a.balance,0);
+        const totalLiab = bLiabilities.reduce((s,a)=>s+a.balance,0);
+        const totalEq = bEquity.reduce((s,a)=>s+a.balance,0);
+        const stockVal = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
+        const debtors = invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+i.amount,0);
+        const totalAssetsCalc = totalAssets + stockVal + debtors;
+        const netWorth = totalAssetsCalc - totalLiab;
+        return (
+          <div>
+            <div className="g3" style={{marginBottom:20}}>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":"var(--blue)"}}><div className="kpi-label">Total Assets</div><div className="kpi-val" style={{color:"var(--blue)"}}>{fmt(totalAssetsCalc)}</div></div>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":"var(--red)"}}><div className="kpi-label">Total Liabilities</div><div className="kpi-val tr-c">{fmt(totalLiab)}</div></div>
+              <div className="kpi" style={{marginBottom:0,"--kpi-accent":netWorth>=0?"var(--green)":"var(--red)"}}><div className="kpi-label">Net Worth</div><div className="kpi-val" style={{color:netWorth>=0?"var(--green)":"var(--red)"}}>{fmt(netWorth)}</div></div>
+            </div>
+            <div className="g2" style={{marginBottom:0}}>
+              <div className="card" style={{marginBottom:0}}>
+                <div className="ch"><div className="ct" style={{color:"var(--blue)"}}>Assets</div><div className="cs">{fmt(totalAssetsCalc)}</div></div>
+                <div className="rs-title">Current Assets</div>
+                {bAssets.map(a=><div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono">{fmt(a.balance)}</span></div>)}
+                <div className="rrow indent"><span>Stock Inventory</span><span className="mono">{fmt(stockVal)}</span></div>
+                <div className="rrow indent"><span>Trade Debtors</span><span className="mono">{fmt(debtors)}</span></div>
+                <div className="rrow subtotal"><span>Total Assets</span><span className="mono" style={{color:"var(--blue)"}}>{fmt(totalAssetsCalc)}</span></div>
+              </div>
+              <div className="card" style={{marginBottom:0}}>
+                <div className="ch"><div className="ct" style={{color:"var(--red)"}}>Liabilities & Equity</div></div>
+                <div className="rs-title">Liabilities</div>
+                {bLiabilities.length>0?bLiabilities.map(a=><div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tr-c">{fmt(a.balance)}</span></div>):<div className="rrow indent"><span style={{color:"var(--text3)"}}>None recorded</span><span>—</span></div>}
+                <div className="rrow subtotal"><span>Total Liabilities</span><span className="mono tr-c">{fmt(totalLiab)}</span></div>
+                <div className="rs-title">Equity</div>
+                {bEquity.map(a=><div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono">{fmt(a.balance)}</span></div>)}
+                <div className="rrow indent"><span>Retained Earnings</span><span className="mono" style={{color:netWorth>=0?"var(--green)":"var(--red)"}}>{fmt(netWorth)}</span></div>
+                <div className="rrow total"><span>Total Equity</span><span className="mono tg">{fmt(totalEq+netWorth)}</span></div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {tab==="stock" && <div>
         <div className="g4" style={{marginBottom:20}}>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
