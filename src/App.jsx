@@ -187,13 +187,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 
 .nav-item{
-  display:flex;align-items:center;gap:9px;
-  padding:8px 12px;border-radius:var(--r);
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r);
   color:rgba(255,255,255,.38);font-size:13px;font-weight:500;
   cursor:pointer;
   transition:color .12s var(--ease),background .12s var(--ease);
-  margin-bottom:1px;user-select:none;letter-spacing:-.1px;
+  margin-bottom:2px;user-select:none;letter-spacing:-.1px;
   border-left:2px solid transparent;
+  line-height:1.4;
 }
 .nav-item:hover{
   background:var(--sidebar-hover);
@@ -406,14 +407,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   animation:fadeIn .2s var(--ease) both;
 }
 .ch{
-  padding:13px 18px;
+  padding:16px 22px;
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;gap:8px;
   background:var(--white);
 }
-.ct{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.1px}
-.cs{font-size:12px;color:var(--text3)}
+.ct{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+.cs{font-size:12px;color:var(--text3);margin-top:2px}
 
 /* ────────────────────────────────────
    TABLES
@@ -421,17 +422,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{
-  text-align:left;font-size:10px;font-weight:700;
-  color:var(--text3);text-transform:uppercase;letter-spacing:.9px;
-  padding:9px 16px;
+  text-align:left;font-size:10px;font-weight:800;
+  color:var(--text3);text-transform:uppercase;letter-spacing:1px;
+  padding:11px 16px;
   border-bottom:1px solid var(--border);
   background:#f8fafd;white-space:nowrap;
   position:sticky;top:0;
+  cursor:pointer;user-select:none;
 }
+th:hover{color:var(--text2);background:#f0f3f8}
 td{
-  padding:11px 16px;font-size:13px;
+  padding:14px 16px;font-size:13px;
   border-bottom:1px solid #f0f3f8;
   transition:background .08s;
+  min-height:52px;
 }
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8fafd}
@@ -551,8 +555,8 @@ tr:hover td{background:#f8fafd}
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:22px;flex-wrap:wrap;gap:12px;
 }
-.pt{font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
-.psub{font-size:13px;color:var(--text2);margin-top:2px}
+.pt{font-size:24px;font-weight:800;letter-spacing:-.6px;color:var(--text);line-height:1.15}
+.psub{font-size:13px;color:var(--text2);margin-top:4px;font-weight:400}
 
 /* ────────────────────────────────────
    CONTACTS
@@ -869,6 +873,70 @@ tr:hover td{background:#f8fafd}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
+// ── Command Palette (Cmd+K) ──────────────────────────────────────────────────
+function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
+  const [q, setQ] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const commands = [
+    { icon: "ti-file-plus",      label: "New Invoice",          action: () => setPage("invoices"),       tag: "Invoices" },
+    { icon: "ti-user-plus",      label: "Add Customer",         action: () => setPage("contacts"),       tag: "Contacts" },
+    { icon: "ti-package",        label: "Add Product",          action: () => setPage("inventory"),      tag: "Inventory" },
+    { icon: "ti-truck-delivery", label: "New Delivery Note",    action: () => setPage("delivery-notes"), tag: "Delivery" },
+    { icon: "ti-chart-bar",      label: "View Dashboard",       action: () => setPage("dashboard"),      tag: "Navigation" },
+    { icon: "ti-report-money",   label: "Reports Suite",        action: () => setPage("admin-reports"),  tag: "Reports" },
+    { icon: "ti-chart-line",     label: "Analytics",            action: () => setPage("analytics"),      tag: "Reports" },
+    { icon: "ti-building-bank",  label: "View Accounts",        action: () => setPage("reports"),        tag: "Finance" },
+    { icon: "ti-adjustments",    label: "Stock Adjustment",     action: () => setPage("stock-adj"),      tag: "Inventory" },
+    { icon: "ti-upload",         label: "Import CSV",           action: () => setPage("import"),         tag: "Data" },
+  ];
+
+  const invResults = q.length > 1 ? invoices.filter(i => i.customer?.toLowerCase().includes(q.toLowerCase()) || i.invoice_number?.toLowerCase().includes(q.toLowerCase())).slice(0, 3) : [];
+  const custResults = q.length > 1 ? contacts.filter(c => c.name?.toLowerCase().includes(q.toLowerCase())).slice(0, 3) : [];
+  const filteredCmds = commands.filter(c => !q || c.label.toLowerCase().includes(q.toLowerCase()) || c.tag.toLowerCase().includes(q.toLowerCase()));
+
+  const all = [
+    ...invResults.map(i => ({ icon: "ti-file-invoice", label: i.customer, sub: i.invoice_number + " · " + fmt(i.amount), action: () => setPage("invoices"), tag: "Invoice" })),
+    ...custResults.map(c => ({ icon: "ti-user", label: c.name, sub: c.email || c.phone || "Customer", action: () => setPage("contacts"), tag: "Customer" })),
+    ...filteredCmds,
+  ].slice(0, 10);
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
+      <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "var(--sh3)", overflow: "hidden", border: "1px solid var(--border)", animation: "scaleIn .15s var(--ease)" }}>
+        {/* Search input */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
+          <i className="ti ti-search" style={{ color: "var(--text3)", fontSize: 18, flexShrink: 0 }} />
+          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && all[0]) { all[0].action(); onClose(); } }} placeholder="Search or type a command..." style={{ flex: 1, border: "none", outline: "none", fontSize: 16, fontFamily: "var(--sans)", color: "var(--text)", background: "transparent" }} />
+          <kbd style={{ background: "var(--border)", borderRadius: 5, padding: "2px 7px", fontSize: 11, color: "var(--text3)", fontFamily: "var(--sans)", flexShrink: 0 }}>ESC</kbd>
+        </div>
+        {/* Results */}
+        <div style={{ maxHeight: 380, overflowY: "auto" }}>
+          {all.length === 0 && <div style={{ padding: "24px", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No results for "{q}"</div>}
+          {all.map((item, i) => (
+            <div key={i} onClick={() => { item.action(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", cursor: "pointer", transition: "background .08s", borderBottom: "1px solid #f8fafd" }} onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i className={"ti " + item.icon} style={{ color: "var(--text2)", fontSize: 15 }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{item.label}</div>
+                {item.sub && <div style={{ fontSize: 11, color: "var(--text3)" }}>{item.sub}</div>}
+              </div>
+              <span style={{ fontSize: 10, color: "var(--text3)", background: "var(--border)", padding: "2px 8px", borderRadius: 10, fontWeight: 600 }}>{item.tag}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "10px 20px", background: "#f8fafd", borderTop: "1px solid var(--border)", display: "flex", gap: 16, fontSize: 11, color: "var(--text3)" }}>
+          <span><kbd style={{ background: "var(--border)", borderRadius: 4, padding: "1px 5px", fontFamily: "var(--sans)" }}>↵</kbd> Select</span>
+          <span><kbd style={{ background: "var(--border)", borderRadius: 4, padding: "1px 5px", fontFamily: "var(--sans)" }}>ESC</kbd> Close</span>
+          <span style={{ marginLeft: "auto" }}>⌘K to open</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Skeleton Table Rows ───────────────────────────────────────────────────────
 function SkeletonTable({ rows = 5, cols = 4 }) {
   return (
@@ -2229,6 +2297,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [payMethod, setPayMethod] = useState({});
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQ, setSearchQ] = useState("");
+  const [sortCol, setSortCol] = useState("created_at");
+  const [sortDir, setSortDir] = useState("desc");
+  const [viewMode, setViewMode] = useState("table"); // table | card
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -2283,7 +2354,15 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const matchStatus = filterStatus === "all" || i.status === filterStatus;
     const matchSearch = !searchQ || i.customer?.toLowerCase().includes(searchQ.toLowerCase()) || i.invoice_number?.toLowerCase().includes(searchQ.toLowerCase());
     return matchStatus && matchSearch;
+  }).sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (sortCol === "amount") { av = parseFloat(av)||0; bv = parseFloat(bv)||0; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
+  const sortToggle = (col) => { if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc"); else { setSortCol(col); setSortDir("asc"); } };
+  const SortIcon = ({ col }) => <i className={"ti " + (sortCol !== col ? "ti-arrows-sort" : sortDir === "asc" ? "ti-sort-ascending" : "ti-sort-descending")} style={{ fontSize: 11, marginLeft: 4, opacity: sortCol === col ? 1 : 0.3 }} />;
   return (
     <div>
       {viewInvoice && <InvoiceModal
@@ -2348,7 +2427,46 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
       </div>
       {showForm && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
       <div className="card">
-        <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th className="hm">Date</th><th className="hm">Due</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => setViewMode("table")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="table"?"var(--blue)":"var(--border)"),background:viewMode==="table"?"var(--blue-lt)":"var(--white)",color:viewMode==="table"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><i className="ti ti-table" style={{fontSize:14}} /></button>
+            <button onClick={() => setViewMode("card")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="card"?"var(--blue)":"var(--border)"),background:viewMode==="card"?"var(--blue-lt)":"var(--white)",color:viewMode==="card"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><i className="ti ti-layout-grid" style={{fontSize:14}} /></button>
+          </div>
+        </div>
+        {viewMode === "card" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14, padding: 16 }}>
+            {filtered.map(inv => (
+              <div key={inv.id} style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:18,boxShadow:"var(--sh)",cursor:"pointer",transition:"all .15s" }}
+                onClick={() => setViewInvoice(inv)}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--blue)";e.currentTarget.style.transform="translateY(-2px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.transform="none";}}>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                    <div className="c-av" style={{ background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0)%5]||"#6366f1",width:30,height:30,fontSize:11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
+                    <span style={{ fontWeight:600,fontSize:13 }}>{inv.customer}</span>
+                  </div>
+                  <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                </div>
+                <div style={{ fontSize:22,fontWeight:800,letterSpacing:"-.5px",marginBottom:4 }}>{fmt(inv.amount)}</div>
+                <div style={{ fontSize:11,color:"var(--text3)",marginBottom:12 }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</div>
+                <div style={{ display:"flex",gap:6 }}>
+                  <button className="btn bp bsm" style={{flex:1}} onClick={e=>{e.stopPropagation();setViewInvoice(inv);}}>View</button>
+                  <button className="btn bsm" style={{background:"#0f172a",color:"#fff"}} onClick={e=>{e.stopPropagation();printDNFromInvoice(inv);}}>DN</button>
+                </div>
+              </div>
+            ))}
+            {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+          </div>
+        ) : (
+        <div className="tw"><table><thead><tr>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer <i className={"ti "+(sortCol!=="customer"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-letters":"ti-sort-descending-letters")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="customer"?1:.3}} /></th>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice # <i className={"ti "+(sortCol!=="invoice_number"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending":"ti-sort-descending")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_number"?1:.3}} /></th>
+          <th className="hm" style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_date")}>Date <i className={"ti "+(sortCol!=="invoice_date"?"ti-arrows-sort":"ti-calendar")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_date"?1:.3}} /></th>
+          <th className="hm">Due</th>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("amount")}>Amount <i className={"ti "+(sortCol!=="amount"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-numbers":"ti-sort-descending-numbers")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="amount"?1:.3}} /></th>
+          <th>Status</th><th>Actions</th>
+        </tr></thead><tbody>
           {filtered.map(inv => (
             <tr key={inv.id}>
               <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td>
@@ -2378,6 +2496,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
           ))}
           {filtered.length === 0 && <tr><td colSpan={7}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} /></td></tr>}
         </tbody></table></div>
+        )}
       </div>
     </div>
   );
@@ -2403,6 +2522,21 @@ function Contacts({ contacts, setContacts, token, userId }) {
       <div className="ph"><div><div className="pt">Customers & Suppliers</div><div className="psub">Manage your business contacts</div></div><button className="btn bp" onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }}><i className="ti ti-user-plus" />Add {tab === "customer" ? "Customer" : "Supplier"}</button></div>
       <div className="tabs">{[["customer","👥 Customers"],["supplier","🏭 Suppliers"]].map(([k,l]) => <div key={k} className={"tab " + (tab === k ? "active" : "")} onClick={() => setTab(k)}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}</div>
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Contact</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Contact"}</button></div></div>}
+      {contactView === "list" ? (
+        <div className="card">
+          <div className="tw"><table><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
+            {(tab==="customers"?customers:suppliers).map(c=>(
+              <tr key={c.id}>
+                <td><div style={{display:"flex",alignItems:"center",gap:10}}><div className="c-av" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1",width:30,height:30,fontSize:11}}>{c.name?.[0]?.toUpperCase()}</div><span style={{fontWeight:600}}>{c.name}</span></div></td>
+                <td style={{fontSize:12,color:"var(--text2)"}}>{c.email||"—"}</td>
+                <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{c.phone||"—"}</td>
+                <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{[c.city,c.postcode].filter(Boolean).join(", ")||"—"}</td>
+                <td><button className="btn bo bsm" onClick={()=>window.open(`mailto:${c.email}`)}><i className="ti ti-mail" />Email</button></td>
+              </tr>
+            ))}
+          </tbody></table></div>
+        </div>
+      ) : (
       <div className="contact-grid">
         {filtered.map(c => <div key={c.id} className="contact-card"><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><i className="ti ti-mail" />{c.email}</div>}{c.phone && <div className="cc-detail"><i className="ti ti-phone" />{c.phone}</div>}{c.city && <div className="cc-detail"><i className="ti ti-map-pin" />{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
         {filtered.length === 0 && <div style={{ padding: 48, textAlign: "center", color: "var(--text3)", gridColumn: "1/-1" }}>No {tab}s yet — add your first one!</div>}
@@ -3488,6 +3622,7 @@ export default function App() {
   const [showActivity, setShowActivity] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("ledgeros_dark") === "1");
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showCmdK, setShowCmdK] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [dismissedNotifs, setDismissedNotifs] = useState(() => {
@@ -3620,6 +3755,19 @@ export default function App() {
   }, [auth]);
 
   const signOut = async () => { await sb.signOut(auth.token); setAuth(null); };
+
+  // Cmd+K global keyboard shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowCmdK(v => !v);
+      }
+      if (e.key === "Escape") setShowCmdK(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // Show onboarding for new users (first login)
   useEffect(() => {
@@ -3879,6 +4027,7 @@ export default function App() {
             )}
           </div>
         </div>
+        {showCmdK && <CommandPalette onClose={() => setShowCmdK(false)} setPage={setPage} invoices={invoices} contacts={contacts} products={products} />}
         {showOnboarding && <OnboardingChecklist onClose={() => setShowOnboarding(false)} invoices={invoices} contacts={contacts} products={products} setPage={setPage} />}
         {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         {showActivity && (
