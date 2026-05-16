@@ -790,34 +790,62 @@ function Auth({ onAuth }) {
     } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg)", fontFamily: "var(--sans)" }}>
-      <div style={{ width: 460, background: "var(--sidebar)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 56, color: "#fff" }}>
-        <div style={{ textAlign: "center", maxWidth: 320 }}>
-          <img src={LOGO} alt="Arkham Retail" style={{ width: 180, height: 52, borderRadius: 10, objectFit: "contain", margin: "0 auto 24px", display: "block" }} />
-          <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, lineHeight: 1.2, letterSpacing: "-.5px" }}>Built for modern businesses</h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7, marginBottom: 36 }}>VAT invoices, inventory, analytics and more — all in one place.</p>
-          {["VAT Invoice PDF with WhatsApp share", "Customer & Supplier management", "Stock & Inventory with low stock alerts", "Agent dashboards & leaderboard", "Daily email notifications"].map(f => (
-            <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,.8)", marginBottom: 10, textAlign: "left" }}>
-              <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{f}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", background: "var(--bg)", fontFamily: "var(--sans)" }}>
+      {/* Left panel */}
+      <div style={{ width: isMobile ? "100%" : 460, minWidth: isMobile ? "unset" : 460, background: "var(--sidebar)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: isMobile ? "36px 24px" : 56, color: "#fff" }}>
+        <div style={{ textAlign: "center", maxWidth: 360, width: "100%" }}>
+          <img src={LOGO} alt="Arkham Retail" style={{ width: isMobile ? 200 : 180, height: isMobile ? 58 : 52, borderRadius: 10, objectFit: "contain", margin: "0 auto 24px", display: "block" }} />
+          <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, marginBottom: 12, lineHeight: 1.2, letterSpacing: "-.5px" }}>Built for modern businesses</h2>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7, marginBottom: isMobile ? 20 : 36 }}>VAT invoices, inventory, analytics and more — all in one place.</p>
+          {!isMobile && ["VAT Invoice PDF with WhatsApp share", "Customer & Supplier management", "Stock & Inventory with low stock alerts", "Agent dashboards & leaderboard", "Daily email notifications"].map(feat => (
+            <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,.8)", marginBottom: 10, textAlign: "left" }}>
+              <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{feat}
             </div>
           ))}
+          {isMobile && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              {["VAT Invoices", "Stock Alerts", "WhatsApp Share", "Agent Dashboards"].map(tag => (
+                <span key={tag} style={{ background: "rgba(255,255,255,.1)", color: "rgba(255,255,255,.8)", padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+
+      {/* Right panel - login form */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "32px 20px" : 48 }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
-            <img src={LOGO} alt="Arkham Retail" style={{ width: 140, height: 40, borderRadius: 8, objectFit: "contain" }} />
-            <div><div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.4px" }}>LedgerOS</div><div style={{ fontSize: 12, color: "var(--text3)" }}>Business Accounting</div></div>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 6, letterSpacing: "-.4px" }}>{mode === "signin" ? "Sign in" : "Create account"}</div>
+          {!isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+              <img src={LOGO} alt="Arkham Retail" style={{ width: 140, height: 40, borderRadius: 8, objectFit: "contain" }} />
+              <div><div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.4px" }}>LedgerOS</div><div style={{ fontSize: 12, color: "var(--text3)" }}>Business Accounting</div></div>
+            </div>
+          )}
+          <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginBottom: 6, letterSpacing: "-.4px" }}>{mode === "signin" ? "Sign in" : "Create account"}</div>
           <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 28 }}>{mode === "signin" ? "Welcome back — sign in to your dashboard" : "Join your team on LedgerOS"}</div>
           {err && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 13, color: "var(--red-dk)", marginBottom: 16 }}>{err}</div>}
-          {mode === "signup" && <div style={{ marginBottom: 16 }}><label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text2)", marginBottom: 6 }}>Full Name</label><input style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" /></div>}
-          <div style={{ marginBottom: 16 }}><label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text2)", marginBottom: 6 }}>Email address</label><input type="email" style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@company.com" /></div>
-          <div style={{ marginBottom: 24 }}><label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text2)", marginBottom: 6 }}>Password</label><input type="password" style={{ width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && go()} /></div>
-          <button style={{ width: "100%", padding: "12px", background: "var(--blue)", color: "#fff", fontWeight: 600, fontSize: 15, border: "none", borderRadius: "var(--r)", cursor: "pointer", fontFamily: "var(--sans)", transition: "background .15s" }} onClick={go} disabled={loading}>{loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}</button>
-          <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text2)" }}>{mode === "signin" ? <>No account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 500 }} onClick={() => setMode("signup")}>Sign up free</span></> : <>Have account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 500 }} onClick={() => setMode("signin")}>Sign in</span></>}</div>
+          {mode === "signup" && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Full Name</label>
+              <input style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" />
+            </div>
+          )}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Email address</label>
+            <input type="email" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@company.com" />
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Password</label>
+            <input type="password" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && go()} />
+          </div>
+          <button style={{ width: "100%", padding: "13px", background: "var(--blue)", color: "#fff", fontWeight: 700, fontSize: 15, border: "none", borderRadius: "var(--r)", cursor: "pointer", fontFamily: "var(--sans)", transition: "background .15s", boxShadow: "var(--sh-blue)" }} onClick={go} disabled={loading}>
+            {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
+          </button>
+          <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text2)" }}>
+            {mode === "signin" ? <>No account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signup")}>Sign up free</span></> : <>Have account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signin")}>Sign in</span></>}
+          </div>
         </div>
       </div>
     </div>
