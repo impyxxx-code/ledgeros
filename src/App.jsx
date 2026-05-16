@@ -3335,6 +3335,8 @@ export default function App() {
   const [allProfiles, setAllProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [realtimeStatus, setRealtimeStatus] = useState("connecting"); // connecting | live | offline
+
   useEffect(() => {
     if (!auth) return; setLoading(true);
     Promise.all([
@@ -3356,6 +3358,99 @@ export default function App() {
       if (Array.isArray(allProfs)) setAllProfiles(allProfs);
       setLoading(false);
     });
+  }, [auth]);
+
+  // ── Supabase Real-time Subscriptions ─────────────────────────────────────
+  useEffect(() => {
+    if (!auth) return;
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const wsUrl = SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + SUPABASE_KEY + "&vsn=1.0.0";
+
+    let ws;
+    let heartbeat;
+    let reconnectTimer;
+    let isAlive = true;
+
+    const connect = () => {
+      try {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          setRealtimeStatus("live");
+          // Join realtime channels for invoices and products
+          const joinInvoices = JSON.stringify({ topic: "realtime:public:invoices", event: "phx_join", payload: { config: { broadcast: { self: false }, presence: { key: "" }, postgres_changes: [{ event: "*", schema: "public", table: "invoices" }] } }, ref: "1" });
+          const joinProducts = JSON.stringify({ topic: "realtime:public:products", event: "phx_join", payload: { config: { broadcast: { self: false }, presence: { key: "" }, postgres_changes: [{ event: "*", schema: "public", table: "products" }] } }, ref: "2" });
+          ws.send(joinInvoices);
+          ws.send(joinProducts);
+          // Heartbeat every 25s
+          heartbeat = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: "hb" }));
+            }
+          }, 25000);
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            const payload = msg.payload;
+            if (!payload?.data) return;
+            const { eventType, record, old_record } = payload.data;
+            const table = payload.data?.schema === "public" ? msg.topic?.split(":")?.[2] : null;
+
+            if (msg.topic === "realtime:public:invoices") {
+              if (eventType === "INSERT") {
+                setInvoices(prev => {
+                  if (prev.find(i => i.id === record.id)) return prev;
+                  return [record, ...prev];
+                });
+              } else if (eventType === "UPDATE") {
+                setInvoices(prev => prev.map(i => i.id === record.id ? { ...i, ...record } : i));
+              } else if (eventType === "DELETE") {
+                setInvoices(prev => prev.filter(i => i.id !== old_record?.id));
+              }
+            }
+
+            if (msg.topic === "realtime:public:products") {
+              if (eventType === "INSERT") {
+                setProducts(prev => {
+                  if (prev.find(p => p.id === record.id)) return prev;
+                  return [...prev, record].sort((a,b) => a.name.localeCompare(b.name));
+                });
+              } else if (eventType === "UPDATE") {
+                setProducts(prev => prev.map(p => p.id === record.id ? { ...p, ...record } : p));
+              } else if (eventType === "DELETE") {
+                setProducts(prev => prev.filter(p => p.id !== old_record?.id));
+              }
+            }
+          } catch(err) { /* ignore parse errors */ }
+        };
+
+        ws.onclose = () => {
+          setRealtimeStatus("offline");
+          clearInterval(heartbeat);
+          if (isAlive) reconnectTimer = setTimeout(connect, 5000);
+        };
+
+        ws.onerror = () => {
+          setRealtimeStatus("offline");
+          ws.close();
+        };
+      } catch(e) {
+        setRealtimeStatus("offline");
+        if (isAlive) reconnectTimer = setTimeout(connect, 5000);
+      }
+    };
+
+    connect();
+
+    return () => {
+      isAlive = false;
+      clearInterval(heartbeat);
+      clearTimeout(reconnectTimer);
+      if (ws) ws.close();
+    };
   }, [auth]);
 
   const signOut = async () => { await sb.signOut(auth.token); setAuth(null); };
@@ -3477,6 +3572,10 @@ export default function App() {
             </div>
             <div className="topbar-right">
               <span className="tb-role">{profile?.role||"agent"}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: realtimeStatus==="live" ? "var(--green-lt)" : realtimeStatus==="offline" ? "var(--red-lt)" : "var(--amber-lt)", border: `1px solid ${realtimeStatus==="live" ? "#86efac" : realtimeStatus==="offline" ? "#fca5a5" : "#fcd34d"}` }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: realtimeStatus==="live" ? "var(--green)" : realtimeStatus==="offline" ? "var(--red)" : "var(--amber)", animation: realtimeStatus==="live" ? "pulse 2s ease-in-out infinite" : "none" }} />
+                <span style={{ fontSize: 10, fontWeight: 600, color: realtimeStatus==="live" ? "var(--green-dk)" : realtimeStatus==="offline" ? "var(--red-dk)" : "var(--amber-dk)" }} className="hm">{realtimeStatus==="live" ? "Live" : realtimeStatus==="offline" ? "Offline" : "Connecting..."}</span>
+              </div>
               {(() => {
                 const notifs = [
                   ...invoices.filter(i=>i.status==="overdue").map(i=>({ id:"ov-"+i.id, type:"overdue", icon:"ti-alert-circle", color:"var(--red)", bg:"var(--red-lt)", title:"Overdue Invoice", body:`${i.customer} — ${fmt(i.amount)} overdue`, action:()=>setPage("invoices") })),
