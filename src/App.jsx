@@ -59,6 +59,29 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 };
 
+// ── Audit Trail Logger ───────────────────────────────────────────────────────
+const logAudit = async (token, userId, action, entity, entityId, details) => {
+  try {
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        action,
+        entity,
+        entity_id: entityId || null,
+        details: details || null,
+        created_at: new Date().toISOString()
+      })
+    });
+  } catch(e) { console.warn("Audit log failed:", e.message); }
+};
+
 const buildInvoiceEmailHtml = (invoice, lines, subtotal, vatTotal, total) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:20px}.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}.header{background:#0b1120;padding:28px 32px}.header-title{color:#fff;font-size:20px;font-weight:700}.header-sub{color:rgba(255,255,255,.5);font-size:12px;margin-top:2px}.body{padding:32px}.badge{background:#eff4ff;color:#2563eb;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px}.amount{font-size:32px;font-weight:800;color:#0b1120;margin:8px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.meta-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}.meta-val{font-size:13px;font-weight:600;color:#0b1120}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#2563eb;color:#fff;padding:10px 14px;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.5px}td{padding:10px 14px;border-bottom:1px solid #f0f3f8;font-size:13px}.tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.balance{border-top:2px solid #0b1120;margin-top:8px;padding-top:10px;font-size:16px;font-weight:700}.bank{background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.bank-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}.bank-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;margin-bottom:3px}.bank-val{font-size:13px;font-weight:600}.footer{background:#f8fafd;padding:16px 32px;text-align:center;font-size:11px;color:#9aa5b4;border-top:1px solid #e5e9f0}</style></head><body><div class="wrap"><div class="header"><div class="header-title">Arkham Retail Ltd</div><div class="header-sub">VAT Invoice</div></div><div class="body"><div class="badge">Invoice \${invoice.invoice_number}</div><div style="font-size:14px;color:#5c677d;margin-bottom:4px">Amount due from <strong>\${invoice.customer}</strong></div><div class="amount">\${fmt(total)}</div><div class="meta"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">\${invoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">\${fmtDate(invoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">\${fmtDate(invoice.due_date)}</div></div><div><div class="meta-lbl">Status</div><div class="meta-val">\${(invoice.status||"pending").toUpperCase()}</div></div></div><table><thead><tr><th style="width:45%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>\${lines.map(l=>\`<tr><td style="font-weight:600">\${l.description}</td><td>\${l.vat_rate===0?"Exempt":l.vat_rate+"% S"}</td><td style="text-align:right">\${l.qty}</td><td style="text-align:right">\${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">\${fmt(l.qty*l.unit_price)}</td></tr>\`).join("")}</tbody></table><div style="width:260px;margin-left:auto"><div class="tot-row"><span style="color:#5c677d">Subtotal</span><span>\${fmt(subtotal)}</span></div><div class="tot-row"><span style="color:#5c677d">VAT Total</span><span>\${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">\${fmt(total)}</span></div></div><div class="bank"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Payment Details</div><div style="font-size:12px;color:#5c677d;margin-bottom:8px">Please use the invoice number as your reference.</div><div class="bank-grid"><div><div class="bank-lbl">Bank</div><div class="bank-val">Tide Bank</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">04-06-05</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">23058246</div></div></div></div><p style="font-size:12px;color:#9aa5b4">VAT Reg: GB462229106 · All goods remain our property until payment received in full.</p></div><div class="footer">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW · ARKHAMRETAIL@GMAIL.COM</div></div></body></html>`;
 
 const CSS = `
@@ -1311,6 +1334,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     if (inv[0]) {
       const fullInv = { ...inv[0], lines };
       onSave(fullInv);
+      logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}`);
       // Pre-fill DN fields from customer contact
       const cust = contacts.find(c => c.name === f.customer);
       setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));
@@ -2045,6 +2069,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
+    const inv = invoices.find(i => i.id === id);
+    if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
 
@@ -2104,6 +2130,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
           await sb.patch(token, "invoices", id, { status });
           setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
           setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
+          const inv = invoices.find(i => i.id === id);
+          if (inv) logAudit(auth.token, auth.user.id, "status_changed", "invoice", id, `${inv.invoice_number} status changed to ${status.toUpperCase()} for ${inv.customer}`);
         }}
         onDuplicate={(inv) => {
           setViewInvoice(null);
@@ -2399,6 +2427,7 @@ function StockAdjustment({ products, setProducts, token }) {
     const newQty = Math.max(0, (product.stock_qty || 0) + delta);
     setSaving(product.id);
     await sb.patch(token, "products", product.id, { stock_qty: newQty });
+    logAudit(token, userId, "stock_adjusted", "product", product.id, `${product.name} stock ${reason}: ${product.stock_qty} → ${newQty} ${product.unit||"units"}`);
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_qty: newQty } : p));
     setAdjustments(prev => ({ ...prev, [product.id]: "" }));
     setSuccess(product.id);
@@ -3292,6 +3321,9 @@ export default function App() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
+  const [auditLog, setAuditLog] = useState([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
   const [dismissedNotifs, setDismissedNotifs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dismissed_notifs") || "[]"); } catch { return []; }
   });
@@ -3497,6 +3529,20 @@ export default function App() {
                 );
               })()}
               <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
+              <button onClick={async () => {
+                setShowActivity(v => {
+                  if (!v) {
+                    setLoadingAudit(true);
+                    fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log?order=created_at.desc&limit=50`, {
+                      headers: { "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY, "Authorization": `Bearer ${auth.token}` }
+                    }).then(r=>r.json()).then(d=>{ setAuditLog(Array.isArray(d)?d:[]); setLoadingAudit(false); }).catch(()=>setLoadingAudit(false));
+                  }
+                  return !v;
+                });
+              }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showActivity ? "linear-gradient(135deg,#059669,#10b981)" : "linear-gradient(135deg,#ecfdf5,#d1fae5)", color: showActivity ? "#fff" : "var(--green)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
+                <i className="ti ti-history" style={{ fontSize: 14 }} />
+                <span className="hm">Activity</span>
+              </button>
               <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
                 <i className="ti ti-sparkles" style={{ fontSize: 14 }} />
                 <span className="hm">AI</span>
@@ -3528,6 +3574,73 @@ export default function App() {
           </div>
         </div>
         {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
+        {showActivity && (
+          <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}><i className="ti ti-history" style={{ color: "var(--green)", fontSize: 16 }} />Recent Activity</div>
+                <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>Audit trail — last 50 events</div>
+              </div>
+              <button onClick={() => setShowActivity(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: 18, display: "flex", alignItems: "center" }}><i className="ti ti-x" /></button>
+            </div>
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+              {loadingAudit ? (
+                <div style={{ padding: 32, textAlign: "center" }}><div className="spin" style={{ margin: "0 auto 10px" }} /><div style={{ fontSize: 12, color: "var(--text3)" }}>Loading activity...</div></div>
+              ) : auditLog.length === 0 ? (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--text3)" }}>
+                  <i className="ti ti-history" style={{ fontSize: 32, display: "block", marginBottom: 8, opacity: .3 }} />
+                  <div style={{ fontSize: 13 }}>No activity recorded yet</div>
+                  <div style={{ fontSize: 11, marginTop: 4 }}>Actions will appear here as you use the app</div>
+                </div>
+              ) : auditLog.map((log, i) => {
+                const iconMap = {
+                  "invoice_created":   { icon: "ti-file-plus",     color: "var(--blue)",   bg: "var(--blue-lt)" },
+                  "invoice_paid":      { icon: "ti-circle-check",   color: "var(--green)",  bg: "var(--green-lt)" },
+                  "invoice_updated":   { icon: "ti-edit",           color: "var(--purple)", bg: "var(--purple-lt)" },
+                  "invoice_emailed":   { icon: "ti-mail",           color: "var(--blue)",   bg: "var(--blue-lt)" },
+                  "status_changed":    { icon: "ti-refresh",        color: "var(--amber)",  bg: "var(--amber-lt)" },
+                  "stock_adjusted":    { icon: "ti-package",        color: "var(--amber)",  bg: "var(--amber-lt)" },
+                  "product_created":   { icon: "ti-package-import", color: "var(--green)",  bg: "var(--green-lt)" },
+                  "customer_created":  { icon: "ti-user-plus",      color: "var(--blue)",   bg: "var(--blue-lt)" },
+                  "delivery_created":  { icon: "ti-truck-delivery", color: "var(--purple)", bg: "var(--purple-lt)" },
+                  "payment_received":  { icon: "ti-coins",          color: "var(--green)",  bg: "var(--green-lt)" },
+                };
+                const cfg = iconMap[log.action] || { icon: "ti-activity", color: "var(--text2)", bg: "#f1f5f9" };
+                const timeAgo = (() => {
+                  const diff = Date.now() - new Date(log.created_at).getTime();
+                  const mins = Math.floor(diff / 60000);
+                  const hrs = Math.floor(mins / 60);
+                  const days = Math.floor(hrs / 24);
+                  if (days > 0) return days + "d ago";
+                  if (hrs > 0) return hrs + "h ago";
+                  if (mins > 0) return mins + "m ago";
+                  return "Just now";
+                })();
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 20px", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <i className={"ti " + cfg.icon} style={{ color: cfg.color, fontSize: 15 }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{(log.action || "").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase())}</div>
+                      <div style={{ fontSize: 11, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.details || log.entity || "—"}</div>
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--text3)", flexShrink: 0, paddingTop: 2, textAlign: "right" }}>
+                      <div>{timeAgo}</div>
+                      <div style={{ marginTop: 2, fontSize: 9 }}>{new Date(log.created_at).toLocaleDateString("en-GB")}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: "10px 20px", borderTop: "1px solid var(--border)", background: "#f8fafd", fontSize: 11, color: "var(--text3)", display: "flex", justifyContent: "space-between" }}>
+              <span>{auditLog.length} events recorded</span>
+              <span>Showing last 50</span>
+            </div>
+          </div>
+        )}
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
