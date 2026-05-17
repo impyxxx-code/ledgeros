@@ -2794,86 +2794,76 @@ function Contacts({ contacts, setContacts, token, userId }) {
     <div>
       {viewContact && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
-          <div className="modal" style={{ maxWidth: 620 }}>
+          <div className="modal" style={{ maxWidth: 580 }}>
             <div className="modal-header">
-              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:44,height:44,borderRadius:"50%",background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ width:44, height:44, borderRadius:"50%", background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:700, color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
                 <div>
-                  <div style={{ fontWeight:700,fontSize:16 }}>{viewContact.name}</div>
-                  <div style={{ fontSize:12,color:"var(--text3)",marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
+                  <div style={{ fontWeight:700, fontSize:16 }}>{viewContact.name}</div>
+                  <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
                 </div>
               </div>
               <button className="btn bo bsm" onClick={() => setViewContact(null)}><i className="ti ti-x" /></button>
             </div>
             <div style={{ padding:"20px 24px" }}>
-              {/* KPI row */}
-              {(() => {
-                const custInvoices = invoices.filter(i => i.customer === viewContact.name);
-                const totalSpend = custInvoices.reduce((s,i)=>s+i.amount,0);
-                const paid = custInvoices.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
-                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue").reduce((s,i)=>s+i.amount,0);
-                return (
-                  <div>
-                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
-                      {[{l:"Total Spend",v:fmt(totalSpend),c:"var(--blue)"},{l:"Invoices",v:custInvoices.length,c:"var(--text)"},{l:"Paid",v:fmt(paid),c:"var(--green)"},{l:"Outstanding",v:fmt(outstanding),c:outstanding>0?"var(--amber)":"var(--green)"}].map(k=>(
-                        <div key={k.l} style={{ background:"#f8fafd",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"12px 14px" }}>
-                          <div style={{ fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.l}</div>
-                          <div style={{ fontSize:16,fontWeight:700,color:k.c }}>{k.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Contact details */}
-                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20 }}>
-                      {[
-                        {icon:"ti-mail",label:"Email",val:viewContact.email},
-                        {icon:"ti-phone",label:"Phone",val:viewContact.phone},
-                        {icon:"ti-map-pin",label:"Address",val:[viewContact.address,viewContact.city,viewContact.postcode].filter(Boolean).join(", ")},
-                        {icon:"ti-file-invoice",label:"VAT Number",val:viewContact.vat_number},
-                      ].filter(d=>d.val).map(d=>(
-                        <div key={d.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--r)" }}>
-                          <i className={"ti "+d.icon} style={{ color:"var(--blue)",fontSize:15,marginTop:1,flexShrink:0 }} />
-                          <div>
-                            <div style={{ fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2 }}>{d.label}</div>
-                            <div style={{ fontSize:13,fontWeight:500,color:"var(--text)" }}>{d.val}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Transaction history */}
-                    <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",marginBottom:10 }}>Transaction History</div>
-                    {custInvoices.length===0 ? (
-                      <div style={{ padding:24,textAlign:"center",color:"var(--text3)",background:"#f8fafd",borderRadius:"var(--rl)",border:"1px solid var(--border)" }}>
-                        <i className="ti ti-file-off" style={{ fontSize:28,display:"block",marginBottom:8,opacity:.3 }} />
-                        No invoices yet for this customer
-                      </div>
-                    ) : (
-                      <div style={{ border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden" }}>
-                        <table style={{ width:"100%",borderCollapse:"collapse" }}>
-                          <thead><tr style={{ background:"#f8fafd" }}>
-                            {["Invoice","Date","Amount","Status"].map(h=><th key={h} style={{ padding:"9px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textAlign:h==="Amount"?"right":"left",textTransform:"uppercase",letterSpacing:".6px" }}>{h}</th>)}
-                          </tr></thead>
-                          <tbody>
-                            {custInvoices.map(inv=>(
-                              <tr key={inv.id} style={{ borderTop:"1px solid var(--border)" }}>
-                                <td style={{ padding:"10px 14px",fontSize:12,color:"var(--blue)",fontWeight:600 }}>{inv.invoice_number}</td>
-                                <td style={{ padding:"10px 14px",fontSize:12,color:"var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
-                                <td style={{ padding:"10px 14px",fontSize:13,fontWeight:700,textAlign:"right" }}>{fmt(inv.amount)}</td>
-                                <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12, marginBottom:20 }}>
+                {[
+                  { l:"Total Spend", v:fmt(invoices.filter(i=>i.customer===viewContact.name).reduce((s,i)=>s+i.amount,0)), c:"var(--blue)" },
+                  { l:"Invoices", v:invoices.filter(i=>i.customer===viewContact.name).length, c:"var(--text)" },
+                  { l:"Paid", v:fmt(invoices.filter(i=>i.customer===viewContact.name&&i.status==="paid").reduce((s,i)=>s+i.amount,0)), c:"var(--green)" },
+                  { l:"Outstanding", v:fmt(invoices.filter(i=>i.customer===viewContact.name&&(i.status==="pending"||i.status==="overdue")).reduce((s,i)=>s+i.amount,0)), c:"var(--amber)" },
+                ].map(k => (
+                  <div key={k.l} style={{ background:"#f8fafd", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:4 }}>{k.l}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:k.c }}>{k.v}</div>
                   </div>
-                );
-              })()}
+                ))}
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:20 }}>
+                {[
+                  { icon:"ti-mail", label:"Email", val:viewContact.email },
+                  { icon:"ti-phone", label:"Phone", val:viewContact.phone },
+                  { icon:"ti-map-pin", label:"Location", val:[viewContact.city, viewContact.postcode].filter(Boolean).join(", ") },
+                  { icon:"ti-file-invoice", label:"VAT", val:viewContact.vat_number },
+                ].filter(d=>d.val).map(d => (
+                  <div key={d.label} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"10px 14px", background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--r)" }}>
+                    <i className={"ti "+d.icon} style={{ color:"var(--blue)", fontSize:15, marginTop:1, flexShrink:0 }} />
+                    <div>
+                      <div style={{ fontSize:10, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", marginBottom:2 }}>{d.label}</div>
+                      <div style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{d.val}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize:12, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".8px", marginBottom:10 }}>Transaction History</div>
+              <div style={{ border:"1px solid var(--border)", borderRadius:"var(--rl)", overflow:"hidden" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead><tr style={{ background:"#f8fafd" }}>
+                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Invoice</th>
+                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Date</th>
+                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"right", textTransform:"uppercase" }}>Amount</th>
+                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Status</th>
+                  </tr></thead>
+                  <tbody>
+                    {invoices.filter(i=>i.customer===viewContact.name).map(inv=>(
+                      <tr key={inv.id} style={{ borderTop:"1px solid var(--border)" }}>
+                        <td style={{ padding:"10px 14px", fontSize:12, color:"var(--blue)", fontWeight:600 }}>{inv.invoice_number}</td>
+                        <td style={{ padding:"10px 14px", fontSize:12, color:"var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
+                        <td style={{ padding:"10px 14px", fontSize:13, fontWeight:700, textAlign:"right" }}>{fmt(inv.amount)}</td>
+                        <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
+                      </tr>
+                    ))}
+                    {invoices.filter(i=>i.customer===viewContact.name).length===0&&(
+                      <tr><td colSpan={4} style={{ padding:24, textAlign:"center", color:"var(--text3)" }}>No invoices yet for this customer</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="modal-actions">
-              <div style={{ display:"flex",gap:8 }}>
+              <div style={{ display:"flex", gap:8 }}>
                 <button className="btn bo bsm" onClick={()=>{setViewContact(null);setF({...viewContact});setShowForm(true);}}><i className="ti ti-edit" />Edit</button>
-                {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
-                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
+                {viewContact.email && <button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
               </div>
               <button className="btn bp bsm" onClick={()=>setViewContact(null)}>Close</button>
             </div>
