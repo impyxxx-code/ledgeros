@@ -2609,6 +2609,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
 function Contacts({ contacts, setContacts, token, userId }) {
   const [tab, setTab] = useState("customer");
+  const [contactView, setContactView] = useState("grid");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
