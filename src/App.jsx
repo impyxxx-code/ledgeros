@@ -4218,7 +4218,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
   const renderMsg = (text) => { let r = text; while (r.includes("*")) { r = r.replace("*", ""); } return r; };
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 9999, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
       {/* Header */}
       <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
