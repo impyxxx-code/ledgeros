@@ -22,12 +22,27 @@ const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 const sb = {
   h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
   async signIn(e, p) { return (await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p }) })).json(); },
-  async signUp(e, p, n) {
+  async checkApproved(token, userId) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=approved,role`, { headers: sb.h(token) });
+      const data = await res.json();
+      if (!data[0]) return true; // no profile yet = admin account
+      if (data[0].role === "admin") return true; // admins always approved
+      return data[0].approved === true;
+    } catch(e) { return true; }
+  },
+  async signUp(e, p, n, role = "agent") {
     const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
     if (d.access_token && d.user) {
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) });
-      } catch(err) { console.log("Profile creation failed, will retry on login"); }
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: role, email: e, approved: false }) });
+        // Notify admin via SendGrid
+        await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+          to: "ARKHAMRETAIL@GMAIL.COM",
+          subject: "New Agent Signup — Approval Required",
+          html: "<h2>New Agent Registration</h2><p><strong>" + n + "</strong> (" + e + ") has signed up as a <strong>" + role + "</strong> and is waiting for your approval.</p><p>Log in to LedgerOS → Settings → Users to approve or reject.</p><br><p><a href='https://ledgeros-lac.vercel.app' style='background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none'>Review in LedgerOS →</a></p>"
+        })});
+      } catch(err) { console.log("Profile/notification failed:", err); }
     }
     return d;
   },
@@ -1036,15 +1051,31 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
 
 function Auth({ onAuth }) {
   const [mode, setMode] = useState("signin");
-  const [f, setF] = useState({ email: "", password: "", full_name: "" });
+  const [f, setF] = useState({ email: "", password: "", full_name: "", role: "agent" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const go = async () => {
     setLoading(true); setErr("");
     try {
-      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name);
-      if (d.access_token) onAuth({ token: d.access_token, user: d.user });
-      else setErr(d.msg || d.error_description || "Authentication failed.");
+      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name, f.role);
+      if (d.access_token) {
+        if (mode === "signin") {
+          const approved = await sb.checkApproved(d.access_token, d.user.id);
+          if (!approved) {
+            setErr("Your account is pending approval. Please contact the administrator.");
+            setLoading(false);
+            return;
+          }
+        }
+        if (mode === "signup") {
+          setErr(""); 
+          setMode("signin");
+          setErr("Account created! Please wait for admin approval before signing in.");
+          setLoading(false);
+          return;
+        }
+        onAuth({ token: d.access_token, user: d.user });
+      } else setErr(d.msg || d.error_description || "Authentication failed.");
     } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
@@ -4324,6 +4355,84 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
 }
 
 
+// ── USER APPROVAL ────────────────────────────────────────────────────────────
+function UserApproval({ token }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    sb.get(token, "profiles", "order=created_at.desc").then(d => {
+      if (Array.isArray(d)) setUsers(d);
+      setLoading(false);
+    });
+  }, [token]);
+
+  const approve = async (id) => {
+    await sb.patch(token, "profiles", id, { approved: true });
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, approved: true } : u));
+  };
+
+  const reject = async (id) => {
+    await sb.patch(token, "profiles", id, { approved: false });
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, approved: false } : u));
+  };
+
+  const pending = users.filter(u => u.approved === false || u.approved === null);
+  const approved = users.filter(u => u.approved === true);
+
+  return (
+    <div>
+      {loading ? <div style={{ padding:24, color:"var(--text3)" }}>Loading users...</div> : (
+        <div>
+          {/* Pending approvals */}
+          <div className="card" style={{ marginBottom:16, padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>⏳ Pending Approval</div>
+            <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting for access</div>
+            {pending.length === 0 ? (
+              <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>No pending users — all caught up ✅</div>
+            ) : pending.map(u => (
+              <div key={u.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#f59e0b,#ef4444)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff" }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:14 }}>{u.full_name || "Unknown"}</div>
+                    <div style={{ fontSize:12, color:"var(--text3)" }}>{u.email || u.id}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button className="btn bp bsm" onClick={() => approve(u.id)} style={{ background:"var(--green)", border:"none", color:"#fff" }}>✓ Approve</button>
+                  <button className="btn bo bsm" onClick={() => reject(u.id)} style={{ color:"var(--red)" }}>✗ Reject</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Approved users */}
+          <div className="card" style={{ padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>✅ Approved Users</div>
+            <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
+            {approved.map(u => (
+              <div key={u.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff" }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:14 }}>{u.full_name || "Unknown"}</div>
+                    <div style={{ fontSize:12, color:"var(--text3)" }}>{u.role || "agent"}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span className="badge b-green">Active</span>
+                  <button className="btn bo bsm" onClick={() => reject(u.id)} style={{ fontSize:11, color:"var(--text3)" }}>Revoke</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SETTINGS ────────────────────────────────────────────────────────────────
 function Settings({ auth, contacts, invoices, products }) {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
@@ -4351,7 +4460,7 @@ function Settings({ auth, contacts, invoices, products }) {
 
       {/* Tab bar */}
       <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {[["company","🏢 Company"],["appearance","🎨 Appearance"],["account","👤 Account"],["data","📊 Data"]].map(([k,l])=>(
+        {[["company","🏢 Company"],["appearance","🎨 Appearance"],["account","👤 Account"],["data","📊 Data"],["users","👥 Users"]].map(([k,l])=>(
           <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px", borderRadius:20, border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"), background:activeTab===k?"var(--blue)":"var(--white)", color:activeTab===k?"#fff":"var(--text2)", fontSize:13, fontWeight:activeTab===k?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{l}</button>
         ))}
       </div>
@@ -4422,6 +4531,11 @@ function Settings({ auth, contacts, invoices, products }) {
             <button className="btn b-red bsm" style={{ background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca" }} onClick={()=>{ localStorage.clear(); window.location.reload(); }}><i className="ti ti-logout" />Sign Out</button>
           </div>
         </div>
+      )}
+
+      {/* Users tab */}
+      {activeTab==="users" && (
+        <UserApproval token={auth?.token} />
       )}
 
       {/* Data tab */}
