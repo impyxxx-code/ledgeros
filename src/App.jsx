@@ -1622,7 +1622,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
   const buildDNHtml = (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
-    const LOGO_URI = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMTIwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjQyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMwNjBmMDkiLz4KCiAgPCEtLSBBIC0gZ3JlZW4gLS0+CiAgPHRleHQgeD0iMjAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDwhLS0gUiAtIGJsdWUgLS0+CiAgPHRleHQgeD0iNzAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMWU5MGZmIj5SPC90ZXh0PgoKICA8IS0tIFZlcnRpY2FsIGRpdmlkZXIgLS0+CiAgPHJlY3QgeD0iMTY0IiB5PSIxNiIgd2lkdGg9IjIiIGhlaWdodD0iODgiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuNSIvPgoKICA8IS0tIEFSS0hBTSAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjUyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjM0IiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iI2ZmZmZmZiI+QVJLSEFNPC90ZXh0PgoKICA8IS0tIEdyZWVuIHJ1bGUgLS0+CiAgPHJlY3QgeD0iMTgyIiB5PSI2MCIgd2lkdGg9IjIyMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjJjNTVlIi8+CgogIDwhLS0gUkVUQUlMIExURCAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjgyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGxldHRlci1zcGFjaW5nPSI2IiBmaWxsPSIjMjJjNTVlIj5SRVRBSUwgIExURDwvdGV4dD4KCiAgPCEtLSBXSE9MRVNBTEUgwrcgUkVUQUlMIC0tPgogIDx0ZXh0IHg9IjE4MiIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI0MDAiIGZvbnQtc2l6ZT0iMTAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMzUpIj5XSE9MRVNBTEUgIMK3ICBSRVRBSUw8L3RleHQ+Cjwvc3ZnPg==";
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1702,7 +1701,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="logo-wrap"><img src="${LOGO_URI}" alt="Arkham Retail Ltd" /></div>
+      <div style="font-size:22px;font-weight:900;color:#0a0f1e;letter-spacing:-1px">AR</div>
       <div class="co-detail">
         2 Fieldhead Street, Fieldhead Business Centre<br>
         Bradford, West Yorkshire BD7 1LW<br>
@@ -1720,10 +1719,10 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   </div>
 
   <!-- Driver strip -->
-  ${dn.driver ? '<div class="driver-strip">
-    <div class="driver-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
-    <div><div class="driver-label">Driver / Courier</div><div class="driver-name">${dn.driver}</div></div>
-  </div>' : ""}
+  ${dn.driver ? "<div class=\"driver-strip\"><div class=\"driver-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"1\" y=\"3\" width=\"15\" height=\"13\"/><path d=\"M16 8h4l3 5v3h-7V8z\"/><circle cx=\"5.5\" cy=\"18.5\" r=\"2.5\"/><circle cx=\"18.5\" cy=\"18.5\" r=\"2.5\"/></svg></div><div><div class=\"driver-label\">Driver / Courier</div><div class=\"driver-name\">" + dn.driver + "</div></div></div>" : ""}
+
+
+
 
   <!-- Meta -->
   <div class="meta-grid">
@@ -2588,13 +2587,12 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const cust = contacts.find(c => c.name === inv.customer);
     const address = [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ");
     const dn_number = `DN-${inv.invoice_number.replace("INV-", "")}`;
-    const LOGO_URI = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMTIwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjQyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMwNjBmMDkiLz4KCiAgPCEtLSBBIC0gZ3JlZW4gLS0+CiAgPHRleHQgeD0iMjAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDwhLS0gUiAtIGJsdWUgLS0+CiAgPHRleHQgeD0iNzAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMWU5MGZmIj5SPC90ZXh0PgoKICA8IS0tIFZlcnRpY2FsIGRpdmlkZXIgLS0+CiAgPHJlY3QgeD0iMTY0IiB5PSIxNiIgd2lkdGg9IjIiIGhlaWdodD0iODgiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuNSIvPgoKICA8IS0tIEFSS0hBTSAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjUyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjM0IiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iI2ZmZmZmZiI+QVJLSEFNPC90ZXh0PgoKICA8IS0tIEdyZWVuIHJ1bGUgLS0+CiAgPHJlY3QgeD0iMTgyIiB5PSI2MCIgd2lkdGg9IjIyMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjJjNTVlIi8+CgogIDwhLS0gUkVUQUlMIExURCAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjgyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGxldHRlci1zcGFjaW5nPSI2IiBmaWxsPSIjMjJjNTVlIj5SRVRBSUwgIExURDwvdGV4dD4KCiAgPCEtLSBXSE9MRVNBTEUgwrcgUkVUQUlMIC0tPgogIDx0ZXh0IHg9IjE4MiIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI0MDAiIGZvbnQtc2l6ZT0iMTAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMzUpIj5XSE9MRVNBTEUgIMK3ICBSRVRBSUw8L3RleHQ+Cjwvc3ZnPg==";
     const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>${dn_number}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:780px;margin:0 auto;padding:32px 36px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}.logo-wrap img{height:52px;object-fit:contain}.co-detail{font-size:10px;color:#64748b;line-height:1.8;margin-top:8px}.doc-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1}.doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px}.inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}.status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}.meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}.meta-box.dark{background:#0a0f1e;border-color:#0a0f1e}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.meta-lbl.light{color:rgba(255,255,255,.45)}.meta-val{font-size:14px;font-weight:700;color:#0a0f1e}.meta-val.large{font-size:20px}.meta-val.light{color:#fff}.meta-val.addr{font-size:12px;font-weight:500;color:rgba(255,255,255,.55);margin-top:4px;line-height:1.6}.meta-sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}.table-wrap{margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}table{width:100%;border-collapse:collapse}thead tr{background:#0a0f1e}th{padding:12px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;text-align:left}th.c{text-align:center}td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f5f9}tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#fafbfd}.td-desc{font-weight:600}.td-unit{color:#94a3b8;font-size:11px}.td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}.td-blank{text-align:center;color:#cbd5e1}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}.sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px}.sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}.footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8}.footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}</style>
 </head><body><div class="page">
 <div class="header">
-  <div><div class="logo-wrap"><img src="${LOGO_URI}" alt="${COMPANY.name}" /></div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} · ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div>
+  <div><div style="font-size:22px;font-weight:900;color:#0a0f1e;letter-spacing:-1px">AR</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} · ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div>
   <div style="text-align:right"><div class="doc-title">DELIVERY</div><div class="doc-title">NOTE</div><div class="doc-num">${dn_number}</div><div class="inv-badge">📄 Invoice: ${inv.invoice_number}</div><div class="status-pill">${(inv.status||"pending").toUpperCase()}</div></div>
 </div>
 <div class="meta-grid">
