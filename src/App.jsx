@@ -2638,7 +2638,7 @@ function Contacts({ contacts, setContacts, token, userId }) {
       {contactView === "list" ? (
         <div className="card">
           <div className="tw"><table><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
-            {(tab==="customers"?customers:suppliers).map(c=>(
+            {filtered.map(c=>(
               <tr key={c.id}>
                 <td><div style={{display:"flex",alignItems:"center",gap:10}}><div className="c-av" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1",width:30,height:30,fontSize:11}}>{c.name?.[0]?.toUpperCase()}</div><span style={{fontWeight:600}}>{c.name}</span></div></td>
                 <td style={{fontSize:12,color:"var(--text2)"}}>{c.email||"—"}</td>
