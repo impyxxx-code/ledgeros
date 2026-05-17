@@ -4280,8 +4280,6 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
           <i className="ti ti-send" style={{ color: input.trim() && !loading ? "#fff" : "var(--text3)", fontSize: 15 }} />
         </button>
       </div>
-      </div>
-      </div>
     </div>
   );
 }
