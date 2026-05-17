@@ -1528,7 +1528,11 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
 // ── INVOICE FORM ──────────────────────────────────────────────────────────────
 function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
-  const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
+  const [lines, setLines] = useState([
+    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
+    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
+    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
+  ]);
   const [saving, setSaving] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState(null); // ← success state
   const [creatingDN, setCreatingDN] = useState(false);
