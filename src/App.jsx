@@ -4160,18 +4160,19 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
     setLoading(true);
     try {
       const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/ai", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
           system: buildContext(),
           messages: [...history, { role: "user", content: userMsg }]
         })
       });
-      // Fallback: if no proxy, use built-in smart responses
-      if (!res.ok) throw new Error("no proxy");
+      if (!res.ok) throw new Error("api error");
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn\'t process that. Please try again.";
+      const reply = data.content?.[0]?.text || "Sorry, I could not process that.";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch (e) {
       // Smart local fallback when API unavailable
@@ -4227,7 +4228,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
     "Who are my top customers?",
   ];
 
-  const renderMsg = (text) => text.replace(/\*([^*]+)\*/g, "$1");
+  const renderMsg = (text) => { let r = text; while (r.includes("*")) { r = r.replace("*", ""); } return r; };
 
   return (
     <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
@@ -4301,8 +4302,8 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
 
 // ── SETTINGS ────────────────────────────────────────────────────────────────
 function Settings({ auth, contacts, invoices, products }) {
-  const [darkMode, setDarkMode] = React.useState(localStorage.getItem("darkMode")==="true");
-  const [activeTab, setActiveTab] = React.useState("company");
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
+  const [activeTab, setActiveTab] = useState("company");
   
   const toggleDark = () => {
     const next = !darkMode;
