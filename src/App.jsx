@@ -655,14 +655,14 @@ tr:hover td{background:#f8fafd}
 
 /* ── Line Items ── */
 .il-header{
-  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
+  display:grid;grid-template-columns:3fr 0.6fr 1fr 1fr 0.8fr 30px;
   gap:10px;padding:9px 16px;
   background:#f8fafd;border-bottom:1px solid var(--border);
 }
 .il-line{
-  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
-  gap:10px;align-items:center;
-  padding:9px 16px;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:3fr 0.6fr 1fr 1fr 0.8fr 30px;
+  gap:10px;align-items:start;
+  padding:14px 16px;border-bottom:1px solid var(--border);
 }
 .il-input{
   background:var(--white);border:1px solid var(--border);
@@ -2011,9 +2011,9 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         <div className="il-header">{["Product / Description", "Qty", "Unit Price", "VAT", "Total", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>{h}</span>)}</div>
         {lines.map((l, i) => (
           <div key={i} className="il-line">
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               <SearchDropdown placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" />
-              <input className="il-input" placeholder="Or type description..." value={l.description} onChange={e => updateLine(i, "description", e.target.value)} />
+              <input className="il-input" placeholder="Description (auto-filled or type manually)" value={l.description} onChange={e => updateLine(i, "description", e.target.value)} style={{ fontSize: 11, padding: "5px 10px", color: "var(--text2)" }} />
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
             <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
