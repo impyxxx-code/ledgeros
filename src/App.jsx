@@ -3004,32 +3004,22 @@ function CreditNotes({ contacts, invoices, token, userId }) {
       alert("Error saving credit note: " + saveErr.message);
       return;
     }
-    // Apply credit note to invoices
+    // Apply credit note to invoices - fetch fresh from Supabase
     try {
+      const custName = customers.find(c=>c.id===f.customer_id)?.name || "";
       if (f.invoice_id) {
-        const linkedInv = invoices.find(i => i.id === f.invoice_id);
-        if (linkedInv) {
-          const newBalance = linkedInv.amount - creditAmount;
-          if (newBalance <= 0) {
-            await sb.patch(token, "invoices", f.invoice_id, { status: "paid" });
-          }
-        }
-      } else {
-        const custName = customers.find(c=>c.id===f.customer_id)?.name || "";
-        console.log("Applying credit to customer:", custName, "amount:", creditAmount);
-        const custInvoices = invoices.filter(i => 
-          i.customer && custName && 
-          i.customer.toLowerCase().trim() === custName.toLowerCase().trim() && 
-          (i.status === "pending" || i.status === "overdue")
-        ).sort((a,b) => new Date(a.invoice_date)-new Date(b.invoice_date));
-        console.log("Found invoices to apply credit:", custInvoices.length, custInvoices.map(i=>i.invoice_number));
-        let remaining = creditAmount;
-        for (const inv of custInvoices) {
-          if (remaining <= 0) break;
-          if (inv.amount <= remaining) {
-            const result = await sb.patch(token, "invoices", inv.id, { status: "paid" });
-            console.log("Marked paid:", inv.invoice_number, result);
-            remaining -= inv.amount;
+        await sb.patch(token, "invoices", f.invoice_id, { status: "paid" });
+      } else if (custName) {
+        // Fetch all pending invoices for this customer directly from Supabase
+        const freshInvs = await sb.get(token, "invoices", "customer=eq." + custName + "&status=in.(pending,overdue)&order=invoice_date.asc");
+        if (Array.isArray(freshInvs)) {
+          let remaining = creditAmount;
+          for (const inv of freshInvs) {
+            if (remaining <= 0) break;
+            if (inv.amount <= remaining) {
+              await sb.patch(token, "invoices", inv.id, { status: "paid" });
+              remaining -= inv.amount;
+            }
           }
         }
       }
