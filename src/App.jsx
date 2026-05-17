@@ -2873,7 +2873,7 @@ function Contacts({ contacts, setContacts, token, userId }) {
               <div style={{ display:"flex",gap:8 }}>
                 <button className="btn bo bsm" onClick={()=>{setViewContact(null);setF({...viewContact});setShowForm(true);}}><i className="ti ti-edit" />Edit</button>
                 {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
-                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.replace(/[^0-9]/g,""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
+                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
               </div>
               <button className="btn bp bsm" onClick={()=>setViewContact(null)}>Close</button>
             </div>
