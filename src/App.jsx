@@ -1123,7 +1123,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
 
-  const lines = invoice.lines || [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }];
+  const lines = (() => { try { const l = invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : null; return Array.isArray(l) && l.length > 0 ? l : [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }]; } catch(e) { return [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }]; } })();
   const subtotal = lines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
   const vatTotal = lines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
   const total = subtotal + vatTotal;
