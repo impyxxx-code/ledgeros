@@ -2984,8 +2984,26 @@ function CreditNotes({ contacts, invoices, token, userId }) {
     const num = `CN-${String(cns.length+1).padStart(3,"0")}`;
     const cust = customers.find(c => c.id===f.customer_id);
     const creditAmount = parseFloat(f.amount);
-    const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:creditAmount,created_by:userId,status:"applied"});
-    if (data[0]) setCNs(prev => [data[0],...prev]);
+    let data = [];
+    try {
+      data = await sb.post(token,"credit_notes",{
+        cn_number: num,
+        customer_id: f.customer_id,
+        customer_name: cust?.name || "",
+        invoice_id: f.invoice_id || null,
+        reason: f.reason || "",
+        amount: creditAmount,
+        issue_date: f.issue_date,
+        created_by: userId,
+        status: "applied"
+      });
+      if (data && data[0]) setCNs(prev => [data[0],...prev]);
+    } catch(saveErr) {
+      console.error("Credit note save error:", saveErr);
+      setSaving(false);
+      alert("Error saving credit note: " + saveErr.message);
+      return;
+    }
     // Apply credit note to invoices
     try {
       if (f.invoice_id) {
