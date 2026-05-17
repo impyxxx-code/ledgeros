@@ -2013,7 +2013,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           <div key={i} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               <SearchDropdown placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" />
-              <input className="il-input" placeholder="Description (auto-filled or type manually)" value={l.description} onChange={e => updateLine(i, "description", e.target.value)} style={{ fontSize: 11, padding: "5px 10px", color: "var(--text2)" }} />
+
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
             <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
