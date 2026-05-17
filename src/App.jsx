@@ -1622,9 +1622,176 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
   const buildDNHtml = (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
-    return `<!DOCTYPE html><html><head><title>${dn.dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:16mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #0f172a}.co-name{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.7}.dn-title{font-size:32px;font-weight:900;color:#e2e8f0;text-align:right;letter-spacing:-1px}.dn-num{font-size:15px;font-weight:700;text-align:right;color:#0f172a}.meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.meta-box{background:#f8fafc;padding:14px;border-radius:6px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}.meta-val{font-size:13px;font-weight:600;color:#0f172a}.meta-val.large{font-size:16px}table{width:100%;border-collapse:collapse;margin-bottom:24px}thead tr{background:#0f172a;color:#fff}th{padding:10px 12px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left;letter-spacing:0.5px}td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:nth-child(even) td{background:#fafbfc}.qty-col{text-align:center;font-weight:700;font-size:14px}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}.sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}.sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}.footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}.ref-badge{display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;margin-top:6px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}</div></div><div style="text-align:right"><div class="dn-title">DELIVERY NOTE</div><div class="dn-num">${dn.dn_number}</div>${dn.invoice_ref ? `<div class="ref-badge">Invoice: ${dn.invoice_ref}</div>` : ""}</div></div><div class="meta"><div class="meta-box"><div class="meta-lbl">Deliver To</div><div class="meta-val large">${dn.customer_name}</div>${dn.delivery_address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${dn.delivery_address}</div>` : ""}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div><div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(dn.delivery_date)}</div></div>${dn.driver ? `<div class="meta-box" style="grid-column:1/-1"><div class="meta-lbl">Driver / Courier</div><div class="meta-val">${dn.driver}</div></div>` : ""}</div></div><table><thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead><tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description || "—"}</td><td style="color:#64748b">${l.unit || "unit"}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody></table>${dn.notes ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin-bottom:20px"><div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">Delivery Instructions</div><div style="font-size:12px;color:#78350f">${dn.notes}</div></div>` : ""}<div class="sig-section"><div><div class="sig-box"></div><div class="sig-lbl">Delivered by (Signature & Name)</div></div><div><div class="sig-box"></div><div class="sig-lbl">Received by (Signature, Name & Date)</div></div></div><div class="footer"><span>${COMPANY.name} · ${COMPANY.vatNumber}</span><span>Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>${dn.dn_number}</span></div></body></html>`;
-  };
+    const LOGO_URI = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMTIwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjQyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMwNjBmMDkiLz4KCiAgPCEtLSBBIC0gZ3JlZW4gLS0+CiAgPHRleHQgeD0iMjAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDwhLS0gUiAtIGJsdWUgLS0+CiAgPHRleHQgeD0iNzAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMWU5MGZmIj5SPC90ZXh0PgoKICA8IS0tIFZlcnRpY2FsIGRpdmlkZXIgLS0+CiAgPHJlY3QgeD0iMTY0IiB5PSIxNiIgd2lkdGg9IjIiIGhlaWdodD0iODgiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuNSIvPgoKICA8IS0tIEFSS0hBTSAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjUyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjM0IiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iI2ZmZmZmZiI+QVJLSEFNPC90ZXh0PgoKICA8IS0tIEdyZWVuIHJ1bGUgLS0+CiAgPHJlY3QgeD0iMTgyIiB5PSI2MCIgd2lkdGg9IjIyMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjJjNTVlIi8+CgogIDwhLS0gUkVUQUlMIExURCAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjgyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGxldHRlci1zcGFjaW5nPSI2IiBmaWxsPSIjMjJjNTVlIj5SRVRBSUwgIExURDwvdGV4dD4KCiAgPCEtLSBXSE9MRVNBTEUgwrcgUkVUQUlMIC0tPgogIDx0ZXh0IHg9IjE4MiIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI0MDAiIGZvbnQtc2l6ZT0iMTAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMzUpIj5XSE9MRVNBTEUgIMK3ICBSRVRBSUw8L3RleHQ+Cjwvc3ZnPg==";
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${dn.dn_number} — Delivery Note</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{max-width:780px;margin:0 auto;padding:32px 36px}
 
+  /* Header */
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}
+  .logo-wrap img{height:52px;object-fit:contain}
+  .co-detail{font-size:10px;color:#64748b;line-height:1.8;margin-top:8px}
+  .doc-title-wrap{text-align:right}
+  .doc-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1}
+  .doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px;letter-spacing:-.5px}
+  .status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+  .inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}
+
+  /* Meta grid */
+  .meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}
+  .meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}
+  .meta-box.accent{background:#0a0f1e;border-color:#0a0f1e}
+  .meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+  .meta-lbl.light{color:rgba(255,255,255,.45)}
+  .meta-val{font-size:14px;font-weight:700;color:#0a0f1e}
+  .meta-val.large{font-size:20px;letter-spacing:-.3px}
+  .meta-val.light{color:#fff}
+  .meta-val.addr{font-size:12px;font-weight:500;color:#475569;margin-top:4px;line-height:1.6}
+  .meta-sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* Table */
+  .table-wrap{margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:#0a0f1e}
+  th{padding:12px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;text-align:left}
+  th.center{text-align:center}
+  td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:nth-child(even) td{background:#fafbfd}
+  .td-desc{font-weight:600;color:#0a0f1e}
+  .td-unit{color:#94a3b8;font-size:11px;font-weight:500}
+  .td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}
+  .td-blank{text-align:center;color:#cbd5e1;font-size:18px}
+
+  /* Signature */
+  .sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}
+  .sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px;border-radius:2px;background:linear-gradient(to bottom,#fafbfd,#fff)}
+  .sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+
+  /* Notes */
+  .notes-box{background:#fef9ec;border:1px solid #fcd34d;border-radius:10px;padding:14px 16px;margin-bottom:24px}
+  .notes-lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+  .notes-val{font-size:12px;color:#78350f;line-height:1.6}
+
+  /* Footer */
+  .footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8}
+  .footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}
+
+  /* Driver strip */
+  .driver-strip{background:#f0f4ff;border:1px solid #c7d7fc;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  .driver-icon{width:34px;height:34px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .driver-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:2px}
+  .driver-name{font-size:14px;font-weight:700;color:#1e40af}
+
+  @media print{
+    body{padding:0}
+    .page{max-width:100%;padding:20px 24px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="logo-wrap"><img src="${LOGO_URI}" alt="Arkham Retail Ltd" /></div>
+      <div class="co-detail">
+        2 Fieldhead Street, Fieldhead Business Centre<br>
+        Bradford, West Yorkshire BD7 1LW<br>
+        Tel: 07801 567209 / 07851 983151<br>
+        ARKHAMRETAIL@GMAIL.COM · VAT: GB462229106
+      </div>
+    </div>
+    <div class="doc-title-wrap">
+      <div class="doc-title">DELIVERY</div>
+      <div style="font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1">NOTE</div>
+      <div class="doc-num">${dn.dn_number}</div>
+      ${dn.invoice_ref ? `<div class="inv-badge">📄 Invoice: ${dn.invoice_ref}</div>` : ""}
+      <div class="status-pill">${dn.status?.toUpperCase() || "PENDING"}</div>
+    </div>
+  </div>
+
+  <!-- Driver strip -->
+  ${dn.driver ? `<div class="driver-strip">
+    <div class="driver-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+    <div><div class="driver-label">Driver / Courier</div><div class="driver-name">${dn.driver}</div></div>
+  </div>` : ""}
+
+  <!-- Meta -->
+  <div class="meta-grid">
+    <div class="meta-box accent">
+      <div class="meta-lbl light">Deliver To</div>
+      <div class="meta-val large light">${dn.customer_name}</div>
+      ${dn.delivery_address ? `<div class="meta-val addr" style="color:rgba(255,255,255,.55)">${dn.delivery_address.replace(/
+/g,"<br>")}</div>` : ""}
+    </div>
+    <div class="meta-sub-grid">
+      <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
+      <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${new Date(dn.delivery_date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div></div>
+      <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${dn.invoice_ref || "—"}</div></div>
+      <div class="meta-box"><div class="meta-lbl">Items</div><div class="meta-val">${dnLines.length} line${dnLines.length !== 1 ? "s" : ""}</div></div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  ${dn.notes ? `<div class="notes-box"><div class="notes-lbl">⚡ Delivery Instructions</div><div class="notes-val">${dn.notes}</div></div>` : ""}
+
+  <!-- Items table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:45%">Description</th>
+          <th>Unit</th>
+          <th class="center">Qty Ordered</th>
+          <th class="center">Qty Delivered</th>
+          <th class="center">Condition</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${dnLines.map(l => `
+        <tr>
+          <td class="td-desc">${l.description || "—"}</td>
+          <td class="td-unit">${l.unit || "unit"}</td>
+          <td class="td-qty">${l.qty}</td>
+          <td class="td-blank">____</td>
+          <td class="td-blank">____</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Signatures -->
+  <div class="sig-section">
+    <div>
+      <div class="sig-box"></div>
+      <div class="sig-lbl">✍ Delivered by — Signature &amp; Full Name</div>
+    </div>
+    <div>
+      <div class="sig-box"></div>
+      <div class="sig-lbl">✍ Received by — Signature, Name &amp; Date</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div><span class="footer-brand">Arkham Retail Ltd</span> · VAT Reg: GB462229106</div>
+    <div>${dn.dn_number} · Printed: ${new Date().toLocaleDateString("en-GB")}</div>
+    <div>All goods remain property of Arkham Retail Ltd until signed</div>
+  </div>
+
+</div>
+</body>
+</html>`;
+  };
   const downloadDN = (dn) => {
     const blob = new Blob([buildDNHtml(dn)], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -2422,30 +2589,34 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const cust = contacts.find(c => c.name === inv.customer);
     const address = [cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", ");
     const dn_number = `DN-${inv.invoice_number.replace("INV-", "")}`;
-    const html = `<!DOCTYPE html><html><head><title>${dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:16mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #0f172a}.co-name{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.7}.dn-title{font-size:32px;font-weight:900;color:#e2e8f0;text-align:right;letter-spacing:-1px}.dn-num{font-size:15px;font-weight:700;text-align:right;color:#0f172a}.meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.meta-box{background:#f8fafc;padding:14px;border-radius:6px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}.meta-val{font-size:13px;font-weight:600;color:#0f172a}.large{font-size:16px}table{width:100%;border-collapse:collapse;margin-bottom:24px}thead tr{background:#0f172a;color:#fff}th{padding:10px 12px;font-size:10px;font-weight:600;text-transform:uppercase;text-align:left;letter-spacing:0.5px}td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:nth-child(even) td{background:#fafbfc}.qty-col{text-align:center;font-weight:700;font-size:14px}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}.sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}.sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}.footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}.ref-badge{display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;margin-top:6px}</style></head><body>
-    <div class="header">
-      <div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}</div></div>
-      <div style="text-align:right"><div class="dn-title">DELIVERY NOTE</div><div class="dn-num">${dn_number}</div><div class="ref-badge">Invoice: ${inv.invoice_number}</div></div>
-    </div>
-    <div class="meta">
-      <div class="meta-box"><div class="meta-lbl">Deliver To</div><div class="meta-val large">${inv.customer}</div>${address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${address}</div>` : ""}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn_number}</div></div>
-        <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(inv.invoice_date)}</div></div>
-        <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${inv.invoice_number}</div></div>
-        <div class="meta-box"><div class="meta-lbl">Status</div><div class="meta-val">${inv.status?.toUpperCase()}</div></div>
-      </div>
-    </div>
-    <table>
-      <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
-      <tbody>${dnLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td style="color:#64748b">${l.unit}</td><td class="qty-col">${l.qty}</td><td class="qty-col" style="color:#94a3b8">____</td><td style="text-align:center;color:#94a3b8">____</td></tr>`).join("")}</tbody>
-    </table>
-    <div class="sig-section">
-      <div><div class="sig-box"></div><div class="sig-lbl">Delivered by (Signature &amp; Name)</div></div>
-      <div><div class="sig-box"></div><div class="sig-lbl">Received by (Signature, Name &amp; Date)</div></div>
-    </div>
-    <div class="footer"><span>${COMPANY.name} · ${COMPANY.vatNumber}</span><span>Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>${dn_number}</span></div>
-    </body></html>`;
+    const LOGO_URI = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMTIwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjQyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMwNjBmMDkiLz4KCiAgPCEtLSBBIC0gZ3JlZW4gLS0+CiAgPHRleHQgeD0iMjAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMjJjNTVlIj5BPC90ZXh0PgogIDwhLS0gUiAtIGJsdWUgLS0+CiAgPHRleHQgeD0iNzAiIHk9Ijg4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjgyIiBmaWxsPSIjMWU5MGZmIj5SPC90ZXh0PgoKICA8IS0tIFZlcnRpY2FsIGRpdmlkZXIgLS0+CiAgPHJlY3QgeD0iMTY0IiB5PSIxNiIgd2lkdGg9IjIiIGhlaWdodD0iODgiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuNSIvPgoKICA8IS0tIEFSS0hBTSAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjUyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjM0IiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iI2ZmZmZmZiI+QVJLSEFNPC90ZXh0PgoKICA8IS0tIEdyZWVuIHJ1bGUgLS0+CiAgPHJlY3QgeD0iMTgyIiB5PSI2MCIgd2lkdGg9IjIyMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjJjNTVlIi8+CgogIDwhLS0gUkVUQUlMIExURCAtLT4KICA8dGV4dCB4PSIxODIiIHk9IjgyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGxldHRlci1zcGFjaW5nPSI2IiBmaWxsPSIjMjJjNTVlIj5SRVRBSUwgIExURDwvdGV4dD4KCiAgPCEtLSBXSE9MRVNBTEUgwrcgUkVUQUlMIC0tPgogIDx0ZXh0IHg9IjE4MiIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI0MDAiIGZvbnQtc2l6ZT0iMTAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMzUpIj5XSE9MRVNBTEUgIMK3ICBSRVRBSUw8L3RleHQ+Cjwvc3ZnPg==";
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>${dn_number}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:780px;margin:0 auto;padding:32px 36px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}.logo-wrap img{height:52px;object-fit:contain}.co-detail{font-size:10px;color:#64748b;line-height:1.8;margin-top:8px}.doc-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1}.doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px}.inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}.status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}.meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}.meta-box.dark{background:#0a0f1e;border-color:#0a0f1e}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.meta-lbl.light{color:rgba(255,255,255,.45)}.meta-val{font-size:14px;font-weight:700;color:#0a0f1e}.meta-val.large{font-size:20px}.meta-val.light{color:#fff}.meta-val.addr{font-size:12px;font-weight:500;color:rgba(255,255,255,.55);margin-top:4px;line-height:1.6}.meta-sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}.table-wrap{margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}table{width:100%;border-collapse:collapse}thead tr{background:#0a0f1e}th{padding:12px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;text-align:left}th.c{text-align:center}td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f5f9}tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#fafbfd}.td-desc{font-weight:600}.td-unit{color:#94a3b8;font-size:11px}.td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}.td-blank{text-align:center;color:#cbd5e1}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}.sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px}.sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}.footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8}.footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}</style>
+</head><body><div class="page">
+<div class="header">
+  <div><div class="logo-wrap"><img src="${LOGO_URI}" alt="${COMPANY.name}" /></div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} · ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div>
+  <div style="text-align:right"><div class="doc-title">DELIVERY</div><div class="doc-title">NOTE</div><div class="doc-num">${dn_number}</div><div class="inv-badge">📄 Invoice: ${inv.invoice_number}</div><div class="status-pill">${(inv.status||"pending").toUpperCase()}</div></div>
+</div>
+<div class="meta-grid">
+  <div class="meta-box dark"><div class="meta-lbl light">Deliver To</div><div class="meta-val large light">${inv.customer}</div>${address?`<div class="meta-val addr">${address}</div>`:""}</div>
+  <div class="meta-sub">
+    <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn_number}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(inv.invoice_date)}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${inv.invoice_number}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Items</div><div class="meta-val">${dnLines.length} line${dnLines.length!==1?"s":""}</div></div>
+  </div>
+</div>
+<div class="table-wrap"><table>
+  <thead><tr><th style="width:45%">Description</th><th>Unit</th><th class="c">Qty Ordered</th><th class="c">Qty Delivered</th><th class="c">Condition</th></tr></thead>
+  <tbody>${dnLines.map(l=>`<tr><td class="td-desc">${l.description}</td><td class="td-unit">${l.unit||"unit"}</td><td class="td-qty">${l.qty}</td><td class="td-blank">____</td><td class="td-blank">____</td></tr>`).join("")}</tbody>
+</table></div>
+<div class="sig-section">
+  <div><div class="sig-box"></div><div class="sig-lbl">✍ Delivered by — Signature &amp; Full Name</div></div>
+  <div><div class="sig-box"></div><div class="sig-lbl">✍ Received by — Signature, Name &amp; Date</div></div>
+</div>
+<div class="footer"><span><span class="footer-brand">${COMPANY.name}</span> · VAT: ${COMPANY.vatNumber}</span><span>${dn_number} · Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>Goods remain property of ${COMPANY.name} until signed</span></div>
+</div></body></html>`;
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
