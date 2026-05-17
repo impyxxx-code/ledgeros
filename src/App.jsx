@@ -2986,38 +2986,30 @@ function CreditNotes({ contacts, invoices, token, userId }) {
     const creditAmount = parseFloat(f.amount);
     const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:creditAmount,created_by:userId,status:"applied"});
     if (data[0]) setCNs(prev => [data[0],...prev]);
-    // If linked to an invoice, update the invoice balance
-    if (f.invoice_id) {
-      const linkedInv = invoices.find(i => i.id === f.invoice_id);
-      if (linkedInv) {
-        const newBalance = linkedInv.amount - creditAmount;
-        if (newBalance <= 0) {
-          // Fully paid by credit note
-          await sb.patch(token, "invoices", f.invoice_id, { status: "paid", amount_paid: linkedInv.amount, payment_method: "Credit Note " + num });
-        } else {
-          // Partially paid - update amount
-          await sb.patch(token, "invoices", f.invoice_id, { amount: newBalance });
+    // Apply credit note to invoices
+    try {
+      if (f.invoice_id) {
+        const linkedInv = invoices.find(i => i.id === f.invoice_id);
+        if (linkedInv) {
+          const newBalance = linkedInv.amount - creditAmount;
+          if (newBalance <= 0) {
+            await sb.patch(token, "invoices", f.invoice_id, { status: "paid" });
+          }
+        }
+      } else {
+        const custInvoices = invoices.filter(i => i.customer === (customers.find(c=>c.id===f.customer_id)?.name) && (i.status === "pending" || i.status === "overdue")).sort((a,b) => new Date(a.invoice_date)-new Date(b.invoice_date));
+        let remaining = creditAmount;
+        for (const inv of custInvoices) {
+          if (remaining <= 0) break;
+          if (inv.amount <= remaining) {
+            await sb.patch(token, "invoices", inv.id, { status: "paid" });
+            remaining -= inv.amount;
+          }
         }
       }
-    } else {
-      // No specific invoice linked - find all pending invoices for this customer and reduce them
-      const custInvoices = invoices.filter(i => i.customer_id === f.customer_id && (i.status === "pending" || i.status === "overdue")).sort((a,b) => new Date(a.invoice_date)-new Date(b.invoice_date));
-      let remaining = creditAmount;
-      for (const inv of custInvoices) {
-        if (remaining <= 0) break;
-        if (inv.amount <= remaining) {
-          await sb.patch(token, "invoices", inv.id, { status: "paid", payment_method: "Credit Note " + num });
-          remaining -= inv.amount;
-        } else {
-          await sb.patch(token, "invoices", inv.id, { amount: inv.amount - remaining });
-          remaining = 0;
-        }
-      }
-    }
+    } catch(e) { console.error("Credit note apply error:", e); }
     setF({ customer_id:"",invoice_id:"",reason:"",amount:"",issue_date:today() });
     setShowForm(false); setSaving(false);
-    // Reload page to reflect changes
-    window.location.reload();
   };
   const updateStatus = async (id,status) => { await sb.patch(token,"credit_notes",id,{status}); setCNs(prev => prev.map(c => c.id===id?{...c,status}:c)); };
   return (
