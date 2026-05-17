@@ -1113,7 +1113,7 @@ function Auth({ onAuth }) {
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Full Name</label>
               <input style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" />
-            </di
+            </div>
           )}
           {mode === "signup" && (
             <div style={{ marginBottom: 16 }}>
