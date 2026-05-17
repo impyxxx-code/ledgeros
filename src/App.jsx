@@ -4160,20 +4160,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
     setLoading(true);
     try {
       const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: buildContext(),
-          messages: [...history, { role: "user", content: userMsg }]
-        })
-      });
-      if (!res.ok) throw new Error("api error");
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I could not process that.";
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      throw new Error("use local");
     } catch (e) {
       // Smart local fallback when API unavailable
       const q = userMsg.toLowerCase();
