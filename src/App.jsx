@@ -4299,6 +4299,137 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
 }
 
 
+// ── SETTINGS ────────────────────────────────────────────────────────────────
+function Settings({ auth, contacts, invoices, products }) {
+  const [darkMode, setDarkMode] = React.useState(localStorage.getItem("darkMode")==="true");
+  const [activeTab, setActiveTab] = React.useState("company");
+  
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem("darkMode", next);
+    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+  };
+
+  const stats = {
+    invoices: invoices.length,
+    customers: contacts.filter(c=>c.type==="customer").length,
+    products: products.length,
+    paid: invoices.filter(i=>i.status==="paid").length,
+  };
+
+  return (
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 0 40px" }}>
+      <div className="ph">
+        <div><div className="pt">Settings</div><div className="ps">Manage your LedgerOS configuration</div></div>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        {[["company","🏢 Company"],["appearance","🎨 Appearance"],["account","👤 Account"],["data","📊 Data"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px", borderRadius:20, border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"), background:activeTab===k?"var(--blue)":"var(--white)", color:activeTab===k?"#fff":"var(--text2)", fontSize:13, fontWeight:activeTab===k?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Company tab */}
+      {activeTab==="company" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+            {[
+              { label:"Company Name", val:"Arkham Retail Ltd" },
+              { label:"VAT Number", val:"GB462229106" },
+              { label:"Address", val:"2 Fieldhead Street, Fieldhead Business Centre" },
+              { label:"City", val:"Bradford, West Yorkshire BD7 1LW" },
+              { label:"Phone", val:"07801 567209 / 07851 983151" },
+              { label:"Email", val:"ARKHAMRETAIL@GMAIL.COM" },
+              { label:"Bank", val:"Tide Bank" },
+              { label:"Sort Code / Account", val:"04-06-05 / 23058246" },
+            ].map(f=>(
+              <div key={f.label}>
+                <div style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5 }}>{f.label}</div>
+                <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:"var(--r)", padding:"10px 14px" }}>{f.val}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop:16, padding:"12px 16px", background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--r)", fontSize:12, color:"#1e40af" }}>
+            ℹ️ Company details are currently hardcoded. Contact your administrator to update them.
+          </div>
+        </div>
+      )}
+
+      {/* Appearance tab */}
+      {activeTab==="appearance" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Appearance</div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 0", borderBottom:"1px solid var(--border)" }}>
+            <div>
+              <div style={{ fontWeight:600, marginBottom:3 }}>Dark Mode</div>
+              <div style={{ fontSize:12, color:"var(--text3)" }}>Switch between light and dark theme</div>
+            </div>
+            <div onClick={toggleDark} style={{ width:48, height:26, borderRadius:13, background:darkMode?"var(--blue)":"var(--border)", cursor:"pointer", position:"relative", transition:"background .2s" }}>
+              <div style={{ position:"absolute", top:3, left:darkMode?22:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }} />
+            </div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 0" }}>
+            <div>
+              <div style={{ fontWeight:600, marginBottom:3 }}>Version</div>
+              <div style={{ fontSize:12, color:"var(--text3)" }}>LedgerOS v2.0 — Beta</div>
+            </div>
+            <span style={{ padding:"4px 10px", background:"var(--blue)", color:"#fff", borderRadius:20, fontSize:11, fontWeight:700 }}>v2.0</span>
+          </div>
+        </div>
+      )}
+
+      {/* Account tab */}
+      {activeTab==="account" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Account</div>
+          <div style={{ display:"flex", alignItems:"center", gap:16, padding:"16px 0", borderBottom:"1px solid var(--border)" }}>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:700, color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
+            <div>
+              <div style={{ fontWeight:700, fontSize:16 }}>{auth?.user?.email}</div>
+              <div style={{ fontSize:12, color:"var(--text3)", marginTop:3 }}>Administrator · Arkham Retail Ltd</div>
+            </div>
+          </div>
+          <div style={{ marginTop:16, display:"flex", gap:10 }}>
+            <button className="btn bo bsm" onClick={()=>window.location.reload()}><i className="ti ti-refresh" />Refresh Session</button>
+            <button className="btn b-red bsm" style={{ background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca" }} onClick={()=>{ localStorage.clear(); window.location.reload(); }}><i className="ti ti-logout" />Sign Out</button>
+          </div>
+        </div>
+      )}
+
+      {/* Data tab */}
+      {activeTab==="data" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Data Summary</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            {[
+              { label:"Total Invoices", val:stats.invoices, icon:"ti-file-invoice", color:"var(--blue)" },
+              { label:"Paid Invoices", val:stats.paid, icon:"ti-circle-check", color:"var(--green)" },
+              { label:"Customers", val:stats.customers, icon:"ti-users", color:"var(--purple)" },
+              { label:"Products", val:stats.products, icon:"ti-box", color:"var(--amber)" },
+            ].map(s=>(
+              <div key={s.label} style={{ background:"var(--bg)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"16px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ width:40, height:40, borderRadius:10, background:s.color+"22", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <i className={"ti "+s.icon} style={{ color:s.color, fontSize:18 }} />
+                </div>
+                <div>
+                  <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
+                  <div style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px" }}>{s.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop:16, padding:"12px 16px", background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:"var(--r)", fontSize:12, color:"#c2410c" }}>
+            ⚠️ To clear data or perform bulk operations, use the Supabase SQL editor directly.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── NAV CONFIG ────────────────────────────────────────────────────────────────
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "ti-home" },
@@ -4676,7 +4807,7 @@ export default function App() {
                 );
               })()}
               <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><i className="ti ti-rocket" /></div>
-              <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
+              <div className="tb-btn" onClick={() => setPage("settings")}><i className="ti ti-settings" /></div>
               <button onClick={async () => {
                 setShowActivity(v => {
                   if (!v) {
@@ -4726,6 +4857,7 @@ export default function App() {
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
+          {page==="settings"&&<Settings auth={auth} contacts={contacts} invoices={invoices} products={products} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
