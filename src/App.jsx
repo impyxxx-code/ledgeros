@@ -1411,7 +1411,6 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               </div>
             </div>
           </div>
-        </div>
         )}
 
         {/* ── ACTIONS TAB ── */}
