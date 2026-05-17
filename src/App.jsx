@@ -3317,13 +3317,11 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       </div>
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
       </div>
-      {/* Scrollable tab bar — works on mobile without wrapping */}
-      <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",marginBottom:20,paddingBottom:4}}>
-        <div style={{display:"flex",gap:6,minWidth:"max-content"}}>
-          {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"],["agent-products","📋 Agent Products"],["product-tracker","🔍 Product Tracker"]].map(([k,l]) => (
-            <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 14px",borderRadius:20,border:"1px solid "+(tab===k?"var(--blue)":"var(--border)"),background:tab===k?"var(--blue)":"var(--white)",color:tab===k?"#fff":"var(--text2)",fontSize:12,fontWeight:tab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",transition:"all .12s"}}>{l}</button>
-          ))}
-        </div>
+      {/* Tab bar — 2 rows */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:20}}>
+        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"],["agent-products","📋 Agent Products"],["product-tracker","🔍 Product Tracker"]].map(([k,l]) => (
+          <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 14px",borderRadius:20,border:"1px solid "+(tab===k?"var(--blue)":"var(--border)"),background:tab===k?"var(--blue)":"var(--white)",color:tab===k?"#fff":"var(--text2)",fontSize:12,fontWeight:tab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",transition:"all .12s"}}>{l}</button>
+        ))}
       </div>
       {tab==="overview" && <div>
         <div className="kgrid">
