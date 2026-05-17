@@ -1714,24 +1714,23 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       <div class="doc-title">DELIVERY</div>
       <div style="font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1">NOTE</div>
       <div class="doc-num">${dn.dn_number}</div>
-      ${dn.invoice_ref ? `<div class="inv-badge">📄 Invoice: ${dn.invoice_ref}</div>` : ""}
+      ${dn.invoice_ref ? "<div class=\"inv-badge\">📄 Invoice: "+dn.invoice_ref+"</div>" : ""}
       <div class="status-pill">${dn.status?.toUpperCase() || "PENDING"}</div>
     </div>
   </div>
 
   <!-- Driver strip -->
-  ${dn.driver ? `<div class="driver-strip">
+  ${dn.driver ? '<div class="driver-strip">
     <div class="driver-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
     <div><div class="driver-label">Driver / Courier</div><div class="driver-name">${dn.driver}</div></div>
-  </div>` : ""}
+  </div>' : ""}
 
   <!-- Meta -->
   <div class="meta-grid">
     <div class="meta-box accent">
       <div class="meta-lbl light">Deliver To</div>
       <div class="meta-val large light">${dn.customer_name}</div>
-      ${dn.delivery_address ? `<div class="meta-val addr" style="color:rgba(255,255,255,.55)">${dn.delivery_address.replace(/
-/g,"<br>")}</div>` : ""}
+      ${dn.delivery_address ? "<div class='meta-val addr' style='color:rgba(255,255,255,.55)'>"+dn.delivery_address+"</div>" : ""}
     </div>
     <div class="meta-sub-grid">
       <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
@@ -1742,7 +1741,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   </div>
 
   <!-- Notes -->
-  ${dn.notes ? `<div class="notes-box"><div class="notes-lbl">⚡ Delivery Instructions</div><div class="notes-val">${dn.notes}</div></div>` : ""}
+  ${dn.notes ? "<div class=\"notes-box\"><div class=\"notes-lbl\">⚡ Delivery Instructions</div><div class=\"notes-val\">"+dn.notes+"</div></div>" : ""}
 
   <!-- Items table -->
   <div class="table-wrap">
@@ -1757,14 +1756,14 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         </tr>
       </thead>
       <tbody>
-        ${dnLines.map(l => `
-        <tr>
-          <td class="td-desc">${l.description || "—"}</td>
-          <td class="td-unit">${l.unit || "unit"}</td>
-          <td class="td-qty">${l.qty}</td>
-          <td class="td-blank">____</td>
-          <td class="td-blank">____</td>
-        </tr>`).join("")}
+        ${dnLines.map(l => "<tr><td class=\"td-desc\">" + (l.description || "—") + "</td><td class=\"td-unit\">" + (l.unit || "unit") + "</td><td class=\"td-qty\">" + l.qty + "</td><td class=\"td-blank\">____</td><td class=\"td-blank\">____</td></tr>").join("")}
+
+
+
+
+
+
+
       </tbody>
     </table>
   </div>
@@ -2599,7 +2598,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   <div style="text-align:right"><div class="doc-title">DELIVERY</div><div class="doc-title">NOTE</div><div class="doc-num">${dn_number}</div><div class="inv-badge">📄 Invoice: ${inv.invoice_number}</div><div class="status-pill">${(inv.status||"pending").toUpperCase()}</div></div>
 </div>
 <div class="meta-grid">
-  <div class="meta-box dark"><div class="meta-lbl light">Deliver To</div><div class="meta-val large light">${inv.customer}</div>${address?`<div class="meta-val addr">${address}</div>`:""}</div>
+  <div class="meta-box dark"><div class="meta-lbl light">Deliver To</div><div class="meta-val large light">${inv.customer}</div>${address?"<div class=\"meta-val addr\">"+address+"</div>":""}</div>
   <div class="meta-sub">
     <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn_number}</div></div>
     <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(inv.invoice_date)}</div></div>
@@ -2609,7 +2608,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 </div>
 <div class="table-wrap"><table>
   <thead><tr><th style="width:45%">Description</th><th>Unit</th><th class="c">Qty Ordered</th><th class="c">Qty Delivered</th><th class="c">Condition</th></tr></thead>
-  <tbody>${dnLines.map(l=>`<tr><td class="td-desc">${l.description}</td><td class="td-unit">${l.unit||"unit"}</td><td class="td-qty">${l.qty}</td><td class="td-blank">____</td><td class="td-blank">____</td></tr>`).join("")}</tbody>
+  <tbody>${dnLines.map(l=>"<tr><td class=\"td-desc\">" + l.description + "</td><td class=\"td-unit\">" + (l.unit||"unit") + "</td><td class=\"td-qty\">" + l.qty + "</td><td class=\"td-blank\">____</td><td class=\"td-blank\">____</td></tr>").join("")}
 </table></div>
 <div class="sig-section">
   <div><div class="sig-box"></div><div class="sig-lbl">✍ Delivered by — Signature &amp; Full Name</div></div>
@@ -3832,27 +3831,27 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       <div class="meta-box">
         <div class="meta-lbl">Deliver To</div>
         <div class="meta-val large">${dn.customer_name}</div>
-        ${dn.delivery_address ? `<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.6">${dn.delivery_address.replace(/\n/g, "<br>")}</div>` : ""}
+        ${dn.delivery_address ? "<div style=\"font-size:11px;color:#64748b;margin-top:4px;line-height:1.6\">" + dn.delivery_address.replace(/\n/g, "<br>") + "</div>" : ""}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
         <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(dn.delivery_date)}</div></div>
-        ${dn.driver ? `<div class="meta-box" style="grid-column:1/-1"><div class="meta-lbl">Driver / Courier</div><div class="meta-val">${dn.driver}</div></div>` : ""}
+        ${dn.driver ? "<div class=\"meta-box\" style=\"grid-column:1/-1\"><div class=\"meta-lbl\">Driver / Courier</div><div class=\"meta-val\">" + dn.driver + "</div></div>" : ""}
       </div>
     </div>
     <table>
       <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
       <tbody>
-        ${dnLines.map(l => `<tr>
-          <td style="font-weight:600">${l.description || "—"}</td>
-          <td style="color:#64748b">${l.unit || "unit"}</td>
-          <td class="qty-col">${l.qty}</td>
-          <td class="qty-col" style="color:#94a3b8">____</td>
-          <td style="text-align:center;color:#94a3b8">____</td>
-        </tr>`).join("")}
+        ${dnLines.map(l => "<tr><td style=\"font-weight:600\">" + (l.description || "—") + "</td><td style=\"color:#64748b\">" + (l.unit || "unit") + "</td><td class=\"qty-col\">" + l.qty + "</td><td class=\"qty-col\" style=\"color:#94a3b8\">____</td><td style=\"text-align:center;color:#94a3b8\">____</td></tr>").join("")}
+
+
+
+
+
+
       </tbody>
     </table>
-    ${dn.notes ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin-bottom:20px"><div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">Delivery Notes</div><div style="font-size:12px;color:#78350f">${dn.notes}</div></div>` : ""}
+    ${dn.notes ? "<div style=\"background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin-bottom:20px\"><div style=\"font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px\">Delivery Notes</div><div style=\"font-size:12px;color:#78350f\">" + dn.notes + "</div></div>" : ""}
     <div class="sig-section">
       <div>
         <div class="sig-box"></div>
