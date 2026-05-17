@@ -3015,12 +3015,20 @@ function CreditNotes({ contacts, invoices, token, userId }) {
           }
         }
       } else {
-        const custInvoices = invoices.filter(i => i.customer === (customers.find(c=>c.id===f.customer_id)?.name) && (i.status === "pending" || i.status === "overdue")).sort((a,b) => new Date(a.invoice_date)-new Date(b.invoice_date));
+        const custName = customers.find(c=>c.id===f.customer_id)?.name || "";
+        console.log("Applying credit to customer:", custName, "amount:", creditAmount);
+        const custInvoices = invoices.filter(i => 
+          i.customer && custName && 
+          i.customer.toLowerCase().trim() === custName.toLowerCase().trim() && 
+          (i.status === "pending" || i.status === "overdue")
+        ).sort((a,b) => new Date(a.invoice_date)-new Date(b.invoice_date));
+        console.log("Found invoices to apply credit:", custInvoices.length, custInvoices.map(i=>i.invoice_number));
         let remaining = creditAmount;
         for (const inv of custInvoices) {
           if (remaining <= 0) break;
           if (inv.amount <= remaining) {
-            await sb.patch(token, "invoices", inv.id, { status: "paid" });
+            const result = await sb.patch(token, "invoices", inv.id, { status: "paid" });
+            console.log("Marked paid:", inv.invoice_number, result);
             remaining -= inv.amount;
           }
         }
