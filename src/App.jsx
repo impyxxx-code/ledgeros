@@ -38,7 +38,7 @@ const sb = {
         await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: role, email: e, approved: false }) });
         // Notify admin via SendGrid
         await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-          to: "ARKHAMRETAIL@GMAIL.COM",
+          to: "arkhamretail@gmail.com",
           subject: "New Agent Signup — Approval Required",
           html: "<h2>New Agent Registration</h2><p><strong>" + n + "</strong> (" + e + ") has signed up as a <strong>" + role + "</strong> and is waiting for your approval.</p><p>Log in to LedgerOS → Settings → Users to approve or reject.</p><br><p><a href='https://ledgeros-lac.vercel.app' style='background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none'>Review in LedgerOS →</a></p>"
         })});
