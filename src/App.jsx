@@ -1163,8 +1163,127 @@ function Auth({ onAuth }) {
   );
 }
 
+// ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
+function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token }) {
+  const existing = invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : [];
+  const [f, setF] = useState({
+    customer: invoice.customer || "",
+    invoice_date: invoice.invoice_date || "",
+    due_date: invoice.due_date || "",
+    status: invoice.status || "pending",
+    notes: invoice.notes || "",
+  });
+  const [lines, setLines] = useState(existing.length > 0 ? existing : [{ description:"", qty:1, unit_price:"", vat_rate:20 }]);
+  const [saving, setSaving] = useState(false);
+
+  const updateLine = (i, key, val) => setLines(prev => prev.map((l,idx) => idx===i ? {...l,[key]:val} : l));
+  const addLine = () => setLines(prev => [...prev, { description:"", qty:1, unit_price:"", vat_rate:20 }]);
+  const removeLine = (i) => setLines(prev => prev.filter((_,idx) => idx!==i));
+
+  const subtotal = lines.reduce((s,l) => s + (parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0), 0);
+  const vatTotal = lines.reduce((s,l) => s + (parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*((parseFloat(l.vat_rate)||0)/100), 0);
+  const total = subtotal + vatTotal;
+
+  const save = async () => {
+    setSaving(true);
+    const validLines = lines.filter(l => l.description && l.unit_price);
+    await sb.patch(token, "invoices", invoice.id, {
+      customer: f.customer,
+      invoice_date: f.invoice_date,
+      due_date: f.due_date || null,
+      status: f.status,
+      notes: f.notes,
+      lines: JSON.stringify(validLines),
+      amount: total,
+      subtotal,
+      vat_total: vatTotal,
+    });
+    onSaved();
+    onClose();
+    setSaving(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth:700, maxHeight:"90vh", overflowY:"auto" }}>
+        <div className="modal-header">
+          <div>
+            <div className="ct">Edit Invoice</div>
+            <div className="cs">{invoice.invoice_number} · {invoice.customer}</div>
+          </div>
+          <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" /></button>
+        </div>
+        <div style={{ padding:"20px 24px" }}>
+          {/* Customer & dates */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+            <div className="fgrp">
+              <label>Customer</label>
+              <select value={f.customer} onChange={e => setF({...f, customer:e.target.value})}>
+                <option value="">Select customer</option>
+                {contacts.filter(c=>c.type==="customer"||c.type==="both").map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="fgrp">
+              <label>Invoice Date</label>
+              <input type="date" value={f.invoice_date} onChange={e=>setF({...f,invoice_date:e.target.value})} />
+            </div>
+            <div className="fgrp">
+              <label>Status</label>
+              <select value={f.status} onChange={e=>setF({...f,status:e.target.value})}>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Line items */}
+          <div style={{ marginBottom:16 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"3fr 0.6fr 1fr 1fr 0.8fr 30px", gap:10, padding:"8px 0", borderBottom:"1px solid var(--border)", marginBottom:8 }}>
+              {["PRODUCT / DESCRIPTION","QTY","UNIT PRICE","VAT","TOTAL",""].map(h=><div key={h} style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>{h}</div>)}
+            </div>
+            {lines.map((l,i) => (
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"3fr 0.6fr 1fr 1fr 0.8fr 30px", gap:10, alignItems:"center", padding:"8px 0", borderBottom:"1px solid var(--border)" }}>
+                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i,"description",p.name); updateLine(i,"unit_price",p.selling_price||p.cost_price||""); }} displayKey="name" />
+                <input className="il-input mono" type="number" value={l.qty} onChange={e=>updateLine(i,"qty",e.target.value)} />
+                <input className="il-input mono" type="number" value={l.unit_price} onChange={e=>updateLine(i,"unit_price",e.target.value)} />
+                <select className="il-input" value={l.vat_rate} onChange={e=>updateLine(i,"vat_rate",e.target.value)}>
+                  <option value={0}>0%</option>
+                  <option value={5}>5%</option>
+                  <option value={20}>20%</option>
+                </select>
+                <div className="mono" style={{ fontWeight:700, fontSize:13 }}>&#163;{((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(1+(parseFloat(l.vat_rate)||0)/100)).toFixed(2)}</div>
+                <button onClick={()=>removeLine(i)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", fontSize:16 }}>&#x2715;</button>
+              </div>
+            ))}
+            <button className="btn bo bsm" onClick={addLine} style={{ marginTop:12 }}><i className="ti ti-plus" />Add Line</button>
+          </div>
+
+          {/* Totals */}
+          <div style={{ textAlign:"right", padding:"12px 0", borderTop:"1px solid var(--border)" }}>
+            <div style={{ fontSize:12, color:"var(--text3)", marginBottom:4 }}>Subtotal: &#163;{subtotal.toFixed(2)} · VAT: &#163;{vatTotal.toFixed(2)}</div>
+            <div style={{ fontSize:18, fontWeight:800 }}>Total: &#163;{total.toFixed(2)}</div>
+          </div>
+
+          {/* Notes */}
+          <div className="fgrp" style={{ marginTop:12 }}>
+            <label>Notes</label>
+            <textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} placeholder="Any notes..." style={{ width:"100%", padding:"10px 14px", borderRadius:"var(--r)", border:"1px solid var(--border2)", fontSize:13, fontFamily:"var(--sans)", resize:"vertical", minHeight:60 }} />
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn bo bsm" onClick={onClose}>Cancel</button>
+          <button className="btn bp bsm" onClick={save} disabled={saving}>{saving?"Saving...":"💾 Save Changes"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
@@ -1464,6 +1583,12 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div style={{ padding: "28px 32px" }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Invoice Actions</div>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 24 }}>Manage {invoice.invoice_number}</div>
+            {/* Edit Invoice */}
+            <div style={{ background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:14 }}>
+              <div style={{ fontWeight:600, marginBottom:4 }}>✏️ Edit Invoice</div>
+              <div style={{ fontSize:12, color:"var(--text3)", marginBottom:10 }}>Modify customer, amounts, line items or status</div>
+              <button className="btn bp bsm" onClick={() => { onEdit(invoice); onClose(); }}>Edit This Invoice</button>
+            </div>
 
             {/* Print & Share */}
             <div style={{ marginBottom: 20 }}>
@@ -2110,6 +2235,17 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   };
   return (
     <div>
+      {editInvoice && <EditInvoiceModal
+        invoice={editInvoice}
+        onClose={() => setEditInvoice(null)}
+        contacts={contacts}
+        products={products}
+        token={token}
+        onSaved={() => {
+          sb.get(token, "invoices", "order=created_at.desc").then(d => Array.isArray(d) && setInvoices(d));
+          setEditInvoice(null);
+        }}
+      />}
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
@@ -2617,6 +2753,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [sortCol, setSortCol] = useState("created_at");
   const [sortDir, setSortDir] = useState("desc");
   const [viewMode, setViewMode] = useState("table"); // table | card
+  const [editInvoice, setEditInvoice] = useState(null);
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -2689,6 +2826,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
         contacts={contacts}
+        onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
           await sb.patch(token, "invoices", id, { status });
           setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
