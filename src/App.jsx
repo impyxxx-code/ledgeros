@@ -1254,7 +1254,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
                   <option value={5}>5%</option>
                   <option value={20}>20%</option>
                 </select>
-                <div className="mono" style={{ fontWeight:700, fontSize:13 }}>£{((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(1+(parseFloat(l.vat_rate)||0)/100)).toFixed(2)}</div>
+                <div className="mono" style={{ fontWeight:700, fontSize:13 }}>{"£"}{((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(1+(parseFloat(l.vat_rate)||0)/100)).toFixed(2)}</div>
                 <button onClick={()=>removeLine(i)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", fontSize:16 }}>×</button>
               </div>
             ))}
@@ -1263,8 +1263,8 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
 
           {/* Totals */}
           <div style={{ textAlign:"right", padding:"12px 0", borderTop:"1px solid var(--border)" }}>
-            <div style={{ fontSize:12, color:"var(--text3)", marginBottom:4 }}>Subtotal: £{subtotal.toFixed(2)} · VAT: £{vatTotal.toFixed(2)}</div>
-            <div style={{ fontSize:18, fontWeight:800 }}>Total: £{total.toFixed(2)}</div>
+            <div style={{ fontSize:12, color:"var(--text3)", marginBottom:4 }}>Subtotal: {"£"}{subtotal.toFixed(2)} · VAT: £{vatTotal.toFixed(2)}</div>
+            <div style={{ fontSize:18, fontWeight:800 }}>Total: {"£"}{total.toFixed(2)}</div>
           </div>
 
           {/* Notes */}
