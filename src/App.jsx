@@ -4660,6 +4660,17 @@ export default function App() {
     });
   }, [auth]);
 
+  // ── Auto-refresh invoices every 15 seconds ───────────────────────────────
+  useEffect(() => {
+    if (!auth) return;
+    const poll = setInterval(() => {
+      sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
+        if (Array.isArray(freshInvs)) setInvoices(freshInvs);
+      });
+    }, 15000);
+    return () => clearInterval(poll);
+  }, [auth]);
+
   // ── Supabase Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
     if (!auth) return;
