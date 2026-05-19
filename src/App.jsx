@@ -4667,7 +4667,7 @@ export default function App() {
       sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
         if (Array.isArray(freshInvs)) setInvoices(freshInvs);
       });
-    }, 15000);
+    }, 5000);
     return () => clearInterval(poll);
   }, [auth]);
 
