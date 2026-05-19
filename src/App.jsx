@@ -1413,6 +1413,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               </div>
             </div>
           </div>
+        </div>
         )}
 
         {/* ── ACTIONS TAB ── */}
@@ -1488,9 +1489,9 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <button className="btn bp bsm" onClick={handlePrint}><i className="ti ti-printer" />Print</button>
             </div>
           </div>
-        </div>
       </div>
     </div>
+  </div>
   );
 }
 
