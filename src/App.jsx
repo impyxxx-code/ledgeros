@@ -4701,9 +4701,17 @@ export default function App() {
 
             if (msg.topic === "realtime:public:invoices") {
               if (eventType === "INSERT") {
-                setInvoices(prev => {
-                  if (prev.find(i => i.id === record.id)) return prev;
-                  return [record, ...prev];
+                // Fetch full record to get all fields including lines
+                sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
+                  if (Array.isArray(freshInvs)) {
+                    setInvoices(freshInvs);
+                  }
+                }).catch(() => {
+                  // Fallback to optimistic update
+                  setInvoices(prev => {
+                    if (prev.find(i => i.id === record.id)) return prev;
+                    return [record, ...prev];
+                  });
                 });
               } else if (eventType === "UPDATE") {
                 setInvoices(prev => prev.map(i => i.id === record.id ? { ...i, ...record } : i));
