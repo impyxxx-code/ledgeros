@@ -2587,6 +2587,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [sortCol, setSortCol] = useState("created_at");
   const [sortDir, setSortDir] = useState("desc");
   const [viewMode, setViewMode] = useState("table"); // table | card
+  const [editInvoice, setEditInvoice] = useState(null);
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -2655,6 +2656,17 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const SortIcon = ({ col }) => <i className={"ti " + (sortCol !== col ? "ti-arrows-sort" : sortDir === "asc" ? "ti-sort-ascending" : "ti-sort-descending")} style={{ fontSize: 11, marginLeft: 4, opacity: sortCol === col ? 1 : 0.3 }} />;
   return (
     <div>
+      {editInvoice && <EditInvoiceModal
+        invoice={editInvoice}
+        onClose={() => setEditInvoice(null)}
+        contacts={contacts}
+        products={products}
+        token={token}
+        onSaved={() => {
+          sb.get(token, "invoices", "order=created_at.desc").then(d => Array.isArray(d) && setInvoices(d));
+          setEditInvoice(null);
+        }}
+      />}
       {viewInvoice && <InvoiceModal
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
