@@ -1,3 +1,5 @@
+import Analytics from "./Analytics.jsx";
+import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect, useRef } from "react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
@@ -22,33 +24,12 @@ const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 const sb = {
   h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
   async signIn(e, p) { return (await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p }) })).json(); },
-  async checkApproved(token, userId) {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=approved,role`, { headers: sb.h(token) });
-      const data = await res.json();
-      if (!data[0]) return true; // no profile yet = admin account
-      if (data[0].role === "admin") return true; // admins always approved
-      return data[0].approved === true;
-    } catch(e) { return true; }
-  },
-  async signUp(e, p, n, role = "agent") {
+  async signUp(e, p, n) {
     const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
     if (d.access_token && d.user) {
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: role, email: e, approved: false }) });
-        // Notify admin via SendGrid
-        try {
-          const emailRes = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-            to: "arkhamretail@gmail.com",
-            subject: "New Agent Signup — Approval Required",
-            html: "<h2>New Agent Registration</h2><p><strong>" + n + "</strong> (" + e + ") has signed up as a <strong>" + role + "</strong> and is waiting for your approval.</p><p>Log in to LedgerOS → Settings → Users to approve or reject.</p><br><p><a href='https://ledgeros-lac.vercel.app' style='background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none'>Review in LedgerOS</a></p>"
-          })});
-          const emailData = await emailRes.json();
-          console.log("Signup email result:", emailRes.status, emailData);
-        } catch(emailErr) {
-          console.error("Signup email failed:", emailErr.message);
-        }
-      } catch(err) { console.log("Profile/notification failed:", err); }
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: "POST", headers: { ...sb.h(d.access_token), "Prefer": "return=representation" }, body: JSON.stringify({ id: d.user.id, full_name: n, role: "agent" }) });
+      } catch(err) { console.log("Profile creation failed, will retry on login"); }
     }
     return d;
   },
@@ -676,14 +657,14 @@ tr:hover td{background:#f8fafd}
 
 /* ── Line Items ── */
 .il-header{
-  display:grid;grid-template-columns:3fr 0.6fr 1fr 1fr 0.8fr 30px;
+  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
   gap:10px;padding:9px 16px;
   background:#f8fafd;border-bottom:1px solid var(--border);
 }
 .il-line{
-  display:grid;grid-template-columns:3fr 0.6fr 1fr 1fr 0.8fr 30px;
-  gap:10px;align-items:start;
-  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
+  gap:10px;align-items:center;
+  padding:9px 16px;border-bottom:1px solid var(--border);
 }
 .il-input{
   background:var(--white);border:1px solid var(--border);
@@ -1057,31 +1038,15 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
 
 function Auth({ onAuth }) {
   const [mode, setMode] = useState("signin");
-  const [f, setF] = useState({ email: "", password: "", full_name: "", role: "agent" });
+  const [f, setF] = useState({ email: "", password: "", full_name: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const go = async () => {
     setLoading(true); setErr("");
     try {
-      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name, f.role);
-      if (d.access_token) {
-        if (mode === "signin") {
-          const approved = await sb.checkApproved(d.access_token, d.user.id);
-          if (!approved) {
-            setErr("Your account is pending approval. Please contact the administrator.");
-            setLoading(false);
-            return;
-          }
-        }
-        if (mode === "signup") {
-          setErr(""); 
-          setMode("signin");
-          setErr("Account created! Please wait for admin approval before signing in.");
-          setLoading(false);
-          return;
-        }
-        onAuth({ token: d.access_token, user: d.user });
-      } else setErr(d.msg || d.error_description || "Authentication failed.");
+      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name);
+      if (d.access_token) onAuth({ token: d.access_token, user: d.user });
+      else setErr(d.msg || d.error_description || "Authentication failed.");
     } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
@@ -1121,15 +1086,6 @@ function Auth({ onAuth }) {
               <input style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" />
             </div>
           )}
-          {mode === "signup" && (
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Role</label>
-              <select value={f.role} onChange={e => setF({ ...f, role: e.target.value })} style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }}>
-                <option value="agent">Agent / Sales Rep</option>
-                <option value="manager">Manager</option>
-              </select>
-            </div>
-          )}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Email address</label>
             <input type="email" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@company.com" />
@@ -1163,132 +1119,13 @@ function Auth({ onAuth }) {
   );
 }
 
-// ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
-function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token }) {
-  const existing = invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : [];
-  const [f, setF] = useState({
-    customer: invoice.customer || "",
-    invoice_date: invoice.invoice_date || "",
-    due_date: invoice.due_date || "",
-    status: invoice.status || "pending",
-    notes: invoice.notes || "",
-  });
-  const [lines, setLines] = useState(existing.length > 0 ? existing : [{ description:"", qty:1, unit_price:"", vat_rate:20 }]);
-  const [saving, setSaving] = useState(false);
-
-  const updateLine = (i, key, val) => setLines(prev => prev.map((l,idx) => idx===i ? {...l,[key]:val} : l));
-  const addLine = () => setLines(prev => [...prev, { description:"", qty:1, unit_price:"", vat_rate:20 }]);
-  const removeLine = (i) => setLines(prev => prev.filter((_,idx) => idx!==i));
-
-  const subtotal = lines.reduce((s,l) => s + (parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0), 0);
-  const vatTotal = lines.reduce((s,l) => s + (parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*((parseFloat(l.vat_rate)||0)/100), 0);
-  const total = subtotal + vatTotal;
-
-  const save = async () => {
-    setSaving(true);
-    const validLines = lines.filter(l => l.description && l.unit_price);
-    await sb.patch(token, "invoices", invoice.id, {
-      customer: f.customer,
-      invoice_date: f.invoice_date,
-      due_date: f.due_date || null,
-      status: f.status,
-      notes: f.notes,
-      lines: JSON.stringify(validLines),
-      amount: total,
-      subtotal,
-      vat_total: vatTotal,
-    });
-    onSaved();
-    onClose();
-    setSaving(false);
-  };
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth:700, maxHeight:"90vh", overflowY:"auto" }}>
-        <div className="modal-header">
-          <div>
-            <div className="ct">Edit Invoice</div>
-            <div className="cs">{invoice.invoice_number} · {invoice.customer}</div>
-          </div>
-          <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" /></button>
-        </div>
-        <div style={{ padding:"20px 24px" }}>
-          {/* Customer & dates */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
-            <div className="fgrp">
-              <label>Customer</label>
-              <select value={f.customer} onChange={e => setF({...f, customer:e.target.value})}>
-                <option value="">Select customer</option>
-                {contacts.filter(c=>c.type==="customer"||c.type==="both").map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="fgrp">
-              <label>Invoice Date</label>
-              <input type="date" value={f.invoice_date} onChange={e=>setF({...f,invoice_date:e.target.value})} />
-            </div>
-            <div className="fgrp">
-              <label>Status</label>
-              <select value={f.status} onChange={e=>setF({...f,status:e.target.value})}>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Line items */}
-          <div style={{ marginBottom:16 }}>
-            <div style={{ display:"grid", gridTemplateColumns:"3fr 0.6fr 1fr 1fr 0.8fr 30px", gap:10, padding:"8px 0", borderBottom:"1px solid var(--border)", marginBottom:8 }}>
-              {["PRODUCT / DESCRIPTION","QTY","UNIT PRICE","VAT","TOTAL",""].map(h=><div key={h} style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>{h}</div>)}
-            </div>
-            {lines.map((l,i) => (
-              <div key={i} style={{ display:"grid", gridTemplateColumns:"3fr 0.6fr 1fr 1fr 0.8fr 30px", gap:10, alignItems:"center", padding:"8px 0", borderBottom:"1px solid var(--border)" }}>
-                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i,"description",p.name); updateLine(i,"unit_price",p.selling_price||p.cost_price||""); }} displayKey="name" />
-                <input className="il-input mono" type="number" value={l.qty} onChange={e=>updateLine(i,"qty",e.target.value)} />
-                <input className="il-input mono" type="number" value={l.unit_price} onChange={e=>updateLine(i,"unit_price",e.target.value)} />
-                <select className="il-input" value={l.vat_rate} onChange={e=>updateLine(i,"vat_rate",e.target.value)}>
-                  <option value={0}>0%</option>
-                  <option value={5}>5%</option>
-                  <option value={20}>20%</option>
-                </select>
-                <div className="mono" style={{ fontWeight:700, fontSize:13 }}>{"£"}{((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(1+(parseFloat(l.vat_rate)||0)/100)).toFixed(2)}</div>
-                <button onClick={()=>removeLine(i)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", fontSize:16 }}>×</button>
-              </div>
-            ))}
-            <button className="btn bo bsm" onClick={addLine} style={{ marginTop:12 }}><i className="ti ti-plus" />Add Line</button>
-          </div>
-
-          {/* Totals */}
-          <div style={{ textAlign:"right", padding:"12px 0", borderTop:"1px solid var(--border)" }}>
-            <div style={{ fontSize:12, color:"var(--text3)", marginBottom:4 }}>Subtotal: {"£"}{subtotal.toFixed(2)} · VAT: £{vatTotal.toFixed(2)}</div>
-            <div style={{ fontSize:18, fontWeight:800 }}>Total: {"£"}{total.toFixed(2)}</div>
-          </div>
-
-          {/* Notes */}
-          <div className="fgrp" style={{ marginTop:12 }}>
-            <label>Notes</label>
-            <textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} placeholder="Any notes..." style={{ width:"100%", padding:"10px 14px", borderRadius:"var(--r)", border:"1px solid var(--border2)", fontSize:13, fontFamily:"var(--sans)", resize:"vertical", minHeight:60 }} />
-          </div>
-        </div>
-        <div className="modal-actions">
-          <button className="btn bo bsm" onClick={onClose}>Cancel</button>
-          <button className="btn bp bsm" onClick={save} disabled={saving}>{saving?"Saving...":"💾 Save Changes"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
 
-  const lines = (() => { try { const l = invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : null; return Array.isArray(l) && l.length > 0 ? l : [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }]; } catch(e) { return [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }]; } })();
+  const lines = invoice.lines || [{ description: invoice.description || "Services rendered", qty: 1, unit_price: invoice.amount || 0, vat_rate: 20 }];
   const subtotal = lines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
   const vatTotal = lines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
   const total = subtotal + vatTotal;
@@ -1583,12 +1420,6 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div style={{ padding: "28px 32px" }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Invoice Actions</div>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 24 }}>Manage {invoice.invoice_number}</div>
-            {/* Edit Invoice */}
-            <div style={{ background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:14 }}>
-              <div style={{ fontWeight:600, marginBottom:4 }}>✏️ Edit Invoice</div>
-              <div style={{ fontSize:12, color:"var(--text3)", marginBottom:10 }}>Modify customer, amounts, line items or status</div>
-              <button className="btn bp bsm" onClick={() => { onEdit(invoice); onClose(); }}>Edit This Invoice</button>
-            </div>
 
             {/* Print & Share */}
             <div style={{ marginBottom: 20 }}>
@@ -1699,11 +1530,7 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
 // ── INVOICE FORM ──────────────────────────────────────────────────────────────
 function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
-  const [lines, setLines] = useState([
-    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
-    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
-    { description: "", qty: 1, unit_price: "", vat_rate: 20 },
-  ]);
+  const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState(null); // ← success state
   const [creatingDN, setCreatingDN] = useState(false);
@@ -1759,7 +1586,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     const sub = invLines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
     const vat = invLines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
     const tot = sub + vat;
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2563eb}.co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.6}.inv-title{font-size:36px;font-weight:900;color:#ddd;text-align:right}.inv-num{font-size:14px;font-weight:700;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.meta-val{font-size:12px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#2563eb;color:#fff}th{padding:8px 10px;font-size:10px;text-transform:uppercase;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:8px 10px;border-bottom:1px solid #f1f5f9}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #000;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}.bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.bank-lbl{font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:2px}.bank-val{font-size:12px;font-weight:600}.footer{font-size:9px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div><div><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div></div></div><div class="meta"><div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${savedInvoice.customer}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${savedInvoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(savedInvoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(savedInvoice.due_date)}</div></div><div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${invLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(sub)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vat)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(tot)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div></div><div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${savedInvoice.invoice_number}</div></body></html>`;
+    const html = `<!DOCTYPE html><html><head><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a}.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2563eb}.co-name{font-size:18px;font-weight:800;color:#2563eb;margin-bottom:4px}.co-detail{font-size:10px;color:#64748b;line-height:1.6}.inv-title{font-size:36px;font-weight:900;color:#ddd;text-align:right}.inv-num{font-size:14px;font-weight:700;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:14px;border-radius:6px;margin-bottom:20px;border:1px solid #e2e8f0}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.meta-val{font-size:12px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#2563eb;color:#fff}th{padding:8px 10px;font-size:10px;text-transform:uppercase;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:8px 10px;border-bottom:1px solid #f1f5f9}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #000;margin-top:6px;padding-top:8px;font-size:15px;font-weight:700}.bank{background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}.bank-val{font-size:12px;font-weight:600}.footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body><div class="header"><div><div class="co-name">${COMPANY.name}</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone}<br>${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div><div><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div></div></div><div class="meta"><div><div class="meta-lbl">Invoice To</div><div class="meta-val" style="font-size:15px">${savedInvoice.customer}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${savedInvoice.invoice_number}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(savedInvoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(savedInvoice.due_date)}</div></div><div><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${invLines.map(l => `<tr><td style="font-weight:600">${l.description}</td><td>${l.vat_rate === 0 ? "Exempt" : l.vat_rate + "% S"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty * l.unit_price)}</td></tr>`).join("")}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(sub)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vat)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(tot)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${COMPANY.bankName}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${COMPANY.sortCode}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${COMPANY.accountNumber}</div></div></div><div class="footer">VAT Reg: ${COMPANY.vatNumber} · Ref: ${savedInvoice.invoice_number}</div></body></html>`;
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1809,9 +1636,9 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   /* Header */
   .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}
   .logo-wrap img{height:52px;object-fit:contain}
-  .co-detail{font-size:10px;color:#475569;line-height:1.8;margin-top:8px}
+  .co-detail{font-size:10px;color:#64748b;line-height:1.8;margin-top:8px}
   .doc-title-wrap{text-align:right}
-  .doc-title{font-size:42px;font-weight:900;color:#c8d3e8;letter-spacing:-2px;line-height:1}
+  .doc-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1}
   .doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px;letter-spacing:-.5px}
   .status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
   .inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}
@@ -1820,8 +1647,8 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   .meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}
   .meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}
   .meta-box.accent{background:#0a0f1e;border-color:#0a0f1e}
-  .meta-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-  .meta-lbl.light{color:rgba(255,255,255,.7)}
+  .meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+  .meta-lbl.light{color:rgba(255,255,255,.45)}
   .meta-val{font-size:14px;font-weight:700;color:#0a0f1e}
   .meta-val.large{font-size:20px;letter-spacing:-.3px}
   .meta-val.light{color:#fff}
@@ -1845,7 +1672,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   /* Signature */
   .sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}
   .sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px;border-radius:2px;background:linear-gradient(to bottom,#fafbfd,#fff)}
-  .sig-lbl{font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px}
+  .sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
 
   /* Notes */
   .notes-box{background:#fef9ec;border:1px solid #fcd34d;border-radius:10px;padding:14px 16px;margin-bottom:24px}
@@ -1853,7 +1680,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   .notes-val{font-size:12px;color:#78350f;line-height:1.6}
 
   /* Footer */
-  .footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#64748b}
+  .footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8}
   .footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}
 
   /* Driver strip */
@@ -1902,7 +1729,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     <div class="meta-box accent">
       <div class="meta-lbl light">Deliver To</div>
       <div class="meta-val large light">${dn.customer_name}</div>
-      ${dn.delivery_address ? "<div class='meta-val addr' style='color:rgba(255,255,255,.8)'>"+dn.delivery_address+"</div>" : ""}
+      ${dn.delivery_address ? "<div class='meta-val addr' style='color:rgba(255,255,255,.55)'>"+dn.delivery_address+"</div>" : ""}
     </div>
     <div class="meta-sub-grid">
       <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
@@ -2186,9 +2013,9 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         <div className="il-header">{["Product / Description", "Qty", "Unit Price", "VAT", "Total", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>{h}</span>)}</div>
         {lines.map((l, i) => (
           <div key={i} className="il-line">
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <SearchDropdown placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" />
-
+              <input className="il-input" placeholder="Or type description..." value={l.description} onChange={e => updateLine(i, "description", e.target.value)} />
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
             <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
@@ -2235,17 +2062,6 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   };
   return (
     <div>
-      {editInvoice && <EditInvoiceModal
-        invoice={editInvoice}
-        onClose={() => setEditInvoice(null)}
-        contacts={contacts}
-        products={products}
-        token={token}
-        onSaved={() => {
-          sb.get(token, "invoices", "order=created_at.desc").then(d => Array.isArray(d) && setInvoices(d));
-          setEditInvoice(null);
-        }}
-      />}
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
@@ -2535,7 +2351,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 {/* Y-axis labels */}
                 <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingBottom:24,height:140}}>
                   {[maxVal,maxVal*0.75,maxVal*0.5,maxVal*0.25,0].map((v,i)=>(
-                    <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v).replace("&#163;","&#163;"):"&#163;0"}</div>
+                    <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v).replace("£","£"):"£0"}</div>
                   ))}
                 </div>
                 {/* Chart area */}
@@ -2753,7 +2569,6 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [sortCol, setSortCol] = useState("created_at");
   const [sortDir, setSortDir] = useState("desc");
   const [viewMode, setViewMode] = useState("table"); // table | card
-  const [editInvoice, setEditInvoice] = useState(null);
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -2774,7 +2589,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const dn_number = `DN-${inv.invoice_number.replace("INV-", "")}`;
     const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>${dn_number}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:780px;margin:0 auto;padding:32px 36px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}.logo-wrap img{height:52px;object-fit:contain}.co-detail{font-size:10px;color:#475569;line-height:1.8;margin-top:8px}.doc-title{font-size:42px;font-weight:900;color:#c8d3e8;letter-spacing:-2px;line-height:1}.doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px}.inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}.status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}.meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}.meta-box.dark{background:#0a0f1e;border-color:#0a0f1e}.meta-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.meta-lbl.light{color:rgba(255,255,255,.7)}.meta-val{font-size:14px;font-weight:700;color:#0a0f1e}.meta-val.large{font-size:20px}.meta-val.light{color:#fff}.meta-val.addr{font-size:12px;font-weight:500;color:rgba(255,255,255,.8);margin-top:4px;line-height:1.6}.meta-sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}.table-wrap{margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}table{width:100%;border-collapse:collapse}thead tr{background:#0a0f1e}th{padding:12px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;text-align:left}th.c{text-align:center}td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f5f9}tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#fafbfd}.td-desc{font-weight:600}.td-unit{color:#94a3b8;font-size:11px}.td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}.td-blank{text-align:center;color:#94a3b8;font-weight:600}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}.sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px}.sig-lbl{font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px}.footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#64748b}.footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:780px;margin:0 auto;padding:32px 36px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:3px solid #0a0f1e;margin-bottom:28px}.logo-wrap img{height:52px;object-fit:contain}.co-detail{font-size:10px;color:#64748b;line-height:1.8;margin-top:8px}.doc-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1}.doc-num{font-size:18px;font-weight:800;color:#0a0f1e;margin-top:4px}.inv-badge{display:inline-block;margin-top:6px;padding:3px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;color:#64748b}.status-pill{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}.meta-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:28px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}.meta-box.dark{background:#0a0f1e;border-color:#0a0f1e}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.meta-lbl.light{color:rgba(255,255,255,.45)}.meta-val{font-size:14px;font-weight:700;color:#0a0f1e}.meta-val.large{font-size:20px}.meta-val.light{color:#fff}.meta-val.addr{font-size:12px;font-weight:500;color:rgba(255,255,255,.55);margin-top:4px;line-height:1.6}.meta-sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}.table-wrap{margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}table{width:100%;border-collapse:collapse}thead tr{background:#0a0f1e}th{padding:12px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;text-align:left}th.c{text-align:center}td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f5f9}tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#fafbfd}.td-desc{font-weight:600}.td-unit{color:#94a3b8;font-size:11px}.td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}.td-blank{text-align:center;color:#cbd5e1}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #f1f5f9}.sig-box{border-bottom:2px solid #0a0f1e;height:64px;margin-bottom:8px}.sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}.footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8}.footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}</style>
 </head><body><div class="page">
 <div class="header">
   <div><div style="font-size:22px;font-weight:900;color:#0a0f1e;letter-spacing:-1px">AR</div><div class="co-detail">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} · ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div>
@@ -2826,7 +2641,6 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
         contacts={contacts}
-        onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
           await sb.patch(token, "invoices", id, { status });
           setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
@@ -2961,10 +2775,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 }
 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
-function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
+function Contacts({ contacts, setContacts, token, userId }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
-  const [viewContact, setViewContact] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
@@ -2981,76 +2794,86 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
     <div>
       {viewContact && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
-          <div className="modal" style={{ maxWidth: 580 }}>
+          <div className="modal" style={{ maxWidth: 620 }}>
             <div className="modal-header">
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ width:44, height:44, borderRadius:"50%", background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:700, color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
+              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                <div style={{ width:44,height:44,borderRadius:"50%",background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
                 <div>
-                  <div style={{ fontWeight:700, fontSize:16 }}>{viewContact.name}</div>
-                  <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
+                  <div style={{ fontWeight:700,fontSize:16 }}>{viewContact.name}</div>
+                  <div style={{ fontSize:12,color:"var(--text3)",marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
                 </div>
               </div>
               <button className="btn bo bsm" onClick={() => setViewContact(null)}><i className="ti ti-x" /></button>
             </div>
             <div style={{ padding:"20px 24px" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12, marginBottom:20 }}>
-                {[
-                  { l:"Total Spend", v:fmt(invoices.filter(i=>i.customer===viewContact.name).reduce((s,i)=>s+i.amount,0)), c:"var(--blue)" },
-                  { l:"Invoices", v:invoices.filter(i=>i.customer===viewContact.name).length, c:"var(--text)" },
-                  { l:"Paid", v:fmt(invoices.filter(i=>i.customer===viewContact.name&&i.status==="paid").reduce((s,i)=>s+i.amount,0)), c:"var(--green)" },
-                  { l:"Outstanding", v:fmt(invoices.filter(i=>i.customer===viewContact.name&&(i.status==="pending"||i.status==="overdue")).reduce((s,i)=>s+i.amount,0)), c:"var(--amber)" },
-                ].map(k => (
-                  <div key={k.l} style={{ background:"#f8fafd", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"12px 14px" }}>
-                    <div style={{ fontSize:10, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:4 }}>{k.l}</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:k.c }}>{k.v}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:20 }}>
-                {[
-                  { icon:"ti-mail", label:"Email", val:viewContact.email },
-                  { icon:"ti-phone", label:"Phone", val:viewContact.phone },
-                  { icon:"ti-map-pin", label:"Location", val:[viewContact.city, viewContact.postcode].filter(Boolean).join(", ") },
-                  { icon:"ti-file-invoice", label:"VAT", val:viewContact.vat_number },
-                ].filter(d=>d.val).map(d => (
-                  <div key={d.label} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"10px 14px", background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--r)" }}>
-                    <i className={"ti "+d.icon} style={{ color:"var(--blue)", fontSize:15, marginTop:1, flexShrink:0 }} />
-                    <div>
-                      <div style={{ fontSize:10, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", marginBottom:2 }}>{d.label}</div>
-                      <div style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{d.val}</div>
+              {/* KPI row */}
+              {(() => {
+                const custInvoices = invoices.filter(i => i.customer === viewContact.name);
+                const totalSpend = custInvoices.reduce((s,i)=>s+i.amount,0);
+                const paid = custInvoices.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
+                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue").reduce((s,i)=>s+i.amount,0);
+                return (
+                  <div>
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
+                      {[{l:"Total Spend",v:fmt(totalSpend),c:"var(--blue)"},{l:"Invoices",v:custInvoices.length,c:"var(--text)"},{l:"Paid",v:fmt(paid),c:"var(--green)"},{l:"Outstanding",v:fmt(outstanding),c:outstanding>0?"var(--amber)":"var(--green)"}].map(k=>(
+                        <div key={k.l} style={{ background:"#f8fafd",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"12px 14px" }}>
+                          <div style={{ fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.l}</div>
+                          <div style={{ fontSize:16,fontWeight:700,color:k.c }}>{k.v}</div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize:12, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".8px", marginBottom:10 }}>Transaction History</div>
-              <div style={{ border:"1px solid var(--border)", borderRadius:"var(--rl)", overflow:"hidden" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead><tr style={{ background:"#f8fafd" }}>
-                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Invoice</th>
-                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Date</th>
-                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"right", textTransform:"uppercase" }}>Amount</th>
-                    <th style={{ padding:"9px 14px", fontSize:10, fontWeight:700, color:"var(--text3)", textAlign:"left", textTransform:"uppercase" }}>Status</th>
-                  </tr></thead>
-                  <tbody>
-                    {invoices.filter(i=>i.customer===viewContact.name).map(inv=>(
-                      <tr key={inv.id} style={{ borderTop:"1px solid var(--border)" }}>
-                        <td style={{ padding:"10px 14px", fontSize:12, color:"var(--blue)", fontWeight:600 }}>{inv.invoice_number}</td>
-                        <td style={{ padding:"10px 14px", fontSize:12, color:"var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
-                        <td style={{ padding:"10px 14px", fontSize:13, fontWeight:700, textAlign:"right" }}>{fmt(inv.amount)}</td>
-                        <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
-                      </tr>
-                    ))}
-                    {invoices.filter(i=>i.customer===viewContact.name).length===0&&(
-                      <tr><td colSpan={4} style={{ padding:24, textAlign:"center", color:"var(--text3)" }}>No invoices yet for this customer</td></tr>
+                    {/* Contact details */}
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20 }}>
+                      {[
+                        {icon:"ti-mail",label:"Email",val:viewContact.email},
+                        {icon:"ti-phone",label:"Phone",val:viewContact.phone},
+                        {icon:"ti-map-pin",label:"Address",val:[viewContact.address,viewContact.city,viewContact.postcode].filter(Boolean).join(", ")},
+                        {icon:"ti-file-invoice",label:"VAT Number",val:viewContact.vat_number},
+                      ].filter(d=>d.val).map(d=>(
+                        <div key={d.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--r)" }}>
+                          <i className={"ti "+d.icon} style={{ color:"var(--blue)",fontSize:15,marginTop:1,flexShrink:0 }} />
+                          <div>
+                            <div style={{ fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2 }}>{d.label}</div>
+                            <div style={{ fontSize:13,fontWeight:500,color:"var(--text)" }}>{d.val}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Transaction history */}
+                    <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",marginBottom:10 }}>Transaction History</div>
+                    {custInvoices.length===0 ? (
+                      <div style={{ padding:24,textAlign:"center",color:"var(--text3)",background:"#f8fafd",borderRadius:"var(--rl)",border:"1px solid var(--border)" }}>
+                        <i className="ti ti-file-off" style={{ fontSize:28,display:"block",marginBottom:8,opacity:.3 }} />
+                        No invoices yet for this customer
+                      </div>
+                    ) : (
+                      <div style={{ border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden" }}>
+                        <table style={{ width:"100%",borderCollapse:"collapse" }}>
+                          <thead><tr style={{ background:"#f8fafd" }}>
+                            {["Invoice","Date","Amount","Status"].map(h=><th key={h} style={{ padding:"9px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textAlign:h==="Amount"?"right":"left",textTransform:"uppercase",letterSpacing:".6px" }}>{h}</th>)}
+                          </tr></thead>
+                          <tbody>
+                            {custInvoices.map(inv=>(
+                              <tr key={inv.id} style={{ borderTop:"1px solid var(--border)" }}>
+                                <td style={{ padding:"10px 14px",fontSize:12,color:"var(--blue)",fontWeight:600 }}>{inv.invoice_number}</td>
+                                <td style={{ padding:"10px 14px",fontSize:12,color:"var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
+                                <td style={{ padding:"10px 14px",fontSize:13,fontWeight:700,textAlign:"right" }}>{fmt(inv.amount)}</td>
+                                <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                );
+              })()}
             </div>
             <div className="modal-actions">
-              <div style={{ display:"flex", gap:8 }}>
+              <div style={{ display:"flex",gap:8 }}>
                 <button className="btn bo bsm" onClick={()=>{setViewContact(null);setF({...viewContact});setShowForm(true);}}><i className="ti ti-edit" />Edit</button>
-                {viewContact.email && <button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
+                {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
+                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
               </div>
               <button className="btn bp bsm" onClick={()=>setViewContact(null)}>Close</button>
             </div>
@@ -3085,7 +2908,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
         </div>
       ) : (
       <div className="contact-grid">
-        {filtered.map(c => <div key={c.id} className="contact-card" onClick={() => setViewContact(c)}><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><i className="ti ti-mail" />{c.email}</div>}{c.phone && <div className="cc-detail"><i className="ti ti-phone" />{c.phone}</div>}{c.city && <div className="cc-detail"><i className="ti ti-map-pin" />{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
+        {filtered.map(c => <div key={c.id} className="contact-card"><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><i className="ti ti-mail" />{c.email}</div>}{c.phone && <div className="cc-detail"><i className="ti ti-phone" />{c.phone}</div>}{c.city && <div className="cc-detail"><i className="ti ti-map-pin" />{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
         {filtered.length === 0 && <div style={{ padding: 48, textAlign: "center", color: "var(--text3)", gridColumn: "1/-1" }}>No {tab}s yet — add your first one!</div>}
       </div>
       )}
@@ -3110,7 +2933,7 @@ function Inventory({ products, setProducts, token, userId }) {
     <div>
       <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />Add Product</button></div>
       <div className="g4" style={{ marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
-      {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (&#163;)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (&#163;)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
+      {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
       <div className="card"><div className="tw"><table><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
         {products.map(p => <tr key={p.id}><td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td className="tm">{p.category||"—"}</td><td className="mono hm">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span className="tag">{p.vat_rate}%</span></td><td className="mono">{p.stock_qty} {p.unit}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")}>{p.stock_qty<=p.reorder_level?"Low Stock":p.stock_qty<=p.reorder_level*2?"Running Low":"In Stock"}</span></td></tr>)}
         {products.length===0&&<tr><td colSpan={8} className="empty">No products yet</td></tr>}
@@ -3167,47 +2990,8 @@ function CreditNotes({ contacts, invoices, token, userId }) {
     if (!f.customer_id||!f.amount) return; setSaving(true);
     const num = `CN-${String(cns.length+1).padStart(3,"0")}`;
     const cust = customers.find(c => c.id===f.customer_id);
-    const creditAmount = parseFloat(f.amount);
-    let data = [];
-    try {
-      data = await sb.post(token,"credit_notes",{
-        cn_number: num,
-        customer_id: f.customer_id,
-        customer_name: cust?.name || "",
-        invoice_id: f.invoice_id || null,
-        reason: f.reason || "",
-        amount: creditAmount,
-        issue_date: f.issue_date,
-        created_by: userId,
-        status: "applied"
-      });
-      if (data && data[0]) setCNs(prev => [data[0],...prev]);
-    } catch(saveErr) {
-      console.error("Credit note save error:", saveErr);
-      setSaving(false);
-      alert("Error saving credit note: " + saveErr.message);
-      return;
-    }
-    // Apply credit note to invoices - fetch fresh from Supabase
-    try {
-      const custName = customers.find(c=>c.id===f.customer_id)?.name || "";
-      if (f.invoice_id) {
-        await sb.patch(token, "invoices", f.invoice_id, { status: "paid" });
-      } else if (custName) {
-        // Fetch all pending invoices for this customer directly from Supabase
-        const freshInvs = await sb.get(token, "invoices", "customer=eq." + custName + "&status=in.(pending,overdue)&order=invoice_date.asc");
-        if (Array.isArray(freshInvs)) {
-          let remaining = creditAmount;
-          for (const inv of freshInvs) {
-            if (remaining <= 0) break;
-            if (inv.amount <= remaining) {
-              await sb.patch(token, "invoices", inv.id, { status: "paid" });
-              remaining -= inv.amount;
-            }
-          }
-        }
-      }
-    } catch(e) { console.error("Credit note apply error:", e); }
+    const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:parseFloat(f.amount),created_by:userId});
+    if (data[0]) setCNs(prev => [data[0],...prev]);
     setF({ customer_id:"",invoice_id:"",reason:"",amount:"",issue_date:today() });
     setShowForm(false); setSaving(false);
   };
@@ -3215,7 +2999,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Credit Notes</div><div className="psub">Issue and apply credit notes</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Credit Note</button></div>
-      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (&#163;) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
+      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
       <div className="card"><div className="tw"><table><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {cns.map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
         {cns.length===0&&<tr><td colSpan={7} className="empty">No credit notes yet</td></tr>}
@@ -3807,7 +3591,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
           <div style={{padding:"20px 20px 8px"}}>
             <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,marginBottom:8}}>
-              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>&#163;{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity:.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
+              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>£{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity:.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"0.5px solid var(--border)",paddingTop:8}}>
               <span>Total: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
@@ -3928,7 +3712,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
                 <thead><tr><th>Supplier / Account</th><th>Type</th><th>Balance Owed</th><th>Status</th></tr></thead>
                 <tbody>
                   {supplierAccounts.map(a=>(<tr key={a.id}><td style={{fontWeight:600}}>{a.name}</td><td><span className="tag" style={{fontSize:10}}>{a.type}</span></td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(a.balance)}</td><td><span className={"badge "+(a.balance>0?"b-red":"b-green")}>{a.balance>0?"Outstanding":"Clear"}</span></td></tr>))}
-                  {suppliers.filter(s=>!supplierAccounts.find(a=>a.name===s.name)).map(s=>(<tr key={s.id}><td style={{fontWeight:600}}>{s.name}</td><td><span className="tag" style={{fontSize:10}}>Supplier</span></td><td className="mono" style={{color:"var(--text3)"}}>&#163;0.00</td><td><span className="badge b-green">Clear</span></td></tr>))}
+                  {suppliers.filter(s=>!supplierAccounts.find(a=>a.name===s.name)).map(s=>(<tr key={s.id}><td style={{fontWeight:600}}>{s.name}</td><td><span className="tag" style={{fontSize:10}}>Supplier</span></td><td className="mono" style={{color:"var(--text3)"}}>£0.00</td><td><span className="badge b-green">Clear</span></td></tr>))}
                   {supplierAccounts.length===0&&suppliers.length===0&&<tr><td colSpan={4} className="empty">No supplier data</td></tr>}
                 </tbody>
               </table></div>
@@ -4115,7 +3899,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       .sig-section{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;padding-top:20px;border-top:1px solid #e2e8f0}
       .sig-box{border-bottom:1.5px solid #0f172a;height:50px;margin-bottom:6px}
       .sig-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
-      .footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#64748b;display:flex;justify-content:space-between}
+      .footer{margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}
       .status-badge{display:inline-block;background:#f1f5f9;border:1.5px solid #0f172a;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
     </style></head><body>
     <div class="header">
@@ -4362,17 +4146,17 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
 
 LIVE BUSINESS DATA:
 - Total invoices: ${invoices.length}
-- Paid revenue: &#163;${totalRevenue.toFixed(2)}
-- Outstanding: &#163;${outstanding.toFixed(2)}
-- Overdue invoices: ${overdue.length} (${overdue.map(i => i.customer + " &#163;" + i.amount).join(", ") || "none"})
+- Paid revenue: £${totalRevenue.toFixed(2)}
+- Outstanding: £${outstanding.toFixed(2)}
+- Overdue invoices: ${overdue.length} (${overdue.map(i => i.customer + " £" + i.amount).join(", ") || "none"})
 - Total customers: ${contacts.filter(c => c.type === "customer" || c.type === "both").length}
 - Total products: ${products.length}
 - Low stock items: ${lowStock.length} (${lowStock.map(p => p.name + " (" + p.stock_qty + " left)").join(", ") || "none"})
-- Top customers by spend: ${topCustomers.map(([name, amt]) => name + " &#163;" + amt.toFixed(2)).join(", ")}
-- Recent invoices: ${invoices.slice(0, 5).map(i => i.invoice_number + " " + i.customer + " &#163;" + i.amount + " " + i.status).join("; ")}
-- Products: ${products.slice(0, 10).map(p => p.name + " (stock: " + p.stock_qty + ", price: &#163;" + p.sale_price + ")").join("; ")}
+- Top customers by spend: ${topCustomers.map(([name, amt]) => name + " £" + amt.toFixed(2)).join(", ")}
+- Recent invoices: ${invoices.slice(0, 5).map(i => i.invoice_number + " " + i.customer + " £" + i.amount + " " + i.status).join("; ")}
+- Products: ${products.slice(0, 10).map(p => p.name + " (stock: " + p.stock_qty + ", price: £" + p.sale_price + ")").join("; ")}
 
-Answer concisely and helpfully. Use &#163; for currency. Format numbers clearly. If asked about specific data, reference the actual numbers above. Keep responses short and actionable.`;
+Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If asked about specific data, reference the actual numbers above. Keep responses short and actionable.`;
   };
 
   const send = async () => {
@@ -4383,7 +4167,19 @@ Answer concisely and helpfully. Use &#163; for currency. Format numbers clearly.
     setLoading(true);
     try {
       const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      throw new Error("use local");
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: buildContext(),
+          messages: [...history, { role: "user", content: userMsg }]
+        })
+      });
+      // Fallback: if no proxy, use built-in smart responses
+      if (!res.ok) throw new Error("no proxy");
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "Sorry, I couldn\'t process that. Please try again.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch (e) {
       // Smart local fallback when API unavailable
       const q = userMsg.toLowerCase();
@@ -4438,10 +4234,10 @@ Answer concisely and helpfully. Use &#163; for currency. Format numbers clearly.
     "Who are my top customers?",
   ];
 
-  const renderMsg = (text) => { let r = text; while (r.includes("*")) { r = r.replace("*", ""); } return r; };
+  const renderMsg = (text) => text.replace(/\*([^*]+)\*/g, "$1");
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 9999, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
       {/* Header */}
       <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -4503,224 +4299,12 @@ Answer concisely and helpfully. Use &#163; for currency. Format numbers clearly.
           <i className="ti ti-send" style={{ color: input.trim() && !loading ? "#fff" : "var(--text3)", fontSize: 15 }} />
         </button>
       </div>
+      {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={filteredInv} periodLabels={periodLabels} />}
+
     </div>
   );
 }
 
-
-// ── USER APPROVAL ────────────────────────────────────────────────────────────
-function UserApproval({ token }) {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    sb.get(token, "profiles", "order=created_at.desc").then(d => {
-      if (Array.isArray(d)) setUsers(d);
-      setLoading(false);
-    });
-  }, [token]);
-
-  const approve = async (id) => {
-    await sb.patch(token, "profiles", id, { approved: true });
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, approved: true } : u));
-  };
-
-  const reject = async (id) => {
-    await sb.patch(token, "profiles", id, { approved: false });
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, approved: false } : u));
-  };
-
-  const pending = users.filter(u => u.approved === false || u.approved === null);
-  const approved = users.filter(u => u.approved === true);
-
-  return (
-    <div>
-      {loading ? <div style={{ padding:24, color:"var(--text3)" }}>Loading users...</div> : (
-        <div>
-          {/* Pending approvals */}
-          <div className="card" style={{ marginBottom:16, padding:20 }}>
-            <div className="ct" style={{ marginBottom:4 }}>⏳ Pending Approval</div>
-            <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting for access</div>
-            {pending.length === 0 ? (
-              <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>No pending users — all caught up ✅</div>
-            ) : pending.map(u => (
-              <div key={u.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                  <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#f59e0b,#ef4444)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff" }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
-                  <div>
-                    <div style={{ fontWeight:600, fontSize:14 }}>{u.full_name || "Unknown"}</div>
-                    <div style={{ fontSize:12, color:"var(--text3)" }}>{u.email || u.id}</div>
-                  </div>
-                </div>
-                <div style={{ display:"flex", gap:8 }}>
-                  <button className="btn bp bsm" onClick={() => approve(u.id)} style={{ background:"var(--green)", border:"none", color:"#fff" }}>✓ Approve</button>
-                  <button className="btn bo bsm" onClick={() => reject(u.id)} style={{ color:"var(--red)" }}>✗ Reject</button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Approved users */}
-          <div className="card" style={{ padding:20 }}>
-            <div className="ct" style={{ marginBottom:4 }}>✅ Approved Users</div>
-            <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
-            {approved.map(u => (
-              <div key={u.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                  <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff" }}>{(u.full_name||"U")[0].toUpperCase()}</div>
-                  <div>
-                    <div style={{ fontWeight:600, fontSize:14 }}>{u.full_name || "Unknown"}</div>
-                    <div style={{ fontSize:12, color:"var(--text3)" }}>{u.role || "agent"}</div>
-                  </div>
-                </div>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <span className="badge b-green">Active</span>
-                  <button className="btn bo bsm" onClick={() => reject(u.id)} style={{ fontSize:11, color:"var(--text3)" }}>Revoke</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── SETTINGS ────────────────────────────────────────────────────────────────
-function Settings({ auth, contacts, invoices, products }) {
-  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
-  const [activeTab, setActiveTab] = useState("company");
-  
-  const toggleDark = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem("darkMode", next);
-    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
-  };
-
-  const stats = {
-    invoices: invoices.length,
-    customers: contacts.filter(c=>c.type==="customer").length,
-    products: products.length,
-    paid: invoices.filter(i=>i.status==="paid").length,
-  };
-
-  return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 0 40px" }}>
-      <div className="ph">
-        <div><div className="pt">Settings</div><div className="ps">Manage your LedgerOS configuration</div></div>
-      </div>
-
-      {/* Tab bar */}
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {[["company","🏢 Company"],["appearance","🎨 Appearance"],["account","👤 Account"],["data","📊 Data"],["users","👥 Users"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px", borderRadius:20, border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"), background:activeTab===k?"var(--blue)":"var(--white)", color:activeTab===k?"#fff":"var(--text2)", fontSize:13, fontWeight:activeTab===k?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{l}</button>
-        ))}
-      </div>
-
-      {/* Company tab */}
-      {activeTab==="company" && (
-        <div className="card" style={{ padding:24 }}>
-          <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-            {[
-              { label:"Company Name", val:"Arkham Retail Ltd" },
-              { label:"VAT Number", val:"GB462229106" },
-              { label:"Address", val:"2 Fieldhead Street, Fieldhead Business Centre" },
-              { label:"City", val:"Bradford, West Yorkshire BD7 1LW" },
-              { label:"Phone", val:"07801 567209 / 07851 983151" },
-              { label:"Email", val:"ARKHAMRETAIL@GMAIL.COM" },
-              { label:"Bank", val:"Tide Bank" },
-              { label:"Sort Code / Account", val:"04-06-05 / 23058246" },
-            ].map(f=>(
-              <div key={f.label}>
-                <div style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5 }}>{f.label}</div>
-                <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:"var(--r)", padding:"10px 14px" }}>{f.val}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop:16, padding:"12px 16px", background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--r)", fontSize:12, color:"#1e40af" }}>
-            ℹ️ Company details are currently hardcoded. Contact your administrator to update them.
-          </div>
-        </div>
-      )}
-
-      {/* Appearance tab */}
-      {activeTab==="appearance" && (
-        <div className="card" style={{ padding:24 }}>
-          <div className="ct" style={{ marginBottom:20 }}>Appearance</div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 0", borderBottom:"1px solid var(--border)" }}>
-            <div>
-              <div style={{ fontWeight:600, marginBottom:3 }}>Dark Mode</div>
-              <div style={{ fontSize:12, color:"var(--text3)" }}>Switch between light and dark theme</div>
-            </div>
-            <div onClick={toggleDark} style={{ width:48, height:26, borderRadius:13, background:darkMode?"var(--blue)":"var(--border)", cursor:"pointer", position:"relative", transition:"background .2s" }}>
-              <div style={{ position:"absolute", top:3, left:darkMode?22:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }} />
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 0" }}>
-            <div>
-              <div style={{ fontWeight:600, marginBottom:3 }}>Version</div>
-              <div style={{ fontSize:12, color:"var(--text3)" }}>LedgerOS v2.0 — Beta</div>
-            </div>
-            <span style={{ padding:"4px 10px", background:"var(--blue)", color:"#fff", borderRadius:20, fontSize:11, fontWeight:700 }}>v2.0</span>
-          </div>
-        </div>
-      )}
-
-      {/* Account tab */}
-      {activeTab==="account" && (
-        <div className="card" style={{ padding:24 }}>
-          <div className="ct" style={{ marginBottom:20 }}>Account</div>
-          <div style={{ display:"flex", alignItems:"center", gap:16, padding:"16px 0", borderBottom:"1px solid var(--border)" }}>
-            <div style={{ width:56, height:56, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:700, color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
-            <div>
-              <div style={{ fontWeight:700, fontSize:16 }}>{auth?.user?.email}</div>
-              <div style={{ fontSize:12, color:"var(--text3)", marginTop:3 }}>Administrator · Arkham Retail Ltd</div>
-            </div>
-          </div>
-          <div style={{ marginTop:16, display:"flex", gap:10 }}>
-            <button className="btn bo bsm" onClick={()=>window.location.reload()}><i className="ti ti-refresh" />Refresh Session</button>
-            <button className="btn b-red bsm" style={{ background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca" }} onClick={()=>{ localStorage.clear(); window.location.reload(); }}><i className="ti ti-logout" />Sign Out</button>
-          </div>
-        </div>
-      )}
-
-      {/* Users tab */}
-      {activeTab==="users" && (
-        <UserApproval token={auth?.token} />
-      )}
-
-      {/* Data tab */}
-      {activeTab==="data" && (
-        <div className="card" style={{ padding:24 }}>
-          <div className="ct" style={{ marginBottom:20 }}>Data Summary</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            {[
-              { label:"Total Invoices", val:stats.invoices, icon:"ti-file-invoice", color:"var(--blue)" },
-              { label:"Paid Invoices", val:stats.paid, icon:"ti-circle-check", color:"var(--green)" },
-              { label:"Customers", val:stats.customers, icon:"ti-users", color:"var(--purple)" },
-              { label:"Products", val:stats.products, icon:"ti-box", color:"var(--amber)" },
-            ].map(s=>(
-              <div key={s.label} style={{ background:"var(--bg)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"16px 18px", display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:40, height:40, borderRadius:10, background:s.color+"22", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <i className={"ti "+s.icon} style={{ color:s.color, fontSize:18 }} />
-                </div>
-                <div>
-                  <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
-                  <div style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px" }}>{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop:16, padding:"12px 16px", background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:"var(--r)", fontSize:12, color:"#c2410c" }}>
-            ⚠️ To clear data or perform bulk operations, use the Supabase SQL editor directly.
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── NAV CONFIG ────────────────────────────────────────────────────────────────
 const NAV = [
@@ -4798,17 +4382,6 @@ export default function App() {
     });
   }, [auth]);
 
-  // ── Auto-refresh invoices every 15 seconds ───────────────────────────────
-  useEffect(() => {
-    if (!auth) return;
-    const poll = setInterval(() => {
-      sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
-        if (Array.isArray(freshInvs)) setInvoices(freshInvs);
-      });
-    }, 5000);
-    return () => clearInterval(poll);
-  }, [auth]);
-
   // ── Supabase Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
     if (!auth) return;
@@ -4850,17 +4423,9 @@ export default function App() {
 
             if (msg.topic === "realtime:public:invoices") {
               if (eventType === "INSERT") {
-                // Fetch full record to get all fields including lines
-                sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
-                  if (Array.isArray(freshInvs)) {
-                    setInvoices(freshInvs);
-                  }
-                }).catch(() => {
-                  // Fallback to optimistic update
-                  setInvoices(prev => {
-                    if (prev.find(i => i.id === record.id)) return prev;
-                    return [record, ...prev];
-                  });
+                setInvoices(prev => {
+                  if (prev.find(i => i.id === record.id)) return prev;
+                  return [record, ...prev];
                 });
               } else if (eventType === "UPDATE") {
                 setInvoices(prev => prev.map(i => i.id === record.id ? { ...i, ...record } : i));
@@ -5118,7 +4683,7 @@ export default function App() {
                 );
               })()}
               <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><i className="ti ti-rocket" /></div>
-              <div className="tb-btn" onClick={() => setPage("settings")}><i className="ti ti-settings" /></div>
+              <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
               <button onClick={async () => {
                 setShowActivity(v => {
                   if (!v) {
@@ -5133,7 +4698,7 @@ export default function App() {
                 <i className="ti ti-history" style={{ fontSize: 14 }} />
                 <span className="hm">Activity</span>
               </button>
-              <button onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
+              <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
                 <i className="ti ti-sparkles" style={{ fontSize: 14 }} />
                 <span className="hm">AI</span>
               </button>
@@ -5168,7 +4733,6 @@ export default function App() {
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
-          {page==="settings"&&<Settings auth={auth} contacts={contacts} invoices={invoices} products={products} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
@@ -5186,7 +4750,7 @@ export default function App() {
         </div>
         {showCmdK && <CommandPalette onClose={() => setShowCmdK(false)} setPage={setPage} invoices={invoices} contacts={contacts} products={products} />}
         {showOnboarding && <OnboardingChecklist onClose={() => setShowOnboarding(false)} invoices={invoices} contacts={contacts} products={products} setPage={setPage} />}
-        {showAI && <div onMouseLeave={() => setShowAI(false)}><AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} /></div>}
+        {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         {showActivity && (
           <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
             {/* Header */}
@@ -5237,7 +4801,7 @@ export default function App() {
                       <i className={"ti " + cfg.icon} style={{ color: cfg.color, fontSize: 15 }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{(log.action || "").replace(/_/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{(log.action || "").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase())}</div>
                       <div style={{ fontSize: 11, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.details || log.entity || "—"}</div>
                     </div>
                     <div style={{ fontSize: 10, color: "var(--text3)", flexShrink: 0, paddingTop: 2, textAlign: "right" }}>
