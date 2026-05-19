@@ -4827,3 +4827,221 @@ export default function App() {
     </>
   );
 }
+// ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
+function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token }) {
+  const existing = (() => { try { return invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : []; } catch(e) { return []; } })();
+  const [customer, setCustomer] = useState(invoice.customer || "");
+  const [invoiceDate, setInvoiceDate] = useState(invoice.invoice_date || "");
+  const [status, setStatus] = useState(invoice.status || "pending");
+  const [notes, setNotes] = useState(invoice.notes || "");
+  const [lines, setLines] = useState(existing.length > 0 ? existing : [{ description:"", qty:1, unit_price:"", vat_rate:20 }]);
+  const [saving, setSaving] = useState(false);
+
+  const updateLine = (i, key, val) => setLines(prev => prev.map((l, idx) => idx === i ? {...l, [key]: val} : l));
+  const addLine = () => setLines(prev => [...prev, { description:"", qty:1, unit_price:"", vat_rate:20 }]);
+  const removeLine = (i) => setLines(prev => prev.filter((_, idx) => idx !== i));
+
+  const subtotal = lines.reduce((s, l) => s + (parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0), 0);
+  const vatTotal = lines.reduce((s, l) => s + (parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0) * ((parseFloat(l.vat_rate)||0) / 100), 0);
+  const total = subtotal + vatTotal;
+
+  const save = async () => {
+    setSaving(true);
+    const validLines = lines.filter(l => l.description && l.unit_price);
+    await sb.patch(token, "invoices", invoice.id, {
+      customer,
+      invoice_date: invoiceDate,
+      status,
+      notes,
+      lines: JSON.stringify(validLines),
+      amount: total,
+      subtotal,
+      vat_total: vatTotal,
+    });
+    onSaved();
+    onClose();
+    setSaving(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 680, maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="modal-header">
+          <div>
+            <div className="ct">Edit Invoice</div>
+            <div className="cs">{invoice.invoice_number}</div>
+          </div>
+          <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" /></button>
+        </div>
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div className="fgrp">
+              <label>Customer</label>
+              <select value={customer} onChange={e => setCustomer(e.target.value)}>
+                <option value="">Select customer</option>
+                {contacts.filter(c => c.type === "customer" || c.type === "both").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="fgrp">
+              <label>Invoice Date</label>
+              <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+            </div>
+            <div className="fgrp">
+              <label>Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value)}>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "3fr 0.6fr 1fr 1fr 0.8fr 30px", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--border)", marginBottom: 8 }}>
+              {["PRODUCT","QTY","PRICE","VAT","TOTAL",""].map(h => <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase" }}>{h}</div>)}
+            </div>
+            {lines.map((l, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 0.6fr 1fr 1fr 0.8fr 30px", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i, "description", p.name); updateLine(i, "unit_price", p.sale_price || p.cost_price || ""); }} displayKey="name" />
+                <input className="il-input mono" type="number" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
+                <input className="il-input mono" type="number" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
+                <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}>
+                  <option value={0}>0%</option>
+                  <option value={5}>5%</option>
+                  <option value={20}>20%</option>
+                </select>
+                <div className="mono" style={{ fontWeight: 700, fontSize: 13 }}>{fmt((parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0) * (1 + (parseFloat(l.vat_rate)||0) / 100))}</div>
+                <button onClick={() => removeLine(i)} style={{ background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 16 }}>x</button>
+              </div>
+            ))}
+            <button className="btn bo bsm" onClick={addLine} style={{ marginTop: 12 }}><i className="ti ti-plus" /> Add Line</button>
+          </div>
+          <div style={{ textAlign: "right", padding: "12px 0", borderTop: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 4 }}>Subtotal: {fmt(subtotal)} · VAT: {fmt(vatTotal)}</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>Total: {fmt(total)}</div>
+          </div>
+          <div className="fgrp" style={{ marginTop: 12 }}>
+            <label>Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes..." style={{ width: "100%", padding: "10px 14px", borderRadius: "var(--r)", border: "1px solid var(--border2)", fontSize: 13, fontFamily: "var(--sans)", resize: "vertical", minHeight: 60 }} />
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn bo bsm" onClick={onClose}>Cancel</button>
+          <button className="btn bp bsm" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── USER APPROVAL ────────────────────────────────────────────────────────────
+function UserApproval({ token }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    sb.get(token, "profiles", "order=created_at.desc").then(d => {
+      if (Array.isArray(d)) setUsers(d);
+      setLoading(false);
+    });
+  }, [token]);
+  const approve = async (id) => { await sb.patch(token, "profiles", id, { approved: true }); setUsers(prev => prev.map(u => u.id===id?{...u,approved:true}:u)); };
+  const revoke = async (id) => { await sb.patch(token, "profiles", id, { approved: false }); setUsers(prev => prev.map(u => u.id===id?{...u,approved:false}:u)); };
+  const pending = users.filter(u => u.approved===false||u.approved===null);
+  const approved = users.filter(u => u.approved===true);
+  return (
+    <div>
+      {loading ? <div style={{ padding:24,color:"var(--text3)" }}>Loading users...</div> : (
+        <div>
+          <div className="card" style={{ marginBottom:16,padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>Pending Approval</div>
+            <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting</div>
+            {pending.length===0 ? <div style={{ padding:"16px 0",color:"var(--text3)",fontSize:13 }}>No pending users</div> : pending.map(u=>(
+              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
+                  <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.email||u.id}</div></div>
+                </div>
+                <div style={{ display:"flex",gap:8 }}>
+                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff" }}>Approve</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)" }}>Reject</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="card" style={{ padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>Approved Users</div>
+            <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
+            {approved.map(u=>(
+              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                  <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
+                </div>
+                <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                  <span className="badge b-green">Active</span>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--text3)" }}>Revoke</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function Settings({ auth, contacts, invoices, products }) {
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
+  const [activeTab, setActiveTab] = useState("company");
+  const toggleDark = () => { const next=!darkMode; setDarkMode(next); localStorage.setItem("darkMode",next); document.documentElement.setAttribute("data-theme",next?"dark":"light"); };
+  return (
+    <div style={{ maxWidth:720,margin:"0 auto",padding:"0 0 40px" }}>
+      <div className="ph"><div><div className="pt">Settings</div><div className="ps">Manage your LedgerOS configuration</div></div></div>
+      <div style={{ display:"flex",gap:8,marginBottom:24,flexWrap:"wrap" }}>
+        {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px",borderRadius:20,border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"),background:activeTab===k?"var(--blue)":"var(--white)",color:activeTab===k?"#fff":"var(--text2)",fontSize:13,fontWeight:activeTab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)" }}>{l}</button>
+        ))}
+      </div>
+      {activeTab==="company" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+            {[{label:"Company Name",val:"Arkham Retail Ltd"},{label:"VAT Number",val:"GB462229106"},{label:"Address",val:"2 Fieldhead Street, Fieldhead Business Centre"},{label:"City",val:"Bradford, West Yorkshire BD7 1LW"},{label:"Phone",val:"07801 567209 / 07851 983151"},{label:"Email",val:"ARKHAMRETAIL@GMAIL.COM"},{label:"Bank",val:"Tide Bank"},{label:"Sort Code / Account",val:"04-06-05 / 23058246"}].map(f=>(
+              <div key={f.label}><div style={{ fontSize:11,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:5 }}>{f.label}</div><div style={{ fontSize:14,fontWeight:600,color:"var(--text)",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--r)",padding:"10px 14px" }}>{f.val}</div></div>
+            ))}
+          </div>
+        </div>
+      )}
+      {activeTab==="appearance" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Appearance</div>
+          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 0",borderBottom:"1px solid var(--border)" }}>
+            <div><div style={{ fontWeight:600,marginBottom:3 }}>Dark Mode</div><div style={{ fontSize:12,color:"var(--text3)" }}>Switch between light and dark theme</div></div>
+            <div onClick={toggleDark} style={{ width:48,height:26,borderRadius:13,background:darkMode?"var(--blue)":"var(--border)",cursor:"pointer",position:"relative",transition:"background .2s" }}>
+              <div style={{ position:"absolute",top:3,left:darkMode?22:3,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)" }} />
+            </div>
+          </div>
+        </div>
+      )}
+      {activeTab==="account" && (
+        <div className="card" style={{ padding:24 }}>
+          <div className="ct" style={{ marginBottom:20 }}>Account</div>
+          <div style={{ display:"flex",alignItems:"center",gap:16,padding:"16px 0",borderBottom:"1px solid var(--border)" }}>
+            <div style={{ width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
+            <div><div style={{ fontWeight:700,fontSize:16 }}>{auth?.user?.email}</div><div style={{ fontSize:12,color:"var(--text3)",marginTop:3 }}>Administrator</div></div>
+          </div>
+          <div style={{ marginTop:16,display:"flex",gap:10 }}>
+            <button className="btn bo bsm" onClick={()=>window.location.reload()}>Refresh Session</button>
+            <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={()=>{ localStorage.clear(); window.location.reload(); }}>Sign Out</button>
+          </div>
+        </div>
+      )}
+      {activeTab==="users" && <UserApproval token={auth?.token} />}
+    </div>
+  );
+}
+
+
