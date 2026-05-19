@@ -1120,7 +1120,7 @@ function Auth({ onAuth }) {
 }
 
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
@@ -1427,6 +1427,17 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div style={{ padding: "28px 32px" }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Invoice Actions</div>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 24 }}>Manage {invoice.invoice_number}</div>
+
+            {/* Edit Invoice */}
+            {onEdit && (
+              <div style={{ background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div>
+                  <div style={{ fontWeight:600, marginBottom:2 }}>Edit Invoice</div>
+                  <div style={{ fontSize:12, color:"var(--text3)" }}>Modify customer, amounts or line items</div>
+                </div>
+                <button className="btn bp bsm" onClick={() => { onEdit(invoice); onClose(); }}>Edit</button>
+              </div>
+            )}
 
             {/* Print & Share */}
             <div style={{ marginBottom: 20 }}>
@@ -2648,6 +2659,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
         contacts={contacts}
+        onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
           await sb.patch(token, "invoices", id, { status });
           setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
