@@ -4180,7 +4180,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 // ── AI ASSISTANT ──────────────────────────────────────────────────────────────
 function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hi! I\'m your LedgerOS AI assistant. Ask me anything about your invoices, customers, stock or finances.\n\nTry: *\"Who owes the most money?\"* or *\"Which products are low on stock?\"*" }
+    { role: "assistant", content: "Hi! I am your LedgerOS AI assistant. Ask me anything about your invoices, customers, stock or finances." }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -4188,112 +4188,71 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const buildContext = () => {
-    const totalRevenue = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
-    const outstanding = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
-    const overdue = invoices.filter(i => i.status === "overdue");
-    const lowStock = products.filter(p => p.stock_qty <= p.reorder_level);
-    const topCustomers = Object.entries(
-      invoices.reduce((acc, inv) => { acc[inv.customer] = (acc[inv.customer] || 0) + inv.amount; return acc; }, {})
-    ).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-    return `You are an AI assistant for LedgerOS, a business accounting app for Arkham Retail Ltd (Bradford, UK).
-
-LIVE BUSINESS DATA:
-- Total invoices: ${invoices.length}
-- Paid revenue: £${totalRevenue.toFixed(2)}
-- Outstanding: £${outstanding.toFixed(2)}
-- Overdue invoices: ${overdue.length} (${overdue.map(i => i.customer + " £" + i.amount).join(", ") || "none"})
-- Total customers: ${contacts.filter(c => c.type === "customer" || c.type === "both").length}
-- Total products: ${products.length}
-- Low stock items: ${lowStock.length} (${lowStock.map(p => p.name + " (" + p.stock_qty + " left)").join(", ") || "none"})
-- Top customers by spend: ${topCustomers.map(([name, amt]) => name + " £" + amt.toFixed(2)).join(", ")}
-- Recent invoices: ${invoices.slice(0, 5).map(i => i.invoice_number + " " + i.customer + " £" + i.amount + " " + i.status).join("; ")}
-- Products: ${products.slice(0, 10).map(p => p.name + " (stock: " + p.stock_qty + ", price: £" + p.sale_price + ")").join("; ")}
-
-Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If asked about specific data, reference the actual numbers above. Keep responses short and actionable.`;
-  };
-
   const send = async () => {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
-    try {
-      const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      throw new Error("use local");
-    } catch (e) {
-      // Smart local fallback when API unavailable
-      const q = userMsg.toLowerCase();
-      const invData = invoices;
-      const prodData = products;
-      const contData = contacts;
-      
-      let reply = "";
-      if (q.includes("owe") || q.includes("most money") || q.includes("outstanding") || q.includes("unpaid")) {
-        const byCustomer = invData.filter(i => i.status !== "paid").reduce((acc, i) => { acc[i.customer] = (acc[i.customer]||0) + i.amount; return acc; }, {});
-        const sorted = Object.entries(byCustomer).sort((a,b) => b[1]-a[1]);
-        reply = sorted.length > 0
-          ? `Top customers with outstanding balances:\n\n${sorted.slice(0,5).map(([name,amt],i) => `${i+1}. ${name} — ${fmt(amt)}`).join("\n")}\n\nTotal outstanding: ${fmt(sorted.reduce((s,[,a])=>s+a,0))}`
-          : "No outstanding invoices at the moment. 🎉";
-      } else if (q.includes("overdue")) {
-        const ov = invData.filter(i => i.status === "overdue");
-        reply = ov.length > 0
-          ? `You have ${ov.length} overdue invoice${ov.length>1?"s":""}:\n\n${ov.map(i => `• ${i.customer} — ${fmt(i.amount)} (${i.invoice_number})`).join("\n")}`
-          : "No overdue invoices. 👍";
-      } else if (q.includes("low stock") || q.includes("running low") || q.includes("stock")) {
-        const low = prodData.filter(p => p.stock_qty <= (p.reorder_level||5));
-        reply = low.length > 0
-          ? `${low.length} product${low.length>1?"s":""} low on stock:\n\n${low.map(p => `• ${p.name} — ${p.stock_qty} ${p.unit||"units"} remaining`).join("\n")}`
-          : "All products are well stocked. 📦";
-      } else if (q.includes("revenue") || q.includes("total") || q.includes("sales") || q.includes("made")) {
-        const paid = invData.filter(i => i.status==="paid").reduce((s,i)=>s+i.amount,0);
-        const pending = invData.filter(i=>i.status==="pending").reduce((s,i)=>s+i.amount,0);
-        reply = `Revenue Summary:\n\n💰 Collected: ${fmt(paid)}\n⏳ Pending: ${fmt(pending)}\n📊 Total invoiced: ${fmt(paid+pending)}\n📋 Total invoices: ${invData.length}`;
-      } else if (q.includes("customer") || q.includes("top") || q.includes("best")) {
-        const top = Object.entries(invData.reduce((acc,i)=>{ acc[i.customer]=(acc[i.customer]||0)+i.amount; return acc; },{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
-        reply = top.length > 0
-          ? `Top customers by spend:\n\n${top.map(([name,amt],i)=>`${["🥇","🥈","🥉","4.","5."][i]} ${name} — ${fmt(amt)}`).join("\n")}`
-          : "No customer data yet.";
-      } else if (q.includes("paid") || q.includes("collected")) {
-        const paidInv = invData.filter(i=>i.status==="paid");
-        reply = `Paid invoices: ${paidInv.length}\nTotal collected: ${fmt(paidInv.reduce((s,i)=>s+i.amount,0))}\n\nMost recent:\n${paidInv.slice(0,3).map(i=>`• ${i.customer} ${fmt(i.amount)}`).join("\n")}`;
-      } else if (q.includes("product") || q.includes("inventory")) {
-        reply = `You have ${prodData.length} products.\n\nTop products by price:\n${prodData.sort((a,b)=>(b.sale_price||0)-(a.sale_price||0)).slice(0,5).map(p=>`• ${p.name} — ${fmt(p.sale_price||0)}`).join("\n")}`;
-      } else {
-        reply = `I can answer questions about your business data. Try asking:\n\n• "Who owes the most money?"\n• "Show overdue invoices"\n• "Which products are low on stock?"\n• "What\'s my total revenue?"\n• "Who are my top customers?"`;
-      }
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+
+    const q = userMsg.toLowerCase();
+
+    let reply = "";
+    if (q.includes("owe") || q.includes("most money") || q.includes("outstanding") || q.includes("unpaid")) {
+      const byCustomer = invoices.filter(i => i.status !== "paid").reduce((acc, i) => { acc[i.customer] = (acc[i.customer]||0) + i.amount; return acc; }, {});
+      const sorted = Object.entries(byCustomer).sort((a,b) => b[1]-a[1]);
+      reply = sorted.length > 0
+        ? "Top customers with outstanding balances:\n\n" + sorted.slice(0,5).map(([name,amt],i) => (i+1) + ". " + name + " - " + fmt(amt)).join("\n") + "\n\nTotal outstanding: " + fmt(sorted.reduce((s,[,a])=>s+a,0))
+        : "No outstanding invoices at the moment.";
+    } else if (q.includes("overdue")) {
+      const ov = invoices.filter(i => i.status === "overdue");
+      reply = ov.length > 0
+        ? "You have " + ov.length + " overdue invoice" + (ov.length>1?"s":"") + ":\n\n" + ov.map(i => "- " + i.customer + " - " + fmt(i.amount) + " (" + i.invoice_number + ")").join("\n")
+        : "No overdue invoices.";
+    } else if (q.includes("low stock") || q.includes("running low") || q.includes("stock")) {
+      const low = products.filter(p => p.stock_qty <= (p.reorder_level||5));
+      reply = low.length > 0
+        ? low.length + " products low on stock:\n\n" + low.map(p => "- " + p.name + " - " + p.stock_qty + " " + (p.unit||"units") + " remaining").join("\n")
+        : "All products are well stocked.";
+    } else if (q.includes("revenue") || q.includes("total") || q.includes("sales") || q.includes("made")) {
+      const paid = invoices.filter(i => i.status==="paid").reduce((s,i)=>s+i.amount,0);
+      const pending = invoices.filter(i=>i.status==="pending").reduce((s,i)=>s+i.amount,0);
+      reply = "Revenue Summary:\n\nCollected: " + fmt(paid) + "\nPending: " + fmt(pending) + "\nTotal invoiced: " + fmt(paid+pending) + "\nTotal invoices: " + invoices.length;
+    } else if (q.includes("customer") || q.includes("top") || q.includes("best")) {
+      const top = Object.entries(invoices.reduce((acc,i)=>{ acc[i.customer]=(acc[i.customer]||0)+i.amount; return acc; },{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      reply = top.length > 0
+        ? "Top customers by spend:\n\n" + top.map(([name,amt],i)=>(i+1)+". "+name+" - "+fmt(amt)).join("\n")
+        : "No customer data yet.";
+    } else if (q.includes("paid") || q.includes("collected")) {
+      const paidInv = invoices.filter(i=>i.status==="paid");
+      reply = "Paid invoices: " + paidInv.length + "\nTotal collected: " + fmt(paidInv.reduce((s,i)=>s+i.amount,0));
+    } else if (q.includes("product") || q.includes("inventory")) {
+      reply = "You have " + products.length + " products.\n\nTop by price:\n" + products.sort((a,b)=>(b.sale_price||0)-(a.sale_price||0)).slice(0,5).map(p=>"- "+p.name+" - "+fmt(p.sale_price||0)).join("\n");
+    } else {
+      reply = "I can help you with:\n\n- Who owes the most money?\n- Show overdue invoices\n- Which products are low on stock?\n- What is my total revenue?\n- Who are my top customers?";
     }
+
+    setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     setLoading(false);
   };
 
-  const suggestions = [
-    "Who owes the most money?",
-    "Which products are low on stock?",
-    "Show me overdue invoices",
-    "What\'s my total revenue?",
-    "Who are my top customers?",
-  ];
-
-  const renderMsg = (text) => { if (!text) return ""; let r = text; while (r.includes("*")) r = r.replace("*", ""); return r; };
+  const suggestions = ["Who owes the most money?", "Which products are low on stock?", "What is my total revenue?", "Show overdue invoices"];
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+    <div style={{ width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 17 }} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>AI Assistant</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>Powered by Claude · Live data</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>Live business data</div>
         </div>
-        <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}><i className="ti ti-x" /></button>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <i className="ti ti-x" />
+        </button>
       </div>
 
-      {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
         {messages.map((msg, i) => (
           <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 8, alignItems: "flex-end" }}>
@@ -4303,7 +4262,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
               </div>
             )}
             <div style={{ maxWidth: "80%", padding: "10px 13px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? "var(--blue)" : "#f4f6f9", color: msg.role === "user" ? "#fff" : "var(--text)", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-              {renderMsg(msg.content)}
+              {msg.content}
             </div>
           </div>
         ))}
@@ -4320,16 +4279,14 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggestions */}
       {messages.length <= 1 && (
         <div style={{ padding: "0 14px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {suggestions.map(s => (
-            <button key={s} onClick={() => { setInput(s); }} style={{ padding: "5px 10px", background: "var(--blue-lt)", border: "1px solid var(--blue-mid)", borderRadius: 20, fontSize: 11, color: "var(--blue)", cursor: "pointer", fontFamily: "var(--sans)", fontWeight: 500, whiteSpace: "nowrap" }}>{s}</button>
+            <button key={s} onClick={() => setInput(s)} style={{ padding: "5px 10px", background: "var(--blue-lt)", border: "1px solid var(--blue-mid)", borderRadius: 20, fontSize: 11, color: "var(--blue)", cursor: "pointer", fontFamily: "var(--sans)", fontWeight: 500, whiteSpace: "nowrap" }}>{s}</button>
           ))}
         </div>
       )}
 
-      {/* Input */}
       <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexShrink: 0 }}>
         <input
           value={input}
@@ -4338,12 +4295,10 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
           placeholder="Ask anything about your business..."
           style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
         />
-        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !loading ? "var(--blue)" : "var(--border)", border: "none", cursor: input.trim() && !loading ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .14s" }}>
+        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !loading ? "var(--blue)" : "var(--border)", border: "none", cursor: input.trim() && !loading ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <i className="ti ti-send" style={{ color: input.trim() && !loading ? "#fff" : "var(--text3)", fontSize: 15 }} />
         </button>
       </div>
-      {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={filteredInv} periodLabels={periodLabels} />}
-
     </div>
   );
 }
