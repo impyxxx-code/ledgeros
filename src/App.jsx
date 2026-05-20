@@ -2621,7 +2621,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 
   // Generate and download a delivery note from any invoice
   const printDNFromInvoice = (inv) => {
-    const invLines = inv.lines || [{ description: inv.description || "See invoice", qty: 1, unit: "unit" }];
+    const rawLines = (() => { try { return inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : null; } catch(e) { return null; } })();
+    const invLines = (Array.isArray(rawLines) && rawLines.length > 0) ? rawLines : [{ description: inv.description || "See invoice", qty: 1, unit: "unit" }];
     const dnLines = invLines.filter(l => l.description && l.description.trim() !== "").map(l => ({
       description: l.description, qty: l.qty, unit: l.unit || "unit"
     }));
