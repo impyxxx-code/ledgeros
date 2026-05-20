@@ -4295,12 +4295,12 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
           placeholder="Ask anything about your business..."
           style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
         />
-        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: input.trim() && !loading ? "var(--blue)" : "var(--border)", border: "none", cursor: input.trim() && !loading ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className="ti ti-send" style={{ color: input.trim() && !loading ? "#fff" : "var(--text3)", fontSize: 15 }} />
+        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: input.trim() && !loading ? 1 : 0.4 }}>
+          <i className="ti ti-send" style={{ color: "#fff", fontSize: 15 }} />
         </button>
       </div>
     </div>
-    </div>
+  </div>
   </div>
   );
 }
@@ -4812,7 +4812,7 @@ export default function App() {
                       <i className={"ti " + cfg.icon} style={{ color: cfg.color, fontSize: 15 }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{(log.action || "").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase())}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{(log.action || "").split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</div>
                       <div style={{ fontSize: 11, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.details || log.entity || "—"}</div>
                     </div>
                     <div style={{ fontSize: 10, color: "var(--text3)", flexShrink: 0, paddingTop: 2, textAlign: "right" }}>
