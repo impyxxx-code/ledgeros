@@ -166,6 +166,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   padding:16px 10px;
   position:sticky;top:0;height:100vh;overflow-y:auto;
   border-right:1px solid var(--sidebar-border);
+  transition:transform .25s cubic-bezier(.16,1,.3,1);
 }
 .sidebar::-webkit-scrollbar{width:0}
 
@@ -358,7 +359,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .qa-btn i{font-size:15px}
 
 /* ── KPI Grid ── */
-.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:22px}
 
 .kpi{
   background:var(--white);
@@ -531,7 +532,6 @@ tr:hover td{background:#f8fafd}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
 .g23{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
-
 /* ── Activity Feed ── */
 .act-item{
   display:flex;align-items:flex-start;gap:12px;
@@ -589,15 +589,17 @@ tr:hover td{background:#f8fafd}
   position:fixed;inset:0;
   background:rgba(10,14,26,.55);
   z-index:1000;
-  display:flex;align-items:center;justify-content:center;
-  padding:20px;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:16px;
+  overflow-y:auto;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   animation:fadeIn .18s var(--ease) both;
 }
 .modal{
   background:var(--white);
   border-radius:var(--rxl);
-  width:100%;max-width:740px;max-height:92vh;
+  width:100%;max-width:740px;
+  margin:auto;
   overflow-y:auto;
   box-shadow:var(--sh3);
   animation:scaleIn .2s var(--ease) both;
@@ -665,8 +667,7 @@ tr:hover td{background:#f8fafd}
   display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
   gap:10px;align-items:center;
   padding:9px 16px;border-bottom:1px solid var(--border);
-}
-.il-input{
+}.il-input{
   background:var(--white);border:1px solid var(--border);
   border-radius:var(--r2);padding:6px 9px;
   font-size:12px;color:var(--text);
@@ -807,11 +808,125 @@ tr:hover td{background:#f8fafd}
   .qa-btn{padding:6px 12px;font-size:12px}
   .welcome-h{font-size:18px}
   .g23{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
   .stat-pills-grid{grid-template-columns:1fr 1fr!important}
   .kgrid{grid-template-columns:1fr 1fr}
   .ai-widget{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
+
+  /* Sidebar becomes off-canvas drawer on mobile */
+  .sidebar{
+    position:fixed!important;
+    top:0;left:0;bottom:0;
+    z-index:999;
+    transform:translateX(-100%);
+    height:100vh;
+  }
+  .sidebar.mob-open{transform:translateX(0)!important}
+
+  /* Main area takes full width */
+  .main{width:100%}
+
+  /* Content padding reduced on mobile */
+  .content{padding:16px 14px}
+
+  /* Topbar adjustments */
+  .topbar{padding:0 14px}
+  .topbar-search{display:none}
+
+  /* Hamburger button — shown only on mobile */
+  .mob-hamburger{display:flex!important}
+
+  /* Line item grids stack on mobile */
+  .il-header{display:none}
+  .il-line{
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+    padding:10px 12px!important;
+  }
+
+  /* Forms stack to 1 column on mobile */
+  .fg{grid-template-columns:1fr!important}
+  .fg3{grid-template-columns:1fr!important}
+
+  /* Invoice doc on mobile */
+  .inv-doc{padding:16px}
+  .inv-header{flex-direction:column;gap:12px}
+  .inv-title-block{text-align:left}
+  .inv-meta{grid-template-columns:1fr 1fr}
+  .inv-bank-grid{grid-template-columns:1fr}
+  .inv-totals-box{width:100%}
+
+  /* Notification panel full-width on mobile */
+  .notif-panel{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
+
+  /* Activity panel full-width on mobile */
+  .activity-panel{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
+
+  /* AI assistant full-width on mobile */
+  .ai-panel{
+    width:calc(100vw - 24px)!important;
+    right:12px!important;
+    left:12px!important;
+    bottom:76px!important;
+  }
+
+  /* Table action buttons stack vertically on very small screens */
+  .act-btns{flex-direction:column!important;gap:4px!important}
+
+  /* Settings company grid single col */
+  .settings-company-grid{grid-template-columns:1fr!important}
+
+  /* Mobile top bar shown */
+  .mob-topbar{display:flex!important}
+
+  /* Prevent iOS font size zoom on inputs */
+  input,select,textarea{font-size:16px!important}
 }
 @media(min-width:769px){.mob-nav{display:none!important}}
+
+/* ── Mobile hamburger ── */
+.mob-hamburger{
+  display:none;
+  width:40px;height:40px;
+  border-radius:var(--r);
+  border:none;
+  background:var(--white);
+  border:1px solid var(--border);
+  cursor:pointer;
+  align-items:center;justify-content:center;
+  color:var(--text);
+  flex-shrink:0;
+  transition:background .12s;
+  z-index:1001;
+}
+.mob-hamburger:hover{background:var(--bg)}
+.mob-hamburger i{font-size:20px}
+
+/* ── Mobile sidebar overlay ── */
+.mob-sidebar-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(10,14,26,.5);
+  z-index:998;
+  backdrop-filter:blur(2px);
+}
+.mob-sidebar-overlay.visible{display:block}
+
+/* ── Mobile topbar ── */
+.mob-topbar{
+  display:none;
+  height:54px;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  align-items:center;
+  padding:0 14px;gap:10px;
+  position:sticky;top:0;z-index:50;
+  flex-shrink:0;
+}
+.dark-mode .mob-topbar{background:rgba(22,27,34,.95)}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -4269,7 +4384,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
   const renderMsg = (text) => text.replace(/\*([^*]+)\*/g, "$1");
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }} className="ai-panel">
       {/* Header */}
       <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -4368,6 +4483,7 @@ const MOBILE_NAV = [
 export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
+  const [navOpen, setNavOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
@@ -4551,7 +4667,8 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
-        <aside className="sidebar">
+        <div className={"mob-sidebar-overlay" + (navOpen ? " visible" : "")} onClick={() => setNavOpen(false)} />
+        <aside className={"sidebar" + (navOpen ? " mob-open" : "")}>
           <div className="sidebar-logo" style={{ paddingBottom: 20 }}>
             <img src={LOGO} alt="Arkham Retail" style={{ width: 190, height: 54, objectFit: "contain", borderRadius: 8 }} />
           </div>
@@ -4580,11 +4697,21 @@ export default function App() {
           </div>
         </aside>
         <div className="main">
+          <div className="mob-topbar">
+            <button className="mob-hamburger" onClick={() => setNavOpen(o => !o)} aria-label="Open navigation">
+              <i className={"ti " + (navOpen ? "ti-x" : "ti-menu-2")} />
+            </button>
+            <img src={LOGO} alt="Arkham Retail" style={{ height: 28, objectFit: "contain", borderRadius: 6, flex: 1, maxWidth: 140 }} />
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "var(--r)", border: "1px solid var(--border)", background: "var(--white)", cursor: "pointer", color: "var(--blue)" }}>
+                <i className="ti ti-sparkles" style={{ fontSize: 16 }} />
+              </button>
+            </div>
+          </div>
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
               <img src={LOGO} alt="Arkham Retail" style={{ width: 90, height: 26, borderRadius: 6, objectFit: "contain" }} />
-            </div>
-            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
+            </div>            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
               <i className="ti ti-search" />
               <input
                 className="search-input"
@@ -4688,7 +4815,7 @@ export default function App() {
                       {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid var(--white)"}}>{unread>9?"9+":unread}</span>}
                     </div>
                     {showNotifications && (
-                      <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:340,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
+                      <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:"min(340px, calc(100vw - 24px))",background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}} className="notif-panel">
                         <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                           <div style={{fontWeight:700,fontSize:14}}>Notifications</div>
                           <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -4795,7 +4922,7 @@ export default function App() {
         {showOnboarding && <OnboardingChecklist onClose={() => setShowOnboarding(false)} invoices={invoices} contacts={contacts} products={products} setPage={setPage} />}
         {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         {showActivity && (
-          <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
+          <div style={{ position: "fixed", top: 54, right: 24, width: "min(420px, calc(100vw - 24px))", maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }} className="activity-panel">
             {/* Header */}
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div>
@@ -5051,7 +5178,7 @@ function Settings({ auth, contacts, invoices, products }) {
       {activeTab==="company" && (
         <div className="card" style={{ padding:24 }}>
           <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }} className="settings-company-grid">
             {[{label:"Company Name",val:"Arkham Retail Ltd"},{label:"VAT Number",val:"GB462229106"},{label:"Address",val:"2 Fieldhead Street, Fieldhead Business Centre"},{label:"City",val:"Bradford, West Yorkshire BD7 1LW"},{label:"Phone",val:"07801 567209 / 07851 983151"},{label:"Email",val:"ARKHAMRETAIL@GMAIL.COM"},{label:"Bank",val:"Tide Bank"},{label:"Sort Code / Account",val:"04-06-05 / 23058246"}].map(f=>(
               <div key={f.label}><div style={{ fontSize:11,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:5 }}>{f.label}</div><div style={{ fontSize:14,fontWeight:600,color:"var(--text)",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--r)",padding:"10px 14px" }}>{f.val}</div></div>
             ))}
