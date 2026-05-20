@@ -2676,7 +2676,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     return 0;
   });
   const sortToggle = (col) => { if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc"); else { setSortCol(col); setSortDir("asc"); } };
-  const SortIcon = ({ col }) => <i className={"ti " + (sortCol !== col ? "ti-arrows-sort" : sortDir === "asc" ? "ti-sort-ascending" : "ti-sort-descending")} style={{ fontSize: 11, marginLeft: 4, opacity: sortCol === col ? 1 : 0.3 }} />;
+  const SortIcon = ({ col }) => <i className={"ti " + (sortCol !== col ? "ti-arrows-sort" : sortDir === "asc" ? "ti-sort-ascending" : "ti-sort-descending")} style={{ fontSize: 11, marginLeft: 4 }} />;
   return (
     <div>
       {editInvoice && <EditInvoiceModal
@@ -4295,7 +4295,7 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
           placeholder="Ask anything about your business..."
           style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
         />
-        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: input.trim() && !loading ? 1 : 0.4 }}>
+        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <i className="ti ti-send" style={{ color: "#fff", fontSize: 15 }} />
         </button>
       </div>
