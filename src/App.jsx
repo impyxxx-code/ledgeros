@@ -4221,19 +4221,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
     setLoading(true);
     try {
       const history = messages.filter(m => m.role !== "assistant" || messages.indexOf(m) > 0).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system: buildContext(),
-          messages: [...history, { role: "user", content: userMsg }]
-        })
-      });
-      // Fallback: if no proxy, use built-in smart responses
-      if (!res.ok) throw new Error("no proxy");
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn\'t process that. Please try again.";
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      throw new Error("use local");
     } catch (e) {
       // Smart local fallback when API unavailable
       const q = userMsg.toLowerCase();
