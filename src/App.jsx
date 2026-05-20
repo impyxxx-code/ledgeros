@@ -4300,6 +4300,8 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
         </button>
       </div>
     </div>
+    </div>
+  </div>
   );
 }
 
