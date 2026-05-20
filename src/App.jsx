@@ -7,6 +7,8 @@ const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://szcogfyrhlrsxnwepnea.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
+const isMobile = () => window.innerWidth < 768;
+
 const COMPANY = {
   name: "Arkham Retail Ltd",
   address: "2 Fieldhead Street, Fieldhead Business Centre",
@@ -166,7 +168,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   padding:16px 10px;
   position:sticky;top:0;height:100vh;overflow-y:auto;
   border-right:1px solid var(--sidebar-border);
-  transition:transform .25s cubic-bezier(.16,1,.3,1);
 }
 .sidebar::-webkit-scrollbar{width:0}
 
@@ -359,7 +360,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .qa-btn i{font-size:15px}
 
 /* ── KPI Grid ── */
-.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:22px}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 
 .kpi{
   background:var(--white);
@@ -532,6 +533,7 @@ tr:hover td{background:#f8fafd}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
 .g23{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
+
 /* ── Activity Feed ── */
 .act-item{
   display:flex;align-items:flex-start;gap:12px;
@@ -589,17 +591,15 @@ tr:hover td{background:#f8fafd}
   position:fixed;inset:0;
   background:rgba(10,14,26,.55);
   z-index:1000;
-  display:flex;align-items:flex-start;justify-content:center;
-  padding:16px;
-  overflow-y:auto;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   animation:fadeIn .18s var(--ease) both;
 }
 .modal{
   background:var(--white);
   border-radius:var(--rxl);
-  width:100%;max-width:740px;
-  margin:auto;
+  width:100%;max-width:740px;max-height:92vh;
   overflow-y:auto;
   box-shadow:var(--sh3);
   animation:scaleIn .2s var(--ease) both;
@@ -667,10 +667,11 @@ tr:hover td{background:#f8fafd}
   display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
   gap:10px;align-items:center;
   padding:9px 16px;border-bottom:1px solid var(--border);
-}.il-input{
+}
+.il-input{
   background:var(--white);border:1px solid var(--border);
   border-radius:var(--r2);padding:6px 9px;
-  font-size:12px;color:var(--text);
+  font-size:16px;color:var(--text);
   font-family:var(--sans);outline:none;width:100%;
   transition:border .12s,box-shadow .12s;
 }
@@ -808,125 +809,11 @@ tr:hover td{background:#f8fafd}
   .qa-btn{padding:6px 12px;font-size:12px}
   .welcome-h{font-size:18px}
   .g23{grid-template-columns:1fr}
-  .g2{grid-template-columns:1fr}
-  .g3{grid-template-columns:1fr 1fr}
-  .g4{grid-template-columns:1fr 1fr}
   .stat-pills-grid{grid-template-columns:1fr 1fr!important}
   .kgrid{grid-template-columns:1fr 1fr}
   .ai-widget{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
-
-  /* Sidebar becomes off-canvas drawer on mobile */
-  .sidebar{
-    position:fixed!important;
-    top:0;left:0;bottom:0;
-    z-index:999;
-    transform:translateX(-100%);
-    height:100vh;
-  }
-  .sidebar.mob-open{transform:translateX(0)!important}
-
-  /* Main area takes full width */
-  .main{width:100%}
-
-  /* Content padding reduced on mobile */
-  .content{padding:16px 14px}
-
-  /* Topbar adjustments */
-  .topbar{padding:0 14px}
-  .topbar-search{display:none}
-
-  /* Hamburger button — shown only on mobile */
-  .mob-hamburger{display:flex!important}
-
-  /* Line item grids stack on mobile */
-  .il-header{display:none}
-  .il-line{
-    grid-template-columns:1fr 1fr!important;
-    gap:8px!important;
-    padding:10px 12px!important;
-  }
-
-  /* Forms stack to 1 column on mobile */
-  .fg{grid-template-columns:1fr!important}
-  .fg3{grid-template-columns:1fr!important}
-
-  /* Invoice doc on mobile */
-  .inv-doc{padding:16px}
-  .inv-header{flex-direction:column;gap:12px}
-  .inv-title-block{text-align:left}
-  .inv-meta{grid-template-columns:1fr 1fr}
-  .inv-bank-grid{grid-template-columns:1fr}
-  .inv-totals-box{width:100%}
-
-  /* Notification panel full-width on mobile */
-  .notif-panel{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
-
-  /* Activity panel full-width on mobile */
-  .activity-panel{width:calc(100vw - 24px)!important;right:12px!important;left:12px!important}
-
-  /* AI assistant full-width on mobile */
-  .ai-panel{
-    width:calc(100vw - 24px)!important;
-    right:12px!important;
-    left:12px!important;
-    bottom:76px!important;
-  }
-
-  /* Table action buttons stack vertically on very small screens */
-  .act-btns{flex-direction:column!important;gap:4px!important}
-
-  /* Settings company grid single col */
-  .settings-company-grid{grid-template-columns:1fr!important}
-
-  /* Mobile top bar shown */
-  .mob-topbar{display:flex!important}
-
-  /* Prevent iOS font size zoom on inputs */
-  input,select,textarea{font-size:16px!important}
 }
 @media(min-width:769px){.mob-nav{display:none!important}}
-
-/* ── Mobile hamburger ── */
-.mob-hamburger{
-  display:none;
-  width:40px;height:40px;
-  border-radius:var(--r);
-  border:none;
-  background:var(--white);
-  border:1px solid var(--border);
-  cursor:pointer;
-  align-items:center;justify-content:center;
-  color:var(--text);
-  flex-shrink:0;
-  transition:background .12s;
-  z-index:1001;
-}
-.mob-hamburger:hover{background:var(--bg)}
-.mob-hamburger i{font-size:20px}
-
-/* ── Mobile sidebar overlay ── */
-.mob-sidebar-overlay{
-  display:none;
-  position:fixed;inset:0;
-  background:rgba(10,14,26,.5);
-  z-index:998;
-  backdrop-filter:blur(2px);
-}
-.mob-sidebar-overlay.visible{display:block}
-
-/* ── Mobile topbar ── */
-.mob-topbar{
-  display:none;
-  height:54px;
-  background:rgba(255,255,255,.95);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-  align-items:center;
-  padding:0 14px;gap:10px;
-  position:sticky;top:0;z-index:50;
-  flex-shrink:0;
-}
-.dark-mode .mob-topbar{background:rgba(22,27,34,.95)}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -985,6 +872,26 @@ tr:hover td{background:#f8fafd}
 
 /* ── Version badge ── */
 .version-badge{font-size:10px;color:rgba(255,255,255,.2);padding:2px 8px;border:1px solid rgba(255,255,255,.08);border-radius:20px;display:inline-block;margin-top:4px}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main-content{margin-left:0!important;padding:12px!important}
+  .ph{flex-direction:column;align-items:flex-start;gap:8px}
+  .g4{grid-template-columns:repeat(2,1fr)!important}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{min-width:600px}
+  .modal{width:95vw!important;max-width:95vw!important;margin:10px auto}
+  .modal-overlay{padding:10px}
+  input,select,textarea{font-size:16px!important}
+  .hm{display:none!important}
+  .il-line{grid-template-columns:1fr!important}
+  .mob-nav{display:flex!important}
+  .topbar{padding:0 12px!important}
+}
+@media(min-width:769px){
+  .mob-nav{display:none!important}
+}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -2212,7 +2119,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
       {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><i className="ti ti-alert-triangle" style={{ color: "#fff", fontSize: 20 }} /></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: .7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
         <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button></div>
-        <div className="tw"><table><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {myInv.slice(0, 8).map(inv => (
             <tr key={inv.id}>
               <td style={{ fontWeight: 500 }}>{inv.customer}</td>
@@ -2877,7 +2784,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
         ) : (
-        <div className="tw"><table><thead><tr>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer <i className={"ti "+(sortCol!=="customer"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-letters":"ti-sort-descending-letters")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="customer"?1:.3}} /></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice # <i className={"ti "+(sortCol!=="invoice_number"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending":"ti-sort-descending")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_number"?1:.3}} /></th>
           <th className="hm" style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_date")}>Date <i className={"ti "+(sortCol!=="invoice_date"?"ti-arrows-sort":"ti-calendar")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_date"?1:.3}} /></th>
@@ -3041,7 +2948,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Contact</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Contact"}</button></div></div>}
       {contactView === "list" ? (
         <div className="card">
-          <div className="tw"><table><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
             {filtered.map(c=>(
               <tr key={c.id}>
                 <td><div style={{display:"flex",alignItems:"center",gap:10}}><div className="c-av" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1",width:30,height:30,fontSize:11}}>{c.name?.[0]?.toUpperCase()}</div><span style={{fontWeight:600}}>{c.name}</span></div></td>
@@ -3079,9 +2986,9 @@ function Inventory({ products, setProducts, token, userId }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />Add Product</button></div>
-      <div className="g4" style={{ marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
+      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
-      <div className="card"><div className="tw"><table><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
+      <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
         {products.map(p => <tr key={p.id}><td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td className="tm">{p.category||"—"}</td><td className="mono hm">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span className="tag">{p.vat_rate}%</span></td><td className="mono">{p.stock_qty} {p.unit}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")}>{p.stock_qty<=p.reorder_level?"Low Stock":p.stock_qty<=p.reorder_level*2?"Running Low":"In Stock"}</span></td></tr>)}
         {products.length===0&&<tr><td colSpan={8} className="empty">No products yet</td></tr>}
       </tbody></table></div></div>
@@ -3117,7 +3024,7 @@ function Purchases({ contacts, products, token, userId }) {
     <div>
       <div className="ph"><div><div className="pt">Purchase Orders</div><div className="psub">Order stock from your suppliers</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New PO</button></div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><i className="ti ti-x" /></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><i className="ti ti-plus" />Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
-      <div className="card"><div className="tw"><table><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{po.status==="sent"&&<button className="btn bp bsm" onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}</td></tr>)}
         {pos.length===0&&<tr><td colSpan={6} className="empty">No purchase orders yet</td></tr>}
       </tbody></table></div></div>
@@ -3147,7 +3054,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
     <div>
       <div className="ph"><div><div className="pt">Credit Notes</div><div className="psub">Issue and apply credit notes</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Credit Note</button></div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
-      <div className="card"><div className="tw"><table><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {cns.map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
         {cns.length===0&&<tr><td colSpan={7} className="empty">No credit notes yet</td></tr>}
       </tbody></table></div></div>
@@ -3220,7 +3127,7 @@ function CustomerStatement({ contacts, invoices, token }) {
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Total Paid</div><div style={{ fontSize: 20, fontWeight: 700, color: "var(--green)" }}>{fmt(totalPaid)}</div></div>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Balance Due</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div>
           </div>
-          <div className="tw"><table><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
             {custInvoices.map(inv => <tr key={inv.id}><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : "b-amber")}>{inv.status}</span></td></tr>)}
             {custInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices found for this customer</td></tr>}
           </tbody></table></div>
@@ -3257,7 +3164,7 @@ function StockAdjustment({ products, setProducts, token }) {
         <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--border)" }}>
           <input style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="🔍  Search products by name, SKU or category..." value={query} onChange={e => setQuery(e.target.value)} />
         </div>
-        <div className="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
           {filtered.slice(0, 30).map(p => {
             const adj = adjustments[p.id] || "";
             const delta = parseInt(adj) || 0;
@@ -3311,7 +3218,7 @@ function AgentReport({ invoices, allProfiles, contacts }) {
           {[["all","All Time"],["month","This Month"],["week","This Week"],["today","Today"]].map(([k,l]) => <button key={k} style={{ padding: "5px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", background: period === k ? "var(--white)" : "transparent", color: period === k ? "var(--text)" : "var(--text3)", boxShadow: period === k ? "var(--sh)" : "none" }} onClick={() => setPeriod(k)}>{l}</button>)}
         </div>
       </div>
-      <div className="g4" style={{ marginBottom: 20 }}>
+      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Total Sales</div><div className="kpi-val">{fmt(totalSales)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Collected</div><div className="kpi-val tg">{fmt(totalPaid)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Pending</div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(totalPending)}</div></div>
@@ -3319,7 +3226,7 @@ function AgentReport({ invoices, allProfiles, contacts }) {
       </div>
       <div className="card">
         <div className="ch"><div className="ct">Invoice Detail</div><div className="cs">{displayInvoices.length} records</div></div>
-        <div className="tw"><table><thead><tr><th>Customer</th><th className="hm">Agent</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Customer</th><th className="hm">Agent</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
           {displayInvoices.slice(0, 50).map(inv => {
             const agent = allProfiles.find(a => a.id === inv.created_by);
             return <tr key={inv.id}>
@@ -3430,7 +3337,7 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
       </div>
 
       {/* Summary KPIs */}
-      <div className="g4" style={{ marginBottom: 18 }}>
+      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 18 }}>
         <div className="kpi" style={{ marginBottom: 0 }}>
           <div className="kpi-label">Products Sold</div>
           <div className="kpi-val" style={{ color: "var(--blue)" }}>{allProducts.length}</div>
@@ -3507,7 +3414,7 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
         {allProducts.length === 0 ? (
           <EmptyState icon="product" title="No sales data" sub="No products found for this date range. Try expanding the date range or selecting All Time." />
         ) : (
-          <div className="tw"><table>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
             <thead><tr><th>#</th><th>Product / Description</th><th>Units Sold</th><th>Revenue</th><th className="hm">Invoices</th><th className="hm">Avg/Invoice</th><th className="hm">Top Agent</th></tr></thead>
             <tbody>
               {allProducts.map((p, i) => (
@@ -3601,7 +3508,7 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
       {selectedAgent==="all" && globalProducts.length>0 && (
         <div className="card" style={{marginBottom:18}}>
           <div className="ch"><div><div className="ct">📦 Top Products — All Agents</div><div className="cs">Ranked by total sales value · {periodLabels[period]}</div></div></div>
-          <div className="tw"><table>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
             <thead><tr><th>#</th><th>Product / Description</th><th>Total Qty</th><th>Total Value</th><th className="hm">Top Sellers</th></tr></thead>
             <tbody>
               {globalProducts.slice(0,20).map((p,i)=>(
@@ -3640,7 +3547,7 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
             </div>
           </div>
           {productLines.length>0 ? (
-            <div className="tw"><table>
+            <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
               <thead><tr><th>#</th><th>Product / Description</th><th>Qty Sold</th><th>Total Value</th><th className="hm">Invoices</th><th className="hm">Avg/Invoice</th></tr></thead>
               <tbody>
                 {productLines.map((p,i)=>{
@@ -3748,17 +3655,17 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           </div>
         </div>
       </div>}
-      {tab==="monthly" && <div className="card"><div className="ch"><div className="ct">Monthly Sales</div><div className="cs">Last 12 months</div></div><div className="tw"><table><thead><tr><th>Month</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Rate</th></tr></thead><tbody>{[...monthlySales].reverse().map(m => <tr key={m.month}><td style={{fontWeight:600}}>{m.month}</td><td className="mono">{m.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(m.total)}</td><td className="mono tg">{fmt(m.paid)}</td><td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:6,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:m.total>0?(m.paid/m.total*100)+"%":"0%",height:"100%",background:"var(--green)",borderRadius:3}} /></div><span style={{fontSize:12}}>{m.total>0?Math.round(m.paid/m.total*100):0}%</span></div></td></tr>)}</tbody></table></div></div>}
+      {tab==="monthly" && <div className="card"><div className="ch"><div className="ct">Monthly Sales</div><div className="cs">Last 12 months</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Month</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Rate</th></tr></thead><tbody>{[...monthlySales].reverse().map(m => <tr key={m.month}><td style={{fontWeight:600}}>{m.month}</td><td className="mono">{m.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(m.total)}</td><td className="mono tg">{fmt(m.paid)}</td><td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:6,background:"var(--border)",borderRadius:3,overflow:"hidden"}}><div style={{width:m.total>0?(m.paid/m.total*100)+"%":"0%",height:"100%",background:"var(--green)",borderRadius:3}} /></div><span style={{fontSize:12}}>{m.total>0?Math.round(m.paid/m.total*100):0}%</span></div></td></tr>)}</tbody></table></div></div>}
       {tab==="products" && <div>
         <div className="g3" style={{marginBottom:20}}>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Products</div><div className="kpi-val">{products.length}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Low Stock</div><div className="kpi-val tr-c">{lowStockItems.length}</div></div>
         </div>
-        <div className="card"><div className="ch"><div className="ct">Full Product Report</div></div><div className="tw"><table><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Margin</th><th>Value</th><th>Status</th></tr></thead><tbody>{productSales.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td><td className="mono">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span style={{color:p.margin>30?"var(--green)":p.margin>15?"var(--amber)":"var(--red)",fontWeight:600,fontSize:12}}>{p.margin}%</span></td><td className="mono">{fmt(p.stockValue)}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")} style={{fontSize:10}}>{p.stock_qty<=p.reorder_level?"Low":"OK"}</span></td></tr>)}</tbody></table></div></div>
+        <div className="card"><div className="ch"><div className="ct">Full Product Report</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Margin</th><th>Value</th><th>Status</th></tr></thead><tbody>{productSales.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td><td className="mono">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span style={{color:p.margin>30?"var(--green)":p.margin>15?"var(--amber)":"var(--red)",fontWeight:600,fontSize:12}}>{p.margin}%</span></td><td className="mono">{fmt(p.stockValue)}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")} style={{fontSize:10}}>{p.stock_qty<=p.reorder_level?"Low":"OK"}</span></td></tr>)}</tbody></table></div></div>
       </div>}
-      {tab==="customers" && <div className="card"><div className="ch"><div className="ct">Customer Sales</div><div className="cs">{periodLabels[period]} · {customerSales.length} customers</div></div><div className="tw"><table><thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{customerSales.slice(0,50).map((c,i) => <tr key={c.name}><td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td><td style={{fontWeight:500}}>{c.name}</td><td className="mono">{c.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td><td className="mono tg">{fmt(c.paid)}</td><td className="mono" style={{color:c.total-c.paid>0?"var(--red)":"var(--green)"}}>{fmt(c.total-c.paid)}</td></tr>)}{customerSales.length===0&&<tr><td colSpan={6} className="empty">No sales data</td></tr>}</tbody></table></div></div>}
-      {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw"><table><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+i.amount,0); const agPaid=agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
+      {tab==="customers" && <div className="card"><div className="ch"><div className="ct">Customer Sales</div><div className="cs">{periodLabels[period]} · {customerSales.length} customers</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{customerSales.slice(0,50).map((c,i) => <tr key={c.name}><td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td><td style={{fontWeight:500}}>{c.name}</td><td className="mono">{c.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td><td className="mono tg">{fmt(c.paid)}</td><td className="mono" style={{color:c.total-c.paid>0?"var(--red)":"var(--green)"}}>{fmt(c.total-c.paid)}</td></tr>)}{customerSales.length===0&&<tr><td colSpan={6} className="empty">No sales data</td></tr>}</tbody></table></div></div>}
+      {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+i.amount,0); const agPaid=agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
       {tab==="pl" && (() => {
         const revenue = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
         const vat = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+(i.vat_total||0),0);
@@ -3771,7 +3678,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
         return (
           <div>
-            <div className="g4" style={{marginBottom:20}}>
+            <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{marginBottom:20}}>
               {[{l:"Net Revenue",v:fmt(netRevenue),c:"var(--blue)"},{l:"Gross Profit",v:fmt(grossProfit),c:"var(--green)"},{l:"Net Profit",v:fmt(netProfit),c:netProfit>=0?"var(--green)":"var(--red)"},{l:"Net Margin",v:netMargin+"%",c:netProfit>=0?"var(--green)":"var(--red)"}].map(k=>(
                 <div key={k.l} className="kpi" style={{marginBottom:0}}><div className="kpi-label">{k.l}</div><div className="kpi-val" style={{color:k.c}}>{k.v}</div></div>
               ))}
@@ -3830,7 +3737,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
             </div>
             <div className="card">
               <div className="ch"><div className="ct">Aged Debtors Report</div><div className="cs">Total outstanding: {fmt(total)}</div></div>
-              <div className="tw"><table>
+              <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
                 <thead><tr><th>Customer</th><th>Current</th><th>1–30 Days</th><th className="hm">31–60 Days</th><th className="hm">61–90 Days</th><th className="hm">90+ Days</th><th>Total</th></tr></thead>
                 <tbody>
                   {customerBuckets.map(c=>(<tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono" style={{color:"var(--green)"}}>{c.current>0?fmt(c.current):"—"}</td><td className="mono" style={{color:"var(--amber)"}}>{c.d30>0?fmt(c.d30):"—"}</td><td className="mono hm" style={{color:"#f97316"}}>{c.d60>0?fmt(c.d60):"—"}</td><td className="mono hm" style={{color:"var(--red)"}}>{c.d90>0?fmt(c.d90):"—"}</td><td className="mono hm" style={{color:"#7f1d1d"}}>{c.d90p>0?fmt(c.d90p):"—"}</td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(c.total)}</td></tr>))}
@@ -3855,7 +3762,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
             </div>
             <div className="card">
               <div className="ch"><div className="ct">Aged Creditors Report</div><div className="cs">What you owe suppliers</div></div>
-              <div className="tw"><table>
+              <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
                 <thead><tr><th>Supplier / Account</th><th>Type</th><th>Balance Owed</th><th>Status</th></tr></thead>
                 <tbody>
                   {supplierAccounts.map(a=>(<tr key={a.id}><td style={{fontWeight:600}}>{a.name}</td><td><span className="tag" style={{fontSize:10}}>{a.type}</span></td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(a.balance)}</td><td><span className={"badge "+(a.balance>0?"b-red":"b-green")}>{a.balance>0?"Outstanding":"Clear"}</span></td></tr>))}
@@ -3901,7 +3808,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
                   </div>
                 ))}
               </div>
-              <div className="tw"><table>
+              <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
                 <thead><tr><th>Month</th><th>Cash In</th><th>Pending</th><th>Expenses</th><th>Net</th></tr></thead>
                 <tbody>
                   {cfMonths.map(m=>(<tr key={m.lbl}><td style={{fontWeight:600}}>{m.lbl}</td><td className="mono tg">{fmt(m.inflow)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(m.pending)}</td><td className="mono tr-c">{fmt(m.expenses)}</td><td className="mono" style={{fontWeight:700,color:m.net>=0?"var(--green)":"var(--red)"}}>{fmt(m.net)}</td></tr>))}
@@ -3956,14 +3863,14 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       })()}
 
       {tab==="stock" && <div>
-        <div className="g4" style={{marginBottom:20}}>
+        <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{marginBottom:20}}>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Cost Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Retail Value</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Potential Profit</div><div className="kpi-val" style={{color:"var(--purple)"}}>{fmt(totalRetailValue-totalStockValue)}</div></div>
         </div>
-        {lowStockItems.length > 0 && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct" style={{color:"var(--red)"}}>⚠️ Low Stock — {lowStockItems.length} items</div></div><div className="tw"><table><thead><tr><th>Product</th><th>In Stock</th><th>Reorder At</th><th>Est. Cost to Restock</th></tr></thead><tbody>{lowStockItems.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono tr-c" style={{fontWeight:600}}>{p.stock_qty}</td><td className="mono">{p.reorder_level}</td><td className="mono">{fmt(Math.max(0,p.reorder_level*2-p.stock_qty)*p.cost_price)}</td></tr>)}</tbody></table></div></div>}
-        <div className="card"><div className="ch"><div className="ct">Stock by Category</div></div><div className="tw"><table><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th><th>Low Stock</th></tr></thead><tbody>{catData.map(c => <tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono">{c.products}</td><td className="mono">{fmt(c.stockValue)}</td><td className="mono tg">{fmt(c.retailValue)}</td><td><span style={{color:c.stockValue>0&&Math.round((c.retailValue-c.stockValue)/c.retailValue*100)>30?"var(--green)":"var(--amber)",fontWeight:600,fontSize:12}}>{c.stockValue>0?Math.round((c.retailValue-c.stockValue)/c.retailValue*100):0}%</span></td><td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td></tr>)}</tbody></table></div></div>
+        {lowStockItems.length > 0 && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct" style={{color:"var(--red)"}}>⚠️ Low Stock — {lowStockItems.length} items</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Product</th><th>In Stock</th><th>Reorder At</th><th>Est. Cost to Restock</th></tr></thead><tbody>{lowStockItems.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono tr-c" style={{fontWeight:600}}>{p.stock_qty}</td><td className="mono">{p.reorder_level}</td><td className="mono">{fmt(Math.max(0,p.reorder_level*2-p.stock_qty)*p.cost_price)}</td></tr>)}</tbody></table></div></div>}
+        <div className="card"><div className="ch"><div className="ct">Stock by Category</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th><th>Low Stock</th></tr></thead><tbody>{catData.map(c => <tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono">{c.products}</td><td className="mono">{fmt(c.stockValue)}</td><td className="mono tg">{fmt(c.retailValue)}</td><td><span style={{color:c.stockValue>0&&Math.round((c.retailValue-c.stockValue)/c.retailValue*100)>30?"var(--green)":"var(--amber)",fontWeight:600,fontSize:12}}>{c.stockValue>0?Math.round((c.retailValue-c.stockValue)/c.retailValue*100):0}%</span></td><td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td></tr>)}</tbody></table></div></div>
       </div>}
       {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={period === "month" && filteredInv.length === 0 ? invoices : filteredInv} periodLabels={periodLabels} />}
       {tab === "product-tracker" && <ProductSalesTracker invoices={invoices} products={products} allProfiles={allProfiles} />}
@@ -4158,7 +4065,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </div>
 
       {/* Summary KPIs */}
-      <div className="g4" style={{ marginBottom: 20 }}>
+      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}>
         {[
           { label: "Total", val: dns.length, color: "var(--text)" },
           { label: "Pending", val: dns.filter(d => d.status === "pending").length, color: "var(--amber)" },
@@ -4227,7 +4134,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 
       {/* Table */}
       <div className="card">
-        <div className="tw"><table>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
           <thead><tr><th>DN #</th><th>Customer</th><th className="hm">Date</th><th className="hm">Driver</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {dns.map(dn => {
@@ -4384,7 +4291,7 @@ Answer concisely and helpfully. Use £ for currency. Format numbers clearly. If 
   const renderMsg = (text) => text.replace(/\*([^*]+)\*/g, "$1");
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }} className="ai-panel">
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 380, height: 540, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 500, overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
       {/* Header */}
       <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #1d4ed8, #7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -4483,7 +4390,6 @@ const MOBILE_NAV = [
 export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
-  const [navOpen, setNavOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
@@ -4667,8 +4573,7 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
-        <div className={"mob-sidebar-overlay" + (navOpen ? " visible" : "")} onClick={() => setNavOpen(false)} />
-        <aside className={"sidebar" + (navOpen ? " mob-open" : "")}>
+        <aside className="sidebar">
           <div className="sidebar-logo" style={{ paddingBottom: 20 }}>
             <img src={LOGO} alt="Arkham Retail" style={{ width: 190, height: 54, objectFit: "contain", borderRadius: 8 }} />
           </div>
@@ -4697,21 +4602,11 @@ export default function App() {
           </div>
         </aside>
         <div className="main">
-          <div className="mob-topbar">
-            <button className="mob-hamburger" onClick={() => setNavOpen(o => !o)} aria-label="Open navigation">
-              <i className={"ti " + (navOpen ? "ti-x" : "ti-menu-2")} />
-            </button>
-            <img src={LOGO} alt="Arkham Retail" style={{ height: 28, objectFit: "contain", borderRadius: 6, flex: 1, maxWidth: 140 }} />
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-              <button onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "var(--r)", border: "1px solid var(--border)", background: "var(--white)", cursor: "pointer", color: "var(--blue)" }}>
-                <i className="ti ti-sparkles" style={{ fontSize: 16 }} />
-              </button>
-            </div>
-          </div>
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
               <img src={LOGO} alt="Arkham Retail" style={{ width: 90, height: 26, borderRadius: 6, objectFit: "contain" }} />
-            </div>            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
+            </div>
+            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
               <i className="ti ti-search" />
               <input
                 className="search-input"
@@ -4815,7 +4710,7 @@ export default function App() {
                       {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid var(--white)"}}>{unread>9?"9+":unread}</span>}
                     </div>
                     {showNotifications && (
-                      <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:"min(340px, calc(100vw - 24px))",background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}} className="notif-panel">
+                      <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:340,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
                         <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                           <div style={{fontWeight:700,fontSize:14}}>Notifications</div>
                           <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -4922,7 +4817,7 @@ export default function App() {
         {showOnboarding && <OnboardingChecklist onClose={() => setShowOnboarding(false)} invoices={invoices} contacts={contacts} products={products} setPage={setPage} />}
         {showAI && <AIAssistant invoices={invoices} contacts={contacts} products={products} accounts={accounts} onClose={() => setShowAI(false)} />}
         {showActivity && (
-          <div style={{ position: "fixed", top: 54, right: 24, width: "min(420px, calc(100vw - 24px))", maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }} className="activity-panel">
+          <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
             {/* Header */}
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div>
@@ -5178,7 +5073,7 @@ function Settings({ auth, contacts, invoices, products }) {
       {activeTab==="company" && (
         <div className="card" style={{ padding:24 }}>
           <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }} className="settings-company-grid">
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
             {[{label:"Company Name",val:"Arkham Retail Ltd"},{label:"VAT Number",val:"GB462229106"},{label:"Address",val:"2 Fieldhead Street, Fieldhead Business Centre"},{label:"City",val:"Bradford, West Yorkshire BD7 1LW"},{label:"Phone",val:"07801 567209 / 07851 983151"},{label:"Email",val:"ARKHAMRETAIL@GMAIL.COM"},{label:"Bank",val:"Tide Bank"},{label:"Sort Code / Account",val:"04-06-05 / 23058246"}].map(f=>(
               <div key={f.label}><div style={{ fontSize:11,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:5 }}>{f.label}</div><div style={{ fontSize:14,fontWeight:600,color:"var(--text)",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--r)",padding:"10px 14px" }}>{f.val}</div></div>
             ))}
