@@ -2241,8 +2241,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                   </div>
                 ) : (
                     <div style={{ display:"flex", gap:4 }}>
-                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
-                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
+                      
+                    <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
                     </div>
                   )
                 )}
