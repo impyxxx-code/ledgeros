@@ -2175,7 +2175,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 
   const recordPartPayment = async (inv, amount) => {
     const paid = parseFloat(amount);
-    if (!paid || paid <= 0) return;
+    if (!paid || paid <= 0) { alert("Please enter a valid amount greater than zero."); return; }
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
