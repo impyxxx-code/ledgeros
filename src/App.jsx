@@ -2903,7 +2903,10 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
                   </div>
                   <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
                 </div>
-                <div style={{ fontSize:22,fontWeight:800,letterSpacing:"-.5px",marginBottom:4 }}>{fmt(inv.amount)}</div>
+                <div style={{ fontSize:22,fontWeight:800,letterSpacing:"-.5px",marginBottom:4 }}>
+                {inv.status === "partial" ? fmt(inv.balance || 0) : fmt(inv.amount)}
+                {inv.status === "partial" && <span style={{ fontSize:12, color:"var(--text3)", fontWeight:400, marginLeft:6 }}>of {fmt(inv.amount)}</span>}
+              </div>
                 <div style={{ fontSize:11,color:"var(--text3)",marginBottom:12 }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</div>
                 <div style={{ display:"flex",gap:6 }}>
                   <button className="btn bp bsm" style={{flex:1}} onClick={e=>{e.stopPropagation();setViewInvoice(inv);}}>View</button>
@@ -2928,7 +2931,11 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
               <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
               <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td>
               <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td>
-              <td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td>
+              <td className="mono" style={{ fontWeight: 600 }}>
+                {inv.status === "partial"
+                  ? <span>{fmt(inv.balance || 0)} <span style={{ fontSize:10, color:"var(--text3)", fontWeight:400 }}>of {fmt(inv.amount)}</span></span>
+                  : fmt(inv.amount)}
+              </td>
               <td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td>
               <td>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
