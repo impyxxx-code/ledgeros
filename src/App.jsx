@@ -2185,24 +2185,6 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     setPartPayId(null);
     setPartPayAmount({});
   };
-
-  const recordPartPayment = async (inv, amount) => {
-    const paid = parseFloat(amount);
-    if (!paid || paid <= 0) return;
-    const prevPaid = parseFloat(inv.amount_paid || 0);
-    const totalPaid = prevPaid + paid;
-    const balance = parseFloat(inv.amount) - totalPaid;
-    const newStatus = balance <= 0 ? "paid" : "partial";
-    await sb.patch(token, "invoices", inv.id, {
-      amount_paid: totalPaid,
-      balance: Math.max(0, balance),
-      status: newStatus,
-      payment_method: payMethod[inv.id] || "cash"
-    });
-    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
-    setPartPayId(null);
-    setPartPayAmount({});
-  };
   return (
     <div>
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} />}
