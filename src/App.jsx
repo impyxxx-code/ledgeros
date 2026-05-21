@@ -2241,8 +2241,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                   </div>
                 ) : (
                     <div style={{ display:"flex", gap:4 }}>
-                      
-                    <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
+                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
                     </div>
                   )
                 )}
@@ -2951,9 +2951,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
                     <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
                       <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
                       <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
-                    </div>
-                  )}
-                {partPayId === inv.id && (
+                      {partPayId === inv.id && (
                   <div style={{ display:"flex", gap:4, alignItems:"center", marginTop:4, flexWrap:"wrap" }}>
                     <input type="number" placeholder="Amount" value={partPayAmount[inv.id]||""} onChange={e=>setPartPayAmount(p=>({...p,[inv.id]:e.target.value}))} style={{ width:80, padding:"4px 8px", borderRadius:6, border:"1px solid var(--border2)", fontSize:11, outline:"none" }} />
                     <select style={{ background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:6, padding:"4px 8px", fontSize:11, outline:"none" }} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(p=>({...p,[inv.id]:e.target.value}))}>
@@ -2966,6 +2964,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
                     <button className="btn bo bsm" style={{ fontSize:10 }} onClick={()=>setPartPayId(null)}>Cancel</button>
                   </div>
                 )}
+                    </div>
+                  )}
                 </div>
               </td>
             </tr>
