@@ -151,7 +151,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity: 0.5}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
@@ -207,7 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   color:#a5b4fc;font-weight:600;
   border-left-color:var(--sidebar-active-border);
 }
-.nav-item i{font-size:16px;flex-shrink:0;opacity:.9}
+.nav-item i{font-size:16px;flex-shrink:0;opacity: 0.9}
 .nav-badge{
   margin-left:auto;background:var(--red);color:#fff;
   font-size:10px;font-weight:700;
@@ -483,7 +483,7 @@ tr:hover td{background:#f8fafd}
   box-shadow:0 1px 2px rgba(37,99,235,.2),0 2px 8px rgba(37,99,235,.15);
 }
 .bp:hover{background:var(--blue-dk);box-shadow:var(--sh-blue);transform:translateY(-1px)}
-.bp:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.bp:disabled{opacity: 0.45;cursor:not-allowed;transform:none;box-shadow:none}
 
 .bo{
   background:var(--white);color:var(--text);
@@ -866,7 +866,7 @@ tr:hover td{background:#f8fafd}
 
 /* ── Empty States ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center}
-.empty-state-icon{font-size:52px;margin-bottom:16px;opacity:.25}
+.empty-state-icon{font-size:52px;margin-bottom:16px;opacity: 0.25}
 .empty-state-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
 .empty-state-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:280px;margin-bottom:20px}
 
@@ -1319,6 +1319,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   ].filter(Boolean);
 
   const statusConfig = {
+    partial:  { label: "Partial",  cls: "b-orange",  icon: "ti-clock-dollar" },
     draft:    { label: "Draft",    cls: "b-gray",   icon: "ti-file" },
     pending:  { label: "Pending",  cls: "b-amber",  icon: "ti-clock" },
     paid:     { label: "Paid",     cls: "b-green",  icon: "ti-circle-check" },
@@ -2001,7 +2002,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
               <i className="ti ti-circle-check" style={{ color: "var(--green)", fontSize: 26, flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--green-dk)", marginBottom: 2 }}>Delivery Note {dnSaved.dn_number} Saved!</div>
-                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: .8 }}>Saved to Delivery Notes. Print, email or WhatsApp below.</div>
+                <div style={{ fontSize: 12, color: "var(--green-dk)", opacity: 0.8 }}>Saved to Delivery Notes. Print, email or WhatsApp below.</div>
               </div>
             </div>
 
@@ -2087,6 +2088,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
+  const [partPayId, setPartPayId] = useState(null);
+  const [partPayAmount, setPartPayAmount] = useState({});
   const myInv = invoices.filter(i => i.created_by === profile?.id);
   const myPaid = myInv.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   const myPending = myInv.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
@@ -2096,9 +2099,27 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const markPaid = async (id, method) => {
-    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
+    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: invoices.find(i=>i.id===id)?.amount || 0, balance: 0 });
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
+  };
+
+  const recordPartPayment = async (inv, amount) => {
+    const paid = parseFloat(amount);
+    if (!paid || paid <= 0) return;
+    const prevPaid = parseFloat(inv.amount_paid || 0);
+    const totalPaid = prevPaid + paid;
+    const balance = parseFloat(inv.amount) - totalPaid;
+    const newStatus = balance <= 0 ? "paid" : "partial";
+    await sb.patch(token, "invoices", inv.id, {
+      amount_paid: totalPaid,
+      balance: Math.max(0, balance),
+      status: newStatus,
+      payment_method: payMethod[inv.id] || "cash"
+    });
+    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+    setPartPayId(null);
+    setPartPayAmount({});
   };
   return (
     <div>
@@ -2116,7 +2137,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
         <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--amber-lt)" }}><i className="ti ti-clock" style={{ color: "var(--amber)" }} /></div><span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>Pending</span></div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(myPending)}</div><div className="kpi-label">Awaiting Payment</div></div>
         <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><i className="ti ti-users" style={{ color: "var(--purple)" }} /></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>{myCusts.length}</span></div><div className="kpi-val" style={{ color: "var(--purple)" }}>{myCusts.length}</div><div className="kpi-label">My Customers</div></div>
       </div>
-      {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><i className="ti ti-alert-triangle" style={{ color: "#fff", fontSize: 20 }} /></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: .7 }}>Please follow up with your customers</div></div></div>}
+      {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><i className="ti ti-alert-triangle" style={{ color: "#fff", fontSize: 20 }} /></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: 0.7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
         <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button></div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
@@ -2124,7 +2145,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
             <tr key={inv.id}>
               <td style={{ fontWeight: 500 }}>{inv.customer}</td>
               <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
-              <td className="mono">{fmt(inv.amount)}</td>
+              <td className="mono">{fmt(inv.amount)}{inv.status === "partial" && inv.balance > 0 && <div style={{ fontSize:10, color:"var(--orange)", fontWeight:600 }}>Bal: {fmt(inv.balance)}</div>}</td>
               <td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td>
               <td><div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>
@@ -2136,7 +2157,26 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                     <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
                     <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
                   </div>
-                ) : <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>)}
+                ) : (
+                    <div style={{ display:"flex", gap:4 }}>
+                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
+                    </div>
+                  )
+                )}
+                {partPayId === inv.id && (
+                  <div style={{ display:"flex", gap:4, alignItems:"center", marginTop:4 }}>
+                    <input type="number" placeholder="Amount" value={partPayAmount[inv.id]||""} onChange={e=>setPartPayAmount(p=>({...p,[inv.id]:e.target.value}))} style={{ width:80, padding:"4px 8px", borderRadius:6, border:"1px solid var(--border2)", fontSize:11, outline:"none" }} />
+                    <select style={{ background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:6, padding:"4px 8px", fontSize:11, outline:"none" }} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(p=>({...p,[inv.id]:e.target.value}))}>
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank</option>
+                      <option value="card">Card</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
+                    <button className="btn bp bsm" style={{ background:"var(--green)", border:"none", color:"#fff" }} onClick={()=>recordPartPayment(inv, partPayAmount[inv.id])}>Save</button>
+                    <button className="btn bo bsm" style={{ fontSize:10 }} onClick={()=>setPartPayId(null)}>Cancel</button>
+                  </div>
+                )}
               </div></td>
             </tr>
           ))}
@@ -2301,7 +2341,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           <div style={{ marginTop: 8, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", display: "flex" }}>
               <div style={{ width: `${overdue / (unpaid || 1) * 100}%`, background: "var(--red)", transition: "width .5s" }} />
-              <div style={{ flex: 1, background: "var(--amber)", opacity: .6 }} />
+              <div style={{ flex: 1, background: "var(--amber)", opacity: 0.6 }} />
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
@@ -2380,7 +2420,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                   <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}} />Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity:.6}} />Pending
+                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity: 0.6}} />Pending
                 </div>
                 <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><i className="ti ti-arrow-right"/>Reports</button>
               </div>
@@ -2390,7 +2430,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:8,alignItems:"stretch"}}>
                 {/* Y-axis labels */}
                 <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingBottom:24,height:140}}>
-                  {[maxVal,maxVal*0.75,maxVal*0.5,maxVal*0.25,0].map((v,i)=>(
+                  {[maxVal, Math.round(maxVal*75/100), Math.round(maxVal*50/100), Math.round(maxVal*25/100), 0].map((v,i)=>(
                     <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v).replace("£","£"):"£0"}</div>
                   ))}
                 </div>
@@ -2898,7 +2938,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
                     <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",marginBottom:10 }}>Transaction History</div>
                     {custInvoices.length===0 ? (
                       <div style={{ padding:24,textAlign:"center",color:"var(--text3)",background:"#f8fafd",borderRadius:"var(--rl)",border:"1px solid var(--border)" }}>
-                        <i className="ti ti-file-off" style={{ fontSize:28,display:"block",marginBottom:8,opacity:.3 }} />
+                        <i className="ti ti-file-off" style={{ fontSize:28,display:"block",marginBottom:8,opacity: 0.3 }} />
                         No invoices yet for this customer
                       </div>
                     ) : (
@@ -2987,7 +3027,7 @@ function Inventory({ products, setProducts, token, userId }) {
   return (
     <div>
       <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />Add Product</button></div>
-      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
         {products.map(p => <tr key={p.id}><td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td className="tm">{p.category||"—"}</td><td className="mono hm">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span className="tag">{p.vat_rate}%</span></td><td className="mono">{p.stock_qty} {p.unit}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=p.reorder_level*2?"b-amber":"b-green")}>{p.stock_qty<=p.reorder_level?"Low Stock":p.stock_qty<=p.reorder_level*2?"Running Low":"In Stock"}</span></td></tr>)}
@@ -3219,7 +3259,7 @@ function AgentReport({ invoices, allProfiles, contacts }) {
           {[["all","All Time"],["month","This Month"],["week","This Week"],["today","Today"]].map(([k,l]) => <button key={k} style={{ padding: "5px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", background: period === k ? "var(--white)" : "transparent", color: period === k ? "var(--text)" : "var(--text3)", boxShadow: period === k ? "var(--sh)" : "none" }} onClick={() => setPeriod(k)}>{l}</button>)}
         </div>
       </div>
-      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}>
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Total Sales</div><div className="kpi-val">{fmt(totalSales)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Collected</div><div className="kpi-val tg">{fmt(totalPaid)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Pending</div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(totalPending)}</div></div>
@@ -3338,7 +3378,7 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
       </div>
 
       {/* Summary KPIs */}
-      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 18 }}>
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 18 }}>
         <div className="kpi" style={{ marginBottom: 0 }}>
           <div className="kpi-label">Products Sold</div>
           <div className="kpi-val" style={{ color: "var(--blue)" }}>{allProducts.length}</div>
@@ -3398,7 +3438,7 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
                 {Object.entries(selected.dailySales).sort((a,b)=>a[0].localeCompare(b[0])).map(([day, qty]) => {
                   const maxDay = Math.max(...Object.values(selected.dailySales));
                   return (
-                    <div key={day} title={fmtDate(day) + ": " + qty + " units"} style={{ flex: 1, background: "var(--blue)", borderRadius: "2px 2px 0 0", height: Math.max(4, Math.round((qty/maxDay)*56))+"px", opacity: .75, cursor: "pointer", transition: "opacity .1s" }} onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=.75} />
+                    <div key={day} title={fmtDate(day) + ": " + qty + " units"} style={{ flex: 1, background: "var(--blue)", borderRadius: "2px 2px 0 0", height: Math.max(4, Math.round((qty/maxDay)*56))+"px", opacity: 0.75, cursor: "pointer", transition: "opacity .1s" }} onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=.75} />
                   );
                 })}
               </div>
@@ -3560,7 +3600,7 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
                       <td>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <span className="mono" style={{fontWeight:700,color:"var(--blue)",fontSize:14,minWidth:30}}>{p.totalQty}</span>
-                          <div style={{height:6,width:Math.max(12,Math.round((p.totalQty/maxQty)*80))+"px",background:"var(--blue)",borderRadius:3,opacity:.35}} />
+                          <div style={{height:6,width:Math.max(12,Math.round((p.totalQty/maxQty)*80))+"px",background:"var(--blue)",borderRadius:3,opacity: 0.35}} />
                         </div>
                       </td>
                       <td className="mono" style={{fontWeight:700,color:"var(--green)"}}>{fmt(p.totalValue)}</td>
@@ -3646,7 +3686,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
           <div style={{padding:"20px 20px 8px"}}>
             <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,marginBottom:8}}>
-              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>£{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity:.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
+              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>£{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity: 0.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"0.5px solid var(--border)",paddingTop:8}}>
               <span>Total: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
@@ -3679,7 +3719,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
         return (
           <div>
-            <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{marginBottom:20}}>
+            <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
               {[{l:"Net Revenue",v:fmt(netRevenue),c:"var(--blue)"},{l:"Gross Profit",v:fmt(grossProfit),c:"var(--green)"},{l:"Net Profit",v:fmt(netProfit),c:netProfit>=0?"var(--green)":"var(--red)"},{l:"Net Margin",v:netMargin+"%",c:netProfit>=0?"var(--green)":"var(--red)"}].map(k=>(
                 <div key={k.l} className="kpi" style={{marginBottom:0}}><div className="kpi-label">{k.l}</div><div className="kpi-val" style={{color:k.c}}>{k.v}</div></div>
               ))}
@@ -3802,8 +3842,8 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
                 {cfMonths.map((m,i)=>(
                   <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}>
                     <div style={{width:"100%",display:"flex",gap:2,alignItems:"flex-end",justifyContent:"center"}}>
-                      <div style={{flex:1,background:"var(--green)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.inflow/maxVal)*120)+"px",opacity:.85}} />
-                      <div style={{flex:1,background:"var(--red)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.expenses/maxVal)*120)+"px",opacity:.7}} />
+                      <div style={{flex:1,background:"var(--green)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.inflow/maxVal)*120)+"px",opacity: 0.85}} />
+                      <div style={{flex:1,background:"var(--red)",borderRadius:"3px 3px 0 0",height:Math.max(4,(m.expenses/maxVal)*120)+"px",opacity:0.7}} />
                     </div>
                     <div style={{fontSize:9,color:"var(--text3)",marginTop:4}}>{m.lbl}</div>
                   </div>
@@ -3864,7 +3904,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       })()}
 
       {tab==="stock" && <div>
-        <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{marginBottom:20}}>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Cost Value</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
           <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Retail Value</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div></div>
@@ -4066,7 +4106,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </div>
 
       {/* Summary KPIs */}
-      <div className="g4" style={{gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}} style={{ marginBottom: 20 }}>
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
         {[
           { label: "Total", val: dns.length, color: "var(--text)" },
           { label: "Pending", val: dns.filter(d => d.status === "pending").length, color: "var(--amber)" },
@@ -4239,12 +4279,12 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
   const suggestions = ["Who owes the most money?", "Which products are low on stock?", "What is my total revenue?", "Show overdue invoices"];
 
   return (
-    <div style={{ width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right" }}>
-      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 17 }} />
+    <div style={{ width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right", outline: "none" }}>
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, outline: "none" }}>
+        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
+          <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 17, pointerEvents: "none" }} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: "1" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>AI Assistant</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>Live business data</div>
         </div>
@@ -4253,12 +4293,12 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12, outline: "none" }}>
         {messages.map((msg, i) => (
           <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 8, alignItems: "flex-end" }}>
             {msg.role === "assistant" && (
-              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 12 }} />
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
+                <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 12, pointerEvents: "none" }} />
               </div>
             )}
             <div style={{ maxWidth: "80%", padding: "10px 13px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? "var(--blue)" : "#f4f6f9", color: msg.role === "user" ? "#fff" : "var(--text)", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
@@ -4267,13 +4307,8 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
           </div>
         ))}
         {loading && (
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-sparkles" style={{ color: "#fff", fontSize: 12 }} />
-            </div>
-            <div style={{ padding: "10px 14px", background: "#f4f6f9", borderRadius: "16px 16px 16px 4px", display: "flex", gap: 4, alignItems: "center" }}>
-              {[0,1,2].map(j => <div key={j} style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text3)", animation: "pulse 1.2s ease-in-out " + (j*0.2) + "s infinite" }} />)}
-            </div>
+          <div style={{ padding: "8px 14px" }}>
+            <span style={{ fontSize: 13, color: "var(--text3)" }}>Thinking...</span>
           </div>
         )}
         <div ref={bottomRef} />
@@ -4287,7 +4322,7 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
         </div>
       )}
 
-      <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexShrink: 0 }}>
+      <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexShrink: 0, outline: "none" }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -4295,12 +4330,11 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
           placeholder="Ask anything about your business..."
           style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
         />
-        <button onClick={send} disabled={!input.trim() || loading} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className="ti ti-send" style={{ color: "#fff", fontSize: 15 }} />
+        <button onClick={send} disabled={!input.trim() || loading} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <i className="ti ti-send" style={{ fontSize: 15, color: "#fff" }} />
         </button>
       </div>
     </div>
-  </div>
   </div>
   );
 }
@@ -4667,7 +4701,7 @@ export default function App() {
                         <div style={{maxHeight:400,overflowY:"auto"}}>
                           {notifs.length===0?(
                             <div style={{padding:"32px 16px",textAlign:"center",color:"var(--text3)"}}>
-                              <i className="ti ti-bell-check" style={{fontSize:32,display:"block",marginBottom:8,opacity:.4}} />
+                              <i className="ti ti-bell-check" style={{fontSize:32,display:"block",marginBottom:8,opacity: 0.4}} />
                               <div style={{fontSize:13}}>All caught up!</div>
                             </div>
                           ):notifs.map(n=>(
@@ -4778,7 +4812,7 @@ export default function App() {
                 <div style={{ padding: 32, textAlign: "center" }}><div className="spin" style={{ margin: "0 auto 10px" }} /><div style={{ fontSize: 12, color: "var(--text3)" }}>Loading activity...</div></div>
               ) : auditLog.length === 0 ? (
                 <div style={{ padding: 32, textAlign: "center", color: "var(--text3)" }}>
-                  <i className="ti ti-history" style={{ fontSize: 32, display: "block", marginBottom: 8, opacity: .3 }} />
+                  <i className="ti ti-history" style={{ fontSize: 32, display: "block", marginBottom: 8, opacity: 0.3 }} />
                   <div style={{ fontSize: 13 }}>No activity recorded yet</div>
                   <div style={{ fontSize: 11, marginTop: 4 }}>Actions will appear here as you use the app</div>
                 </div>
