@@ -2180,6 +2180,19 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
+    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+    setPartPayId(null);
+    setPartPayAmount({});
+  };
+
+  const recordPartPayment = async (inv, amount) => {
+    const paid = parseFloat(amount);
+    if (!paid || paid <= 0) return;
+    const prevPaid = parseFloat(inv.amount_paid || 0);
+    const totalPaid = prevPaid + paid;
+    const balance = parseFloat(inv.amount) - totalPaid;
+    const newStatus = balance <= 0 ? "paid" : "partial";
     await sb.patch(token, "invoices", inv.id, {
       amount_paid: totalPaid,
       balance: Math.max(0, balance),
@@ -2729,6 +2742,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const [sortDir, setSortDir] = useState("desc");
   const [viewMode, setViewMode] = useState("table"); // table | card
   const [editInvoice, setEditInvoice] = useState(null);
+  const [partPayId, setPartPayId] = useState(null);
+  const [partPayAmount, setPartPayAmount] = useState({});
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -2933,8 +2948,24 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
                       <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
                     </div>
                   ) : (
-                    <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
+                    </div>
                   )}
+                {partPayId === inv.id && (
+                  <div style={{ display:"flex", gap:4, alignItems:"center", marginTop:4, flexWrap:"wrap" }}>
+                    <input type="number" placeholder="Amount" value={partPayAmount[inv.id]||""} onChange={e=>setPartPayAmount(p=>({...p,[inv.id]:e.target.value}))} style={{ width:80, padding:"4px 8px", borderRadius:6, border:"1px solid var(--border2)", fontSize:11, outline:"none" }} />
+                    <select style={{ background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:6, padding:"4px 8px", fontSize:11, outline:"none" }} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(p=>({...p,[inv.id]:e.target.value}))}>
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank</option>
+                      <option value="card">Card</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
+                    <button className="btn bp bsm" style={{ background:"var(--green)", border:"none", color:"#fff" }} onClick={()=>recordPartPayment(inv, partPayAmount[inv.id])}>Save</button>
+                    <button className="btn bo bsm" style={{ fontSize:10 }} onClick={()=>setPartPayId(null)}>Cancel</button>
+                  </div>
+                )}
                 </div>
               </td>
             </tr>
