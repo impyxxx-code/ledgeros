@@ -1706,6 +1706,15 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     URL.revokeObjectURL(url);
   };
 
+  const downloadInvoicePDF = () => {
+    const html = buildInvoiceHtml();
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
+  };
+
   // Create delivery note from invoice
   const createDeliveryNote = async () => {
     if (!savedInvoice) return;
@@ -1999,7 +2008,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
               </button>
 
               {/* Print Delivery Note — immediate, no DB save required */}
-              <button onClick={() => downloadDN(buildQuickDN())} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
+              <button onClick={() => downloadDNpdf(buildDNHtml(buildQuickDN()), buildQuickDN().dn_number)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
                 <div style={{ width: 42, height: 42, borderRadius: 11, background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
@@ -2790,6 +2799,14 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const a = document.createElement("a");
     a.href = url; a.download = `${dn_number}.html`; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadDNpdf = (html, dn_number) => {
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
