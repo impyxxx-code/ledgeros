@@ -931,14 +931,14 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
           <i className="ti ti-search" style={{ color: "var(--text3)", fontSize: 18, flexShrink: 0 }} />
           <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && all[0]) { all[0].action(); onClose(); } }} placeholder="Search or type a command..." style={{ flex: 1, border: "none", outline: "none", fontSize: 16, fontFamily: "var(--sans)", color: "var(--text)", background: "transparent" }} />
-          <kbd style={{ background: "var(--border)", borderRadius: 5, padding: "2px 7px", fontSize: 11, color: "var(--text3)", fontFamily: "var(--sans)", flexShrink: 0, outline: "none" }}>ESC</kbd>
+          <kbd style={{ background: "var(--border)", borderRadius: 5, padding: "2px 7px", fontSize: 11, color: "var(--text3)", fontFamily: "var(--sans)", flexShrink: 0 }}>ESC</kbd>
         </div>
         {/* Results */}
         <div style={{ maxHeight: 380, overflowY: "auto" }}>
           {all.length === 0 && <div style={{ padding: "24px", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No results for "{q}"</div>}
           {all.map((item, i) => (
             <div key={i} onClick={() => { item.action(); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", cursor: "pointer", transition: "background .08s", borderBottom: "1px solid #f8fafd" }} onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <i className={"ti " + item.icon} style={{ color: "var(--text2)", fontSize: 15 }} />
               </div>
               <div style={{ flex: 1 }}>
@@ -1083,7 +1083,7 @@ function Auth({ onAuth }) {
           <p style={{ fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7, marginBottom: isMobile ? 20 : 36 }}>VAT invoices, inventory, analytics and more — all in one place.</p>
           {!isMobile && ["VAT Invoice PDF with WhatsApp share", "Customer & Supplier management", "Stock & Inventory with low stock alerts", "Agent dashboards & leaderboard", "Daily email notifications"].map(feat => (
             <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,.8)", marginBottom: 10, textAlign: "left" }}>
-              <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{feat}
+              <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{feat}
             </div>
           ))}
 
@@ -1903,7 +1903,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
         {/* ── Success banner ── */}
         <div style={{ background: "linear-gradient(135deg,#10b981,#059669)", padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <i className="ti ti-circle-check" style={{ color: "#fff", fontSize: 26 }} />
           </div>
           <div style={{ flex: 1 }}>
@@ -2291,7 +2291,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
           {insights.map((ins, i) => (
             <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <i className={`ti ${ins.icon}`} style={{ color: ins.color, fontSize: 16 }} />
               </div>
               <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{ins.text}</div>
@@ -2374,7 +2374,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           { label: "Today's Sales", val: fmt(todayRevenue), icon: "ti-sun", color: "var(--amber)", onClick: drillToday },
         ].map(s => (
           <div key={s.label} onClick={s.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 16 }} />
             </div>
             <div>
@@ -3416,7 +3416,7 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Sales by Agent</div>
             {Object.entries(selected.agentBreakdown).sort((a,b)=>b[1]-a[1]).map(([name, qty]) => (
               <div key={name} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0, outline: "none" }}>{name[0]?.toUpperCase()}</div>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{name[0]?.toUpperCase()}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{name}</span>
@@ -4279,6 +4279,7 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
   const suggestions = ["Who owes the most money?", "Which products are low on stock?", "What is my total revenue?", "Show overdue invoices"];
 
   return (
+    <>
     <div style={{ width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right", outline: "none" }}>
       <div style={{ padding: "14px 16px", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, outline: "none" }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
@@ -4336,6 +4337,7 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
       </div>
     </div>
   </div>
+  </>
   );
 }
 
@@ -4626,7 +4628,7 @@ export default function App() {
                       <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Invoices</div>
                       {invResults.map(inv => (
                         <div key={inv.id} onMouseDown={() => { setPage("invoices"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}><i className="ti ti-file-invoice" style={{ color: "var(--blue)", fontSize: 13 }} /></div>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-file-invoice" style={{ color: "var(--blue)", fontSize: 13 }} /></div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{inv.customer}</div>
                             <div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount||0)}</div>
@@ -4639,7 +4641,7 @@ export default function App() {
                       <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Customers</div>
                       {custResults.map(c => (
                         <div key={c.id} onMouseDown={() => { setPage("contacts"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0, outline: "none" }}>{c.name?.[0]?.toUpperCase()}</div>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.name?.[0]?.toUpperCase()}</div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{c.name}</div>
                             <div style={{ fontSize: 11, color: "var(--text3)" }}>{c.email || c.phone || c.type}</div>
@@ -4652,7 +4654,7 @@ export default function App() {
                       <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Products</div>
                       {prodResults.map(p => (
                         <div key={p.id} onMouseDown={() => { setPage("inventory"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--purple-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}><i className="ti ti-package" style={{ color: "var(--purple)", fontSize: 13 }} /></div>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--purple-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-package" style={{ color: "var(--purple)", fontSize: 13 }} /></div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{p.name}</div>
                             <div style={{ fontSize: 11, color: "var(--text3)" }}>{p.stock_qty} {p.unit||"units"} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(p.sale_price||0)}</div>
@@ -4799,7 +4801,7 @@ export default function App() {
         {showActivity && (
           <div style={{ position: "fixed", top: 54, right: 24, width: 420, maxHeight: "calc(100vh - 80px)", background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rxl)", boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", zIndex: 490, overflow: "hidden", animation: "scaleIn .18s var(--ease) both", transformOrigin: "top right" }}>
             {/* Header */}
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, outline: "none" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}><i className="ti ti-history" style={{ color: "var(--green)", fontSize: 16 }} />Recent Activity</div>
                 <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>Audit trail — last 50 events</div>
@@ -4842,7 +4844,7 @@ export default function App() {
                 })();
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 20px", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                    <div style={{ width: 32, height: 32, borderRadius: 9, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, outline: "none" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <i className={"ti " + cfg.icon} style={{ color: cfg.color, fontSize: 15 }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
