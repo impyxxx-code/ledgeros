@@ -1,3 +1,34 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  LedgerOS — Arkham Retail Ltd                                    ║
+// ║  Single-file React app  |  src/App.jsx                           ║
+// ║  Stack: React + Vite + Supabase + Vercel + SendGrid              ║
+// ╠══════════════════════════════════════════════════════════════════╣
+// ║  COMPONENT INDEX                                                  ║
+// ║  L  898  CommandPalette      Global Ctrl+K search                ║
+// ║  L  962  SkeletonTable       Loading placeholder                 ║
+// ║  L 1008  OnboardingChecklist First-run checklist                 ║
+// ║  L 1060  Auth                Login/Signup                        ║
+// ║  L 1144  InvoiceModal        Invoice detail (3 tabs)             ║
+// ║  L 1571  InvoiceForm         Create invoice + line items         ║
+// ║  L 2086  AgentDashboard      Agent role dashboard                ║
+// ║  L 2190  Dashboard           Admin KPI dashboard                 ║
+// ║  L 2641  Invoices            Invoice list + actions              ║
+// ║  L 2871  Contacts            Customer/supplier management        ║
+// ║  L 3629  AdminReports        13-tab reports suite                ║
+// ║  L 3922  DeliveryNotes       DN create/print/email               ║
+// ║  L 4220  AIAssistant         Hover AI chat panel                 ║
+// ║  L 4876  EditInvoiceModal    Edit existing invoice               ║
+// ║  L 5041  Settings            App settings                        ║
+// ╠══════════════════════════════════════════════════════════════════╣
+// ║  AUDIT RULES (run before every push)                             ║
+// ║  1. All 27 functions must have balanced braces/parens            ║
+// ║  2. No duplicate style props on same element                     ║
+// ║  3. No bare opacity decimals without leading zero                 ║
+// ║  4. No regex literals inside JSX returns                         ║
+// ║  5. No variable * decimal expressions in JSX                     ║
+// ║  6. Backtick count must be even (template literal balance)       ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
 import Analytics from "./Analytics.jsx";
 import CSVImport from "./CSVImport.jsx";
 import { useState, useEffect, useRef } from "react";
@@ -896,6 +927,11 @@ tr:hover td{background:#f8fafd}
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 // ── Command Palette (Cmd+K) ──────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ CommandPalette                                             │
+// │ Global search palette — Ctrl+K to open                     │
+// └────────────────────────────────────────────────────────────┘
 function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
   const [q, setQ] = useState("");
   const inputRef = useRef(null);
@@ -960,6 +996,11 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
 }
 
 // ── Skeleton Table Rows ───────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ SkeletonTable                                              │
+// │ Loading skeleton placeholder for tables                    │
+// └────────────────────────────────────────────────────────────┘
 function SkeletonTable({ rows = 5, cols = 4 }) {
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -989,6 +1030,11 @@ function SkeletonTable({ rows = 5, cols = 4 }) {
 }
 
 // ── Illustrated Empty State ───────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ EmptyState                                                 │
+// │ Empty state UI with icon and message                       │
+// └────────────────────────────────────────────────────────────┘
 function EmptyState({ icon, title, sub, action, actionLabel }) {
   const icons = {
     invoice: "🧾", customer: "👥", product: "📦", delivery: "🚚",
@@ -1006,6 +1052,11 @@ function EmptyState({ icon, title, sub, action, actionLabel }) {
 }
 
 // ── Onboarding Checklist ──────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ OnboardingChecklist                                        │
+// │ First-run checklist for new users                          │
+// └────────────────────────────────────────────────────────────┘
 function OnboardingChecklist({ onClose, invoices, contacts, products, setPage }) {
   const steps = [
     { key: "profile",  icon: "ti-user",          label: "Set up your profile",          done: true,                                     page: null },
@@ -1058,6 +1109,11 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
   );
 }
 
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Auth                                                       │
+// │ Login / Signup page                                        │
+// └────────────────────────────────────────────────────────────┘
 function Auth({ onAuth }) {
   const [mode, setMode] = useState("signin");
   const [f, setF] = useState({ email: "", password: "", full_name: "" });
@@ -1142,6 +1198,11 @@ function Auth({ onAuth }) {
 }
 
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ InvoiceModal                                               │
+// │ Invoice detail modal — 3 tabs: Invoice, Timeline, Actions  │
+// └────────────────────────────────────────────────────────────┘
 function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
@@ -1536,6 +1597,11 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 }
 
 // ── SEARCHABLE DROPDOWN ───────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ SearchDropdown                                             │
+// │ Searchable dropdown for product/contact selection          │
+// └────────────────────────────────────────────────────────────┘
 function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", value = "" }) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
@@ -1569,6 +1635,11 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
 }
 
 // ── INVOICE FORM ──────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ InvoiceForm                                                │
+// │ Create new invoice form with line items and VAT            │
+// └────────────────────────────────────────────────────────────┘
 function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
@@ -1763,8 +1834,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   ${dn.driver ? "<div class=\"driver-strip\"><div class=\"driver-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"1\" y=\"3\" width=\"15\" height=\"13\"/><path d=\"M16 8h4l3 5v3h-7V8z\"/><circle cx=\"5.5\" cy=\"18.5\" r=\"2.5\"/><circle cx=\"18.5\" cy=\"18.5\" r=\"2.5\"/></svg></div><div><div class=\"driver-label\">Driver / Courier</div><div class=\"driver-name\">" + dn.driver + "</div></div></div>" : ""}
 
 
-
-
   <!-- Meta -->
   <div class="meta-grid">
     <div class="meta-box accent">
@@ -1797,11 +1866,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       </thead>
       <tbody>
         ${dnLines.map(l => "<tr><td class=\"td-desc\">" + (l.description || "—") + "</td><td class=\"td-unit\">" + (l.unit || "unit") + "</td><td class=\"td-qty\">" + l.qty + "</td><td class=\"td-blank\">____</td><td class=\"td-blank\">____</td></tr>").join("")}
-
-
-
-
-
 
 
       </tbody>
@@ -2084,6 +2148,11 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 }
 
 // ── AGENT DASHBOARD ───────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ AgentDashboard                                             │
+// │ Dashboard view for agent role users                        │
+// └────────────────────────────────────────────────────────────┘
 function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token }) {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
@@ -2188,6 +2257,11 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 }
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Dashboard                                                  │
+// │ Admin dashboard with KPIs, charts and AI insights          │
+// └────────────────────────────────────────────────────────────┘
 function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
@@ -2639,6 +2713,11 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 }
 
 // ── INVOICES ──────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Invoices                                                   │
+// │ Invoice list — filter, sort, mark paid, part pay, edit     │
+// └────────────────────────────────────────────────────────────┘
 function Invoices({ invoices, setInvoices, contacts, products, token, userId }) {
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
@@ -2869,6 +2948,11 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 }
 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Contacts                                                   │
+// │ Customer and supplier contact management                   │
+// └────────────────────────────────────────────────────────────┘
 function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
@@ -3012,6 +3096,11 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Inventory                                                  │
+// │ Product stock management                                   │
+// └────────────────────────────────────────────────────────────┘
 function Inventory({ products, setProducts, token, userId }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -3038,6 +3127,11 @@ function Inventory({ products, setProducts, token, userId }) {
 }
 
 // ── PURCHASES ─────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Purchases                                                  │
+// │ Purchase orders                                            │
+// └────────────────────────────────────────────────────────────┘
 function Purchases({ contacts, products, token, userId }) {
   const [pos, setPOs] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -3074,6 +3168,11 @@ function Purchases({ contacts, products, token, userId }) {
 }
 
 // ── CREDIT NOTES ──────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ CreditNotes                                                │
+// │ Issue and apply credit notes to invoices                   │
+// └────────────────────────────────────────────────────────────┘
 function CreditNotes({ contacts, invoices, token, userId }) {
   const [cns, setCNs] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -3104,6 +3203,11 @@ function CreditNotes({ contacts, invoices, token, userId }) {
 }
 
 // ── REPORTS ───────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Reports                                                    │
+// │ Reports router — delegates to AdminReports                 │
+// └────────────────────────────────────────────────────────────┘
 function Reports({ accounts }) {
   const revenue = accounts.filter(a => a.type==="Revenue");
   const expenses = accounts.filter(a => a.type==="Expense");
@@ -3122,6 +3226,11 @@ function Reports({ accounts }) {
 }
 
 // ── CUSTOMER STATEMENT ────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ CustomerStatement                                          │
+// │ Printable customer statement                               │
+// └────────────────────────────────────────────────────────────┘
 function CustomerStatement({ contacts, invoices, token }) {
   const [selectedContact, setSelectedContact] = useState(null);
   const [query, setQuery] = useState("");
@@ -3180,6 +3289,11 @@ function CustomerStatement({ contacts, invoices, token }) {
 }
 
 // ── STOCK ADJUSTMENT ──────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ StockAdjustment                                            │
+// │ Adjust stock quantities                                    │
+// └────────────────────────────────────────────────────────────┘
 function StockAdjustment({ products, setProducts, token }) {
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(null);
@@ -3229,6 +3343,11 @@ function StockAdjustment({ products, setProducts, token }) {
 }
 
 // ── SALES BY AGENT ────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ AgentReport                                                │
+// │ Agent performance report                                   │
+// └────────────────────────────────────────────────────────────┘
 function AgentReport({ invoices, allProfiles, contacts }) {
   const [selectedAgent, setSelectedAgent] = useState("all");
   const [period, setPeriod] = useState("all");
@@ -3287,6 +3406,11 @@ function AgentReport({ invoices, allProfiles, contacts }) {
 
 // ── ADMIN REPORTS SUITE ───────────────────────────────────────────────────────
 // ── Product Sales Tracker ────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ ProductSalesTracker                                        │
+// │ Product sales analytics tracker                            │
+// └────────────────────────────────────────────────────────────┘
 function ProductSalesTracker({ invoices, products, allProfiles }) {
   const [selectedProduct, setSelectedProduct] = useState("");
   const [dateFrom, setDateFrom] = useState(() => {
@@ -3484,6 +3608,11 @@ function ProductSalesTracker({ invoices, products, allProfiles }) {
   );
 }
 
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ AgentProductsReport                                        │
+// │ Agent products breakdown report                            │
+// └────────────────────────────────────────────────────────────┘
 function AgentProductsReport({ invoices, allProfiles, period, filteredInv, periodLabels }) {
   const [selectedAgent, setSelectedAgent] = useState("all");
 
@@ -3627,6 +3756,11 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
   );
 }
 
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ AdminReports                                               │
+// │ Full 13-tab reports suite                                  │
+// └────────────────────────────────────────────────────────────┘
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
   const [period, setPeriod] = useState("month");
@@ -3920,6 +4054,11 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
 }
 
 // ── DELIVERY NOTES ────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ DeliveryNotes                                              │
+// │ Create, print and email delivery notes                     │
+// └────────────────────────────────────────────────────────────┘
 function DeliveryNotes({ contacts, products, token, userId }) {
   const [dns, setDNs] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -4024,10 +4163,6 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       <thead><tr><th style="width:50%">Description</th><th>Unit</th><th style="text-align:center">Qty Ordered</th><th style="text-align:center">Qty Delivered</th><th style="text-align:center">Condition</th></tr></thead>
       <tbody>
         ${dnLines.map(l => "<tr><td style=\"font-weight:600\">" + (l.description || "—") + "</td><td style=\"color:#64748b\">" + (l.unit || "unit") + "</td><td class=\"qty-col\">" + l.qty + "</td><td class=\"qty-col\" style=\"color:#94a3b8\">____</td><td style=\"text-align:center;color:#94a3b8\">____</td></tr>").join("")}
-
-
-
-
 
 
       </tbody>
@@ -4218,6 +4353,11 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 
 
 // ── AI ASSISTANT ──────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ AIAssistant                                                │
+// │ AI chat assistant — hover to open, local smart responses   │
+// └────────────────────────────────────────────────────────────┘
 function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! I am your LedgerOS AI assistant. Ask me anything about your invoices, customers, stock or finances." }
@@ -4874,6 +5014,11 @@ export default function App() {
   );
 }
 // ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ EditInvoiceModal                                           │
+// │ Edit existing invoice — customer, lines, status            │
+// └────────────────────────────────────────────────────────────┘
 function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token }) {
   const existing = (() => { try { return invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : []; } catch(e) { return []; } })();
   const [customer, setCustomer] = useState(invoice.customer || "");
@@ -4983,6 +5128,11 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
 
 
 // ── USER APPROVAL ────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ UserApproval                                               │
+// │ Admin user approval panel — approve/revoke agents          │
+// └────────────────────────────────────────────────────────────┘
 function UserApproval({ token }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -5039,6 +5189,11 @@ function UserApproval({ token }) {
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Settings                                                   │
+// │ Settings page — company, appearance, account, users        │
+// └────────────────────────────────────────────────────────────┘
 function Settings({ auth, contacts, invoices, products }) {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
   const [activeTab, setActiveTab] = useState("company");
