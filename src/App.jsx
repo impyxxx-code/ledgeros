@@ -2735,6 +2735,19 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
 
+  const recordPartPayment = async (inv, amount) => {
+    const paid = parseFloat(amount);
+    if (!paid || paid <= 0) { alert("Enter a valid amount."); return; }
+    const prevPaid = parseFloat(inv.amount_paid || 0);
+    const totalPaid = prevPaid + paid;
+    const balance = parseFloat(inv.amount) - totalPaid;
+    const newStatus = balance <= 0 ? "paid" : "partial";
+    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+    setPartPayId(null);
+    setPartPayAmount({});
+  };
+
   // Generate and download a delivery note from any invoice
   const printDNFromInvoice = (inv) => {
     const rawLines = (() => { try { return inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : null; } catch(e) { return null; } })();
