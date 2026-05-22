@@ -31,7 +31,7 @@
 
 import Analytics from "./Analytics.jsx";
 import CSVImport from "./CSVImport.jsx";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
