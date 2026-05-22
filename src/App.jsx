@@ -40,6 +40,31 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 const isMobile = () => window.innerWidth < 768;
 
+// ── Toast Notification System ────────────────────────────────────────────────
+const toast = (() => {
+  let container = null;
+  const getContainer = () => {
+    if (!container || !document.body.contains(container)) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    return container;
+  };
+  const show = (msg, type = 'info', duration = 3500) => {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = { success: 'ti-circle-check', error: 'ti-circle-x', info: 'ti-info-circle', warn: 'ti-alert-triangle' };
+    el.innerHTML = `<i class="ti ${icons[type] || icons.info}" style="font-size:16px;flex-shrink:0"></i><span>${msg}</span>`;
+    getContainer().appendChild(el);
+    const remove = () => { el.style.animation = 'slideOutRight .2s var(--ease) forwards'; setTimeout(() => el.remove(), 200); };
+    const timer = setTimeout(remove, duration);
+    el.onclick = () => { clearTimeout(timer); remove(); };
+    return remove;
+  };
+  return { success: (m, d) => show(m, 'success', d), error: (m, d) => show(m, 'error', d), info: (m, d) => show(m, 'info', d), warn: (m, d) => show(m, 'warn', d) };
+})();
+
 const COMPANY = {
   name: "Arkham Retail Ltd",
   address: "2 Fieldhead Street, Fieldhead Business Centre",
@@ -784,19 +809,14 @@ tr:hover td{background:#f8fafd}
 /* ────────────────────────────────────
    MOBILE NAV
    ──────────────────────────────────── */
-.mob-nav{
-  display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:rgba(255,255,255,.95);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-top:1px solid var(--border);
-  padding:5px 0 env(safe-area-inset-bottom,5px);
-  box-shadow:0 -4px 24px rgba(13,17,23,.1);
-}
-.mob-nav-inner{display:flex;width:100%;justify-content:space-around;align-items:center}
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+background:var(--white);border-top:1px solid var(--border);
+padding-bottom:env(safe-area-inset-bottom,0px)}
+.mob-nav-inner{display:flex;width:100%;justify-content:space-around;align-items:stretch}
 .mob-nav-item{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  padding:8px 0;cursor:pointer;color:var(--text3);flex:1;min-width:0;
-  transition:color .12s;
+  padding:10px 4px 8px;cursor:pointer;color:var(--text3);flex:1;min-width:0;
+  transition:color .12s;font-size:10px;
 }
 .mob-nav-item.active{color:var(--blue)}
 .mob-nav-item i{font-size:20px}
@@ -923,6 +943,16 @@ tr:hover td{background:#f8fafd}
 @media(min-width:769px){
   .mob-nav{display:none!important}
 }
+
+/* ── Toast Notifications ── */
+.toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .25s var(--ease);border:1px solid rgba(0,0,0,.06)}
+.toast.success{background:#fff;color:#166534;border-left:3px solid var(--green)}
+.toast.error{background:#fff;color:#991b1b;border-left:3px solid var(--red)}
+.toast.info{background:#fff;color:#1e40af;border-left:3px solid var(--blue)}
+.toast.warn{background:#fff;color:#92400e;border-left:3px solid var(--amber)}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes slideOutRight{from{opacity:1;transform:none}to{opacity:0;transform:translateX(20px)}}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -1122,9 +1152,48 @@ function Auth({ onAuth }) {
   const go = async () => {
     setLoading(true); setErr("");
     try {
-      const d = mode === "signin" ? await sb.signIn(f.email, f.password) : await sb.signUp(f.email, f.password, f.full_name);
-      if (d.access_token) onAuth({ token: d.access_token, user: d.user });
-      else setErr(d.msg || d.error_description || "Authentication failed.");
+      const d = mode === "signin"
+        ? await sb.signIn(f.email, f.password)
+        : await sb.signUp(f.email, f.password, f.full_name, f.role);
+      if (d.access_token) {
+        if (mode === "signup") {
+          // New user — show pending message, do not grant access
+          setMode("signin");
+          setErr("Account created! Please wait for admin approval before signing in.");
+          setLoading(false);
+          return;
+        }
+        // Signin — check approval before granting access
+        try {
+          const profileRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${d.user.id}&select=approved,role`,
+            { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${d.access_token}` } }
+          );
+          const profiles = await profileRes.json();
+          const profile = profiles?.[0];
+          // Admin always gets in; agents must be approved
+          if (!profile) {
+            setErr("Account profile not found. Please contact the administrator.");
+            setLoading(false);
+            return;
+          }
+          if (profile.role !== "admin" && profile.approved !== true) {
+            if (profile.approved === false) {
+              setErr("Your account access has been revoked. Please contact the administrator.");
+            } else {
+              setErr("Your account is pending admin approval. You will be notified once approved.");
+            }
+            setLoading(false);
+            return;
+          }
+        } catch (approvalErr) {
+          // If we can't check approval (e.g. admin account with no profile yet), allow through
+          console.warn("Approval check failed:", approvalErr);
+        }
+        onAuth({ token: d.access_token, user: d.user });
+      } else {
+        setErr(d.msg || d.error_description || "Authentication failed.");
+      }
     } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
@@ -1225,6 +1294,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
   const handlePrint = async () => {
+    try {
     if (!window.jspdf) {
       await new Promise((res, rej) => {
         const s = document.createElement("script");
@@ -1338,7 +1408,10 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
     doc.setLineWidth(0.5);
     doc.line(M, y + 3, W - M, y + 3);
 
-    doc.save(`${invoice.invoice_number}.pdf`);
+    doc.autoPrint();
+    const blob = doc.output('bloburl');
+    window.open(blob, '_blank');
+    } catch(err) { console.error("PDF error:", err); toast.error("PDF error: " + err.message); }
   };
 
   const buildWaMsg = () => encodeURIComponent(
@@ -1358,7 +1431,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
     const customerContact = contacts.find(c => c.name === invoice.customer);
     const toEmail = customerContact?.email;
     if (!toEmail) {
-      alert(`No email address found for ${invoice.customer}. Please add one in Customers first.`);
+      toast.warn(`No email address found for ${invoice.customer}. Please add one in Customers first.`);
       return;
     }
     setEmailStatus("sending");
@@ -1686,7 +1759,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       setDnNotes(f.notes || "");
       setSavedInvoice(fullInv);
     } else {
-      alert("Failed to save invoice. Please try again.");
+      toast.error("Failed to save invoice. Please try again.");
     }
     setSaving(false);
   };
@@ -2184,7 +2257,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 
   const recordPartPayment = async (inv, amount) => {
     const paid = parseFloat(amount);
-    if (!paid || paid <= 0) { alert("Please enter a valid amount greater than zero."); return; }
+    if (!paid || paid <= 0) { toast.warn("Please enter a valid amount greater than zero."); return; }
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
@@ -2278,6 +2351,28 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
   const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  
+  // Trend calculations — compare last 30 days vs previous 30 days
+  const now = new Date();
+  const d30 = new Date(now - 30*24*60*60*1000);
+  const d60 = new Date(now - 60*24*60*60*1000);
+  const last30Paid = invoices.filter(i => i.status==="paid" && new Date(i.invoice_date) >= d30).reduce((s,i)=>s+i.amount,0);
+  const prev30Paid = invoices.filter(i => i.status==="paid" && new Date(i.invoice_date) >= d60 && new Date(i.invoice_date) < d30).reduce((s,i)=>s+i.amount,0);
+  const last30Inv = invoices.filter(i => new Date(i.invoice_date||i.created_at) >= d30).length;
+  const prev30Inv = invoices.filter(i => new Date(i.invoice_date||i.created_at) >= d60 && new Date(i.invoice_date||i.created_at) < d30).length;
+  const trendPct = (curr, prev) => prev === 0 ? null : Math.round(((curr - prev) / prev) * 100);
+  const revTrend = trendPct(last30Paid, prev30Paid);
+  const invTrend = trendPct(last30Inv, prev30Inv);
+  const TrendBadge = ({ pct }) => {
+    if (pct === null) return null;
+    const up = pct >= 0;
+    return (
+      <span style={{ display:"inline-flex", alignItems:"center", gap:2, fontSize:11, fontWeight:600, color: up ? "var(--green)" : "var(--red)", background: up ? "var(--green-lt)" : "var(--red-lt)", padding:"2px 6px", borderRadius:10 }}>
+        <i className={`ti ${up ? "ti-trending-up" : "ti-trending-down"}`} style={{ fontSize:11 }} />
+        {Math.abs(pct)}%
+      </span>
+    );
+  };
   const paidCount = invoices.filter(i => i.status === "paid").length;
   const pendingCount = invoices.filter(i => i.status === "pending").length;
   const overdueCount = invoices.filter(i => i.status === "overdue").length;
@@ -2401,7 +2496,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             <span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>{paidCount} invoices</span>
           </div>
           <div className="kpi-val tg">{fmt(paid)}</div>
-          <div className="kpi-label">Collected Revenue</div>
+          <div className="kpi-label" style={{ display:"flex", alignItems:"center", gap:6 }}>Collected Revenue <TrendBadge pct={revTrend} /></div>
           <svg className="spark" viewBox="0 0 120 40">
             <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity=".3"/><stop offset="100%" stopColor="#10b981" stopOpacity="0"/></linearGradient></defs>
             <polygon points="0,34 20,28 40,22 60,20 80,14 100,10 120,6 120,40 0,40" fill="url(#g2)" />
@@ -2415,7 +2510,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             <span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>{pendingCount + overdueCount} open</span>
           </div>
           <div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(unpaid)}</div>
-          <div className="kpi-label">Outstanding</div>
+          <div className="kpi-label" style={{ display:"flex", alignItems:"center", gap:6 }}>Outstanding <TrendBadge pct={invTrend} /></div>
           <div style={{ marginTop: 8, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", display: "flex" }}>
               <div style={{ width: `${overdue / (unpaid || 1) * 100}%`, background: "var(--red)", transition: "width .5s" }} />
@@ -2739,6 +2834,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
+    toast.success("Invoice marked as paid");
     const inv = invoices.find(i => i.id === id);
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
@@ -2746,7 +2842,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 
   const recordPartPayment = async (inv, amount) => {
     const paid = parseFloat(amount);
-    if (!paid || paid <= 0) { alert("Enter a valid amount."); return; }
+    if (!paid || paid <= 0) { toast.warn("Enter a valid amount."); return; }
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
@@ -4547,6 +4643,7 @@ const NAV = [
   { id: "agent-report", label: "Agent Sales", icon: "ti-report-analytics" },
   { id: "import", label: "Import", icon: "ti-upload" },
   { id: "delivery-notes", label: "Delivery Notes", icon: "ti-truck-delivery" },
+  { id: "settings", label: "Settings", icon: "ti-settings", adminOnly: true },
 ];
 
 const MOBILE_NAV = [
@@ -4586,19 +4683,35 @@ export default function App() {
 
   useEffect(() => {
     if (!auth) return; setLoading(true);
-    Promise.all([
-      sb.get(auth.token, "accounts", "order=code.asc"),
-      sb.get(auth.token, "invoices", "order=created_at.desc"),
-      sb.get(auth.token, "contacts", "order=name.asc"),
-      sb.get(auth.token, "products", "order=name.asc"),
-      sb.get(auth.token, "profiles", `id=eq.${auth.user.id}`),
-      sb.get(auth.token, "profiles", "order=full_name.asc"),
-    ]).then(([accs,invs,cnts,prods,profs,allProfs]) => {
-      if (Array.isArray(accs)) setAccounts(accs);
+    // Step 1: fetch profile FIRST to know the role before fetching invoices
+    sb.get(auth.token, "profiles", `id=eq.${auth.user.id}`).then(async profs => {
       const userProfile = Array.isArray(profs) && profs[0] ? profs[0] : null;
+      // Re-validate approval on every data load (catches revoked access while logged in)
+      if (userProfile && userProfile.role !== "admin" && userProfile.approved !== true) {
+        setAuth(null);
+        return;
+      }
       if (userProfile) setProfile(userProfile);
+      // isAdmin: check role OR if profile is missing assume admin
+      const isAdmin = !userProfile || userProfile?.role === "admin" || userProfile?.role === "manager";
+      const invQuery = isAdmin
+        ? "order=created_at.desc&limit=1000"
+        : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
+      // Step 2: now fetch everything else with correct invoice filter
+      const [accs, invs, cnts, prods, allProfs] = await Promise.all([
+        sb.get(auth.token, "accounts", "order=code.asc"),
+        sb.get(auth.token, "invoices", invQuery),
+        sb.get(auth.token, "contacts", "order=name.asc"),
+        sb.get(auth.token, "products", "order=name.asc"),
+        sb.get(auth.token, "profiles", "order=full_name.asc"),
+      ]);
+      if (Array.isArray(accs)) setAccounts(accs);
       if (Array.isArray(invs)) {
-        setInvoices(userProfile?.role === "admin" ? invs : invs.filter(i => i.created_by === auth.user.id));
+        if (isAdmin) {
+          setInvoices(invs);
+        } else {
+          setInvoices(invs.filter(i => i.created_by === auth.user?.id));
+        }
       }
       if (Array.isArray(cnts)) setContacts(cnts);
       if (Array.isArray(prods)) setProducts(prods);
@@ -4611,8 +4724,15 @@ export default function App() {
   useEffect(() => {
     if (!auth) return;
     const poll = setInterval(() => {
-      sb.get(auth.token, "invoices", "order=created_at.desc").then(freshInvs => {
-        if (Array.isArray(freshInvs)) setInvoices(freshInvs);
+      const adminRoles = ["admin", "manager"];
+      const isAdminPoll = !profile || adminRoles.includes(profile?.role);
+      const invQuery = isAdminPoll
+        ? "order=created_at.desc&limit=1000"
+        : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
+      sb.get(auth.token, "invoices", invQuery).then(freshInvs => {
+        if (Array.isArray(freshInvs)) {
+          setInvoices(isAdminPoll ? freshInvs : freshInvs.filter(i => i.created_by === auth.user?.id));
+        }
       });
     }, 5000);
     return () => clearInterval(poll);
@@ -4754,7 +4874,7 @@ export default function App() {
           </div>
           <div className="nav-section">
             <div className="nav-label">Finance</div>
-            {NAV.slice(5).map(n => <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} />{n.label}</div>)}
+            {NAV.slice(5).filter(n => !n.adminOnly || profile?.role === "admin" || profile?.role === "manager").map(n => <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} />{n.label}</div>)}
           </div>
           <div className="nav-bottom">
             {/* Dark mode + version */}
@@ -4980,6 +5100,7 @@ export default function App() {
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
+                {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} />}
               </>
             )}
           </div>
@@ -5056,7 +5177,7 @@ export default function App() {
         )}
         <nav className="mob-nav">
           <div className="mob-nav-inner">
-            {MOBILE_NAV.map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
+            {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
           </div>
         </nav>
       </div>
@@ -5192,8 +5313,26 @@ function UserApproval({ token }) {
       setLoading(false);
     });
   }, [token]);
-  const approve = async (id) => { await sb.patch(token, "profiles", id, { approved: true }); setUsers(prev => prev.map(u => u.id===id?{...u,approved:true}:u)); };
-  const revoke = async (id) => { await sb.patch(token, "profiles", id, { approved: false }); setUsers(prev => prev.map(u => u.id===id?{...u,approved:false}:u)); };
+  const approve = async (id) => {
+    const res = await sb.patch(token, "profiles", id, { approved: true });
+    if (res && !res.error && !res.message?.includes("error")) {
+      setUsers(prev => prev.map(u => u.id===id ? {...u, approved:true} : u));
+      toast.success("User approved successfully");
+    } else {
+      toast.error("Failed to approve user. Check Supabase RLS policies on profiles table.");
+      console.error("Approve error:", res);
+    }
+  };
+  const revoke = async (id) => {
+    const res = await sb.patch(token, "profiles", id, { approved: false });
+    if (res && !res.error && !res.message?.includes("error")) {
+      setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
+      toast.warn("User access revoked");
+    } else {
+      toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
+      console.error("Revoke error:", res);
+    }
+  };
   const pending = users.filter(u => u.approved===false||u.approved===null);
   const approved = users.filter(u => u.approved===true);
   return (
@@ -5244,10 +5383,10 @@ function UserApproval({ token }) {
 // │ Settings                                                   │
 // │ Settings page — company, appearance, account, users        │
 // └────────────────────────────────────────────────────────────┘
-function Settings({ auth, contacts, invoices, products }) {
-  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode")==="true");
+function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
+  const darkMode = darkModeProp;
   const [activeTab, setActiveTab] = useState("company");
-  const toggleDark = () => { const next=!darkMode; setDarkMode(next); localStorage.setItem("darkMode",next); document.documentElement.setAttribute("data-theme",next?"dark":"light"); };
+  
   return (
     <div style={{ maxWidth:720,margin:"0 auto",padding:"0 0 40px" }}>
       <div className="ph"><div><div className="pt">Settings</div><div className="ps">Manage your LedgerOS configuration</div></div></div>
