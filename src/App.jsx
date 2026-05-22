@@ -4664,6 +4664,7 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("ledgeros_dark") === "1");
+  const toggleDark = () => { const n = !darkMode; setDarkMode(n); localStorage.setItem("ledgeros_dark", n?"1":"0"); document.documentElement.setAttribute("data-theme", n?"dark":"light"); };
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
