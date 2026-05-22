@@ -55,7 +55,13 @@ const toast = (() => {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
     const icons = { success: 'ti-circle-check', error: 'ti-circle-x', info: 'ti-info-circle', warn: 'ti-alert-triangle' };
-    el.innerHTML = `<i class="ti ${icons[type] || icons.info}" style="font-size:16px;flex-shrink:0"></i><span>${msg}</span>`;
+    const icon = document.createElement('i');
+    icon.className = `ti ${icons[type] || icons.info}`;
+    icon.style.cssText = 'font-size:16px;flex-shrink:0';
+    const span = document.createElement('span');
+    span.textContent = msg;
+    el.appendChild(icon);
+    el.appendChild(span);
     getContainer().appendChild(el);
     const remove = () => { el.style.animation = 'slideOutRight .2s var(--ease) forwards'; setTimeout(() => el.remove(), 200); };
     const timer = setTimeout(remove, duration);
@@ -2257,7 +2263,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 
   const recordPartPayment = async (inv, amount) => {
     const paid = parseFloat(amount);
-    if (!paid || paid <= 0) { toast.warn("Please enter a valid amount greater than zero."); return; }
+    if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
@@ -2842,7 +2848,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
 
   const recordPartPayment = async (inv, amount) => {
     const paid = parseFloat(amount);
-    if (!paid || paid <= 0) { toast.warn("Enter a valid amount."); return; }
+    if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
@@ -4655,6 +4661,26 @@ const MOBILE_NAV = [
 ];
 
 // ── APP ───────────────────────────────────────────────────────────────────────
+// ── Error Boundary ───────────────────────────────────────────────────────────
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error("LedgerOS Error:", error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",gap:16,fontFamily:"sans-serif",color:"#333" }}>
+          <i className="ti ti-alert-triangle" style={{ fontSize:48,color:"#ef4444" }} />
+          <div style={{ fontSize:20,fontWeight:600 }}>Something went wrong</div>
+          <div style={{ fontSize:14,color:"#666",maxWidth:400,textAlign:"center" }}>{this.state.error?.message || "An unexpected error occurred."}</div>
+          <button style={{ padding:"10px 20px",background:"#2563eb",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
