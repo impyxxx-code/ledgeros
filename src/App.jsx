@@ -2248,6 +2248,20 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
               </div>
               <div style={{ fontSize:15, fontWeight:700, color:"var(--blue)", marginLeft:12 }}>{fmt((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0))}</div>
             </div>
+            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+              <div style={{ flex:1 }}>
+                <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>Unit Price £</label>
+                <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
+              </div>
+              <div style={{ width:100 }}>
+                <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>VAT Rate</label>
+                <select value={l.vat_rate} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],vat_rate:e.target.value}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:13, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }}>
+                  <option value="20">20% Std</option>
+                  <option value="5">5% Red</option>
+                  <option value="0">0% Exempt</option>
+                </select>
+              </div>
+            </div>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ display:"flex", alignItems:"center", background:"var(--bg)", borderRadius:10, border:"1px solid var(--border)", overflow:"hidden" }}>
                 <button onClick={() => mobDec(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
