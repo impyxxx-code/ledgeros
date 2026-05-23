@@ -217,7 +217,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity: 0.5}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
 /* ── Layout ── */
@@ -1731,8 +1730,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [dnDriver, setDnDriver] = useState("");
   const [dnAddress, setDnAddress] = useState("");
   const [dnNotes, setDnNotes] = useState("");
-  const [showProductPicker, setShowProductPicker] = useState(false);
-  const [pickerSearch, setPickerSearch] = useState("");
 
   const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
 
@@ -2196,145 +2193,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   }
 
   // ── INVOICE FORM ───────────────────────────────────────────────────────────
-  const mob = isMobile();
-  const recentProducts = products.slice(0, 6);
-  const pickerFiltered = pickerSearch
-    ? products.filter(p => p.name.toLowerCase().includes(pickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(pickerSearch.toLowerCase()))
-    : recentProducts;
-
-  const addProduct = (p) => {
-    const existing = lines.findIndex(l => l.product_id === p.id);
-    if (existing >= 0) {
-      const next = [...lines];
-      next[existing] = { ...next[existing], qty: (parseFloat(next[existing].qty) || 0) + 1 };
-      setLines(next);
-    } else {
-      const newLine = { product_id: p.id, description: p.name, qty: 1, unit_price: p.sale_price || 0, vat_rate: p.vat_rate ?? 20 };
-      setLines(prev => prev[0]?.description === "" && !prev[0]?.product_id ? [newLine] : [...prev, newLine]);
-    }
-    setShowProductPicker(false);
-    setPickerSearch("");
-  };
-
-  const removeLineCard = (i) => setLines(prev => prev.length > 1 ? prev.filter((_, j) => j !== i) : [{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
-  const incrementQty = (i) => { const next = [...lines]; next[i] = { ...next[i], qty: (parseFloat(next[i].qty) || 0) + 1 }; setLines(next); };
-  const decrementQty = (i) => { const next = [...lines]; const q = (parseFloat(next[i].qty) || 1) - 1; if (q < 1) return removeLineCard(i); next[i] = { ...next[i], qty: q }; setLines(next); };
-
-  if (mob) return (
-    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:140 }}>
-      {/* ── Header ── */}
-      <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><i className="ti ti-arrow-left" style={{ fontSize:20 }} /></button>
-          <div>
-            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>New Invoice</div>
-            <div style={{ fontSize:11, color:"var(--text3)" }}>{lines.filter(l=>l.description).length} item{lines.filter(l=>l.description).length!==1?"s":""}</div>
-          </div>
-        </div>
-        <div style={{ fontSize:16, fontWeight:700, color:"var(--blue)" }}>{fmt(total)}</div>
-      </div>
-
-      {/* ── Customer selector ── */}
-      <div style={{ background:"var(--white)", margin:"12px 12px 0", borderRadius:"var(--rl)", padding:"14px 16px", border:"1px solid var(--border)" }}>
-        <div style={{ fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>Customer *</div>
-        <SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} />
-        {f.customer && <div style={{ marginTop:8, fontSize:13, fontWeight:600, color:"var(--green)", display:"flex", alignItems:"center", gap:6 }}><i className="ti ti-circle-check" style={{ fontSize:14 }} />{f.customer}</div>}
-      </div>
-
-      {/* ── Product cards ── */}
-      <div style={{ padding:"12px 12px 0" }}>
-        {lines.filter(l => l.description).map((l, i) => (
-          <div key={i} style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:10, border:"1px solid var(--border)", boxShadow:"var(--sh)" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{l.description}</div>
-                <div style={{ fontSize:12, color:"var(--text3)" }}>{fmt(parseFloat(l.unit_price)||0)} each · VAT {l.vat_rate}%</div>
-              </div>
-              <div style={{ fontSize:15, fontWeight:700, color:"var(--blue)", marginLeft:12 }}>{fmt((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0))}</div>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:0, background:"var(--bg)", borderRadius:10, border:"1px solid var(--border)", overflow:"hidden" }}>
-                <button onClick={() => decrementQty(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
-                <span style={{ minWidth:32, textAlign:"center", fontSize:15, fontWeight:700, color:"var(--text)" }}>{l.qty}</span>
-                <button onClick={() => incrementQty(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--blue)", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
-              </div>
-              <button onClick={() => removeLineCard(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Add Product CTA ── */}
-      <div style={{ padding:"0 12px" }}>
-        <button onClick={() => setShowProductPicker(true)} style={{ width:"100%", background:"var(--blue)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, boxShadow:"0 4px 14px rgba(37,99,235,.35)" }}>
-          <i className="ti ti-plus" style={{ fontSize:20 }} />Add Product
-        </button>
-      </div>
-
-      {/* ── Advanced (collapsed) ── */}
-      <details style={{ margin:"12px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
-        <summary style={{ padding:"14px 16px", fontSize:13, fontWeight:600, color:"var(--text2)", cursor:"pointer", listStyle:"none", display:"flex", alignItems:"center", gap:8 }}>
-          <i className="ti ti-adjustments" style={{ fontSize:14 }} />Advanced Options
-        </summary>
-        <div style={{ padding:"0 16px 16px", borderTop:"1px solid var(--border)" }}>
-          <div style={{ marginTop:12 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Status</label><select className="il-input" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
-          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Invoice Date</label><input className="il-input" type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
-          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Due Date</label><input className="il-input" type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
-          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Notes</label><input className="il-input" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
-        </div>
-      </details>
-
-      {/* ── Sticky footer ── */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"var(--white)", borderTop:"1px solid var(--border)", padding:"12px 16px", zIndex:100, boxShadow:"0 -4px 20px rgba(0,0,0,.08)" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10, fontSize:13 }}>
-          <span style={{ color:"var(--text2)" }}>{lines.filter(l=>l.description).length} items · Subtotal {fmt(subtotal)}</span>
-          <span style={{ color:"var(--text3)" }}>VAT {fmt(vatTotal)}</span>
-        </div>
-        <button onClick={save} disabled={saving || !f.customer || !lines.some(l=>l.description)} style={{ width:"100%", background: (!f.customer || !lines.some(l=>l.description)) ? "var(--border2)" : "linear-gradient(135deg,#2563eb,#1d4ed8)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor: (!f.customer || !lines.some(l=>l.description)) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <span>{saving ? "Creating..." : "Create Invoice"}</span>
-          <span style={{ fontSize:18, fontWeight:800 }}>{fmt(total)}</span>
-        </button>
-      </div>
-
-      {/* ── Product picker bottom sheet ── */}
-      {showProductPicker && (
-        <div style={{ position:"fixed", inset:0, zIndex:200 }} onClick={() => setShowProductPicker(false)}>
-          <div style={{ position:"absolute", inset:0, background:"rgba(10,14,26,.5)", backdropFilter:"blur(4px)" }} />
-          <div onClick={e => e.stopPropagation()} style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"20px 20px 0 0", maxHeight:"75vh", display:"flex", flexDirection:"column", boxShadow:"0 -8px 40px rgba(0,0,0,.15)", animation:"slideUp .2s ease" }}>
-            <div style={{ padding:"12px 16px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontSize:15, fontWeight:700 }}>Add Product</div>
-              <button onClick={() => setShowProductPicker(false)} style={{ background:"var(--bg)", border:"none", borderRadius:"50%", width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><i className="ti ti-x" /></button>
-            </div>
-            <div style={{ padding:"10px 16px" }}>
-              <input autoFocus value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} placeholder="Search products..." style={{ width:"100%", padding:"12px 14px", borderRadius:"var(--rl)", border:"1.5px solid var(--blue)", fontSize:14, outline:"none", fontFamily:"var(--sans)", background:"var(--white)" }} />
-            </div>
-            {!pickerSearch && <div style={{ padding:"0 16px 6px", fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Recent Products</div>}
-            <div style={{ overflowY:"auto", flex:1, padding:"0 12px 16px" }}>
-              {pickerFiltered.length === 0 && <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:13 }}>No products found</div>}
-              {pickerFiltered.map(p => {
-                const inCart = lines.find(l => l.product_id === p.id);
-                return (
-                  <button key={p.id} onClick={() => addProduct(p)} style={{ width:"100%", background: inCart ? "var(--blue-lt)" : "var(--white)", border: inCart ? "1.5px solid var(--blue)" : "1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", textAlign:"left", fontFamily:"var(--sans)", transition:"all .1s" }}>
-                    <div>
-                      <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{p.name}</div>
-                      <div style={{ fontSize:12, color:"var(--text3)" }}>{p.code ? `${p.code} · ` : ""}{fmt(p.sale_price||0)} · VAT {p.vat_rate ?? 20}% · Stock: {p.stock_qty}</div>
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      {inCart && <span style={{ fontSize:12, fontWeight:700, color:"var(--blue)", background:"var(--blue-lt)", padding:"3px 8px", borderRadius:20 }}>×{inCart.qty}</span>}
-                      <div style={{ width:36, height:36, borderRadius:10, background: inCart ? "var(--blue)" : "var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        <i className={`ti ${inCart ? "ti-plus" : "ti-plus"}`} style={{ color: inCart ? "#fff" : "var(--text3)", fontSize:16 }} />
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Cancel</button></div>
@@ -2488,17 +2346,15 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token, expenses = [] }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
 
   // ── Computed metrics ──
-  const expenses_total = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
-  const accountExpenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
-  const expenses_used = expenses_total > 0 ? expenses_total : accountExpenses;
+  const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
-  const net = paid - expenses_used;
+  const net = revenue - expenses;
   const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
   const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
@@ -2673,12 +2529,12 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         {/* Net Profit */}
-        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
+        <div className="kpi" style={{ "--kpi-accent": paid >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
           <div className="kpi-top">
-            <div className="kpi-icon" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }} /></div>
-            <span className="kpi-badge" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: net >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>{net >= 0 ? "Profit" : "Loss"}</span>
+            <div className="kpi-icon" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: paid >= 0 ? "var(--green)" : "var(--red)" }} /></div>
+            <span className="kpi-badge" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: paid >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>Profit</span>
           </div>
-          <div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div>
+          <div className="kpi-val" style={{ color: "var(--green)" }}>{fmt(paid)}</div>
           <div className="kpi-label">Net Position</div>
           <svg className="spark" viewBox="0 0 120 40">
             <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7c3aed" stopOpacity=".3"/><stop offset="100%" stopColor="#7c3aed" stopOpacity="0"/></linearGradient></defs>
@@ -3507,9 +3363,9 @@ function CreditNotes({ contacts, invoices, token, userId }) {
 // └────────────────────────────────────────────────────────────┘
 function Reports({ accounts }) {
   const revenue = accounts.filter(a => a.type==="Revenue");
-  const expenseAccounts = accounts.filter(a => a.type==="Expense");
+  const expenses = accounts.filter(a => a.type==="Expense");
   const totalRev = revenue.reduce((s,a) => s+a.balance,0);
-  const totalExp = expenseAccounts.reduce((s,a) => s+a.balance,0);
+  const totalExp = expenses.reduce((s,a) => s+a.balance,0);
   const net = totalRev-totalExp;
   const [tab, setTab] = useState("pl");
   return (
@@ -4145,8 +4001,8 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const cogs = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
         const grossProfit = netRevenue - cogs;
         const grossMargin = netRevenue > 0 ? Math.round((grossProfit/netRevenue)*100) : 0;
-        const expenseTotal = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
-        const netProfit = grossProfit - expenseTotal;
+        const expenses = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
+        const netProfit = grossProfit - expenses;
         const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
         return (
           <div>
@@ -4511,7 +4367,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
-  const emailDN = (dn) => {
+  const sendEmail = (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     const cust = contacts.find(c => c.name === dn.customer_name);
     const subject = encodeURIComponent(`Delivery Note ${dn.dn_number} — ${COMPANY.name}`);
@@ -4633,7 +4489,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                   <td>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-file-download" />Download</button>
-                      <button className="btn bo bsm" onClick={() => emailDN(dn)}><i className="ti ti-mail" />Email</button>
+                      <button className="btn bo bsm" onClick={() => sendEmail(dn)}><i className="ti ti-mail" />Email</button>
                       <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
                     </div>
                   </td>
@@ -4786,7 +4642,6 @@ const NAV = [
   { id: "inventory", label: "Inventory", icon: "ti-package" },
   { id: "purchases", label: "Purchases", icon: "ti-shopping-cart" },
   { id: "credits", label: "Credits", icon: "ti-receipt-refund" },
-  { id: "expenses", label: "Expenses", icon: "ti-receipt" },
   { id: "reports", label: "P&L", icon: "ti-chart-bar" },
   { id: "analytics", label: "Analytics", icon: "ti-trending-up" },
   { id: "admin-reports", label: "Reports", icon: "ti-report-money" },
@@ -4805,157 +4660,6 @@ const MOBILE_NAV = [
   { id: "inventory", label: "Stock", icon: "ti-package" },
   { id: "analytics", label: "Analytics", icon: "ti-trending-up" },
 ];
-
-// ┌────────────────────────────────────────────────────────────┐
-// │ Expenses                                                   │
-// │ Track business expenses with categories and VAT            │
-// └────────────────────────────────────────────────────────────┘
-function Expenses({ expenses, setExpenses, token, userId }) {
-  const CATS = ["Stock/Inventory","Rent","Utilities","Wages","Transport","Marketing","Equipment","Software","Insurance","Professional Fees","General"];
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [filterCat, setFilterCat] = useState("all");
-  const [filterMonth, setFilterMonth] = useState("all");
-  const [editExp, setEditExp] = useState(null);
-  const blank = { date: new Date().toISOString().split("T")[0], description: "", category: "Stock/Inventory", amount: "", vat_rate: 20, supplier: "", payment_method: "bank", notes: "" };
-  const [form, setForm] = useState(blank);
-  const ff = (k, v) => setForm(p => ({ ...p, [k]: v }));
-
-  const vatAmt = (parseFloat(form.amount) || 0) * (parseFloat(form.vat_rate) || 0) / 100;
-  const totalAmt = (parseFloat(form.amount) || 0) + vatAmt;
-
-  const save = async () => {
-    if (!form.description || !form.amount) return toast.error("Description and amount required");
-    setSaving(true);
-    const payload = { ...form, amount: parseFloat(form.amount), vat_amount: parseFloat(vatAmt.toFixed(2)), vat_rate: parseFloat(form.vat_rate), created_by: userId };
-    let res;
-    if (editExp) {
-      res = await sb.patch(token, "expenses", editExp.id, payload);
-      if (res && !res.error) { setExpenses(prev => prev.map(e => e.id === editExp.id ? { ...e, ...payload } : e)); toast.success("Expense updated"); }
-    } else {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/expenses`, { method: "POST", headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}`, "Prefer": "return=representation" }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (Array.isArray(data) && data[0]) { setExpenses(prev => [data[0], ...prev]); toast.success("Expense added"); }
-      else toast.error("Failed to save expense");
-    }
-    setSaving(false); setShowForm(false); setEditExp(null); setForm(blank);
-  };
-
-  const del = async (id) => {
-    if (!confirm("Delete this expense?")) return;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses?id=eq.${id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
-    if (res.ok || res.status === 204) { setExpenses(prev => prev.filter(e => e.id !== id)); toast.success("Expense deleted"); }
-    else toast.error("Failed to delete expense");
-  };
-
-  const months = [...new Set(expenses.map(e => e.date?.slice(0,7)))].sort().reverse();
-  const filtered = expenses.filter(e => (filterCat === "all" || e.category === filterCat) && (filterMonth === "all" || e.date?.startsWith(filterMonth)));
-  const totalFiltered = filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-  const totalVAT = filtered.reduce((s, e) => s + (parseFloat(e.vat_amount) || 0), 0);
-  const byCategory = CATS.map(c => ({ cat: c, total: expenses.filter(e => e.category === c).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) })).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
-
-  return (
-    <div>
-      <div className="ph">
-        <div><div className="pt">Expenses</div><div className="psub">Track business costs and VAT</div></div>
-        <button className="btn bp" onClick={() => { setForm(blank); setEditExp(null); setShowForm(true); }}><i className="ti ti-plus" />Add Expense</button>
-      </div>
-
-      {showForm && (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="ch"><div className="ct">{editExp ? "Edit Expense" : "New Expense"}</div><button className="btn bo bsm" onClick={() => { setShowForm(false); setEditExp(null); setForm(blank); }}><i className="ti ti-x" /></button></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, padding: "0 20px 20px" }}>
-            <div><label className="il-label">Date</label><input className="il-input" type="date" value={form.date} onChange={e => ff("date", e.target.value)} /></div>
-            <div><label className="il-label">Description *</label><input className="il-input" placeholder="e.g. Office supplies" value={form.description} onChange={e => ff("description", e.target.value)} /></div>
-            <div><label className="il-label">Category</label><select className="il-input" value={form.category} onChange={e => ff("category", e.target.value)}>{CATS.map(c => <option key={c}>{c}</option>)}</select></div>
-            <div><label className="il-label">Supplier</label><input className="il-input" placeholder="Supplier name" value={form.supplier} onChange={e => ff("supplier", e.target.value)} /></div>
-            <div><label className="il-label">Net Amount (£) *</label><input className="il-input" type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={e => ff("amount", e.target.value)} /></div>
-            <div><label className="il-label">VAT Rate (%)</label><select className="il-input" value={form.vat_rate} onChange={e => ff("vat_rate", e.target.value)}><option value={0}>0% (Exempt)</option><option value={5}>5% (Reduced)</option><option value={20}>20% (Standard)</option></select></div>
-            <div><label className="il-label">Payment Method</label><select className="il-input" value={form.payment_method} onChange={e => ff("payment_method", e.target.value)}><option value="bank">Bank Transfer</option><option value="cash">Cash</option><option value="card">Card</option><option value="cheque">Cheque</option></select></div>
-            <div><label className="il-label">Notes</label><input className="il-input" placeholder="Optional notes" value={form.notes} onChange={e => ff("notes", e.target.value)} /></div>
-          </div>
-          {form.amount && <div style={{ padding: "0 20px 16px", fontSize: 13, color: "var(--text2)" }}>VAT: <strong>{fmt(vatAmt)}</strong> · Total inc. VAT: <strong style={{ color: "var(--text)" }}>{fmt(totalAmt)}</strong></div>}
-          <div style={{ padding: "0 20px 20px", display: "flex", gap: 8 }}>
-            <button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editExp ? "Update Expense" : "Save Expense"}</button>
-            <button className="btn bo" onClick={() => { setShowForm(false); setEditExp(null); setForm(blank); }}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, marginBottom: 20 }}>
-        {[
-          { label: "Total Expenses", val: fmt(expenses.reduce((s,e) => s+(parseFloat(e.amount)||0),0)), color: "var(--red)", icon: "ti-trending-down" },
-          { label: "Total VAT", val: fmt(expenses.reduce((s,e) => s+(parseFloat(e.vat_amount)||0),0)), color: "var(--amber)", icon: "ti-percentage" },
-          { label: "This Month", val: fmt(expenses.filter(e=>e.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color: "var(--blue)", icon: "ti-calendar" },
-          { label: "Transactions", val: expenses.length, color: "var(--purple)", icon: "ti-list" },
-        ].map(s => (
-          <div key={s.label} className="card" style={{ padding: "16px 18px", marginBottom: 0, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 18 }} /></div>
-            <div><div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>{s.label}</div><div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.val}</div></div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16, alignItems: "start" }}>
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="ch">
-            <div className="ct">Expense Log</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <select className="il-input" style={{ width: 140, padding: "5px 10px", fontSize: 12 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-                <option value="all">All Categories</option>{CATS.map(c => <option key={c}>{c}</option>)}
-              </select>
-              <select className="il-input" style={{ width: 130, padding: "5px 10px", fontSize: 12 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-                <option value="all">All Months</option>{months.map(m => <option key={m} value={m}>{new Date(m+"-01").toLocaleDateString("en-GB",{month:"short",year:"numeric"})}</option>)}
-              </select>
-            </div>
-          </div>
-          {filtered.length > 0 && <div style={{ padding: "8px 20px", fontSize: 12, color: "var(--text3)", borderBottom: "1px solid var(--border)" }}>{filtered.length} expense{filtered.length!==1?"s":""} · Net: <strong>{fmt(totalFiltered)}</strong> · VAT: <strong>{fmt(totalVAT)}</strong> · Total: <strong>{fmt(totalFiltered+totalVAT)}</strong></div>}
-          <div className="tw" style={{ overflowX: "auto" }}><table style={{ minWidth: 560 }}><thead><tr>
-            <th>Date</th><th>Description</th><th>Category</th><th>Supplier</th><th>Net</th><th>VAT</th><th>Method</th><th>Actions</th>
-          </tr></thead><tbody>
-            {filtered.map(e => (
-              <tr key={e.id}>
-                <td style={{ fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(e.date)}</td>
-                <td style={{ fontWeight: 500 }}>{e.description}{e.notes && <div style={{ fontSize: 11, color: "var(--text3)" }}>{e.notes}</div>}</td>
-                <td><span className="badge b-gray" style={{ fontSize: 10 }}>{e.category}</span></td>
-                <td style={{ fontSize: 12, color: "var(--text2)" }}>{e.supplier || "—"}</td>
-                <td className="mono" style={{ fontWeight: 600, color: "var(--red)" }}>{fmt(e.amount)}</td>
-                <td className="mono" style={{ fontSize: 12, color: "var(--text3)" }}>{fmt(e.vat_amount)}</td>
-                <td style={{ fontSize: 12 }}>{e.payment_method}</td>
-                <td><div style={{ display: "flex", gap: 4 }}>
-                  <button className="btn bo bsm" onClick={() => { setEditExp(e); setForm({ date: e.date, description: e.description, category: e.category, amount: e.amount, vat_rate: e.vat_rate, supplier: e.supplier||"", payment_method: e.payment_method||"bank", notes: e.notes||"" }); setShowForm(true); }}><i className="ti ti-edit" /></button>
-                  <button className="btn bo bsm" style={{ color: "var(--red)" }} onClick={() => del(e.id)}><i className="ti ti-trash" /></button>
-                </div></td>
-              </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan={8} className="empty">No expenses yet — add your first one</td></tr>}
-          </tbody></table></div>
-        </div>
-
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="ch"><div className="ct">By Category</div></div>
-          {byCategory.length === 0 && <div style={{ padding: "20px", fontSize: 13, color: "var(--text3)", textAlign: "center" }}>No expenses yet</div>}
-          {byCategory.map(c => {
-            const total = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-            const pct = total > 0 ? (c.total / total * 100) : 0;
-            return (
-              <div key={c.cat} style={{ padding: "10px 20px", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>{c.cat}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--red)" }}>{fmt(c.total)}</span>
-                </div>
-                <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
-                  <div style={{ height: "100%", width: `${pct}%`, background: "var(--red)", borderRadius: 2, transition: "width .4s" }} />
-                </div>
-                <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 2 }}>{pct.toFixed(1)}% of total</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 // ── Error Boundary ───────────────────────────────────────────────────────────
@@ -4996,7 +4700,6 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("dismissed_notifs") || "[]"); } catch { return []; }
   });
   const [accounts, setAccounts] = useState([]);
-  const [expenses, setExpenses] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [products, setProducts] = useState([]);
@@ -5023,16 +4726,14 @@ export default function App() {
         ? "order=created_at.desc&limit=1000"
         : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
       // Step 2: now fetch everything else with correct invoice filter
-      const [accs, exps, invs, cnts, prods, allProfs] = await Promise.all([
+      const [accs, invs, cnts, prods, allProfs] = await Promise.all([
         sb.get(auth.token, "accounts", "order=code.asc"),
-        sb.get(auth.token, "expenses", "order=date.desc&limit=500"),
         sb.get(auth.token, "invoices", invQuery),
         sb.get(auth.token, "contacts", "order=name.asc"),
         sb.get(auth.token, "products", "order=name.asc"),
         sb.get(auth.token, "profiles", "order=full_name.asc"),
       ]);
       if (Array.isArray(accs)) setAccounts(accs);
-      if (Array.isArray(exps)) setExpenses(exps);
       if (Array.isArray(invs)) {
         if (isAdmin) {
           setInvoices(invs);
@@ -5069,7 +4770,9 @@ export default function App() {
   // ── Supabase Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
     if (!auth) return;
-    const wsUrl = SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + SUPABASE_ANON_KEY + "&vsn=1.0.0";
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const wsUrl = SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + SUPABASE_KEY + "&vsn=1.0.0";
 
     let ws;
     let heartbeat;
@@ -5412,15 +5115,14 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} expenses={expenses} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
-                {page==="expenses"&&<Expenses expenses={expenses} setExpenses={setExpenses} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
-                {page==="analytics"&&<Analytics invoices={invoices} products={products} contacts={contacts} expenses={expenses} />}
+                {page==="analytics"&&<Analytics invoices={invoices} products={products} contacts={contacts} />}
                 {page==="import"&&<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}><i className="ti ti-upload" style={{fontSize:40,display:"block",marginBottom:12}} /><div style={{fontSize:16,fontWeight:600,marginBottom:6}}>CSV Import</div><div style={{fontSize:13}}>Coming soon — import contacts and products from CSV</div></div>}
                 {page==="statement"&&<CustomerStatement contacts={contacts} invoices={invoices} token={auth.token} />}
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} />}
