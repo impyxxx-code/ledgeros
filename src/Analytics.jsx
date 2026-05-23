@@ -9,7 +9,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numer
 // ── DATA HELPERS ──────────────────────────────────────────────────────────────
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-function buildMonthlySales(invoices) {
+function buildMonthlySales(invoices, expenses = []) {
   const now = new Date();
   const months = [];
   for (let i = 11; i >= 0; i--) {
@@ -24,9 +24,19 @@ function buildMonthlySales(invoices) {
     const amt = parseFloat(inv.amount) || 0;
     slot.revenue += amt;
     slot.invoices += 1;
-    // Treat cost as 60% of revenue as a reasonable expense proxy when no expense table exists
-    slot.expenses += amt * 0.6;
   });
+  const hasRealExpenses = expenses.length > 0;
+  expenses.forEach(exp => {
+    if (!exp.date) return;
+    const d = new Date(exp.date);
+    const slot = months.find(m => m.monthIdx === d.getMonth() && m.year === d.getFullYear());
+    if (!slot) return;
+    slot.expenses += parseFloat(exp.amount) || 0;
+  });
+  // Fall back to 60% proxy only if no real expense data
+  if (!hasRealExpenses) {
+    months.forEach(m => { m.expenses = m.revenue * 0.6; });
+  }
   return months;
 }
 
@@ -278,12 +288,12 @@ function SparkLine({ values, color }) {
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-export default function Analytics({ invoices = [], products = [], contacts = [] }) {
+export default function Analytics({ invoices = [], products = [], contacts = [], expenses = [] }) {
   const [period, setPeriod] = useState("12m");
   const [now] = useState(new Date());
 
   // Build real data from props
-  const MONTHLY_SALES = buildMonthlySales(invoices);
+  const MONTHLY_SALES = buildMonthlySales(invoices, expenses);
   const TOP_PRODUCTS = buildTopProducts(products, invoices);
   const TOP_CUSTOMERS = buildTopCustomers(invoices);
   const RECENT_ACTIVITY = buildRecentActivity(invoices, products);
@@ -291,7 +301,9 @@ export default function Analytics({ invoices = [], products = [], contacts = [] 
   const totalRevenue = invoices.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const totalOutstanding = invoices.filter(i => i.status !== "paid").reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
-  const totalExpenses = MONTHLY_SALES.reduce((s, m) => s + m.expenses, 0);
+  const totalExpenses = expenses.length > 0
+    ? expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+    : MONTHLY_SALES.reduce((s, m) => s + m.expenses, 0);
   const totalProfit = totalRevenue - totalExpenses;
   const totalInvoices = invoices.length;
   const avgMonthlyRev = MONTHLY_SALES.length > 0 ? totalRevenue / MONTHLY_SALES.length : 0;
@@ -345,9 +357,9 @@ export default function Analytics({ invoices = [], products = [], contacts = [] 
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--red)" }} />
             <div className="ki"><i className="ti ti-trending-up" style={{color:"var(--red)"}} /></div>
-            <div className="kl">Est. Expenses</div>
+            <div className="kl">{expenses.length > 0 ? "Total Expenses" : "Est. Expenses"}</div>
             <div className="kv" style={{ color: "var(--red)" }}>{fmt(totalExpenses)}</div>
-            <div className="kd down">Estimated at 60% of revenue</div>
+            <div className="kd down">{expenses.length > 0 ? `${expenses.length} transactions` : "Estimated at 60% of revenue"}</div>
             <SparkLine values={MONTHLY_SALES.map(m => m.expenses)} color="var(--red)" />
           </div>
           <div className="kpi">

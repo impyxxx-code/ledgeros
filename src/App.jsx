@@ -2346,15 +2346,17 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token, expenses = [] }) {
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
 
   // ── Computed metrics ──
+  const expenses_total = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
-  const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
+  const accountExpenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
+  const expenses_used = expenses_total > 0 ? expenses_total : accountExpenses;
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
-  const net = revenue - expenses;
+  const net = paid - expenses_used;
   const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
   const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
@@ -2529,12 +2531,12 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         {/* Net Profit */}
-        <div className="kpi" style={{ "--kpi-accent": paid >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
+        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
           <div className="kpi-top">
-            <div className="kpi-icon" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: paid >= 0 ? "var(--green)" : "var(--red)" }} /></div>
-            <span className="kpi-badge" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: paid >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>Profit</span>
+            <div className="kpi-icon" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }} /></div>
+            <span className="kpi-badge" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: net >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>{net >= 0 ? "Profit" : "Loss"}</span>
           </div>
-          <div className="kpi-val" style={{ color: "var(--green)" }}>{fmt(paid)}</div>
+          <div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div>
           <div className="kpi-label">Net Position</div>
           <svg className="spark" viewBox="0 0 120 40">
             <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7c3aed" stopOpacity=".3"/><stop offset="100%" stopColor="#7c3aed" stopOpacity="0"/></linearGradient></defs>
@@ -4642,6 +4644,7 @@ const NAV = [
   { id: "inventory", label: "Inventory", icon: "ti-package" },
   { id: "purchases", label: "Purchases", icon: "ti-shopping-cart" },
   { id: "credits", label: "Credits", icon: "ti-receipt-refund" },
+  { id: "expenses", label: "Expenses", icon: "ti-receipt" },
   { id: "reports", label: "P&L", icon: "ti-chart-bar" },
   { id: "analytics", label: "Analytics", icon: "ti-trending-up" },
   { id: "admin-reports", label: "Reports", icon: "ti-report-money" },
@@ -4660,6 +4663,157 @@ const MOBILE_NAV = [
   { id: "inventory", label: "Stock", icon: "ti-package" },
   { id: "analytics", label: "Analytics", icon: "ti-trending-up" },
 ];
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ Expenses                                                   │
+// │ Track business expenses with categories and VAT            │
+// └────────────────────────────────────────────────────────────┘
+function Expenses({ expenses, setExpenses, token, userId }) {
+  const CATS = ["Stock/Inventory","Rent","Utilities","Wages","Transport","Marketing","Equipment","Software","Insurance","Professional Fees","General"];
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [filterCat, setFilterCat] = useState("all");
+  const [filterMonth, setFilterMonth] = useState("all");
+  const [editExp, setEditExp] = useState(null);
+  const blank = { date: new Date().toISOString().split("T")[0], description: "", category: "Stock/Inventory", amount: "", vat_rate: 20, supplier: "", payment_method: "bank", notes: "" };
+  const [form, setForm] = useState(blank);
+  const ff = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const vatAmt = (parseFloat(form.amount) || 0) * (parseFloat(form.vat_rate) || 0) / 100;
+  const totalAmt = (parseFloat(form.amount) || 0) + vatAmt;
+
+  const save = async () => {
+    if (!form.description || !form.amount) return toast.error("Description and amount required");
+    setSaving(true);
+    const payload = { ...form, amount: parseFloat(form.amount), vat_amount: parseFloat(vatAmt.toFixed(2)), vat_rate: parseFloat(form.vat_rate), created_by: userId };
+    let res;
+    if (editExp) {
+      res = await sb.patch(token, "expenses", editExp.id, payload);
+      if (res && !res.error) { setExpenses(prev => prev.map(e => e.id === editExp.id ? { ...e, ...payload } : e)); toast.success("Expense updated"); }
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/expenses`, { method: "POST", headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}`, "Prefer": "return=representation" }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]) { setExpenses(prev => [data[0], ...prev]); toast.success("Expense added"); }
+      else toast.error("Failed to save expense");
+    }
+    setSaving(false); setShowForm(false); setEditExp(null); setForm(blank);
+  };
+
+  const del = async (id) => {
+    if (!confirm("Delete this expense?")) return;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses?id=eq.${id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
+    if (res.ok || res.status === 204) { setExpenses(prev => prev.filter(e => e.id !== id)); toast.success("Expense deleted"); }
+    else toast.error("Failed to delete expense");
+  };
+
+  const months = [...new Set(expenses.map(e => e.date?.slice(0,7)))].sort().reverse();
+  const filtered = expenses.filter(e => (filterCat === "all" || e.category === filterCat) && (filterMonth === "all" || e.date?.startsWith(filterMonth)));
+  const totalFiltered = filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const totalVAT = filtered.reduce((s, e) => s + (parseFloat(e.vat_amount) || 0), 0);
+  const byCategory = CATS.map(c => ({ cat: c, total: expenses.filter(e => e.category === c).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) })).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+
+  return (
+    <div>
+      <div className="ph">
+        <div><div className="pt">Expenses</div><div className="psub">Track business costs and VAT</div></div>
+        <button className="btn bp" onClick={() => { setForm(blank); setEditExp(null); setShowForm(true); }}><i className="ti ti-plus" />Add Expense</button>
+      </div>
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="ch"><div className="ct">{editExp ? "Edit Expense" : "New Expense"}</div><button className="btn bo bsm" onClick={() => { setShowForm(false); setEditExp(null); setForm(blank); }}><i className="ti ti-x" /></button></div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, padding: "0 20px 20px" }}>
+            <div><label className="il-label">Date</label><input className="il-input" type="date" value={form.date} onChange={e => ff("date", e.target.value)} /></div>
+            <div><label className="il-label">Description *</label><input className="il-input" placeholder="e.g. Office supplies" value={form.description} onChange={e => ff("description", e.target.value)} /></div>
+            <div><label className="il-label">Category</label><select className="il-input" value={form.category} onChange={e => ff("category", e.target.value)}>{CATS.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div><label className="il-label">Supplier</label><input className="il-input" placeholder="Supplier name" value={form.supplier} onChange={e => ff("supplier", e.target.value)} /></div>
+            <div><label className="il-label">Net Amount (£) *</label><input className="il-input" type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={e => ff("amount", e.target.value)} /></div>
+            <div><label className="il-label">VAT Rate (%)</label><select className="il-input" value={form.vat_rate} onChange={e => ff("vat_rate", e.target.value)}><option value={0}>0% (Exempt)</option><option value={5}>5% (Reduced)</option><option value={20}>20% (Standard)</option></select></div>
+            <div><label className="il-label">Payment Method</label><select className="il-input" value={form.payment_method} onChange={e => ff("payment_method", e.target.value)}><option value="bank">Bank Transfer</option><option value="cash">Cash</option><option value="card">Card</option><option value="cheque">Cheque</option></select></div>
+            <div><label className="il-label">Notes</label><input className="il-input" placeholder="Optional notes" value={form.notes} onChange={e => ff("notes", e.target.value)} /></div>
+          </div>
+          {form.amount && <div style={{ padding: "0 20px 16px", fontSize: 13, color: "var(--text2)" }}>VAT: <strong>{fmt(vatAmt)}</strong> · Total inc. VAT: <strong style={{ color: "var(--text)" }}>{fmt(totalAmt)}</strong></div>}
+          <div style={{ padding: "0 20px 20px", display: "flex", gap: 8 }}>
+            <button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editExp ? "Update Expense" : "Save Expense"}</button>
+            <button className="btn bo" onClick={() => { setShowForm(false); setEditExp(null); setForm(blank); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, marginBottom: 20 }}>
+        {[
+          { label: "Total Expenses", val: fmt(expenses.reduce((s,e) => s+(parseFloat(e.amount)||0),0)), color: "var(--red)", icon: "ti-trending-down" },
+          { label: "Total VAT", val: fmt(expenses.reduce((s,e) => s+(parseFloat(e.vat_amount)||0),0)), color: "var(--amber)", icon: "ti-percentage" },
+          { label: "This Month", val: fmt(expenses.filter(e=>e.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color: "var(--blue)", icon: "ti-calendar" },
+          { label: "Transactions", val: expenses.length, color: "var(--purple)", icon: "ti-list" },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ padding: "16px 18px", marginBottom: 0, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 18 }} /></div>
+            <div><div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>{s.label}</div><div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.val}</div></div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16, alignItems: "start" }}>
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div className="ch">
+            <div className="ct">Expense Log</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <select className="il-input" style={{ width: 140, padding: "5px 10px", fontSize: 12 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+                <option value="all">All Categories</option>{CATS.map(c => <option key={c}>{c}</option>)}
+              </select>
+              <select className="il-input" style={{ width: 130, padding: "5px 10px", fontSize: 12 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+                <option value="all">All Months</option>{months.map(m => <option key={m} value={m}>{new Date(m+"-01").toLocaleDateString("en-GB",{month:"short",year:"numeric"})}</option>)}
+              </select>
+            </div>
+          </div>
+          {filtered.length > 0 && <div style={{ padding: "8px 20px", fontSize: 12, color: "var(--text3)", borderBottom: "1px solid var(--border)" }}>{filtered.length} expense{filtered.length!==1?"s":""} · Net: <strong>{fmt(totalFiltered)}</strong> · VAT: <strong>{fmt(totalVAT)}</strong> · Total: <strong>{fmt(totalFiltered+totalVAT)}</strong></div>}
+          <div className="tw" style={{ overflowX: "auto" }}><table style={{ minWidth: 560 }}><thead><tr>
+            <th>Date</th><th>Description</th><th>Category</th><th>Supplier</th><th>Net</th><th>VAT</th><th>Method</th><th>Actions</th>
+          </tr></thead><tbody>
+            {filtered.map(e => (
+              <tr key={e.id}>
+                <td style={{ fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(e.date)}</td>
+                <td style={{ fontWeight: 500 }}>{e.description}{e.notes && <div style={{ fontSize: 11, color: "var(--text3)" }}>{e.notes}</div>}</td>
+                <td><span className="badge b-gray" style={{ fontSize: 10 }}>{e.category}</span></td>
+                <td style={{ fontSize: 12, color: "var(--text2)" }}>{e.supplier || "—"}</td>
+                <td className="mono" style={{ fontWeight: 600, color: "var(--red)" }}>{fmt(e.amount)}</td>
+                <td className="mono" style={{ fontSize: 12, color: "var(--text3)" }}>{fmt(e.vat_amount)}</td>
+                <td style={{ fontSize: 12 }}>{e.payment_method}</td>
+                <td><div style={{ display: "flex", gap: 4 }}>
+                  <button className="btn bo bsm" onClick={() => { setEditExp(e); setForm({ date: e.date, description: e.description, category: e.category, amount: e.amount, vat_rate: e.vat_rate, supplier: e.supplier||"", payment_method: e.payment_method||"bank", notes: e.notes||"" }); setShowForm(true); }}><i className="ti ti-edit" /></button>
+                  <button className="btn bo bsm" style={{ color: "var(--red)" }} onClick={() => del(e.id)}><i className="ti ti-trash" /></button>
+                </div></td>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={8} className="empty">No expenses yet — add your first one</td></tr>}
+          </tbody></table></div>
+        </div>
+
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div className="ch"><div className="ct">By Category</div></div>
+          {byCategory.length === 0 && <div style={{ padding: "20px", fontSize: 13, color: "var(--text3)", textAlign: "center" }}>No expenses yet</div>}
+          {byCategory.map(c => {
+            const total = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const pct = total > 0 ? (c.total / total * 100) : 0;
+            return (
+              <div key={c.cat} style={{ padding: "10px 20px", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>{c.cat}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--red)" }}>{fmt(c.total)}</span>
+                </div>
+                <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: "var(--red)", borderRadius: 2, transition: "width .4s" }} />
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 2 }}>{pct.toFixed(1)}% of total</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 // ── Error Boundary ───────────────────────────────────────────────────────────
@@ -4700,6 +4854,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("dismissed_notifs") || "[]"); } catch { return []; }
   });
   const [accounts, setAccounts] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [products, setProducts] = useState([]);
@@ -4726,14 +4881,16 @@ export default function App() {
         ? "order=created_at.desc&limit=1000"
         : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
       // Step 2: now fetch everything else with correct invoice filter
-      const [accs, invs, cnts, prods, allProfs] = await Promise.all([
+      const [accs, exps, invs, cnts, prods, allProfs] = await Promise.all([
         sb.get(auth.token, "accounts", "order=code.asc"),
+        sb.get(auth.token, "expenses", "order=date.desc&limit=500"),
         sb.get(auth.token, "invoices", invQuery),
         sb.get(auth.token, "contacts", "order=name.asc"),
         sb.get(auth.token, "products", "order=name.asc"),
         sb.get(auth.token, "profiles", "order=full_name.asc"),
       ]);
       if (Array.isArray(accs)) setAccounts(accs);
+      if (Array.isArray(exps)) setExpenses(exps);
       if (Array.isArray(invs)) {
         if (isAdmin) {
           setInvoices(invs);
@@ -5115,14 +5272,15 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} expenses={expenses} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
+                {page==="expenses"&&<Expenses expenses={expenses} setExpenses={setExpenses} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
-                {page==="analytics"&&<Analytics invoices={invoices} products={products} contacts={contacts} />}
+                {page==="analytics"&&<Analytics invoices={invoices} products={products} contacts={contacts} expenses={expenses} />}
                 {page==="import"&&<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}><i className="ti ti-upload" style={{fontSize:40,display:"block",marginBottom:12}} /><div style={{fontSize:16,fontWeight:600,marginBottom:6}}>CSV Import</div><div style={{fontSize:13}}>Coming soon — import contacts and products from CSV</div></div>}
                 {page==="statement"&&<CustomerStatement contacts={contacts} invoices={invoices} token={auth.token} />}
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} />}
