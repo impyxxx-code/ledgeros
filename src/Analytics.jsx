@@ -237,7 +237,7 @@ function SparkLine({ values, color }) {
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-export default function Analytics({ invoices = [], products = [], contacts = [] }) {
+export default function Analytics() {
   const [period, setPeriod] = useState("12m");
   const [now] = useState(new Date());
 
