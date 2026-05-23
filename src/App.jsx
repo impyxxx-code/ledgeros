@@ -30,7 +30,7 @@
 // ╚══════════════════════════════════════════════════════════════════╝
 
 import Analytics from "./Analytics.jsx";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, createPortal } from "react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
@@ -308,7 +308,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ────────────────────────────────────
    MAIN AREA
    ──────────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:100vh}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
 
 /* ── Topbar ── */
 .topbar{
@@ -379,6 +379,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ── Content ── */
 .content{
   flex:1;padding:26px 28px;
+  overflow-y:auto;
   max-width:1440px;width:100%;margin:0 auto;
   animation:fadeIn .22s var(--ease) both;
 }
@@ -652,7 +653,7 @@ tr:hover td{background:#f8fafd}
    MODALS
    ──────────────────────────────────── */
 .modal-overlay{
-  position:fixed;inset:0;
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
   background:rgba(10,14,26,.55);
   z-index:1000;
   display:flex;align-items:center;justify-content:center;
@@ -964,6 +965,9 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
+// ── Modal Portal — renders overlays into document.body to escape overflow containers ──
+const ModalPortal = ({ children }) => createPortal(children, document.body);
+
 // ── Command Palette (Cmd+K) ──────────────────────────────────────────────────
 
 // ┌────────────────────────────────────────────────────────────┐
@@ -998,8 +1002,8 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
     ...filteredCmds,
   ].slice(0, 10);
 
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
+  return (<ModalPortal>
+    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
       <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "var(--sh3)", overflow: "hidden", border: "1px solid var(--border)", animation: "scaleIn .15s var(--ease)" }}>
         {/* Search input */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
@@ -1029,7 +1033,7 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
           <span style={{ marginLeft: "auto" }}>⌘K to open</span>
         </div>
       </div>
-    </div>
+    </div></ModalPortal>
   );
 }
 
@@ -1470,8 +1474,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   };
   const sc = statusConfig[invoice.status] || statusConfig.pending;
 
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+  return (<ModalPortal>
+    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 800 }}>
         <div className="modal-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2568,7 +2572,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
     <div>
       {/* ── Drill-down Modal ── */}
       {drill && (
-        <div className="modal-overlay" onClick={() => setDrill(null)}>
+        <ModalPortal><div className="modal-overlay" onClick={() => setDrill(null)}>
           <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div>
@@ -2594,7 +2598,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               </table>
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* ── Header ── */}
@@ -3273,7 +3277,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   return (
     <div>
       {viewContact && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
+        <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
           <div className="modal" style={{ maxWidth: 620 }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
@@ -3358,7 +3362,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
               <button className="btn bp bsm" onClick={()=>setViewContact(null)}>Close</button>
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
       <div className="ph">
         <div><div className="pt">Customers & Suppliers</div><div className="psub">Manage your business contacts</div></div>
@@ -5402,8 +5406,8 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
     setSaving(false);
   };
 
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+  return (<ModalPortal>
+    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 680, maxHeight: "90vh", overflowY: "auto" }}>
         <div className="modal-header">
           <div>
@@ -5470,7 +5474,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
           <button className="btn bp bsm" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
         </div>
       </div>
-    </div>
+    </div></ModalPortal>
   );
 }
 
