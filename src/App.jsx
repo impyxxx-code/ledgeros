@@ -30,7 +30,8 @@
 // ╚══════════════════════════════════════════════════════════════════╝
 
 import Analytics from "./Analytics.jsx";
-import React, { useState, useEffect, useRef, createPortal } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
@@ -2053,6 +2054,15 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       invoice_ref: savedInvoice.invoice_number,
       lines: JSON.stringify(dnLines)
     };
+  };
+
+  const downloadDNpdf = (html, dn_num) => {
+    const mobWin = window.open('', '_blank');
+    if (!mobWin) return;
+    mobWin.document.write(html);
+    mobWin.document.close();
+    mobWin.focus();
+    setTimeout(() => { mobWin.print(); }, 800);
   };
 
   // ── SUCCESS SCREEN ─────────────────────────────────────────────────────────
