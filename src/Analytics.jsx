@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 
 const SUPABASE_URL = "https://szcogfyrhlrsxnwepnea.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y29nZnlyaGxyc3hud2VwbmVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODY1MzEsImV4cCI6MjA5NDA2MjUzMX0.oU60PfFsb0QHmn1qKasNKIxS8G30xhiMDxAPtMQTNT4";
 
 const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—";
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "â€”";
 
-// ── SAMPLE DATA (replace with real Supabase data when connected) ───────────────
+// â”€â”€ SAMPLE DATA (replace with real Supabase data when connected) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MONTHLY_SALES = [
   { month: "Jul", revenue: 18400, expenses: 11200, invoices: 12 },
   { month: "Aug", revenue: 22100, expenses: 13400, invoices: 15 },
@@ -40,12 +40,12 @@ const TOP_CUSTOMERS = [
 ];
 
 const RECENT_ACTIVITY = [
-  { type: "invoice", desc: "Invoice INV-038 raised for Acme Corp", amount: 1240, time: "2 hours ago", icon: "🧾" },
-  { type: "payment", desc: "Payment received from TechStart LLC", amount: 3200, time: "5 hours ago", icon: "💰" },
-  { type: "stock", desc: "Crystal Pro Max stock low — 8 units left", amount: null, time: "Yesterday", icon: "⚠️" },
-  { type: "invoice", desc: "Invoice INV-037 raised for Nexus Partners", amount: 980, time: "Yesterday", icon: "🧾" },
-  { type: "purchase", desc: "PO-012 sent to Global Supplies", amount: 4200, time: "2 days ago", icon: "🛒" },
-  { type: "payment", desc: "Payment received from BuildRight Inc", amount: 2800, time: "2 days ago", icon: "💰" },
+  { type: "invoice", desc: "Invoice INV-038 raised for Acme Corp", amount: 1240, time: "2 hours ago", icon: "ðŸ§¾" },
+  { type: "payment", desc: "Payment received from TechStart LLC", amount: 3200, time: "5 hours ago", icon: "ðŸ’°" },
+  { type: "stock", desc: "Crystal Pro Max stock low â€” 8 units left", amount: null, time: "Yesterday", icon: "âš ï¸" },
+  { type: "invoice", desc: "Invoice INV-037 raised for Nexus Partners", amount: 980, time: "Yesterday", icon: "ðŸ§¾" },
+  { type: "purchase", desc: "PO-012 sent to Global Supplies", amount: 4200, time: "2 days ago", icon: "ðŸ›’" },
+  { type: "payment", desc: "Payment received from BuildRight Inc", amount: 2800, time: "2 days ago", icon: "ðŸ’°" },
 ];
 
 const CSS = `
@@ -162,7 +162,7 @@ const CSS = `
   ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 `;
 
-// ── CHART COMPONENT ───────────────────────────────────────────────────────────
+// â”€â”€ CHART COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function BarChart({ data, period }) {
   const d = period === "3m" ? data.slice(-3) : period === "6m" ? data.slice(-6) : data;
   const maxRev = Math.max(...d.map(x => x.revenue));
@@ -189,7 +189,7 @@ function BarChart({ data, period }) {
   );
 }
 
-// ── DONUT CHART ───────────────────────────────────────────────────────────────
+// â”€â”€ DONUT CHART â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function DonutChart({ data, total }) {
   const colors = ["#2ca01c", "#2563eb", "#d97706", "#7c3aed", "#dc2626"];
   let cumPct = 0;
@@ -228,7 +228,7 @@ function DonutChart({ data, total }) {
   );
 }
 
-// ── SPARK LINE ────────────────────────────────────────────────────────────────
+// â”€â”€ SPARK LINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SparkLine({ values, color }) {
   const max = Math.max(...values); const min = Math.min(...values);
   const w = 120; const h = 36; const pad = 4;
@@ -236,7 +236,7 @@ function SparkLine({ values, color }) {
   return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}><polyline points={pts} fill="none" stroke={color || "var(--qb)"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
+// â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function Analytics() {
   const [period, setPeriod] = useState("12m");
   const [now] = useState(new Date());
@@ -267,13 +267,13 @@ export default function Analytics() {
       <nav className="tnav">
         <div className="tlogo">L</div>
         <div><div className="tname">LedgerOS</div><div className="tco">Analytics</div></div>
-        <div className="tbadge">📊 Sales Analytics</div>
-        <a className="tback" href="https://ledgeros-lac.vercel.app" style={{ marginLeft: 8 }}>← Back to App</a>
+        <div className="tbadge">ðŸ“Š Sales Analytics</div>
+        <a className="tback" href="https://ledgeros-lac.vercel.app" style={{ marginLeft: 8 }}>â† Back to App</a>
       </nav>
 
       <div className="page">
         <div className="ph">
-          <div><div className="pt">Sales Analytics</div><div className="ps">Performance overview · {now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</div></div>
+          <div><div className="pt">Sales Analytics</div><div className="ps">Performance overview Â· {now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</div></div>
           <div className="period-btns">
             {[["3m", "3 Months"], ["6m", "6 Months"], ["12m", "12 Months"]].map(([k, l]) => (
               <button key={k} className={`pb ${period === k ? "active" : ""}`} onClick={() => setPeriod(k)}>{l}</button>
@@ -285,31 +285,31 @@ export default function Analytics() {
         <div className="kg">
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--green)" }} />
-            <div className="ki">💰</div>
+            <div className="ki">ðŸ’°</div>
             <div className="kl">Total Revenue</div>
             <div className="kv" style={{ color: "var(--green)" }}>{fmt(totalRevenue)}</div>
-            <div className="kd up">↑ {revGrowth}% vs last month</div>
+            <div className="kd up">â†‘ {revGrowth}% vs last month</div>
             <SparkLine values={MONTHLY_SALES.map(m => m.revenue)} color="var(--green)" />
           </div>
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--red)" }} />
-            <div className="ki">📤</div>
+            <div className="ki">ðŸ“¤</div>
             <div className="kl">Total Expenses</div>
             <div className="kv" style={{ color: "var(--red)" }}>{fmt(totalExpenses)}</div>
-            <div className="kd down">↑ {expGrowth}% vs last month</div>
+            <div className="kd down">â†‘ {expGrowth}% vs last month</div>
             <SparkLine values={MONTHLY_SALES.map(m => m.expenses)} color="var(--red)" />
           </div>
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--blue)" }} />
-            <div className="ki">📈</div>
+            <div className="ki">ðŸ“ˆ</div>
             <div className="kl">Net Profit</div>
             <div className="kv" style={{ color: "var(--blue)" }}>{fmt(totalProfit)}</div>
-            <div className="kd up">↑ {((totalProfit / totalRevenue) * 100).toFixed(1)}% margin</div>
+            <div className="kd up">â†‘ {((totalProfit / totalRevenue) * 100).toFixed(1)}% margin</div>
             <SparkLine values={MONTHLY_SALES.map(m => m.revenue - m.expenses)} color="var(--blue)" />
           </div>
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--purple)" }} />
-            <div className="ki">🧾</div>
+            <div className="ki">ðŸ§¾</div>
             <div className="kl">Total Invoices</div>
             <div className="kv" style={{ color: "var(--purple)" }}>{totalInvoices}</div>
             <div className="kd flat">Avg {fmt(totalRevenue / totalInvoices)} per invoice</div>
@@ -331,7 +331,7 @@ export default function Analytics() {
 
         {/* TOP SELLING PRODUCTS */}
         <div className="card">
-          <div className="ch"><div className="ct">🏆 Fastest Selling Products</div><div className="cs">Ranked by units sold</div></div>
+          <div className="ch"><div className="ct">ðŸ† Fastest Selling Products</div><div className="cs">Ranked by units sold</div></div>
           <div className="tw">
             <table>
               <thead>
@@ -345,7 +345,7 @@ export default function Analytics() {
                     <td><span style={{ padding: "2px 8px", background: "var(--blue-bg)", color: "var(--blue)", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{p.category}</span></td>
                     <td className="hm"><div className="mono">{p.units.toLocaleString()}</div><div className="rank-bar"><div className="rank-fill" style={{ width: `${(p.units / Math.max(...TOP_PRODUCTS.map(x => x.units))) * 100}%` }} /></div></td>
                     <td className="mono tg">{fmt(p.revenue)}</td>
-                    <td><span className={`growth ${p.growth >= 0 ? "up" : "down"}`}>{p.growth >= 0 ? "↑" : "↓"} {Math.abs(p.growth)}%</span></td>
+                    <td><span className={`growth ${p.growth >= 0 ? "up" : "down"}`}>{p.growth >= 0 ? "â†‘" : "â†“"} {Math.abs(p.growth)}%</span></td>
                     <td className="hm"><div className="rank-bar" style={{ width: 120 }}><div className="rank-fill" style={{ width: `${(p.revenue / maxRevenue) * 100}%` }} /></div><div style={{ fontSize: 11, color: "var(--text3)", marginTop: 3 }}>{((p.revenue / TOP_PRODUCTS.reduce((s, x) => s + x.revenue, 0)) * 100).toFixed(1)}% of total</div></td>
                   </tr>
                 ))}
@@ -357,7 +357,7 @@ export default function Analytics() {
         {/* CUSTOMERS + ACTIVITY */}
         <div className="g2">
           <div className="card">
-            <div className="ch"><div className="ct">👥 Top Customers</div><div className="cs">By revenue generated</div></div>
+            <div className="ch"><div className="ct">ðŸ‘¥ Top Customers</div><div className="cs">By revenue generated</div></div>
             <div className="tw">
               <table>
                 <thead><tr><th>Customer</th><th className="hm">Invoices</th><th>Total</th><th>Status</th></tr></thead>
@@ -381,7 +381,7 @@ export default function Analytics() {
           </div>
 
           <div className="card">
-            <div className="ch"><div className="ct">🕐 Recent Activity</div><div className="cs">Latest transactions</div></div>
+            <div className="ch"><div className="ct">ðŸ• Recent Activity</div><div className="cs">Latest transactions</div></div>
             {RECENT_ACTIVITY.map((a, i) => (
               <div key={i} className="activity-item">
                 <div className="act-icon">{a.icon}</div>
@@ -398,7 +398,7 @@ export default function Analytics() {
         {/* SUMMARY STATS */}
         <div className="g3">
           <div className="card">
-            <div className="ch"><div className="ct">📅 Monthly Averages</div></div>
+            <div className="ch"><div className="ct">ðŸ“… Monthly Averages</div></div>
             <div className="stat-row"><span className="stat-label">Avg Monthly Revenue</span><span className="stat-value tg">{fmt(avgMonthlyRev)}</span></div>
             <div className="stat-row"><span className="stat-label">Avg Monthly Expenses</span><span className="stat-value tr-c">{fmt(totalExpenses / MONTHLY_SALES.length)}</span></div>
             <div className="stat-row"><span className="stat-label">Avg Monthly Profit</span><span className="stat-value" style={{ color: "var(--blue)" }}>{fmt(totalProfit / MONTHLY_SALES.length)}</span></div>
@@ -406,7 +406,7 @@ export default function Analytics() {
             <div className="stat-row"><span className="stat-label">Best Month</span><span className="stat-value">{MONTHLY_SALES.reduce((a, b) => a.revenue > b.revenue ? a : b).month}</span></div>
           </div>
           <div className="card">
-            <div className="ch"><div className="ct">📦 Product Performance</div></div>
+            <div className="ch"><div className="ct">ðŸ“¦ Product Performance</div></div>
             <div className="stat-row"><span className="stat-label">Total Products</span><span className="stat-value">{TOP_PRODUCTS.length}</span></div>
             <div className="stat-row"><span className="stat-label">Total Units Sold</span><span className="stat-value">{TOP_PRODUCTS.reduce((s, p) => s + p.units, 0).toLocaleString()}</span></div>
             <div className="stat-row"><span className="stat-label">Top Seller</span><span className="stat-value">{TOP_PRODUCTS.sort((a, b) => b.units - a.units)[0].name}</span></div>
@@ -414,9 +414,9 @@ export default function Analytics() {
             <div className="stat-row"><span className="stat-label">Total Product Revenue</span><span className="stat-value tg">{fmt(TOP_PRODUCTS.reduce((s, p) => s + p.revenue, 0))}</span></div>
           </div>
           <div className="card">
-            <div className="ch"><div className="ct">🎯 Business Health</div></div>
+            <div className="ch"><div className="ct">ðŸŽ¯ Business Health</div></div>
             <div className="stat-row"><span className="stat-label">Profit Margin</span><span className="stat-value tg">{((totalProfit / totalRevenue) * 100).toFixed(1)}%</span></div>
-            <div className="stat-row"><span className="stat-label">Revenue Growth (MoM)</span><span className="stat-value tg">↑ {revGrowth}%</span></div>
+            <div className="stat-row"><span className="stat-label">Revenue Growth (MoM)</span><span className="stat-value tg">â†‘ {revGrowth}%</span></div>
             <div className="stat-row"><span className="stat-label">Active Customers</span><span className="stat-value">{TOP_CUSTOMERS.filter(c => c.status === "active").length}</span></div>
             <div className="stat-row"><span className="stat-label">Overdue Accounts</span><span className="stat-value tr-c">{TOP_CUSTOMERS.filter(c => c.status === "overdue").length}</span></div>
             <div className="stat-row"><span className="stat-label">Expense Ratio</span><span className="stat-value">{((totalExpenses / totalRevenue) * 100).toFixed(1)}%</span></div>
