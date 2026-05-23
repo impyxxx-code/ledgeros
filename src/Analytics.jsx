@@ -6,47 +6,88 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "â€”";
 
-// â”€â”€ SAMPLE DATA (replace with real Supabase data when connected) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const MONTHLY_SALES = [
-  { month: "Jul", revenue: 18400, expenses: 11200, invoices: 12 },
-  { month: "Aug", revenue: 22100, expenses: 13400, invoices: 15 },
-  { month: "Sep", revenue: 19800, expenses: 12100, invoices: 13 },
-  { month: "Oct", revenue: 26500, expenses: 15800, invoices: 18 },
-  { month: "Nov", revenue: 31200, expenses: 18400, invoices: 22 },
-  { month: "Dec", revenue: 38900, expenses: 21200, invoices: 28 },
-  { month: "Jan", revenue: 29400, expenses: 17100, invoices: 19 },
-  { month: "Feb", revenue: 33700, expenses: 19800, invoices: 24 },
-  { month: "Mar", revenue: 41200, expenses: 23100, invoices: 31 },
-  { month: "Apr", revenue: 37800, expenses: 21600, invoices: 27 },
-  { month: "May", revenue: 44600, expenses: 25400, invoices: 33 },
-  { month: "Jun", revenue: 52100, expenses: 28900, invoices: 38 },
-];
+// â”€â”€ DATA HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-const TOP_PRODUCTS = [
-  { name: "Hayati 6K", category: "Vapes", units: 847, revenue: 22445.50, growth: 12.4 },
-  { name: "Hayati 6K Pods", category: "Pods", units: 623, revenue: 10591.00, growth: 8.2 },
-  { name: "Elux Salts 20mg", category: "E-Liquids", units: 1240, revenue: 15810.00, growth: 24.1 },
-  { name: "Hayati 25K Pods", category: "Pods", units: 412, revenue: 9682.00, growth: -3.2 },
-  { name: "Crystal Pro Max", category: "Vapes", units: 389, revenue: 13504.00, growth: 31.5 },
-  { name: "Lost Mary BM600", category: "Disposables", units: 756, revenue: 11340.00, growth: 18.7 },
-];
+function buildMonthlySales(invoices) {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ month: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), monthIdx: d.getMonth(), revenue: 0, expenses: 0, invoices: 0 });
+  }
+  invoices.forEach(inv => {
+    if (!inv.created_at) return;
+    const d = new Date(inv.created_at);
+    const slot = months.find(m => m.monthIdx === d.getMonth() && m.year === d.getFullYear());
+    if (!slot) return;
+    const amt = parseFloat(inv.amount) || 0;
+    slot.revenue += amt;
+    slot.invoices += 1;
+    // Treat cost as 60% of revenue as a reasonable expense proxy when no expense table exists
+    slot.expenses += amt * 0.6;
+  });
+  return months;
+}
 
-const TOP_CUSTOMERS = [
-  { name: "Acme Corp", invoices: 24, total: 28400, lastOrder: "2025-05-08", status: "active" },
-  { name: "TechStart LLC", invoices: 18, total: 19200, lastOrder: "2025-05-10", status: "active" },
-  { name: "BuildRight Inc", invoices: 15, total: 16800, lastOrder: "2025-04-28", status: "active" },
-  { name: "FoodCo Markets", invoices: 12, total: 14200, lastOrder: "2025-04-15", status: "overdue" },
-  { name: "Nexus Partners", invoices: 9, total: 11600, lastOrder: "2025-05-01", status: "active" },
-];
+function buildTopProducts(products, invoices) {
+  // Build a revenue map from invoice lines where product names match
+  const revenueMap = {};
+  invoices.forEach(inv => {
+    let lines = inv.lines;
+    try { if (typeof lines === "string") lines = JSON.parse(lines); } catch { lines = []; }
+    if (!Array.isArray(lines)) return;
+    lines.forEach(line => {
+      if (!line.description) return;
+      const key = line.description.trim();
+      if (!revenueMap[key]) revenueMap[key] = { revenue: 0, units: 0 };
+      revenueMap[key].revenue += (parseFloat(line.unit_price) || 0) * (parseFloat(line.qty) || 1);
+      revenueMap[key].units += parseFloat(line.qty) || 1;
+    });
+  });
+  return products.slice(0, 6).map(p => {
+    const match = revenueMap[p.name] || { revenue: (p.sale_price || 0) * (p.stock_qty || 0), units: p.stock_qty || 0 };
+    return {
+      name: p.name,
+      category: p.category || "General",
+      units: Math.round(match.units),
+      revenue: match.revenue,
+      growth: 0,
+    };
+  }).filter(p => p.revenue > 0 || p.units > 0);
+}
 
-const RECENT_ACTIVITY = [
-  { type: "invoice", desc: "Invoice INV-038 raised for Acme Corp", amount: 1240, time: "2 hours ago", icon: "ðŸ§¾" },
-  { type: "payment", desc: "Payment received from TechStart LLC", amount: 3200, time: "5 hours ago", icon: "ðŸ’°" },
-  { type: "stock", desc: "Crystal Pro Max stock low â€” 8 units left", amount: null, time: "Yesterday", icon: "âš ï¸" },
-  { type: "invoice", desc: "Invoice INV-037 raised for Nexus Partners", amount: 980, time: "Yesterday", icon: "ðŸ§¾" },
-  { type: "purchase", desc: "PO-012 sent to Global Supplies", amount: 4200, time: "2 days ago", icon: "ðŸ›’" },
-  { type: "payment", desc: "Payment received from BuildRight Inc", amount: 2800, time: "2 days ago", icon: "ðŸ’°" },
-];
+function buildTopCustomers(invoices) {
+  const map = {};
+  invoices.forEach(inv => {
+    const name = inv.customer || "Unknown";
+    if (!map[name]) map[name] = { name, invoices: 0, total: 0, lastOrder: inv.created_at, status: "active" };
+    map[name].invoices += 1;
+    map[name].total += parseFloat(inv.amount) || 0;
+    if (inv.created_at > map[name].lastOrder) map[name].lastOrder = inv.created_at;
+    if (inv.status === "overdue") map[name].status = "overdue";
+  });
+  return Object.values(map).sort((a, b) => b.total - a.total).slice(0, 5);
+}
+
+function buildRecentActivity(invoices, products) {
+  const items = [];
+  const sorted = [...invoices].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
+  sorted.forEach(inv => {
+    const d = new Date(inv.created_at);
+    const diffDays = Math.floor((Date.now() - d) / 86400000);
+    const time = diffDays === 0 ? "Today" : diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
+    if (inv.status === "paid") {
+      items.push({ type: "payment", desc: "Payment received from " + inv.customer, amount: parseFloat(inv.amount) || 0, time, icon: "ðŸ’°" });
+    } else {
+      items.push({ type: "invoice", desc: "Invoice " + (inv.invoice_number || "") + " raised for " + inv.customer, amount: parseFloat(inv.amount) || 0, time, icon: "ðŸ§¾" });
+    }
+  });
+  products.filter(p => p.stock_qty <= (p.reorder_level || 5)).slice(0, 2).forEach(p => {
+    items.push({ type: "stock", desc: p.name + " stock low â€” " + p.stock_qty + " units left", amount: null, time: "Now", icon: "âš ï¸" });
+  });
+  return items;
+}
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -237,29 +278,39 @@ function SparkLine({ values, color }) {
 }
 
 // â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export default function Analytics() {
+export default function Analytics({ invoices = [], products = [], contacts = [] }) {
   const [period, setPeriod] = useState("12m");
   const [now] = useState(new Date());
 
-  const totalRevenue = MONTHLY_SALES.reduce((s, m) => s + m.revenue, 0);
+  // Build real data from props
+  const MONTHLY_SALES = buildMonthlySales(invoices);
+  const TOP_PRODUCTS = buildTopProducts(products, invoices);
+  const TOP_CUSTOMERS = buildTopCustomers(invoices);
+  const RECENT_ACTIVITY = buildRecentActivity(invoices, products);
+
+  const totalRevenue = invoices.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+  const totalOutstanding = invoices.filter(i => i.status !== "paid").reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const totalExpenses = MONTHLY_SALES.reduce((s, m) => s + m.expenses, 0);
   const totalProfit = totalRevenue - totalExpenses;
-  const totalInvoices = MONTHLY_SALES.reduce((s, m) => s + m.invoices, 0);
-  const avgMonthlyRev = totalRevenue / MONTHLY_SALES.length;
+  const totalInvoices = invoices.length;
+  const avgMonthlyRev = MONTHLY_SALES.length > 0 ? totalRevenue / MONTHLY_SALES.length : 0;
 
-  const currentMonth = MONTHLY_SALES[MONTHLY_SALES.length - 1];
-  const prevMonth = MONTHLY_SALES[MONTHLY_SALES.length - 2];
-  const revGrowth = ((currentMonth.revenue - prevMonth.revenue) / prevMonth.revenue * 100).toFixed(1);
-  const expGrowth = ((currentMonth.expenses - prevMonth.expenses) / prevMonth.expenses * 100).toFixed(1);
+  const currentMonth = MONTHLY_SALES[MONTHLY_SALES.length - 1] || { revenue: 0, expenses: 0, invoices: 0 };
+  const prevMonth = MONTHLY_SALES[MONTHLY_SALES.length - 2] || { revenue: 0, expenses: 0, invoices: 0 };
+  const revGrowth = prevMonth.revenue > 0 ? ((currentMonth.revenue - prevMonth.revenue) / prevMonth.revenue * 100).toFixed(1) : "0.0";
+  const expGrowth = prevMonth.expenses > 0 ? ((currentMonth.expenses - prevMonth.expenses) / prevMonth.expenses * 100).toFixed(1) : "0.0";
 
-  const categoryData = [
-    { label: "Vapes", value: TOP_PRODUCTS.filter(p => p.category === "Vapes" || p.category === "Disposables").reduce((s, p) => s + p.revenue, 0) },
-    { label: "Pods", value: TOP_PRODUCTS.filter(p => p.category === "Pods").reduce((s, p) => s + p.revenue, 0) },
-    { label: "E-Liquids", value: TOP_PRODUCTS.filter(p => p.category === "E-Liquids").reduce((s, p) => s + p.revenue, 0) },
-  ];
+  // Category donut: group products by category from real product data
+  const catMap = {};
+  TOP_PRODUCTS.forEach(p => {
+    const cat = p.category || "Other";
+    catMap[cat] = (catMap[cat] || 0) + p.revenue;
+  });
+  const categoryData = Object.entries(catMap).map(([label, value]) => ({ label, value })).filter(d => d.value > 0);
   const catTotal = categoryData.reduce((s, d) => s + d.value, 0);
 
-  const maxRevenue = Math.max(...TOP_PRODUCTS.map(p => p.revenue));
+  const maxRevenue = TOP_PRODUCTS.length > 0 ? Math.max(...TOP_PRODUCTS.map(p => p.revenue)) : 1;
 
   return (
     <>
@@ -400,26 +451,26 @@ export default function Analytics() {
           <div className="card">
             <div className="ch"><div className="ct">ðŸ“… Monthly Averages</div></div>
             <div className="stat-row"><span className="stat-label">Avg Monthly Revenue</span><span className="stat-value tg">{fmt(avgMonthlyRev)}</span></div>
-            <div className="stat-row"><span className="stat-label">Avg Monthly Expenses</span><span className="stat-value tr-c">{fmt(totalExpenses / MONTHLY_SALES.length)}</span></div>
-            <div className="stat-row"><span className="stat-label">Avg Monthly Profit</span><span className="stat-value" style={{ color: "var(--blue)" }}>{fmt(totalProfit / MONTHLY_SALES.length)}</span></div>
-            <div className="stat-row"><span className="stat-label">Avg Invoices / Month</span><span className="stat-value">{(totalInvoices / MONTHLY_SALES.length).toFixed(0)}</span></div>
-            <div className="stat-row"><span className="stat-label">Best Month</span><span className="stat-value">{MONTHLY_SALES.reduce((a, b) => a.revenue > b.revenue ? a : b).month}</span></div>
+            <div className="stat-row"><span className="stat-label">Avg Monthly Expenses</span><span className="stat-value tr-c">{fmt(MONTHLY_SALES.length > 0 ? totalExpenses / MONTHLY_SALES.length : 0)}</span></div>
+            <div className="stat-row"><span className="stat-label">Avg Monthly Profit</span><span className="stat-value" style={{ color: "var(--blue)" }}>{fmt(MONTHLY_SALES.length > 0 ? totalProfit / MONTHLY_SALES.length : 0)}</span></div>
+            <div className="stat-row"><span className="stat-label">Avg Invoices / Month</span><span className="stat-value">{MONTHLY_SALES.length > 0 ? (totalInvoices / MONTHLY_SALES.length).toFixed(0) : 0}</span></div>
+            <div className="stat-row"><span className="stat-label">Best Month</span><span className="stat-value">{MONTHLY_SALES.length > 0 ? MONTHLY_SALES.reduce((a, b) => a.revenue > b.revenue ? a : b).month : "â€”"}</span></div>
           </div>
           <div className="card">
             <div className="ch"><div className="ct">ðŸ“¦ Product Performance</div></div>
-            <div className="stat-row"><span className="stat-label">Total Products</span><span className="stat-value">{TOP_PRODUCTS.length}</span></div>
+            <div className="stat-row"><span className="stat-label">Total Products</span><span className="stat-value">{products.length}</span></div>
             <div className="stat-row"><span className="stat-label">Total Units Sold</span><span className="stat-value">{TOP_PRODUCTS.reduce((s, p) => s + p.units, 0).toLocaleString()}</span></div>
-            <div className="stat-row"><span className="stat-label">Top Seller</span><span className="stat-value">{TOP_PRODUCTS.sort((a, b) => b.units - a.units)[0].name}</span></div>
-            <div className="stat-row"><span className="stat-label">Fastest Growing</span><span className="stat-value tg">{TOP_PRODUCTS.sort((a, b) => b.growth - a.growth)[0].name}</span></div>
+            <div className="stat-row"><span className="stat-label">Top Seller</span><span className="stat-value">{TOP_PRODUCTS.length > 0 ? TOP_PRODUCTS.slice().sort((a, b) => b.units - a.units)[0].name : "â€”"}</span></div>
+            <div className="stat-row"><span className="stat-label">Low Stock Items</span><span className="stat-value tr-c">{products.filter(p => p.stock_qty <= (p.reorder_level || 5)).length}</span></div>
             <div className="stat-row"><span className="stat-label">Total Product Revenue</span><span className="stat-value tg">{fmt(TOP_PRODUCTS.reduce((s, p) => s + p.revenue, 0))}</span></div>
           </div>
           <div className="card">
             <div className="ch"><div className="ct">ðŸŽ¯ Business Health</div></div>
-            <div className="stat-row"><span className="stat-label">Profit Margin</span><span className="stat-value tg">{((totalProfit / totalRevenue) * 100).toFixed(1)}%</span></div>
-            <div className="stat-row"><span className="stat-label">Revenue Growth (MoM)</span><span className="stat-value tg">â†‘ {revGrowth}%</span></div>
-            <div className="stat-row"><span className="stat-label">Active Customers</span><span className="stat-value">{TOP_CUSTOMERS.filter(c => c.status === "active").length}</span></div>
-            <div className="stat-row"><span className="stat-label">Overdue Accounts</span><span className="stat-value tr-c">{TOP_CUSTOMERS.filter(c => c.status === "overdue").length}</span></div>
-            <div className="stat-row"><span className="stat-label">Expense Ratio</span><span className="stat-value">{((totalExpenses / totalRevenue) * 100).toFixed(1)}%</span></div>
+            <div className="stat-row"><span className="stat-label">Profit Margin</span><span className="stat-value tg">{totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : "0.0"}%</span></div>
+            <div className="stat-row"><span className="stat-label">Revenue Growth (MoM)</span><span className="stat-value tg">{revGrowth >= 0 ? "â†‘" : "â†“"} {Math.abs(revGrowth)}%</span></div>
+            <div className="stat-row"><span className="stat-label">Total Paid</span><span className="stat-value tg">{fmt(totalPaid)}</span></div>
+            <div className="stat-row"><span className="stat-label">Outstanding</span><span className="stat-value tr-c">{fmt(totalOutstanding)}</span></div>
+            <div className="stat-row"><span className="stat-label">Expense Ratio</span><span className="stat-value">{totalRevenue > 0 ? ((totalExpenses / totalRevenue) * 100).toFixed(1) : "0.0"}%</span></div>
           </div>
         </div>
       </div>
