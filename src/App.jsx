@@ -2227,8 +2227,8 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const mobDec = (i) => { const nxt = [...lines]; const newQty = (parseFloat(nxt[i].qty) || 1) - 1; if (newQty < 1) { mobRemoveLine(i); return; } nxt[i] = { ...nxt[i], qty: newQty }; setLines(nxt); };
 
   if (mobView) return (
-    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:140 }}>
-      <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:160 }}>
+      <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:54, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><i className="ti ti-arrow-left" style={{ fontSize:20 }} /></button>
           <div><div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>New Invoice</div><div style={{ fontSize:11, color:"var(--text3)" }}>{mobActiveLines.length} item{mobActiveLines.length!==1?"s":""}</div></div>
@@ -2296,7 +2296,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         </div>
       </details>
 
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"var(--white)", borderTop:"1px solid var(--border)", padding:"12px 16px", zIndex:100, boxShadow:"0 -4px 20px rgba(0,0,0,.08)" }}>
+      <div style={{ position:"fixed", bottom:76, left:0, right:0, background:"var(--white)", borderTop:"1px solid var(--border)", padding:"12px 16px", zIndex:100, boxShadow:"0 -4px 20px rgba(0,0,0,.08)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10, fontSize:13 }}>
           <span style={{ color:"var(--text2)" }}>{mobActiveLines.length} items · Subtotal {fmt(subtotal)}</span>
           <span style={{ color:"var(--text3)" }}>VAT {fmt(vatTotal)}</span>
@@ -3152,7 +3152,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
           </button>
         ))}
       </div>
-      {showForm && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
+      {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
+      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => [inv, ...prev]); setShowForm(false); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
