@@ -5353,18 +5353,24 @@ function UserApproval({ token }) {
   const revoke = async (id) => {
     const user = users.find(u => u.id === id);
     const isPending = user && (user.approved === false || user.approved === null);
-    const res = await sb.patch(token, "profiles", id, { approved: false });
-    if (res && !res.error && !res.message?.includes("error")) {
-      if (isPending) {
+    if (isPending) {
+      // Delete profile row entirely so they can't reappear via re-fetch
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, { method: "DELETE", headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
+      if (res.ok || res.status === 204) {
         setUsers(prev => prev.filter(u => u.id !== id));
         toast.warn("User rejected");
       } else {
-        setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
-        toast.warn("User access revoked");
+        toast.error("Failed to reject user. Check Supabase RLS policies.");
       }
     } else {
-      toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
-      console.error("Revoke error:", res);
+      const res = await sb.patch(token, "profiles", id, { approved: false });
+      if (res && !res.error && !res.message?.includes("error")) {
+        setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
+        toast.warn("User access revoked");
+      } else {
+        toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
+        console.error("Revoke error:", res);
+      }
     }
   };
   const pending = users.filter(u => u.approved===false||u.approved===null);
