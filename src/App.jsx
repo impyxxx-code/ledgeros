@@ -307,7 +307,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ────────────────────────────────────
    MAIN AREA
    ──────────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
+.main{flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:100vh}
 
 /* ── Topbar ── */
 .topbar{
@@ -378,7 +378,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ── Content ── */
 .content{
   flex:1;padding:26px 28px;
-  overflow-y:auto;
   max-width:1440px;width:100%;margin:0 auto;
   animation:fadeIn .22s var(--ease) both;
 }
@@ -2489,7 +2488,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             <div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><i className="ti ti-currency-pound" style={{ color: "var(--blue)" }} /></div>
             <span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>Total</span>
           </div>
-          <div className="kpi-val">{fmt(revenue)}</div>
+          <div className="kpi-val">{fmt(paid + unpaid)}</div>
           <div className="kpi-label">Total Revenue</div>
           <svg className="spark" viewBox="0 0 120 40">
             <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563eb" stopOpacity=".3"/><stop offset="100%" stopColor="#2563eb" stopOpacity="0"/></linearGradient></defs>
@@ -2530,12 +2529,12 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         {/* Net Profit */}
-        <div className="kpi" style={{ "--kpi-accent": net >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
+        <div className="kpi" style={{ "--kpi-accent": paid >= 0 ? "var(--green)" : "var(--red)" }} onClick={drillNet}>
           <div className="kpi-top">
-            <div className="kpi-icon" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }} /></div>
-            <span className="kpi-badge" style={{ background: net >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: net >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>{net >= 0 ? "Profit" : "Loss"}</span>
+            <div className="kpi-icon" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)" }}><i className="ti ti-trending-up" style={{ color: paid >= 0 ? "var(--green)" : "var(--red)" }} /></div>
+            <span className="kpi-badge" style={{ background: paid >= 0 ? "var(--green-lt)" : "var(--red-lt)", color: paid >= 0 ? "var(--green-dk)" : "var(--red-dk)" }}>Profit</span>
           </div>
-          <div className="kpi-val" style={{ color: net >= 0 ? "var(--green)" : "var(--red)" }}>{fmt(net)}</div>
+          <div className="kpi-val" style={{ color: "var(--green)" }}>{fmt(paid)}</div>
           <div className="kpi-label">Net Position</div>
           <svg className="spark" viewBox="0 0 120 40">
             <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7c3aed" stopOpacity=".3"/><stop offset="100%" stopColor="#7c3aed" stopOpacity="0"/></linearGradient></defs>
@@ -3038,7 +3037,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
         ) : (
-        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:460}}><thead><tr>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer <i className={"ti "+(sortCol!=="customer"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-letters":"ti-sort-descending-letters")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="customer"?1:.3}} /></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice # <i className={"ti "+(sortCol!=="invoice_number"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending":"ti-sort-descending")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_number"?1:.3}} /></th>
           <th className="hm" style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_date")}>Date <i className={"ti "+(sortCol!=="invoice_date"?"ti-arrows-sort":"ti-calendar")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_date"?1:.3}} /></th>
@@ -3048,7 +3047,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
         </tr></thead><tbody>
           {filtered.map(inv => (
             <tr key={inv.id}>
-              <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td>
+              <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av hm" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td>
               <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
               <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td>
               <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td>
