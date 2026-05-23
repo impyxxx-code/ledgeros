@@ -1002,8 +1002,7 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
     ...filteredCmds,
   ].slice(0, 10);
 
-  return (<ModalPortal>
-    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
+  return (<ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
       <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "var(--sh3)", overflow: "hidden", border: "1px solid var(--border)", animation: "scaleIn .15s var(--ease)" }}>
         {/* Search input */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
@@ -1474,8 +1473,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   };
   const sc = statusConfig[invoice.status] || statusConfig.pending;
 
-  return (<ModalPortal>
-    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+  return (<ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 800 }}>
         <div className="modal-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1678,6 +1676,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
       </div>
     </div>
   </div>
+  </ModalPortal>
   );
 }
 
@@ -5407,8 +5406,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
     setSaving(false);
   };
 
-  return (<ModalPortal>
-    <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+  return (<ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 680, maxHeight: "90vh", overflowY: "auto" }}>
         <div className="modal-header">
           <div>
