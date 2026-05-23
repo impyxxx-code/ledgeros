@@ -3162,7 +3162,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
         ))}
       </div>
       {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
-      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => [inv, ...prev]); setShowForm(false); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
+      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => [inv, ...prev]); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
