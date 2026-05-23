@@ -345,9 +345,9 @@ export default function Analytics({ invoices = [], products = [], contacts = [] 
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--red)" }} />
             <div className="ki"><i className="ti ti-trending-up" style={{color:"var(--red)"}} /></div>
-            <div className="kl">Total Expenses</div>
+            <div className="kl">Est. Expenses</div>
             <div className="kv" style={{ color: "var(--red)" }}>{fmt(totalExpenses)}</div>
-            <div className="kd down">{expGrowth >= 0 ? "+" : ""}{expGrowth}% vs last month</div>
+            <div className="kd down">Estimated at 60% of revenue</div>
             <SparkLine values={MONTHLY_SALES.map(m => m.expenses)} color="var(--red)" />
           </div>
           <div className="kpi">
