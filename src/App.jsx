@@ -3507,9 +3507,9 @@ function CreditNotes({ contacts, invoices, token, userId }) {
 // └────────────────────────────────────────────────────────────┘
 function Reports({ accounts }) {
   const revenue = accounts.filter(a => a.type==="Revenue");
-  const expenses = accounts.filter(a => a.type==="Expense");
+  const expenseAccounts = accounts.filter(a => a.type==="Expense");
   const totalRev = revenue.reduce((s,a) => s+a.balance,0);
-  const totalExp = expenses.reduce((s,a) => s+a.balance,0);
+  const totalExp = expenseAccounts.reduce((s,a) => s+a.balance,0);
   const net = totalRev-totalExp;
   const [tab, setTab] = useState("pl");
   return (
@@ -4145,8 +4145,8 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const cogs = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
         const grossProfit = netRevenue - cogs;
         const grossMargin = netRevenue > 0 ? Math.round((grossProfit/netRevenue)*100) : 0;
-        const expenses = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
-        const netProfit = grossProfit - expenses;
+        const expenseTotal = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
+        const netProfit = grossProfit - expenseTotal;
         const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
         return (
           <div>
