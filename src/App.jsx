@@ -217,6 +217,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity: 0.5}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
 /* ── Layout ── */
@@ -2193,6 +2194,147 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   }
 
   // ── INVOICE FORM ───────────────────────────────────────────────────────────
+  const mob = isMobile();
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const recentProducts = products.slice(0, 6);
+  const pickerFiltered = pickerSearch
+    ? products.filter(p => p.name.toLowerCase().includes(pickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(pickerSearch.toLowerCase()))
+    : recentProducts;
+
+  const addProduct = (p) => {
+    const existing = lines.findIndex(l => l.product_id === p.id);
+    if (existing >= 0) {
+      const next = [...lines];
+      next[existing] = { ...next[existing], qty: (parseFloat(next[existing].qty) || 0) + 1 };
+      setLines(next);
+    } else {
+      const newLine = { product_id: p.id, description: p.name, qty: 1, unit_price: p.sale_price || 0, vat_rate: p.vat_rate ?? 20 };
+      setLines(prev => prev[0]?.description === "" && !prev[0]?.product_id ? [newLine] : [...prev, newLine]);
+    }
+    setShowProductPicker(false);
+    setPickerSearch("");
+  };
+
+  const removeLineCard = (i) => setLines(prev => prev.length > 1 ? prev.filter((_, j) => j !== i) : [{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
+  const incrementQty = (i) => { const next = [...lines]; next[i] = { ...next[i], qty: (parseFloat(next[i].qty) || 0) + 1 }; setLines(next); };
+  const decrementQty = (i) => { const next = [...lines]; const q = (parseFloat(next[i].qty) || 1) - 1; if (q < 1) return removeLineCard(i); next[i] = { ...next[i], qty: q }; setLines(next); };
+
+  if (mob) return (
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:140 }}>
+      {/* ── Header ── */}
+      <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><i className="ti ti-arrow-left" style={{ fontSize:20 }} /></button>
+          <div>
+            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>New Invoice</div>
+            <div style={{ fontSize:11, color:"var(--text3)" }}>{lines.filter(l=>l.description).length} item{lines.filter(l=>l.description).length!==1?"s":""}</div>
+          </div>
+        </div>
+        <div style={{ fontSize:16, fontWeight:700, color:"var(--blue)" }}>{fmt(total)}</div>
+      </div>
+
+      {/* ── Customer selector ── */}
+      <div style={{ background:"var(--white)", margin:"12px 12px 0", borderRadius:"var(--rl)", padding:"14px 16px", border:"1px solid var(--border)" }}>
+        <div style={{ fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>Customer *</div>
+        <SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} />
+        {f.customer && <div style={{ marginTop:8, fontSize:13, fontWeight:600, color:"var(--green)", display:"flex", alignItems:"center", gap:6 }}><i className="ti ti-circle-check" style={{ fontSize:14 }} />{f.customer}</div>}
+      </div>
+
+      {/* ── Product cards ── */}
+      <div style={{ padding:"12px 12px 0" }}>
+        {lines.filter(l => l.description).map((l, i) => (
+          <div key={i} style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:10, border:"1px solid var(--border)", boxShadow:"var(--sh)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{l.description}</div>
+                <div style={{ fontSize:12, color:"var(--text3)" }}>{fmt(parseFloat(l.unit_price)||0)} each · VAT {l.vat_rate}%</div>
+              </div>
+              <div style={{ fontSize:15, fontWeight:700, color:"var(--blue)", marginLeft:12 }}>{fmt((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0))}</div>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:0, background:"var(--bg)", borderRadius:10, border:"1px solid var(--border)", overflow:"hidden" }}>
+                <button onClick={() => decrementQty(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+                <span style={{ minWidth:32, textAlign:"center", fontSize:15, fontWeight:700, color:"var(--text)" }}>{l.qty}</span>
+                <button onClick={() => incrementQty(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--blue)", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+              </div>
+              <button onClick={() => removeLineCard(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Add Product CTA ── */}
+      <div style={{ padding:"0 12px" }}>
+        <button onClick={() => setShowProductPicker(true)} style={{ width:"100%", background:"var(--blue)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, boxShadow:"0 4px 14px rgba(37,99,235,.35)" }}>
+          <i className="ti ti-plus" style={{ fontSize:20 }} />Add Product
+        </button>
+      </div>
+
+      {/* ── Advanced (collapsed) ── */}
+      <details style={{ margin:"12px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
+        <summary style={{ padding:"14px 16px", fontSize:13, fontWeight:600, color:"var(--text2)", cursor:"pointer", listStyle:"none", display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ti ti-adjustments" style={{ fontSize:14 }} />Advanced Options
+        </summary>
+        <div style={{ padding:"0 16px 16px", borderTop:"1px solid var(--border)" }}>
+          <div style={{ marginTop:12 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Status</label><select className="il-input" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
+          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Invoice Date</label><input className="il-input" type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
+          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Due Date</label><input className="il-input" type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
+          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Notes</label><input className="il-input" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
+        </div>
+      </details>
+
+      {/* ── Sticky footer ── */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"var(--white)", borderTop:"1px solid var(--border)", padding:"12px 16px", zIndex:100, boxShadow:"0 -4px 20px rgba(0,0,0,.08)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10, fontSize:13 }}>
+          <span style={{ color:"var(--text2)" }}>{lines.filter(l=>l.description).length} items · Subtotal {fmt(subtotal)}</span>
+          <span style={{ color:"var(--text3)" }}>VAT {fmt(vatTotal)}</span>
+        </div>
+        <button onClick={save} disabled={saving || !f.customer || !lines.some(l=>l.description)} style={{ width:"100%", background: (!f.customer || !lines.some(l=>l.description)) ? "var(--border2)" : "linear-gradient(135deg,#2563eb,#1d4ed8)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor: (!f.customer || !lines.some(l=>l.description)) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <span>{saving ? "Creating..." : "Create Invoice"}</span>
+          <span style={{ fontSize:18, fontWeight:800 }}>{fmt(total)}</span>
+        </button>
+      </div>
+
+      {/* ── Product picker bottom sheet ── */}
+      {showProductPicker && (
+        <div style={{ position:"fixed", inset:0, zIndex:200 }} onClick={() => setShowProductPicker(false)}>
+          <div style={{ position:"absolute", inset:0, background:"rgba(10,14,26,.5)", backdropFilter:"blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"20px 20px 0 0", maxHeight:"75vh", display:"flex", flexDirection:"column", boxShadow:"0 -8px 40px rgba(0,0,0,.15)", animation:"slideUp .2s ease" }}>
+            <div style={{ padding:"12px 16px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ fontSize:15, fontWeight:700 }}>Add Product</div>
+              <button onClick={() => setShowProductPicker(false)} style={{ background:"var(--bg)", border:"none", borderRadius:"50%", width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><i className="ti ti-x" /></button>
+            </div>
+            <div style={{ padding:"10px 16px" }}>
+              <input autoFocus value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} placeholder="Search products..." style={{ width:"100%", padding:"12px 14px", borderRadius:"var(--rl)", border:"1.5px solid var(--blue)", fontSize:14, outline:"none", fontFamily:"var(--sans)", background:"var(--white)" }} />
+            </div>
+            {!pickerSearch && <div style={{ padding:"0 16px 6px", fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Recent Products</div>}
+            <div style={{ overflowY:"auto", flex:1, padding:"0 12px 16px" }}>
+              {pickerFiltered.length === 0 && <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:13 }}>No products found</div>}
+              {pickerFiltered.map(p => {
+                const inCart = lines.find(l => l.product_id === p.id);
+                return (
+                  <button key={p.id} onClick={() => addProduct(p)} style={{ width:"100%", background: inCart ? "var(--blue-lt)" : "var(--white)", border: inCart ? "1.5px solid var(--blue)" : "1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", textAlign:"left", fontFamily:"var(--sans)", transition:"all .1s" }}>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{p.name}</div>
+                      <div style={{ fontSize:12, color:"var(--text3)" }}>{p.code ? `${p.code} · ` : ""}{fmt(p.sale_price||0)} · VAT {p.vat_rate ?? 20}% · Stock: {p.stock_qty}</div>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      {inCart && <span style={{ fontSize:12, fontWeight:700, color:"var(--blue)", background:"var(--blue-lt)", padding:"3px 8px", borderRadius:20 }}>×{inCart.qty}</span>}
+                      <div style={{ width:36, height:36, borderRadius:10, background: inCart ? "var(--blue)" : "var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <i className={`ti ${inCart ? "ti-plus" : "ti-plus"}`} style={{ color: inCart ? "#fff" : "var(--text3)", fontSize:16 }} />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Cancel</button></div>
