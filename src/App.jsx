@@ -4750,6 +4750,7 @@ export default function App() {
   useEffect(() => {
     if (!auth) return;
     const poll = setInterval(() => {
+      if (document.hidden) return;
       const adminRoles = ["admin", "manager"];
       const isAdminPoll = !profile || adminRoles.includes(profile?.role);
       const invQuery = isAdminPoll
@@ -4762,7 +4763,7 @@ export default function App() {
       });
     }, 5000);
     return () => clearInterval(poll);
-  }, [auth]);
+  }, [auth, profile]);
 
   // ── Supabase Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
