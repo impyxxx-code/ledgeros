@@ -5351,10 +5351,17 @@ function UserApproval({ token }) {
     }
   };
   const revoke = async (id) => {
+    const user = users.find(u => u.id === id);
+    const isPending = user && (user.approved === false || user.approved === null);
     const res = await sb.patch(token, "profiles", id, { approved: false });
     if (res && !res.error && !res.message?.includes("error")) {
-      setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
-      toast.warn("User access revoked");
+      if (isPending) {
+        setUsers(prev => prev.filter(u => u.id !== id));
+        toast.warn("User rejected");
+      } else {
+        setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
+        toast.warn("User access revoked");
+      }
     } else {
       toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
       console.error("Revoke error:", res);
