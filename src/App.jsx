@@ -1731,6 +1731,8 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [dnDriver, setDnDriver] = useState("");
   const [dnAddress, setDnAddress] = useState("");
   const [dnNotes, setDnNotes] = useState("");
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
 
   const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
 
@@ -2195,8 +2197,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
   // ── INVOICE FORM ───────────────────────────────────────────────────────────
   const mob = isMobile();
-  const [showProductPicker, setShowProductPicker] = useState(false);
-  const [pickerSearch, setPickerSearch] = useState("");
   const recentProducts = products.slice(0, 6);
   const pickerFiltered = pickerSearch
     ? products.filter(p => p.name.toLowerCase().includes(pickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(pickerSearch.toLowerCase()))
