@@ -30,12 +30,11 @@
 // ╚══════════════════════════════════════════════════════════════════╝
 
 import Analytics from "./Analytics.jsx";
-import CSVImport from "./CSVImport.jsx";
 import React, { useState, useEffect, useRef } from "react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://szcogfyrhlrsxnwepnea.supabase.co";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 const isMobile = () => window.innerWidth < 768;
@@ -5121,7 +5120,7 @@ export default function App() {
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
                 {page==="analytics"&&<Analytics invoices={invoices} products={products} contacts={contacts} />}
-                {page==="import"&&<CSVImport token={auth.token} contacts={contacts} setContacts={setContacts} products={products} setProducts={setProducts} />}
+                {page==="import"&&<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}><i className="ti ti-upload" style={{fontSize:40,display:"block",marginBottom:12}} /><div style={{fontSize:16,fontWeight:600,marginBottom:6}}>CSV Import</div><div style={{fontSize:13}}>Coming soon — import contacts and products from CSV</div></div>}
                 {page==="statement"&&<CustomerStatement contacts={contacts} invoices={invoices} token={auth.token} />}
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} />}
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
@@ -5464,8 +5463,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
             <div><div style={{ fontWeight:700,fontSize:16 }}>{auth?.user?.email}</div><div style={{ fontSize:12,color:"var(--text3)",marginTop:3 }}>Administrator</div></div>
           </div>
           <div style={{ marginTop:16,display:"flex",gap:10 }}>
-            <button className="btn bo bsm" onClick={()=>window.location.reload()}>Refresh Session</button>
-            <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={()=>{ localStorage.clear(); window.location.reload(); }}>Sign Out</button>
+            <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={async()=>{ await sb.signOut(auth?.token); setAuth(null); }}>Sign Out</button>
           </div>
         </div>
       )}
