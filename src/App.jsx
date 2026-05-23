@@ -4511,7 +4511,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
-  const sendEmail = (dn) => {
+  const emailDN = (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     const cust = contacts.find(c => c.name === dn.customer_name);
     const subject = encodeURIComponent(`Delivery Note ${dn.dn_number} — ${COMPANY.name}`);
@@ -4633,7 +4633,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                   <td>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-file-download" />Download</button>
-                      <button className="btn bo bsm" onClick={() => sendEmail(dn)}><i className="ti ti-mail" />Email</button>
+                      <button className="btn bo bsm" onClick={() => emailDN(dn)}><i className="ti ti-mail" />Email</button>
                       <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
                     </div>
                   </td>
@@ -5069,9 +5069,7 @@ export default function App() {
   // ── Supabase Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
     if (!auth) return;
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const wsUrl = SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + SUPABASE_KEY + "&vsn=1.0.0";
+    const wsUrl = SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + SUPABASE_ANON_KEY + "&vsn=1.0.0";
 
     let ws;
     let heartbeat;
