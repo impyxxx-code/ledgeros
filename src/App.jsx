@@ -447,7 +447,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--sh2);border-color:var(--border2)}
 .kpi:hover::before{transform:scaleX(1)}
-.kpi:hover::after{content:'\2197';position:absolute;top:12px;right:14px;font-size:13px;color:var(--text3);opacity:0.6;line-height:1}
+.kpi:hover::after{content:'↗';position:absolute;top:12px;right:14px;font-size:13px;color:var(--text3);opacity:0.6;line-height:1}
 .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .kpi-icon{
   width:38px;height:38px;border-radius:10px;
