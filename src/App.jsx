@@ -1421,10 +1421,14 @@ function Auth({ onAuth }) {
 // │ InvoiceModal                                               │
 // │ Invoice detail modal — 3 tabs: Invoice, Timeline, Actions  │
 // └────────────────────────────────────────────────────────────┘
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
+  const [partPayAmount, setPartPayAmount] = useState("");
+  const [partPayMethod, setPartPayMethod] = useState("cash");
+  const [partPayLoading, setPartPayLoading] = useState(false);
+  const [partPayMsg, setPartPayMsg] = useState("");
 
   const lines = (() => {
     try {
@@ -1784,6 +1788,39 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 ))}
               </div>
             </div>
+
+            {/* Part payment */}
+            {invoice.status !== "paid" && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>Part Payment</div>
+                {partPayMsg && <div style={{ fontSize: 12, color: partPayMsg.startsWith("✓") ? "var(--green)" : "var(--red)", marginBottom: 8, fontWeight: 600 }}>{partPayMsg}</div>}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <input type="number" placeholder="Amount £" value={partPayAmount} onChange={e => setPartPayAmount(e.target.value)} style={{ width: 110, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, outline: "none", fontFamily: "var(--sans)", background: "var(--white)", color: "var(--text)" }} />
+                  <select value={partPayMethod} onChange={e => setPartPayMethod(e.target.value)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, outline: "none", fontFamily: "var(--sans)", background: "var(--white)", color: "var(--text)", cursor: "pointer" }}>
+                    <option value="cash">💵 Cash</option>
+                    <option value="bank">🏦 Bank</option>
+                    <option value="card">💳 Card</option>
+                    <option value="cheque">📝 Cheque</option>
+                  </select>
+                  <button className="btn bp" disabled={!partPayAmount || partPayLoading} onClick={async () => {
+                    const amt = parseFloat(partPayAmount);
+                    if (!amt || amt <= 0) return;
+                    setPartPayLoading(true); setPartPayMsg("");
+                    try {
+                      if (onPartPay) await onPartPay(invoice, amt, partPayMethod);
+                      const bal = invoice.balance > 0 ? invoice.balance : total;
+                      const newBal = Math.max(0, bal - amt);
+                      setPartPayMsg(`✓ £${amt.toFixed(2)} recorded. Balance: £${newBal.toFixed(2)}`);
+                      setPartPayAmount("");
+                    } catch { setPartPayMsg("Error recording payment"); }
+                    setPartPayLoading(false);
+                  }} style={{ whiteSpace: "nowrap" }}>
+                    {partPayLoading ? "Saving..." : "Record Payment"}
+                  </button>
+                </div>
+                {invoice.balance > 0 && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 6 }}>Outstanding balance: <strong>£{invoice.balance.toFixed(2)}</strong></div>}
+              </div>
+            )}
 
             {/* Other actions */}
             <div>
@@ -2579,7 +2616,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   };
   return (
     <div>
-      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} />}
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
@@ -3251,6 +3288,15 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         onDuplicate={(inv) => {
           setViewInvoice(null);
           setShowForm(true);
+        }}
+        onPartPay={async (inv, amt, method) => {
+          const prevPaid = parseFloat(inv.amount_paid || 0);
+          const totalPaid = prevPaid + amt;
+          const balance = parseFloat(inv.amount) - totalPaid;
+          const newStatus = balance <= 0 ? "paid" : "partial";
+          await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method });
+          setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+          setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
         }}
       />}
       <div className="ph">
