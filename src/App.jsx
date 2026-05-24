@@ -2367,7 +2367,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       <div style={{ borderTop: "0.5px solid var(--border)" }}>
         <div className="il-header">{["Product / Description", "Qty", "Unit Price", "VAT", "Total", ""].map(h => <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>{h}</span>)}</div>
         {lines.map((l, i) => (
-          <div key={i} className="il-line">
+          <div key={`${i}-${l.product_id||"empty"}`} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" value={l.description} />
             </div>
