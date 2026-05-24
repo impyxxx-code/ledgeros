@@ -3021,8 +3021,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               <thead><tr><th>Customer</th><th className="hm">Invoice</th><th>Amount</th><th>Status</th></tr></thead>
               <tbody>
                 {invoices.slice(0, 8).map(inv => (
-                  <tr key={inv.id} style={{ cursor: "pointer", background: selectedIds.has(inv.id) ? "#eff6ff" : undefined }}>
-                    <td style={{padding:"8px 6px",width:32}} onClick={e => { e.stopPropagation(); toggleSelect(inv.id); }}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} style={{cursor:"pointer"}} /></td>
+                  <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => setViewInvoice(inv)}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                         <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
