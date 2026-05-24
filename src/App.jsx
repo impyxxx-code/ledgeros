@@ -5337,7 +5337,7 @@ export default function App() {
                 return (
                   <div style={{position:"relative"}}>
                     <div className={"tb-btn"+(unread>0?" tb-notif":"")} onClick={()=>setShowNotifications(v=>!v)} style={{cursor:"pointer"}}>
-                      <i className="ti ti-bell" />
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                       {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid var(--white)"}}>{unread>9?"9+":unread}</span>}
                     </div>
                     {showNotifications && (
@@ -5378,8 +5378,8 @@ export default function App() {
                   </div>
                 );
               })()}
-              <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><i className="ti ti-rocket" /></div>
-              <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
+              <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></div>
+              <div className="tb-btn" onClick={() => setPage("settings")} title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
               <button onClick={async () => {
                 if (!showActivity && profile?.role !== "admin" && profile?.role !== "manager") return;
                 setShowActivity(v => {
@@ -5392,11 +5392,11 @@ export default function App() {
                   return !v;
                 });
               }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showActivity ? "linear-gradient(135deg,#059669,#10b981)" : "linear-gradient(135deg,#ecfdf5,#d1fae5)", color: showActivity ? "#fff" : "var(--green)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
-                <i className="ti ti-history" style={{ fontSize: 14 }} />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
                 <span className="hm">Activity</span>
               </button>
               <button onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
-                <i className="ti ti-sparkles" style={{ fontSize: 14 }} />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
                 <span className="hm">AI</span>
               </button>
               <div className="tb-av">{initials}</div>
