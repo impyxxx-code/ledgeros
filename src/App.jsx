@@ -5452,8 +5452,8 @@ export default function App() {
               <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><i className="ti ti-rocket" /></div>
               <div className="tb-btn" onClick={() => setPage("import")}><i className="ti ti-settings" /></div>
               <button onClick={async () => {
+                if (!showActivity && profile?.role !== "admin" && profile?.role !== "manager") return;
                 setShowActivity(v => {
-                  if (!v && profile?.role !== "admin" && profile?.role !== "manager") return false;
                   if (!v) {
                     setLoadingAudit(true);
                     fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log?order=created_at.desc&limit=50`, {
