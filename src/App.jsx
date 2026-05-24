@@ -5158,32 +5158,8 @@ export default function App() {
     });
   }, [auth]);
 
-  // ── Auto-reminder: check overdue invoices once per session (admin only) ─────
-  useEffect(() => {
-    if (!auth || !profile || profile.role !== "admin" || invoices.length === 0) return;
-    const sessionKey = `ledgeros_reminders_${new Date().toDateString()}`;
-    if (sessionStorage.getItem(sessionKey)) return;
-    sessionStorage.setItem(sessionKey, "1");
-    // Defer to avoid blocking render — run 3 seconds after login
-    const timer = setTimeout(async () => {
-      const overdue = invoices.filter(i => i.status === "overdue" && i.amount > 0).slice(0, 10);
-      if (overdue.length === 0) return;
-      let sent = 0;
-      for (const inv of overdue) {
-        const cust = contacts.find(c => c.name === inv.customer);
-        if (!cust?.email) continue;
-        const balance = inv.balance > 0 ? inv.balance : inv.amount;
-        const html = buildReminderEmailHtml(inv, balance);
-        const result = await sendEmail({ to: cust.email, subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`, html });
-        if (result.success) {
-          sent++;
-          logAudit(auth.token, auth.user.id, "reminder_sent", "invoice", inv.id, `Auto-reminder sent to ${cust.email} for ${inv.invoice_number} — ${fmt(balance)} overdue`);
-        }
-      }
-      if (sent > 0) toast.info(`Auto-reminder sent for ${sent} overdue invoice${sent > 1 ? "s" : ""}`);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [profile]);
+  // ── Auto-reminder disabled — triggered manually via Send Reminder button ─────
+  // useEffect auto-reminder removed to prevent login hang
 
   // ── Auto-refresh invoices every 5 seconds ────────────────────────────────
   useEffect(() => {
