@@ -1162,6 +1162,8 @@ function Auth({ onAuth }) {
   const [f, setF] = useState({ email: "", password: "", full_name: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
   const go = async () => {
     setLoading(true); setErr("");
     try {
@@ -1170,13 +1172,11 @@ function Auth({ onAuth }) {
         : await sb.signUp(f.email, f.password, f.full_name, f.role);
       if (d.access_token) {
         if (mode === "signup") {
-          // New user — show pending message, do not grant access
           setMode("signin");
-          setErr("Account created! Please wait for admin approval before signing in.");
+          setErr("✓ Account created! Please wait for admin approval before signing in.");
           setLoading(false);
           return;
         }
-        // Signin — check approval before granting access
         try {
           const profileRes = await fetch(
             `${SUPABASE_URL}/rest/v1/profiles?id=eq.${d.user.id}&select=approved,role`,
@@ -1184,25 +1184,14 @@ function Auth({ onAuth }) {
           );
           const profiles = await profileRes.json();
           const profile = profiles?.[0];
-          // Admin always gets in; agents must be approved
-          if (!profile) {
-            setErr("Account profile not found. Please contact the administrator.");
-            setLoading(false);
-            return;
-          }
+          if (!profile) { setErr("Account profile not found. Please contact the administrator."); setLoading(false); return; }
           if (profile.role !== "admin" && profile.approved !== true) {
-            if (profile.approved === false) {
-              setErr("Your account access has been revoked. Please contact the administrator.");
-            } else {
-              setErr("Your account is pending admin approval. You will be notified once approved.");
-            }
-            setLoading(false);
-            return;
+            setErr(profile.approved === false
+              ? "Your account access has been revoked. Please contact the administrator."
+              : "Your account is pending admin approval. You will be notified once approved.");
+            setLoading(false); return;
           }
-        } catch (approvalErr) {
-          // If we can't check approval (e.g. admin account with no profile yet), allow through
-          console.warn("Approval check failed:", approvalErr);
-        }
+        } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
         onAuth({ token: d.access_token, user: d.user });
       } else {
         setErr(d.msg || d.error_description || "Authentication failed.");
@@ -1210,75 +1199,187 @@ function Auth({ onAuth }) {
     } catch { setErr("Network error. Please try again."); }
     setLoading(false);
   };
+
   const mob = isMobile();
+  const isSuccess = err.startsWith("✓");
+
+  // ── Concept B SVG logo mark ──
+  const LogoMark = () => (
+    <svg width="44" height="44" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+      <rect width="48" height="48" rx="11" fill="#1e1b4b"/>
+      <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
+      <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
+      <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
+      <rect x="10" y="34" width="14" height="3" rx="1.5" fill="#818cf8" fillOpacity=".18"/>
+      <rect x="30" y="21" width="2.5" height="14" rx="1.25" fill="#60a5fa"/>
+      <polygon points="36,27 30,21 30,35" fill="#60a5fa" fillOpacity=".4"/>
+    </svg>
+  );
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: mob ? "column" : "row", background: "var(--bg)", fontFamily: "var(--sans)" }}>
-      {/* Left panel */}
-      <div style={{ width: mob ? "100%" : 460, minWidth: mob ? "unset" : 460, background: "var(--sidebar)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: mob ? "36px 24px" : 56, color: "#fff" }}>
-        <div style={{ textAlign: "center", maxWidth: 360, width: "100%" }}>
-          <img src={LOGO} alt="Arkham Retail" style={{ width: mob ? 200 : 180, height: mob ? 58 : 52, borderRadius: 10, objectFit: "contain", margin: "0 auto 24px", display: "block" }} />
-          <h2 style={{ fontSize: mob ? 22 : 26, fontWeight: 800, marginBottom: 12, lineHeight: 1.2, letterSpacing: "-.5px" }}>Built for modern businesses</h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7, marginBottom: mob ? 20 : 36 }}>VAT invoices, inventory, analytics and more — all in one place.</p>
-          {!mob && ["VAT Invoice PDF with WhatsApp share", "Customer & Supplier management", "Stock & Inventory with low stock alerts", "Agent dashboards & leaderboard", "Daily email notifications"].map(feat => (
-            <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,.8)", marginBottom: 10, textAlign: "left" }}>
-              <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(37,99,235,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-check" style={{ fontSize: 12, color: "#93c5fd" }} /></div>{feat}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: mob ? "column" : "row", fontFamily: "var(--sans)" }}>
+
+      {/* ── LEFT PANEL ── */}
+      {!mob && (
+        <div style={{ width: 440, minWidth: 440, background: "#060d1f", display: "flex", flexDirection: "column", padding: "44px 48px", position: "relative", overflow: "hidden" }}>
+          {/* Glow effects */}
+          <div style={{ position: "absolute", top: -100, left: -100, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle,rgba(37,99,235,.15) 0%,transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.1) 0%,transparent 70%)", pointerEvents: "none" }} />
+
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 52, position: "relative" }}>
+            <LogoMark />
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", lineHeight: 1.1 }}>LedgerOS</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 2, letterSpacing: ".2px" }}>Arkham Retail Ltd</div>
             </div>
-          ))}
+          </div>
 
+          {/* Live tag */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(37,99,235,.15)", border: "1px solid rgba(37,99,235,.3)", borderRadius: 20, padding: "4px 13px", fontSize: 11, fontWeight: 600, color: "#93c5fd", letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 22, alignSelf: "flex-start" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#2563eb", animation: "pulse 2s ease-in-out infinite" }} />
+            Business Finance Platform
+          </div>
+
+          {/* Headline */}
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1.18, letterSpacing: "-.8px", marginBottom: 14 }}>
+            Run your business<br />with <span style={{ color: "#60a5fa" }}>total clarity</span>
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.42)", lineHeight: 1.75, marginBottom: 44 }}>
+            VAT invoices, inventory, delivery notes and analytics — purpose-built for Arkham Retail.
+          </div>
+
+          {/* Feature list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: "auto" }}>
+            {[
+              { icon: "ti-file-invoice", title: "VAT invoices in seconds", desc: "PDF generation, WhatsApp sharing, email delivery" },
+              { icon: "ti-package", title: "Live inventory tracking", desc: "Low stock alerts, reorder levels, stock adjustments" },
+              { icon: "ti-chart-bar", title: "Real-time analytics", desc: "Revenue, aged debtors, agent leaderboard" },
+              { icon: "ti-truck-delivery", title: "Delivery management", desc: "Branded delivery notes, driver tracking, signatures" },
+            ].map(feat => (
+              <div key={feat.title} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <i className={"ti " + feat.icon} style={{ fontSize: 16, color: "rgba(255,255,255,.55)" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.82)", marginBottom: 2 }}>{feat.title}</div>
+                  <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.32)", lineHeight: 1.5 }}>{feat.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 44, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,.07)" }}>
+            {[["5s", "Per invoice"], ["Live", "Data sync"], ["100%", "VAT compliant"]].map(([val, lbl]) => (
+              <div key={lbl} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 21, fontWeight: 800, color: "#fff", letterSpacing: "-.5px" }}>{val}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,.28)", marginTop: 3, textTransform: "uppercase", letterSpacing: ".7px" }}>{lbl}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Right panel - login form */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: mob ? "32px 20px" : 48 }}>
-        <div style={{ width: "100%", maxWidth: 400 }}>
-          {!mob && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
-              <img src={LOGO} alt="Arkham Retail" style={{ width: 140, height: 40, borderRadius: 8, objectFit: "contain" }} />
-              <div><div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.4px" }}>LedgerOS</div><div style={{ fontSize: 12, color: "var(--text3)" }}>Business Accounting</div></div>
+      {/* ── RIGHT PANEL ── */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: mob ? "40px 24px" : "48px 52px", background: "#fff", minHeight: mob ? "100vh" : "auto" }}>
+        <div style={{ width: "100%", maxWidth: 360 }}>
+
+          {/* Mobile logo */}
+          {mob && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 36 }}>
+              <LogoMark />
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#0d1117", letterSpacing: "-.4px" }}>LedgerOS</div>
+                <div style={{ fontSize: 11, color: "#9aa5b4" }}>Arkham Retail Ltd</div>
+              </div>
             </div>
           )}
-          <div style={{ fontSize: mob ? 22 : 26, fontWeight: 700, marginBottom: 6, letterSpacing: "-.4px" }}>{mode === "signin" ? "Sign in" : "Create account"}</div>
-          <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 28 }}>{mode === "signin" ? "Welcome back — sign in to your dashboard" : "Join your team on LedgerOS"}</div>
-          {err && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 13, color: "var(--red-dk)", marginBottom: 16 }}>{err}</div>}
+
+          {/* Form header */}
+          <div style={{ marginBottom: 30 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Secure access</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#0d1117", letterSpacing: "-.6px", marginBottom: 6 }}>
+              {mode === "signin" ? "Welcome back" : "Request access"}
+            </div>
+            <div style={{ fontSize: 13, color: "#5c677d" }}>
+              {mode === "signin" ? "Sign in to your Arkham Retail dashboard" : "Join your team on LedgerOS"}
+            </div>
+          </div>
+
+          {/* Error / success message */}
+          {err && (
+            <div style={{ background: isSuccess ? "#ecfdf5" : "#fff1f1", border: "1px solid " + (isSuccess ? "#6ee7b7" : "#fca5a5"), borderRadius: 9, padding: "10px 14px", fontSize: 12.5, color: isSuccess ? "#065f46" : "#991b1b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
+              <i className={"ti " + (isSuccess ? "ti-circle-check" : "ti-alert-circle")} style={{ fontSize: 15, flexShrink: 0 }} />
+              {isSuccess ? err.slice(2) : err}
+            </div>
+          )}
+
+          {/* Full name (signup only) */}
           {mode === "signup" && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Full Name</label>
-              <input style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" />
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>Full name</label>
+              <div style={{ position: "relative" }}>
+                <i className="ti ti-user" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+                <input style={{ width: "100%", padding: "11px 14px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
+              </div>
             </div>
           )}
+
+          {/* Email */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Email address</label>
-            <input type="email" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@company.com" />
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>Email address</label>
+            <div style={{ position: "relative" }}>
+              <i className="ti ti-mail" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+              <input type="email" style={{ width: "100%", padding: "11px 14px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@arkhamretail.com" onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
+            </div>
           </div>
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6 }}>Password</label>
-            <input type="password" style={{ width: "100%", background: "var(--white)", border: "1px solid var(--border2)", borderRadius: "var(--r)", padding: "11px 14px", fontSize: 14, color: "var(--text)", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && go()} />
+
+          {/* Password */}
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>
+              Password
+            </label>
+            <div style={{ position: "relative" }}>
+              <i className="ti ti-lock" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+              <input type={showPw ? "text" : "password"} style={{ width: "100%", padding: "11px 40px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="Enter your password" onKeyDown={e => e.key === "Enter" && go()} onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
+              <button onClick={() => setShowPw(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9aa5b4", padding: 2, display: "flex", alignItems: "center" }}>
+                <i className={"ti " + (showPw ? "ti-eye-off" : "ti-eye")} style={{ fontSize: 16 }} />
+              </button>
+            </div>
           </div>
-          <button style={{ width: "100%", padding: "13px", background: "var(--blue)", color: "#fff", fontWeight: 700, fontSize: 15, border: "none", borderRadius: "var(--r)", cursor: "pointer", fontFamily: "var(--sans)", transition: "background .15s", boxShadow: "var(--sh-blue)" }} onClick={go} disabled={loading}>
-            {loading ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><div className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />Please wait...</span> : mode === "signin" ? "Sign In →" : "Create Account →"}
+
+          {/* CTA button */}
+          <button onClick={go} disabled={loading} style={{ width: "100%", padding: "13px", background: loading ? "#93c5fd" : "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 14px rgba(37,99,235,.35)", transition: "transform .15s,box-shadow .15s", marginTop: 24, marginBottom: 20 }}
+            onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(37,99,235,.4)"; }}}
+            onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 4px 14px rgba(37,99,235,.35)"; }}>
+            {loading
+              ? <><div className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />Please wait...</>
+              : <><i className="ti ti-login" style={{ fontSize: 16 }} />{mode === "signin" ? "Sign in to dashboard" : "Request access"}</>}
           </button>
-          <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text2)" }}>
-            {mode === "signin" ? <>No account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signup")}>Sign up free</span></> : <>Have account? <span style={{ color: "var(--blue)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode("signin")}>Sign in</span></>}
+
+          {/* Switch mode */}
+          <div style={{ textAlign: "center", fontSize: 13, color: "#5c677d" }}>
+            {mode === "signin"
+              ? <>Don't have an account? <span style={{ color: "#2563eb", cursor: "pointer", fontWeight: 600 }} onClick={() => { setMode("signup"); setErr(""); }}>Request access</span></>
+              : <>Have an account? <span style={{ color: "#2563eb", cursor: "pointer", fontWeight: 600 }} onClick={() => { setMode("signin"); setErr(""); }}>Sign in</span></>}
           </div>
+
           {/* Trust badges */}
-          <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
-            {[
-              { icon: "ti-lock", label: "256-bit SSL" },
-              { icon: "ti-shield-check", label: "Secured by Supabase" },
-              { icon: "ti-server", label: "UK Data Storage" },
-            ].map(b => (
-              <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--text3)" }}>
-                <i className={"ti " + b.icon} style={{ fontSize: 13, color: "var(--text3)" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap", marginTop: 28, paddingTop: 20, borderTop: "1px solid #f0f3f8" }}>
+            {[{ icon: "ti-lock", label: "256-bit SSL" }, { icon: "ti-shield-check", label: "Supabase auth" }, { icon: "ti-server", label: "UK servers" }].map(b => (
+              <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#9aa5b4" }}>
+                <i className={"ti " + b.icon} style={{ fontSize: 13 }} />
                 <span>{b.label}</span>
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </div>
   );
 }
-
 // ── INVOICE MODAL ─────────────────────────────────────────────────────────────
 
 // ┌────────────────────────────────────────────────────────────┐
