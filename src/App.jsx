@@ -2375,7 +2375,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
             <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{fmt((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0))}</span>
-            <button className="ib" onClick={() => lines.length > 1 && setLines(lines.filter((_, j) => j !== i))}><i className="ti ti-x" /></button>
+            <button className="ib" onClick={() => lines.length > 1 ? setLines(lines.filter((_, j) => j !== i)) : setLines([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }])}><i className="ti ti-x" /></button>
           </div>
         ))}
         <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc", borderTop: "0.5px solid var(--border)" }}>
@@ -4621,7 +4621,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                 <select className="il-input" value={l.unit} onChange={e => updateLine(i, "unit", e.target.value)}>
                   <option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option><option>pallet</option><option>carton</option>
                 </select>
-                <button className="ib" onClick={() => lines.length > 1 && setLines(lines.filter((_, j) => j !== i))}><i className="ti ti-x" /></button>
+                <button className="ib" onClick={() => lines.length > 1 ? setLines(lines.filter((_, j) => j !== i)) : setLines([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }])}><i className="ti ti-x" /></button>
               </div>
             ))}
             <div style={{ padding: "12px 18px", background: "#fafbfc", borderTop: "0.5px solid var(--border)" }}>
