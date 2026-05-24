@@ -1252,14 +1252,18 @@ function Auth({ onAuth }) {
           {/* Feature list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: "auto" }}>
             {[
-              { icon: "ti-file-invoice", title: "VAT invoices in seconds", desc: "PDF generation, WhatsApp sharing, email delivery" },
-              { icon: "ti-package", title: "Live inventory tracking", desc: "Low stock alerts, reorder levels, stock adjustments" },
-              { icon: "ti-chart-bar", title: "Real-time analytics", desc: "Revenue, aged debtors, agent leaderboard" },
-              { icon: "ti-truck-delivery", title: "Delivery management", desc: "Branded delivery notes, driver tracking, signatures" },
+              { title: "VAT invoices in seconds", desc: "PDF generation, WhatsApp sharing, email delivery",
+                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
+              { title: "Live inventory tracking", desc: "Low stock alerts, reorder levels, stock adjustments",
+                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> },
+              { title: "Real-time analytics", desc: "Revenue, aged debtors, agent leaderboard",
+                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+              { title: "Delivery management", desc: "Branded delivery notes, driver tracking, signatures",
+                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
             ].map(feat => (
               <div key={feat.title} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <i className={"ti " + feat.icon} style={{ fontSize: 16, color: "rgba(255,255,255,.55)" }} />
+                  {feat.svg}
                 </div>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.82)", marginBottom: 2 }}>{feat.title}</div>
@@ -1370,7 +1374,9 @@ function Auth({ onAuth }) {
               <i className="ti ti-lock" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
               <input type={showPw ? "text" : "password"} style={{ width: "100%", padding: "11px 40px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="Enter your password" onKeyDown={e => e.key === "Enter" && go()} onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
               <button onClick={() => setShowPw(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9aa5b4", padding: 2, display: "flex", alignItems: "center" }}>
-                <i className={"ti " + (showPw ? "ti-eye-off" : "ti-eye")} style={{ fontSize: 16 }} />
+                {showPw
+                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa5b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa5b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
               </button>
             </div>
           </div>
@@ -1381,7 +1387,7 @@ function Auth({ onAuth }) {
             onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 4px 14px rgba(37,99,235,.35)"; }}>
             {loading
               ? <><div className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />Please wait...</>
-              : <><i className="ti ti-login" style={{ fontSize: 16 }} />{mode === "signin" ? "Sign in to dashboard" : "Request access"}</>}
+              : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>{mode === "signin" ? "Sign in to dashboard" : "Request access"}</>}
           </button>
 
           {/* Switch mode */}
@@ -1393,10 +1399,13 @@ function Auth({ onAuth }) {
 
           {/* Trust badges */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap", marginTop: 28, paddingTop: 20, borderTop: "1px solid #f0f3f8" }}>
-            {[{ icon: "ti-lock", label: "256-bit SSL" }, { icon: "ti-shield-check", label: "Supabase auth" }, { icon: "ti-server", label: "UK servers" }].map(b => (
+            {[
+              { label: "256-bit SSL", svg: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9aa5b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
+              { label: "Supabase auth", svg: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9aa5b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg> },
+              { label: "UK servers", svg: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9aa5b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> },
+            ].map(b => (
               <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#9aa5b4" }}>
-                <i className={"ti " + b.icon} style={{ fontSize: 13 }} />
-                <span>{b.label}</span>
+                {b.svg}<span>{b.label}</span>
               </div>
             ))}
           </div>
