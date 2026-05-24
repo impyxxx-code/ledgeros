@@ -2605,24 +2605,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                     <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
                   </div>
                 ) : (
-                    <div style={{ display:"flex", gap:4 }}>
-                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
-                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
-                    </div>
+                    <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
                   )
-                )}
-                {partPayId === inv.id && (
-                  <div style={{ display:"flex", gap:4, alignItems:"center", marginTop:4 }}>
-                    <input type="number" placeholder="Amount" value={partPayAmount[inv.id]||""} onChange={e=>setPartPayAmount(p=>({...p,[inv.id]:e.target.value}))} style={{ width:80, padding:"4px 8px", borderRadius:6, border:"1px solid var(--border2)", fontSize:11, outline:"none" }} />
-                    <select style={{ background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:6, padding:"4px 8px", fontSize:11, outline:"none" }} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(p=>({...p,[inv.id]:e.target.value}))}>
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank</option>
-                      <option value="card">Card</option>
-                      <option value="cheque">Cheque</option>
-                    </select>
-                    <button className="btn bp bsm" style={{ background:"var(--green)", border:"none", color:"#fff" }} onClick={()=>recordPartPayment(inv, partPayAmount[inv.id])}>Save</button>
-                    <button className="btn bo bsm" style={{ fontSize:10 }} onClick={()=>setPartPayId(null)}>Cancel</button>
-                  </div>
                 )}
               </div></td>
             </tr>
@@ -3378,23 +3362,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                       <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
                     </div>
                   ) : (
-                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-                      <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
-                      <button className="btn bo bsm" style={{ fontSize:10, padding:"3px 7px" }} onClick={() => { setPartPayId(inv.id); setPartPayAmount(p=>({...p,[inv.id]:""})); }}>Part Pay</button>
-                      {partPayId === inv.id && (
-                  <div style={{ display:"flex", gap:4, alignItems:"center", marginTop:4, flexWrap:"wrap" }}>
-                    <input type="number" placeholder="Amount" value={partPayAmount[inv.id]||""} onChange={e=>setPartPayAmount(p=>({...p,[inv.id]:e.target.value}))} style={{ width:80, padding:"4px 8px", borderRadius:6, border:"1px solid var(--border2)", fontSize:11, outline:"none" }} />
-                    <select style={{ background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:6, padding:"4px 8px", fontSize:11, outline:"none" }} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(p=>({...p,[inv.id]:e.target.value}))}>
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank</option>
-                      <option value="card">Card</option>
-                      <option value="cheque">Cheque</option>
-                    </select>
-                    <button className="btn bp bsm" style={{ background:"var(--green)", border:"none", color:"#fff" }} onClick={()=>recordPartPayment(inv, partPayAmount[inv.id])}>Save</button>
-                    <button className="btn bo bsm" style={{ fontSize:10 }} onClick={()=>setPartPayId(null)}>Cancel</button>
-                  </div>
-                )}
-                    </div>
+                    <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
                   )}
                 </div>
               </td>
