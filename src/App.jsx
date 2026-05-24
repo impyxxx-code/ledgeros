@@ -1192,6 +1192,7 @@ function Auth({ onAuth }) {
             setLoading(false); return;
           }
         } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
+        logAudit(d.access_token, d.user.id, "user_login", "user", d.user.id, `${d.user.email} signed in`);
         onAuth({ token: d.access_token, user: d.user });
       } else {
         setErr(d.msg || d.error_description || "Authentication failed.");
@@ -1421,7 +1422,7 @@ function Auth({ onAuth }) {
 // │ InvoiceModal                                               │
 // │ Invoice detail modal — 3 tabs: Invoice, Timeline, Actions  │
 // └────────────────────────────────────────────────────────────┘
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
@@ -1815,6 +1816,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                       const newBal = Math.max(0, bal - amt);
                       setPartPayMsg(`✓ £${amt.toFixed(2)} recorded. Balance: £${newBal.toFixed(2)}`);
                       setPartPayAmount("");
+                      if (onLogPartPay) onLogPartPay(invoice, amt, partPayMethod, newBal);
                     } catch { setPartPayMsg("Error recording payment"); }
                     setPartPayLoading(false);
                   }} style={{ whiteSpace: "nowrap" }}>
@@ -2600,9 +2602,11 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const markPaid = async (id, method) => {
-    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: invoices.find(i=>i.id===id)?.amount || 0, balance: 0 });
+    const inv = invoices.find(i => i.id === id);
+    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
+    if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
   };
 
   const recordPartPayment = async (inv, amount) => {
@@ -3301,6 +3305,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
           setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
         }}
+        onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
       <div className="ph">
         <div><div className="pt">Invoices</div><div className="psub">{filtered.length} of {invoices.length} invoices</div></div>
@@ -3451,7 +3456,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   const save = async () => {
     if (!f.name) return; setSaving(true);
     const data = await sb.post(token, "contacts", { ...f, created_by: userId });
-    if (data[0]) setContacts(prev => [data[0], ...prev]);
+    if (data[0]) { setContacts(prev => [data[0], ...prev]); logAudit(token, userId, "contact_created", "contact", data[0].id, `${f.type} contact created: ${f.name}${f.email ? ' · ' + f.email : ''}`); }
     setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
     setShowForm(false); setSaving(false);
   };
@@ -3595,7 +3600,7 @@ function Inventory({ products, setProducts, token, userId }) {
   const save = async () => {
     if (!f.name) return; setSaving(true);
     const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price)||0, sale_price: parseFloat(f.sale_price)||0, vat_rate: parseFloat(f.vat_rate)||20, stock_qty: parseFloat(f.stock_qty)||0, reorder_level: parseFloat(f.reorder_level)||0, created_by: userId });
-    if (data[0]) setProducts(prev => [data[0], ...prev]);
+    if (data[0]) { setProducts(prev => [data[0], ...prev]); logAudit(token, userId, "product_created", "product", data[0].id, `Product added: ${f.name} · Sale £${parseFloat(f.sale_price)||0} · Stock: ${parseFloat(f.stock_qty)||0}`); }
     setF({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
     setShowForm(false); setSaving(false);
   };
@@ -3636,7 +3641,7 @@ function Purchases({ contacts, products, token, userId }) {
     const num = `PO-${String(pos.length+1).padStart(3,"0")}`;
     const sup = suppliers.find(s => s.id === f.supplier_id);
     const po = await sb.post(token, "purchase_orders", { ...f, po_number: num, supplier_name: sup?.name, total: total+vatTotal, created_by: userId });
-    if (po[0]) { for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty)||0, unit_cost: parseFloat(l.unit_cost)||0, vat_rate: parseFloat(l.vat_rate)||0, total: lineTotal(l) }); setPOs(prev => [po[0],...prev]); }
+    if (po[0]) { for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty)||0, unit_cost: parseFloat(l.unit_cost)||0, vat_rate: parseFloat(l.vat_rate)||0, total: lineTotal(l) }); setPOs(prev => [po[0],...prev]); logAudit(token, userId, "purchase_created", "purchase_order", po[0].id, `${num} raised for ${sup?.name} — £${(total+vatTotal).toFixed(2)}`); }
     setLines([{ product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20" }]);
     setF({ supplier_id:"",order_date:today(),expected_date:"",notes:"" });
     setShowForm(false); setSaving(false);
@@ -3672,7 +3677,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
     const num = `CN-${String(cns.length+1).padStart(3,"0")}`;
     const cust = customers.find(c => c.id===f.customer_id);
     const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:parseFloat(f.amount),created_by:userId});
-    if (data[0]) setCNs(prev => [data[0],...prev]);
+    if (data[0]) { setCNs(prev => [data[0],...prev]); logAudit(token, userId, "credit_note_created", "credit_note", data[0].id, `${num} issued to ${cust?.name} — £${parseFloat(f.amount).toFixed(2)}${f.reason ? ' · ' + f.reason : ''}`); }
     setF({ customer_id:"",invoice_id:"",reason:"",amount:"",issue_date:today() });
     setShowForm(false); setSaving(false);
   };
@@ -4584,7 +4589,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       notes: f.notes, driver: f.driver, status: "pending",
       lines: JSON.stringify(lines), created_by: userId
     });
-    if (data[0]) setDNs(prev => [{ ...data[0], lines }, ...prev]);
+    if (data[0]) { setDNs(prev => [{ ...data[0], lines }, ...prev]); logAudit(token, userId, "delivery_created", "delivery_note", data[0].id, `${dn_number} created for ${cust?.name}${f.driver ? ' · Driver: ' + f.driver : ''}`); }
     setF({ customer_id: "", delivery_date: today(), delivery_address: "", notes: "", driver: "" });
     setLines([{ product_id: "", description: "", qty: 1, unit: "unit" }]);
     setShowForm(false);
@@ -5546,6 +5551,12 @@ export default function App() {
                   "customer_created":  { icon: "ti-user-plus",      color: "var(--blue)",   bg: "var(--blue-lt)" },
                   "delivery_created":  { icon: "ti-truck-delivery", color: "var(--purple)", bg: "var(--purple-lt)" },
                   "payment_received":  { icon: "ti-coins",          color: "var(--green)",  bg: "var(--green-lt)" },
+                  "part_payment":      { icon: "ti-cash",           color: "var(--green)",  bg: "var(--green-lt)" },
+                  "user_login":        { icon: "ti-login",          color: "var(--blue)",   bg: "var(--blue-lt)" },
+                  "contact_created":   { icon: "ti-user-plus",      color: "var(--blue)",   bg: "var(--blue-lt)" },
+                  "purchase_created":  { icon: "ti-shopping-cart",  color: "var(--amber)",  bg: "var(--amber-lt)" },
+                  "credit_note_created":{ icon: "ti-receipt-refund",color: "var(--red)",    bg: "var(--red-lt)" },
+                  "invoice_deleted":   { icon: "ti-trash",          color: "var(--red)",    bg: "var(--red-lt)" },
                 };
                 const cfg = iconMap[log.action] || { icon: "ti-activity", color: "var(--text2)", bg: "#f1f5f9" };
                 const timeAgo = (() => {
