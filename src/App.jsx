@@ -1453,125 +1453,16 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const savedPhone = customerContact?.phone || "";
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
-  const handlePrint = async () => {
-    try {
-    if (!window.jspdf) {
-      await new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = JSPDF_URL; s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
-    const W = 210, M = 14, cw = W - M * 2;
-    let y = 14;
-
-    // Top rule
-    doc.setFillColor(37, 99, 235);
-    doc.rect(M, y, cw, 1, "F");
-    y += 6;
-
-    // Company name
-    doc.setFontSize(16).setFont(undefined, "bold").setTextColor(37, 99, 235);
-    doc.text(COMPANY.name, M, y);
-    y += 6;
-
-    // Company details
-    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(80, 80, 80);
-    doc.text([COMPANY.address, `${COMPANY.city}, ${COMPANY.postcode}`, `Tel: ${COMPANY.phone}`, COMPANY.email, `VAT: ${COMPANY.vatNumber}`], M, y);
-
-    // INVOICE title top-right
-    doc.setFontSize(28).setFont(undefined, "bold").setTextColor(220, 220, 220);
-    doc.text("INVOICE", W - M, y - 2, { align: "right" });
-    doc.setFontSize(11).setFont(undefined, "bold").setTextColor(30, 30, 30);
-    doc.text(invoice.invoice_number, W - M, y + 10, { align: "right" });
-    y += 28;
-
-    // Meta box
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(M, y, cw, 22, 2, 2, "F");
-    doc.setFontSize(8).setTextColor(100, 100, 100).setFont(undefined, "normal");
-    doc.text("INVOICE TO", M + 4, y + 5);
-    doc.setFontSize(11).setFont(undefined, "bold").setTextColor(15, 23, 42);
-    doc.text(invoice.customer || "—", M + 4, y + 11);
-    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(100, 100, 100);
-    const metaCols = ["Invoice #", "Date", "Due Date", "Terms"];
-    const metaVals = [invoice.invoice_number, fmtDate(invoice.invoice_date), fmtDate(invoice.due_date), "Due on receipt"];
-    metaCols.forEach((c, i) => {
-      const x = M + cw / 2 + (i % 2) * (cw / 4);
-      const ry = y + (i < 2 ? 5 : 13);
-      doc.text(c, x, ry);
-      doc.setFont(undefined, "bold").setTextColor(15, 23, 42).setFontSize(9);
-      doc.text(metaVals[i], x, ry + 5);
-      doc.setFont(undefined, "normal").setTextColor(100, 100, 100).setFontSize(8);
-    });
-    y += 28;
-
-    // Table header
-    doc.setFillColor(37, 99, 235);
-    doc.rect(M, y, cw, 8, "F");
-    doc.setTextColor(255, 255, 255).setFontSize(8).setFont(undefined, "bold");
-    const tCols = ["Description", "VAT", "Qty", "Rate", "Amount"];
-    const tXs = [M + 2, M + 80, M + 100, M + 120, W - M - 2];
-    const tAligns = ["left", "left", "left", "left", "right"];
-    tCols.forEach((c, i) => doc.text(c, tXs[i], y + 5.5, { align: tAligns[i] }));
-    y += 8;
-
-    // Table rows
-    lines.forEach((l, i) => {
-      if (i % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(M, y, cw, 8, "F"); }
-      doc.setTextColor(15, 23, 42).setFont(undefined, "normal").setFontSize(9);
-      doc.text(l.description || "—", tXs[0], y + 5.5);
-      doc.setFontSize(8);
-      doc.text(`${l.vat_rate}%`, tXs[1], y + 5.5);
-      doc.text(String(l.qty), tXs[2], y + 5.5);
-      doc.text(fmt(l.unit_price), tXs[3], y + 5.5);
-      doc.setFont(undefined, "bold");
-      doc.text(fmt(l.qty * l.unit_price), tXs[4], y + 5.5, { align: "right" });
-      y += 8;
-    });
-    y += 4;
-
-    // Totals
-    const totRows = [["Subtotal", fmt(subtotal)], ["VAT Total", fmt(vatTotal)], ["Balance Due", fmt(total)]];
-    totRows.forEach(([label, val], i) => {
-      if (i === 2) {
-        doc.setFillColor(37, 99, 235);
-        doc.rect(W - M - 70, y - 1, 70, 9, "F");
-        doc.setTextColor(255, 255, 255).setFont(undefined, "bold").setFontSize(10);
-      } else {
-        doc.setTextColor(80, 80, 80).setFont(undefined, "normal").setFontSize(9);
-      }
-      doc.text(label, W - M - 68, y + 5);
-      doc.text(val, W - M - 2, y + 5, { align: "right" });
-      y += 9;
-    });
-    y += 6;
-
-    // Bank details
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(M, y, cw, 20, 2, 2, "F");
-    doc.setFontSize(9).setFont(undefined, "bold").setTextColor(15, 23, 42);
-    doc.text("Payment Details", M + 4, y + 6);
-    doc.setFontSize(8).setFont(undefined, "normal").setTextColor(80, 80, 80);
-    doc.text(`Bank: ${COMPANY.bankName}`, M + 4, y + 12);
-    doc.text(`Sort Code: ${COMPANY.sortCode}`, M + 55, y + 12);
-    doc.text(`Account: ${COMPANY.accountNumber}`, M + 110, y + 12);
-    doc.text(`Reference: ${invoice.invoice_number}`, M + 4, y + 17);
-    y += 24;
-
-    // Footer
-    doc.setFontSize(7).setTextColor(150, 150, 150);
-    doc.text(`VAT Reg: ${COMPANY.vatNumber} · All goods remain property of ${COMPANY.name} until payment received in full.`, M, y);
-    doc.setDrawColor(37, 99, 235);
-    doc.setLineWidth(0.5);
-    doc.line(M, y + 3, W - M, y + 3);
-
-    doc.autoPrint();
-    const blob = doc.output('bloburl');
-    window.open(blob, '_blank');
-    } catch(err) { console.error("PDF error:", err); toast.error("PDF error: " + err.message); }
+  const handlePrint = () => {
+    const invLines = lines;
+    const sub = subtotal, vat = vatTotal, tot = total;
+    const html = `<!DOCTYPE html><html><head><title>${escHtml(invoice.invoice_number)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #1e1b4b}.logo{height:52px;object-fit:contain}.co-detail{font-size:10px;color:#64748b;line-height:1.7;margin-top:8px}.inv-title{font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:4px}.inv-status{display:inline-block;margin-top:6px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}.meta-box.dk{background:#1e1b4b;border-color:#1e1b4b}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.meta-lbl.lt{color:rgba(255,255,255,.45)}.meta-val{font-size:12px;font-weight:600;color:#0f172a}.meta-val.lg{font-size:18px}.meta-val.lt{color:#fff}.meta-sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}table{width:100%;border-collapse:collapse;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}thead tr{background:#1e1b4b;color:#fff}th{padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}.totals{width:280px;margin-left:auto;margin-bottom:24px}.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}.balance{border-top:2px solid #1e1b4b;margin-top:8px;padding-top:10px;font-size:16px;font-weight:800;color:#1e1b4b}.bank{background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank-val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}</style></head><body><div class="header"><div><img src="${LOGO}" class="logo" alt="${escHtml(COMPANY.name)}"/><div class="co-detail">${escHtml(COMPANY.address)}<br>${escHtml(COMPANY.city)}, ${escHtml(COMPANY.postcode)}<br>Tel: ${escHtml(COMPANY.phone)} &middot; ${escHtml(COMPANY.email)}<br>VAT: ${escHtml(COMPANY.vatNumber)}</div></div><div style="text-align:right"><div class="inv-title">INVOICE</div><div class="inv-num">${escHtml(invoice.invoice_number)}</div><div class="inv-status">${escHtml((invoice.status||'pending').toUpperCase())}</div></div></div><div class="meta"><div class="meta-box dk"><div class="meta-lbl lt">Invoice To</div><div class="meta-val lg lt">${escHtml(invoice.customer)}</div></div><div class="meta-sub"><div class="meta-box"><div class="meta-lbl">Invoice #</div><div class="meta-val">${escHtml(invoice.invoice_number)}</div></div><div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div><div class="meta-box"><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)}</div></div><div class="meta-box"><div class="meta-lbl">Terms</div><div class="meta-val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="color:#94a3b8;font-size:11px">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tot-row"><span style="color:#64748b">Subtotal</span><span>${fmt(sub)}</span></div><div class="tot-row"><span style="color:#64748b">VAT Total</span><span>${fmt(vat)}</span></div><div class="tot-row balance"><span>Balance Due</span><span>${fmt(tot)}</span></div></div><div class="bank"><div><div class="bank-lbl">Bank</div><div class="bank-val">${escHtml(COMPANY.bankName)}</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">${escHtml(COMPANY.sortCode)}</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">${escHtml(COMPANY.accountNumber)}</div></div></div><div class="footer"><span>${escHtml(COMPANY.name)} &middot; VAT: ${escHtml(COMPANY.vatNumber)}</span><span>Ref: ${escHtml(invoice.invoice_number)} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const buildWaMsg = () => encodeURIComponent(
