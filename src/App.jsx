@@ -2369,7 +2369,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         {lines.map((l, i) => (
           <div key={i} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <SearchDropdown placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" />
+              <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" value={l.description} />
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
             <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
