@@ -3351,7 +3351,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                   <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>
                   <button className="btn bsm" style={{ background: "#0f172a", color: "#fff" }} onClick={() => printDNFromInvoice(inv)} title="Download Delivery Note"><i className="ti ti-truck-delivery" />DN</button>
                   {(profile?.role === "admin") && (
-                    <button className="btn bo bsm" style={{ color: "var(--red)", borderColor: "var(--red)" }} onClick={() => deleteInvoice(inv)} title="Delete invoice"><i className="ti ti-trash" /></button>
+                    <button className="btn bo bsm" style={{ color: "var(--red)", borderColor: "var(--red)", minWidth: 32 }} onClick={() => deleteInvoice(inv)} title="Delete invoice"><i className="ti ti-trash" style={{ fontSize: 14 }} /></button>
                   )}
                   {inv.status !== "paid" && payingId === inv.id ? (
                     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
