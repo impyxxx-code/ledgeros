@@ -2985,7 +2985,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile }) {
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
@@ -3006,6 +3006,16 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
     const inv = invoices.find(i => i.id === id);
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
+  };
+
+  const deleteInvoice = async (inv) => {
+    if (!confirm(`Delete ${inv.invoice_number} (${fmt(inv.amount)}) for ${inv.customer}?\n\nThis cannot be undone.`)) return;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/invoices?id=eq.${inv.id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
+    if (res.ok || res.status === 204) {
+      setInvoices(prev => prev.filter(i => i.id !== inv.id));
+      toast.success(`${inv.invoice_number} deleted`);
+      logAudit(token, userId, "invoice_deleted", "invoice", inv.id, `${inv.invoice_number} deleted — ${fmt(inv.amount)}`);
+    } else { toast.error("Failed to delete invoice"); }
   };
 
   const recordPartPayment = async (inv, amount) => {
@@ -3223,6 +3233,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId }) 
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><i className="ti ti-file-invoice" />View</button>
                   <button className="btn bsm" style={{ background: "#0f172a", color: "#fff" }} onClick={() => printDNFromInvoice(inv)} title="Download Delivery Note"><i className="ti ti-truck-delivery" />DN</button>
+                  {(profile?.role === "admin") && (
+                    <button className="btn bo bsm" style={{ color: "var(--red)", borderColor: "var(--red)" }} onClick={() => deleteInvoice(inv)} title="Delete invoice"><i className="ti ti-trash" /></button>
+                  )}
                   {inv.status !== "paid" && payingId === inv.id ? (
                     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                       <select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
@@ -5278,7 +5291,7 @@ export default function App() {
             ) : (
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
