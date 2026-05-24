@@ -149,7 +149,13 @@ const logAudit = async (token, userId, action, entity, entityId, details) => {
 
 const escHtml = (s) => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-const buildInvoiceEmailHtml = (invoice, lines, subtotal, vatTotal, total) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:20px}.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}.header{background:#0b1120;padding:28px 32px}.header-title{color:#fff;font-size:20px;font-weight:700}.header-sub{color:rgba(255,255,255,.5);font-size:12px;margin-top:2px}.body{padding:32px}.badge{background:#eff4ff;color:#2563eb;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px}.amount{font-size:32px;font-weight:800;color:#0b1120;margin:8px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.meta-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}.meta-val{font-size:13px;font-weight:600;color:#0b1120}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#2563eb;color:#fff;padding:10px 14px;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.5px}td{padding:10px 14px;border-bottom:1px solid #f0f3f8;font-size:13px}.tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.balance{border-top:2px solid #0b1120;margin-top:8px;padding-top:10px;font-size:16px;font-weight:700}.bank{background:#f8fafd;border-radius:8px;padding:16px;margin:20px 0;border:1px solid #e5e9f0}.bank-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}.bank-lbl{font-size:10px;color:#9aa5b4;text-transform:uppercase;margin-bottom:3px}.bank-val{font-size:13px;font-weight:600}.footer{background:#f8fafd;padding:16px 32px;text-align:center;font-size:11px;color:#9aa5b4;border-top:1px solid #e5e9f0}</style></head><body><div class="wrap"><div class="header"><div class="header-title">Arkham Retail Ltd</div><div class="header-sub">VAT Invoice</div></div><div class="body"><div class="badge">Invoice ${escHtml(invoice.invoice_number)}</div><div style="font-size:14px;color:#5c677d;margin-bottom:4px">Amount due from <strong>${escHtml(invoice.customer)}</strong></div><div class="amount">${fmt(total)}</div><div class="meta"><div><div class="meta-lbl">Invoice #</div><div class="meta-val">${escHtml(invoice.invoice_number)}</div></div><div><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div><div><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)}</div></div><div><div class="meta-lbl">Status</div><div class="meta-val">${escHtml((invoice.status||"pending").toUpperCase())}</div></div></div><table><thead><tr><th style="width:45%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td>${l.vat_rate===0?"Exempt":l.vat_rate+"% S"}</td><td style="text-align:right">${escHtml(l.qty)}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty*l.unit_price)}</td></tr>`).join("")}</tbody></table><div style="width:260px;margin-left:auto"><div class="tot-row"><span style="color:#5c677d">Subtotal</span><span>${fmt(subtotal)}</span></div><div class="tot-row"><span style="color:#5c677d">VAT Total</span><span>${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span style="color:#2563eb">${fmt(total)}</span></div></div><div class="bank"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Payment Details</div><div style="font-size:12px;color:#5c677d;margin-bottom:8px">Please use the invoice number as your reference.</div><div class="bank-grid"><div><div class="bank-lbl">Bank</div><div class="bank-val">Tide Bank</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">04-06-05</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">23058246</div></div></div></div><p style="font-size:12px;color:#9aa5b4">VAT Reg: GB462229106 · All goods remain our property until payment received in full.</p></div><div class="footer">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW · ARKHAMRETAIL@GMAIL.COM</div></div></body></html>`;
+const _emailCss = (accentBg, accentLight) => `body{font-family:'Helvetica Neue',Arial,sans-serif;background:#f0f2f5;margin:0;padding:24px 16px}.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.09)}.hdr{background:${accentBg};padding:24px 32px;display:flex;align-items:center;gap:14px}.hdr-mark{width:40px;height:40px;background:#1e1b4b;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.hdr-title{color:#fff;font-size:18px;font-weight:800;letter-spacing:-.3px}.hdr-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:2px}.body{padding:32px}.eyebrow{font-size:11px;font-weight:700;color:${accentLight};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}.amount{font-size:34px;font-weight:900;color:#0f172a;letter-spacing:-1px;margin:4px 0 20px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}.meta-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px}.meta-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.meta-val{font-size:13px;font-weight:700;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}thead tr{background:${accentBg}}th{padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff;text-align:left}th:last-child,td:last-child{text-align:right}td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px}tr:last-child td{border-bottom:none}.totals{width:260px;margin-left:auto;margin-bottom:24px}.tot-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#64748b}.balance{border-top:2px solid ${accentBg};margin-top:8px;padding-top:10px;font-size:16px;font-weight:800;color:${accentBg}}.bank{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px}.bank-title{font-size:12px;font-weight:700;color:#0f172a;margin-bottom:4px}.bank-sub{font-size:11px;color:#64748b;margin-bottom:12px}.bank-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.bank-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}.bank-val{font-size:12px;font-weight:700;color:#0f172a}.alert-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}.alert-icon{font-size:20px;flex-shrink:0}.alert-text{font-size:13px;color:#9a3412;line-height:1.6}.dn-items{margin-bottom:20px}.dn-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px}.dn-item:last-child{border-bottom:none}.dn-name{font-weight:600;color:#0f172a}.dn-qty{font-weight:800;color:${accentLight};font-size:15px}.ftr{background:#f8fafc;padding:16px 32px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;line-height:1.7}`;
+
+const buildInvoiceEmailHtml = (invoice, lines, subtotal, vatTotal, total) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCss('#1e1b4b','#818cf8')}</style></head><body><div class="wrap"><div class="hdr"><div class="hdr-mark"><svg width="22" height="22" viewBox="0 0 48 48" fill="none"><rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/><rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fill-opacity=".6"/><rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fill-opacity=".35"/><rect x="30" y="21" width="2.5" height="14" rx="1.25" fill="#60a5fa"/><polygon points="36,27 30,21 30,35" fill="#60a5fa" fill-opacity=".4"/></svg></div><div><div class="hdr-title">Arkham Retail Ltd</div><div class="hdr-sub">VAT Invoice · LedgerOS</div></div></div><div class="body"><div class="eyebrow">Invoice from Arkham Retail Ltd</div><div style="font-size:15px;color:#5c677d;margin-bottom:4px">Amount due from <strong style="color:#0f172a">${escHtml(invoice.customer)}</strong></div><div class="amount">${fmt(total)}</div><div class="meta"><div class="meta-box"><div class="meta-lbl">Invoice #</div><div class="meta-val">${escHtml(invoice.invoice_number)}</div></div><div class="meta-box"><div class="meta-lbl">Issue Date</div><div class="meta-val">${fmtDate(invoice.invoice_date)}</div></div><div class="meta-box"><div class="meta-lbl">Due Date</div><div class="meta-val">${fmtDate(invoice.due_date)||'On receipt'}</div></div><div class="meta-box"><div class="meta-lbl">Status</div><div class="meta-val">${escHtml((invoice.status||'pending').toUpperCase())}</div></div></div><table><thead><tr><th style="width:45%">Description</th><th>VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="color:#94a3b8;font-size:11px">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td style="text-align:right;font-weight:700">${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tot-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div><div class="tot-row"><span>VAT Total</span><span>${fmt(vatTotal)}</span></div><div class="tot-row balance"><span>Balance Due</span><span>${fmt(total)}</span></div></div><div class="bank"><div class="bank-title">Payment Details</div><div class="bank-sub">Please use <strong>${escHtml(invoice.invoice_number)}</strong> as your payment reference.</div><div class="bank-grid"><div><div class="bank-lbl">Bank</div><div class="bank-val">Tide Bank</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">04-06-05</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">23058246</div></div></div></div></div><div class="ftr">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW<br>ARKHAMRETAIL@GMAIL.COM · VAT Reg: GB462229106<br>Goods remain property of Arkham Retail Ltd until payment received in full.</div></div></body></html>`;
+
+const buildReminderEmailHtml = (invoice, balance) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCss('#b45309','#f59e0b')}</style></head><body><div class="wrap"><div class="hdr" style="background:#b45309"><div class="hdr-mark" style="background:#92400e"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="hdr-title">Payment Reminder</div><div class="hdr-sub">Arkham Retail Ltd · Action Required</div></div></div><div class="body"><div class="alert-box"><div class="alert-icon">⚠️</div><div class="alert-text"><strong>This invoice is overdue.</strong> The payment due date has passed. Please arrange payment at your earliest convenience to avoid any disruption to your account.</div></div><div class="eyebrow" style="color:#b45309">Outstanding balance</div><div style="font-size:15px;color:#5c677d;margin-bottom:4px">Owed by <strong style="color:#0f172a">${escHtml(invoice.customer)}</strong></div><div class="amount" style="color:#b45309">${fmt(balance||invoice.amount)}</div><div class="meta"><div class="meta-box"><div class="meta-lbl">Invoice #</div><div class="meta-val">${escHtml(invoice.invoice_number)}</div></div><div class="meta-box"><div class="meta-lbl">Original Due</div><div class="meta-val" style="color:#dc2626">${fmtDate(invoice.due_date)||'Overdue'}</div></div><div class="meta-box"><div class="meta-lbl">Days Overdue</div><div class="meta-val" style="color:#dc2626">${Math.max(0,Math.floor((Date.now()-new Date(invoice.due_date||invoice.invoice_date).getTime())/86400000))} days</div></div><div class="meta-box"><div class="meta-lbl">Original Amount</div><div class="meta-val">${fmt(invoice.amount)}</div></div></div><div class="bank"><div class="bank-title">How to Pay</div><div class="bank-sub">Please use <strong>${escHtml(invoice.invoice_number)}</strong> as your reference. Contact us if you have already made payment.</div><div class="bank-grid"><div><div class="bank-lbl">Bank</div><div class="bank-val">Tide Bank</div></div><div><div class="bank-lbl">Sort Code</div><div class="bank-val">04-06-05</div></div><div><div class="bank-lbl">Account</div><div class="bank-val">23058246</div></div></div></div></div><div class="ftr">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW<br>ARKHAMRETAIL@GMAIL.COM · Tel: 07801 567209<br>If you believe this is an error, please contact us immediately.</div></div></body></html>`;
+
+const buildDNEmailHtml = (dn, dnLines) => `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCss('#1e1b4b','#818cf8')}</style></head><body><div class="wrap"><div class="hdr"><div class="hdr-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="hdr-title">Delivery Note</div><div class="hdr-sub">Arkham Retail Ltd · ${escHtml(dn.dn_number||'')}</div></div></div><div class="body"><div class="eyebrow">Delivery from Arkham Retail Ltd</div><div style="font-size:15px;color:#5c677d;margin-bottom:20px">For <strong style="color:#0f172a">${escHtml(dn.customer_name||'')}</strong></div><div class="meta"><div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${escHtml(dn.dn_number||'')}</div></div><div class="meta-box"><div class="meta-lbl">Delivery Date</div><div class="meta-val">${fmtDate(dn.delivery_date)}</div></div>${dn.invoice_ref?`<div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${escHtml(dn.invoice_ref)}</div></div>`:''} ${dn.driver?`<div class="meta-box"><div class="meta-lbl">Driver</div><div class="meta-val">${escHtml(dn.driver)}</div></div>`:''}</div>${dn.delivery_address?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px;margin-bottom:16px"><div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Delivery Address</div><div style="font-size:13px;font-weight:600;color:#0f172a">${escHtml(dn.delivery_address)}</div></div>`:''}<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:20px"><div style="background:#1e1b4b;padding:8px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff">Items</div><div class="dn-items">${dnLines.map(l=>`<div class="dn-item"><div><div class="dn-name">${escHtml(l.description||'')}</div><div style="font-size:11px;color:#94a3b8">${escHtml(l.unit||'unit')}</div></div><div class="dn-qty">${escHtml(String(l.qty))}</div></div>`).join('')}</div></div>${dn.notes?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#5c677d"><strong style="color:#0f172a">Instructions:</strong> ${escHtml(dn.notes)}</div>`:''}<div style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;font-size:13px;color:#1e40af">Please sign and return a copy upon receipt of goods. Thank you for your business.</div></div><div class="ftr">Arkham Retail Ltd · 2 Fieldhead Street, Bradford, BD7 1LW<br>ARKHAMRETAIL@GMAIL.COM · Tel: 07801 567209</div></div></body></html>`;
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -1581,7 +1587,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   };
 
   const [emailStatus, setEmailStatus] = useState(null); // null | "sending" | "sent" | "error"
-  const handleEmail = async () => {
+  const handleEmail = async (isReminder = false) => {
     const customerContact = contacts.find(c => c.name === invoice.customer);
     const toEmail = customerContact?.email;
     if (!toEmail) {
@@ -1589,12 +1595,14 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
       return;
     }
     setEmailStatus("sending");
-    const html = buildInvoiceEmailHtml(invoice, lines, subtotal, vatTotal, total);
-    const result = await sendEmail({
-      to: toEmail,
-      subject: `Invoice ${invoice.invoice_number} — ${COMPANY.name}`,
-      html
-    });
+    const balance = invoice.balance > 0 ? invoice.balance : (invoice.amount || total);
+    const html = isReminder
+      ? buildReminderEmailHtml(invoice, balance)
+      : buildInvoiceEmailHtml(invoice, lines, subtotal, vatTotal, total);
+    const subject = isReminder
+      ? `Payment Reminder — ${invoice.invoice_number} — ${COMPANY.name}`
+      : `Invoice ${invoice.invoice_number} — ${COMPANY.name}`;
+    const result = await sendEmail({ to: toEmail, subject, html });
     setEmailStatus(result.success ? "sent" : "error");
     setTimeout(() => setEmailStatus(null), 4000);
   };
@@ -1832,7 +1840,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>More Actions</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button className="btn bo" onClick={() => onDuplicate && onDuplicate(invoice)}><i className="ti ti-copy" />Duplicate Invoice</button>
-                <button className="btn bo" onClick={handleEmail}><i className="ti ti-bell" />Send Reminder</button>
+                <button className="btn bo" onClick={() => handleEmail(true)}><i className="ti ti-bell" />Send Reminder</button>
               </div>
             </div>
           </div>
@@ -2186,23 +2194,22 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     URL.revokeObjectURL(url);
   };
 
-  const emailDN = (dn) => {
+  const emailDN = async (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     const cust = contacts.find(c => c.name === dn.customer_name);
-    const subject = encodeURIComponent(`Delivery Note ${dn.dn_number} — ${COMPANY.name}`);
-    const body = encodeURIComponent(
-      `Dear ${dn.customer_name},\n\nPlease find your delivery note details below.\n\n` +
-      `Delivery Note: ${dn.dn_number}\n` +
-      (dn.invoice_ref ? `Invoice Reference: ${dn.invoice_ref}\n` : "") +
-      `Date: ${fmtDate(dn.delivery_date)}\n` +
-      (dn.driver ? `Driver: ${dn.driver}\n` : "") +
-      (dn.delivery_address ? `Delivery Address: ${dn.delivery_address}\n` : "") +
-      `\nItems:\n` +
-      dnLines.map(l => `• ${l.description} — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
-      (dn.notes ? `\n\nInstructions: ${dn.notes}` : "") +
-      `\n\nPlease sign and return a copy upon receipt.\n\n${COMPANY.name}\n${COMPANY.phone}\n${COMPANY.email}`
-    );
-    window.open(`mailto:${cust?.email || ""}?subject=${subject}&body=${body}`);
+    const toEmail = cust?.email;
+    if (!toEmail) {
+      toast.warn(`No email address found for ${dn.customer_name}. Please add one in Customers first.`);
+      return;
+    }
+    const html = buildDNEmailHtml(dn, dnLines);
+    const result = await sendEmail({
+      to: toEmail,
+      subject: `Delivery Note ${dn.dn_number} — ${COMPANY.name}`,
+      html
+    });
+    if (result.success) toast.success("Delivery note emailed successfully");
+    else toast.error("Failed to send email. Please try again.");
   };
 
   const whatsappDN = (dn) => {
@@ -3014,7 +3021,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               <thead><tr><th>Customer</th><th className="hm">Invoice</th><th>Amount</th><th>Status</th></tr></thead>
               <tbody>
                 {invoices.slice(0, 8).map(inv => (
-                  <tr key={inv.id} style={{ cursor: "pointer" }}>
+                  <tr key={inv.id} style={{ cursor: "pointer", background: selectedIds.has(inv.id) ? "#eff6ff" : undefined }}>
+                    <td style={{padding:"8px 6px",width:32}} onClick={e => { e.stopPropagation(); toggleSelect(inv.id); }}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} style={{cursor:"pointer"}} /></td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                         <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
@@ -3157,7 +3165,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, pendingInvoiceView, onClearPending }) {
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
@@ -3170,6 +3178,50 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   const [editInvoice, setEditInvoice] = useState(null);
   const [partPayId, setPartPayId] = useState(null);
   const [partPayAmount, setPartPayAmount] = useState({});
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelect = (id) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleSelectAll = () => setSelectedIds(prev => prev.size === filtered.length ? new Set() : new Set(filtered.map(i => i.id)));
+
+  const bulkMarkPaid = async () => {
+    if (!selectedIds.size) return;
+    setBulkLoading(true);
+    for (const id of selectedIds) {
+      await sb.patch(token, "invoices", id, { status: "paid", payment_method: "cash" });
+      setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: "cash" } : i));
+    }
+    logAudit(token, userId, "bulk_paid", "invoice", null, `${selectedIds.size} invoices marked paid in bulk`);
+    toast.success(`${selectedIds.size} invoice${selectedIds.size > 1 ? "s" : ""} marked as paid`);
+    setSelectedIds(new Set());
+    setBulkLoading(false);
+  };
+
+  const bulkSendReminder = async () => {
+    if (!selectedIds.size) return;
+    setBulkLoading(true);
+    let sent = 0;
+    for (const id of selectedIds) {
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) continue;
+      const cust = contacts.find(c => c.name === inv.customer);
+      if (!cust?.email) continue;
+      const balance = inv.balance > 0 ? inv.balance : inv.amount;
+      const html = buildReminderEmailHtml(inv, balance);
+      const result = await sendEmail({ to: cust.email, subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`, html });
+      if (result.success) {
+        sent++;
+        logAudit(token, userId, "reminder_sent", "invoice", id, `Reminder sent to ${cust.email} for ${inv.invoice_number}`);
+      }
+    }
+    toast.success(`Reminder sent to ${sent} customer${sent > 1 ? "s" : ""}`);
+    setSelectedIds(new Set());
+    setBulkLoading(false);
+  };
+
+  useEffect(() => {
+    if (pendingInvoiceView) { setViewInvoice(pendingInvoiceView); onClearPending && onClearPending(); }
+  }, [pendingInvoiceView]);
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -5027,6 +5079,7 @@ export default function App() {
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
+  const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -5104,6 +5157,30 @@ export default function App() {
       setLoading(false);
     });
   }, [auth]);
+
+  // ── Auto-reminder: check overdue invoices once per session (admin only) ─────
+  useEffect(() => {
+    if (!auth || !profile || profile.role !== "admin" || invoices.length === 0) return;
+    const sessionKey = `ledgeros_reminders_${new Date().toDateString()}`;
+    if (sessionStorage.getItem(sessionKey)) return; // already ran today
+    sessionStorage.setItem(sessionKey, "1");
+    const overdue = invoices.filter(i => i.status === "overdue" && i.amount > 0);
+    if (overdue.length === 0) return;
+    // Fire reminders for overdue invoices that have a contact email
+    overdue.forEach(async inv => {
+      const cust = contacts.find(c => c.name === inv.customer);
+      if (!cust?.email) return;
+      const balance = inv.balance > 0 ? inv.balance : inv.amount;
+      const html = buildReminderEmailHtml(inv, balance);
+      await sendEmail({
+        to: cust.email,
+        subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`,
+        html
+      });
+      logAudit(auth.token, auth.user.id, "reminder_sent", "invoice", inv.id, `Auto-reminder sent to ${cust.email} for ${inv.invoice_number} — ${fmt(balance)} overdue`);
+    });
+    if (overdue.length > 0) toast.info(`Auto-reminder sent for ${overdue.length} overdue invoice${overdue.length > 1 ? "s" : ""}`);
+  }, [invoices, profile]);
 
   // ── Auto-refresh invoices every 5 seconds ────────────────────────────────
   useEffect(() => {
@@ -5350,7 +5427,7 @@ export default function App() {
                     {invResults.length > 0 && <>
                       <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Invoices</div>
                       {invResults.map(inv => (
-                        <div key={inv.id} onMouseDown={() => { setPage("invoices"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                        <div key={inv.id} onMouseDown={() => { setPage("invoices"); setPendingInvoiceView(inv); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                           <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="ti ti-file-invoice" style={{ color: "var(--blue)", fontSize: 13 }} /></div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{inv.customer}</div>
@@ -5502,7 +5579,7 @@ export default function App() {
             ) : (
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
