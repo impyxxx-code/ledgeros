@@ -5162,25 +5162,28 @@ export default function App() {
   useEffect(() => {
     if (!auth || !profile || profile.role !== "admin" || invoices.length === 0) return;
     const sessionKey = `ledgeros_reminders_${new Date().toDateString()}`;
-    if (sessionStorage.getItem(sessionKey)) return; // already ran today
+    if (sessionStorage.getItem(sessionKey)) return;
     sessionStorage.setItem(sessionKey, "1");
-    const overdue = invoices.filter(i => i.status === "overdue" && i.amount > 0);
-    if (overdue.length === 0) return;
-    // Fire reminders for overdue invoices that have a contact email
-    overdue.forEach(async inv => {
-      const cust = contacts.find(c => c.name === inv.customer);
-      if (!cust?.email) return;
-      const balance = inv.balance > 0 ? inv.balance : inv.amount;
-      const html = buildReminderEmailHtml(inv, balance);
-      await sendEmail({
-        to: cust.email,
-        subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`,
-        html
-      });
-      logAudit(auth.token, auth.user.id, "reminder_sent", "invoice", inv.id, `Auto-reminder sent to ${cust.email} for ${inv.invoice_number} — ${fmt(balance)} overdue`);
-    });
-    if (overdue.length > 0) toast.info(`Auto-reminder sent for ${overdue.length} overdue invoice${overdue.length > 1 ? "s" : ""}`);
-  }, [invoices, profile]);
+    // Defer to avoid blocking render — run 3 seconds after login
+    const timer = setTimeout(async () => {
+      const overdue = invoices.filter(i => i.status === "overdue" && i.amount > 0).slice(0, 10);
+      if (overdue.length === 0) return;
+      let sent = 0;
+      for (const inv of overdue) {
+        const cust = contacts.find(c => c.name === inv.customer);
+        if (!cust?.email) continue;
+        const balance = inv.balance > 0 ? inv.balance : inv.amount;
+        const html = buildReminderEmailHtml(inv, balance);
+        const result = await sendEmail({ to: cust.email, subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`, html });
+        if (result.success) {
+          sent++;
+          logAudit(auth.token, auth.user.id, "reminder_sent", "invoice", inv.id, `Auto-reminder sent to ${cust.email} for ${inv.invoice_number} — ${fmt(balance)} overdue`);
+        }
+      }
+      if (sent > 0) toast.info(`Auto-reminder sent for ${sent} overdue invoice${sent > 1 ? "s" : ""}`);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [profile]);
 
   // ── Auto-refresh invoices every 5 seconds ────────────────────────────────
   useEffect(() => {
