@@ -725,12 +725,12 @@ tr:hover td{background:#f8fafd}
 
 /* ── Line Items ── */
 .il-header{
-  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
+  display:grid;grid-template-columns:3.5fr 1fr 1fr 1fr 1fr 30px;
   gap:10px;padding:9px 16px;
   background:#f8fafd;border-bottom:1px solid var(--border);
 }
 .il-line{
-  display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 30px;
+  display:grid;grid-template-columns:3.5fr 1fr 1fr 1fr 1fr 30px;
   gap:10px;align-items:center;
   padding:9px 16px;border-bottom:1px solid var(--border);
 }
@@ -1687,8 +1687,11 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 // │ SearchDropdown                                             │
 // │ Searchable dropdown for product/contact selection          │
 // └────────────────────────────────────────────────────────────┘
+// shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
+const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };
+
 function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", value = "" }) {
-  const [query, setQuery] = useState(value);
+  const [query, setQuery] = useState(shortName(value));
   const [open, setOpen] = useState(false);
   const ref = useRef();
   const filtered = items.filter(i => (i[displayKey] || "").toLowerCase().includes(query.toLowerCase())).slice(0, 8);
@@ -1706,10 +1709,12 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
       {open && filtered.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, maxHeight: 280, overflowY: "auto", marginTop: 4 }}>
           {filtered.map((item, i) => (
-            <div key={i} style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, borderBottom: "0.5px solid var(--border)", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} onMouseDown={() => { onSelect(item); setQuery(item[displayKey]); setOpen(false); }}>
-              <div style={{ fontWeight: 500 }}>{item[displayKey]}</div>
+            <div key={i} style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, borderBottom: "0.5px solid var(--border)", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} onMouseDown={() => { onSelect(item); setQuery(shortName(item[displayKey])); setOpen(false); }}>
+              <div style={{ fontWeight: 500 }}>{shortName(item[displayKey])}</div>
+              <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 1 }}>{item[displayKey]}</div>
               {item.city && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.city}{item.postcode ? ` · ${item.postcode}` : ""}</div>}
-              {item.category && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.category} · {item.code || ""}</div>}
+              {item.code && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.code}{item.sale_price != null ? ` · £${parseFloat(item.sale_price).toFixed(2)}` : ""}{item.category ? ` · ${item.category}` : ""}</div>}
+              {!item.code && item.category && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.category}</div>}
             </div>
           ))}
         </div>
