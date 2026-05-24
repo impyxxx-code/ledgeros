@@ -1633,7 +1633,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             <div style={{ display: "flex", background: "#f4f6f9", borderRadius: "var(--r)", padding: 3, gap: 2 }}>
               {[["invoice","ti-file-text","Invoice"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].map(([id, icon, lbl]) => (
                 <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, transition: "all .12s", background: activeTab === id ? "var(--white)" : "transparent", color: activeTab === id ? "var(--text)" : "var(--text3)", boxShadow: activeTab === id ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
-                  <i className={"ti " + icon} style={{ fontSize: 13 }} />{lbl}
+                  <i className={"ti " + icon} style={{ fontSize: 13 }} />{isMobile() ? null : lbl}
                 </button>
               ))}
             </div>
@@ -1913,6 +1913,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState(null); // ← success state
   const [creatingDN, setCreatingDN] = useState(false);
   const [dnSaved, setDnSaved] = useState(false);
@@ -1936,6 +1937,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const total = subtotal + vatTotal;
 
   const save = async () => {
+    setSubmitted(true);
     if (!f.customer) return;
     setSaving(true);
     const existing = await sb.get(token, "invoices", "select=id");
@@ -2543,7 +2545,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" />Cancel</button></div>
       <div className="fg">
-        <div className="fgrp"><label>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} /></div>
+        <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp"><label>Due Date</label><input type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
@@ -4979,15 +4981,15 @@ const NAV = [
   { id: "invoices", label: "Invoices", icon: "ti-file-invoice" },
   { id: "contacts", label: "Customers", icon: "ti-users" },
   { id: "inventory", label: "Inventory", icon: "ti-package" },
-  { id: "purchases", label: "Purchases", icon: "ti-shopping-cart" },
-  { id: "credits", label: "Credits", icon: "ti-receipt-refund" },
-  { id: "reports", label: "P&L", icon: "ti-chart-bar" },
-  { id: "analytics", label: "Analytics", icon: "ti-trending-up" },
-  { id: "admin-reports", label: "Reports", icon: "ti-report-money" },
-  { id: "statement", label: "Statements", icon: "ti-user-check" },
-  { id: "stock-adj", label: "Stock In/Out", icon: "ti-adjustments" },
-  { id: "agent-report", label: "Agent Sales", icon: "ti-report-analytics" },
-  { id: "import", label: "Import", icon: "ti-upload" },
+  { id: "purchases", label: "Purchases", icon: "ti-shopping-cart", adminOnly: true },
+  { id: "credits", label: "Credits", icon: "ti-receipt-refund", adminOnly: true },
+  { id: "reports", label: "P&L", icon: "ti-chart-bar", adminOnly: true },
+  { id: "analytics", label: "Analytics", icon: "ti-trending-up", adminOnly: true },
+  { id: "admin-reports", label: "Reports", icon: "ti-report-money", adminOnly: true },
+  { id: "statement", label: "Statements", icon: "ti-user-check", adminOnly: true },
+  { id: "stock-adj", label: "Stock In/Out", icon: "ti-adjustments", adminOnly: true },
+  { id: "agent-report", label: "Agent Sales", icon: "ti-report-analytics", adminOnly: true },
+  { id: "import", label: "Import", icon: "ti-upload", adminOnly: true },
   { id: "delivery-notes", label: "Delivery Notes", icon: "ti-truck-delivery" },
   { id: "settings", label: "Settings", icon: "ti-settings", adminOnly: true },
 ];
@@ -5049,6 +5051,7 @@ export default function App() {
   // PWA install prompt
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showMobMore, setShowMobMore] = useState(false);
   useEffect(() => {
     const handler = e => { e.preventDefault(); setInstallPrompt(e); setShowInstallBanner(true); };
     window.addEventListener('beforeinstallprompt', handler);
@@ -5596,8 +5599,24 @@ export default function App() {
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
+            <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><i className="ti ti-dots" style={{fontSize:20}} /><span className="mob-nav-lbl">More</span></div>
           </div>
         </nav>
+        {showMobMore && (
+          <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.45)" }} onClick={() => setShowMobMore(false)}>
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", padding:"16px 0 32px", boxShadow:"0 -4px 24px rgba(0,0,0,.15)" }} onClick={e => e.stopPropagation()}>
+              <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"0 auto 16px" }} />
+              <div style={{ padding:"0 8px", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:4 }}>
+                {NAV.filter(n => !MOBILE_NAV.find(m => m.id===n.id) && (!n.adminOnly || profile?.role==="admin" || profile?.role==="manager")).map(n => (
+                  <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => { setPage(n.id); setShowMobMore(false); }} style={{ flexDirection:"column", padding:"10px 4px" }}>
+                    <i className={"ti "+n.icon} style={{fontSize:22}} />
+                    <span className="mob-nav-lbl" style={{marginTop:4,fontSize:9,textAlign:"center"}}>{n.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
