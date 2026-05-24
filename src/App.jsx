@@ -1281,20 +1281,46 @@ function Auth({ onAuth }) {
         </div>
       )}
 
-      {/* ── RIGHT PANEL ── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: mob ? "40px 24px" : "48px 52px", background: "#fff", minHeight: mob ? "100vh" : "auto" }}>
-        <div style={{ width: "100%", maxWidth: 360 }}>
-
-          {/* Mobile logo */}
-          {mob && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 36 }}>
+      {/* ── MOBILE TOP PANEL (Option C) ── */}
+      {mob && (
+        <div style={{ background: "#060d1f", padding: "22px 22px 26px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.15) 0%,transparent 70%)", pointerEvents: "none" }} />
+          {/* Logo row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <LogoMark />
               <div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "#0d1117", letterSpacing: "-.4px" }}>LedgerOS</div>
-                <div style={{ fontSize: 11, color: "#9aa5b4" }}>Arkham Retail Ltd</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-.3px", lineHeight: 1.1 }}>LedgerOS</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", marginTop: 1 }}>Arkham Retail Ltd</div>
               </div>
             </div>
-          )}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "3px 10px" }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e" }} />
+              <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: ".5px" }}>Live</span>
+            </div>
+          </div>
+          {/* Feature grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[
+              { icon: "ti-file-invoice", text: "VAT invoices & PDFs" },
+              { icon: "ti-package",      text: "Live inventory" },
+              { icon: "ti-chart-bar",    text: "Analytics & reports" },
+              { icon: "ti-truck-delivery", text: "Delivery notes" },
+            ].map(f => (
+              <div key={f.text} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                <i className={"ti " + f.icon} style={{ fontSize: 13, color: "rgba(255,255,255,.5)", flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontWeight: 500, lineHeight: 1.3 }}>{f.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── RIGHT PANEL ── */}
+      <div style={{ flex: 1, display: "flex", alignItems: mob ? "flex-start" : "center", justifyContent: "center", padding: mob ? "28px 24px 40px" : "48px 52px", background: "#fff", minHeight: mob ? "auto" : "auto" }}>
+        <div style={{ width: "100%", maxWidth: 360 }}>
+
+          {/* Mobile logo — hidden, rendered in mobile top panel instead */}
 
           {/* Form header */}
           <div style={{ marginBottom: 30 }}>
