@@ -1552,7 +1552,9 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 </button>
               ))}
             </div>
-            <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" /></button>
+            <button className="btn bo bsm" onClick={onClose} style={{ width: 32, height: 32, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
           </div>
         </div>
         {/* ── INVOICE TAB ── */}
@@ -1770,17 +1772,18 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 
         <div className="modal-actions">
           <div style={{ display: "flex", gap: 8, flex: 1, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ fontSize: 12, color: "var(--text3)" }}>
-              <span className={"badge " + sc.cls} style={{ marginRight: 8 }}>{sc.label}</span>
-              {fmt(total)} · {invoice.invoice_number}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className={"badge " + sc.cls}>{sc.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt(total)}</span>
+              <span style={{ fontSize: 12, color: "var(--text3)" }}>· {invoice.invoice_number}</span>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               {savedPhone && <button className="btn bwa bsm" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />{savedPhone}</button>}
               <button className="btn bo bsm" onClick={handleEmail} disabled={emailStatus==="sending"} style={{color:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined,borderColor:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined}}>
-                <i className={"ti "+(emailStatus==="sending"?"ti-loader-2":emailStatus==="sent"?"ti-circle-check":emailStatus==="error"?"ti-alert-circle":"ti-mail")} style={{animation:emailStatus==="sending"?"spin .7s linear infinite":undefined}} />
+                {emailStatus==="sending" ? <div className="spin" style={{width:13,height:13,borderWidth:2,flexShrink:0}}/> : emailStatus==="sent" ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> : emailStatus==="error" ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
                 {emailStatus==="sending"?"Sending...":emailStatus==="sent"?"Sent!":emailStatus==="error"?"Failed":"Email"}
               </button>
-              <button className="btn bp bsm" onClick={handlePrint}><i className="ti ti-printer" />Print</button>
+              <button className="btn bp bsm" onClick={handlePrint}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
             </div>
           </div>
       </div>
@@ -5660,7 +5663,9 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
             <div className="ct">Edit Invoice</div>
             <div className="cs">{invoice.invoice_number}</div>
           </div>
-          <button className="btn bo bsm" onClick={onClose}><i className="ti ti-x" /></button>
+          <button className="btn bo bsm" onClick={onClose} style={{ width: 32, height: 32, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
         </div>
         <div style={{ padding: "20px 24px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
