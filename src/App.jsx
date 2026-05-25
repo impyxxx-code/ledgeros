@@ -3220,15 +3220,17 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
 </div>
 <div class="footer"><span><span class="footer-brand">${COMPANY.name}</span> · VAT: ${COMPANY.vatNumber}</span><span>${dn_number} · Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>Goods remain property of ${COMPANY.name} until signed</span></div>
 </div></body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `${dn_number}.html`; a.click();
-    URL.revokeObjectURL(url);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const downloadDNpdf = (html, dn_number) => {
-    const win = window.open('', '_blank');
+    const win = window.open("", "_blank");
+    if (!win) return;
     win.document.write(html);
     win.document.close();
     win.focus();
