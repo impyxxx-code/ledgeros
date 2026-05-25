@@ -713,20 +713,20 @@ tr:hover td{background:#f8fafd}
 }
 
 /* ── Invoice Doc ── */
-.inv-doc{padding:32px}
+.inv-doc{padding:32px;background:#fff}
 .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
 .inv-co-name{font-size:20px;font-weight:800;color:var(--blue);letter-spacing:-.4px;margin-bottom:5px}
 .inv-co-detail{font-size:11px;color:var(--text2);line-height:1.7}
 .inv-title-block{text-align:right}
 .inv-title{font-size:30px;font-weight:800;color:#e8edf4;letter-spacing:-.5px;margin-bottom:5px}
-.inv-num{font-size:15px;font-weight:700;color:var(--text)}
+.inv-num{font-size:15px;font-weight:700;color:#0f172a}
 .inv-meta{
   display:grid;grid-template-columns:1fr 1fr;gap:20px;
   margin-bottom:28px;padding:18px;
-  background:#f8fafd;border-radius:var(--r);border:1px solid var(--border);
+  background:#f8fafc;border-radius:var(--r);border:1px solid #e2e8f0;
 }
-.inv-meta-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
-.inv-meta-val{font-size:13px;font-weight:600;color:var(--text)}
+.inv-meta-lbl{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.inv-meta-val{font-size:13px;font-weight:600;color:#0f172a}
 .inv-table{width:100%;border-collapse:collapse;margin-bottom:22px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
 .inv-table th{background:#1e1b4b;color:#fff;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:left}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
@@ -734,7 +734,7 @@ tr:hover td{background:#f8fafd}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px}
-.inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
 .inv-tot-row.divider{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:13px;font-weight:600}
 .inv-balance-box{background:#1e1b4b;border-radius:9px;padding:11px 14px;margin-top:16px;display:flex;justify-content:space-between;align-items:center}
 .inv-balance-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
@@ -742,11 +742,11 @@ tr:hover td{background:#f8fafd}
 .inv-footer{border-top:1px solid var(--border);padding-top:18px}
 .inv-bank-grid{
   display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;
-  margin-top:12px;background:#f8fafd;padding:13px;
-  border-radius:var(--r);border:1px solid var(--border);
+  margin-top:12px;background:#f8fafc;padding:14px;
+  border-radius:var(--r);border:1px solid #e2e8f0;
 }
-.inv-bank-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.inv-bank-val{font-size:13px;font-weight:600;color:var(--text)}
+.inv-bank-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.inv-bank-val{font-size:13px;font-weight:700;color:#0f172a}
 
 /* ── Line Items ── */
 .il-header{
