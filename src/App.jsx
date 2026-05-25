@@ -728,11 +728,11 @@ tr:hover td{background:#f8fafd}
 .inv-meta-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
 .inv-meta-val{font-size:13px;font-weight:600;color:var(--text)}
 .inv-table{width:100%;border-collapse:collapse;margin-bottom:22px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
-.inv-table th{background:var(--blue);color:#fff;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;text-align:left}
+.inv-table th{background:#1e1b4b;color:#fff;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:left}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
-.inv-table tr:nth-child(even) td{background:#f8fafd}
+.inv-table tr:nth-child(even) td{background:#f8fafc}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
 .inv-tot-row.divider{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:13px;font-weight:600}
