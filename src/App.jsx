@@ -713,7 +713,7 @@ tr:hover td{background:#f8fafd}
 }
 
 /* ── Invoice Doc ── */
-.inv-doc{padding:32px;background:#fff}
+.inv-doc{padding:32px;background:#ffffff}
 .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
 .inv-co-name{font-size:20px;font-weight:800;color:var(--blue);letter-spacing:-.4px;margin-bottom:5px}
 .inv-co-detail{font-size:11px;color:var(--text2);line-height:1.7}
@@ -1622,8 +1622,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(total)}</span></div>
             </div>
             <div className="inv-footer">
-              <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 13 }}>Payment Details</div>
-              <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12 }}>Please transfer using the invoice number as reference.</div>
+              <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 13, color: "#0f172a" }}>Payment Details</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>Please transfer using the invoice number as reference.</div>
               <div className="inv-bank-grid">
                 <div><div className="inv-bank-lbl">Bank</div><div className="inv-bank-val">{COMPANY.bankName}</div></div>
                 <div><div className="inv-bank-lbl">Sort Code</div><div className="inv-bank-val mono">{COMPANY.sortCode}</div></div>
