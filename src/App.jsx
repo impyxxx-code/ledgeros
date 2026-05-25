@@ -1560,7 +1560,22 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div className="inv-doc">
             <div className="inv-header">
               <div>
-                <img src={LOGO} alt={COMPANY.name} style={{ width: 160, height: 44, objectFit: "contain", marginBottom: 14, borderRadius: 6 }} />
+<div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <div style={{ width: 44, height: 44, background: "#1e1b4b", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                    <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
+                    <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
+                    <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
+                    <rect x="10" y="34" width="14" height="3" rx="1.5" fill="#818cf8" fillOpacity=".18"/>
+                    <rect x="30" y="21" width="2.5" height="14" rx="1.25" fill="#60a5fa"/>
+                    <polygon points="36,27 30,21 30,35" fill="#60a5fa" fillOpacity=".4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#1e1b4b", letterSpacing: "-.3px" }}>{COMPANY.name}</div>
+                  <div style={{ fontSize: 10, color: "#94a3b8" }}>{COMPANY.address}, {COMPANY.postcode}</div>
+                </div>
+              </div>
                 <div className="inv-co-name">{COMPANY.name}</div>
                 <div className="inv-co-detail">{COMPANY.address}<br />{COMPANY.city}, {COMPANY.postcode}<br />Tel: {COMPANY.phone}<br />{COMPANY.email}<br />VAT: {COMPANY.vatNumber}</div>
               </div>
@@ -5261,7 +5276,17 @@ export default function App() {
         <div className="main">
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
-              <img src={LOGO} alt="Arkham Retail" style={{ width: 90, height: 26, borderRadius: 6, objectFit: "contain" }} />
+<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, background: "#1e1b4b", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+                    <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
+                    <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
+                    <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
+                    <rect x="30" y="21" width="2.5" height="12" rx="1.25" fill="#60a5fa"/>
+                    <polygon points="36,26 30,21 30,33" fill="#60a5fa" fillOpacity=".4"/>
+                  </svg>
+                </div>
+              </div>
             </div>
             <div className="search-wrap topbar-search" style={{ position: "relative" }}>
               <i className="ti ti-search" />
