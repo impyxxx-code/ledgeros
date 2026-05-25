@@ -5267,7 +5267,7 @@ export default function App() {
                 <i className={"ti " + (darkMode ? "ti-sun" : "ti-moon")} style={{ color: "rgba(255,255,255,.35)", fontSize: 14 }} />
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)", fontWeight: 500 }}>{darkMode ? "Light mode" : "Dark mode"}</span>
               </div>
-              <span className="version-badge">v2.0</span>
+              <span className="version-badge">v2.1</span>
             </div>
             <div className="user-row">
               <div className="user-av">{initials}</div>
