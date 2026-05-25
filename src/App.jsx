@@ -722,8 +722,8 @@ tr:hover td{background:#f8fafd}
 .inv-num{font-size:15px;font-weight:700;color:#0f172a}
 .inv-meta{
   display:grid;grid-template-columns:1fr 1fr;gap:20px;
-  margin-bottom:28px;padding:18px;
-  background:#f8fafc;border-radius:var(--r);border:1px solid #e2e8f0;
+  margin-bottom:28px;padding:16px 18px;
+  background:transparent;border-radius:var(--r);border:1px solid #e2e8f0;
 }
 .inv-meta-lbl{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
 .inv-meta-val{font-size:13px;font-weight:600;color:#0f172a}
@@ -1616,8 +1616,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               </tbody>
             </table>
             <div className="inv-totals-box">
-              <div className="inv-tot-row"><span style={{ color: "var(--text2)" }}>Subtotal</span><span className="mono">{fmt(subtotal)}</span></div>
-              <div className="inv-tot-row"><span style={{ color: "var(--text2)" }}>VAT Total</span><span className="mono">{fmt(vatTotal)}</span></div>
+              <div className="inv-tot-row"><span style={{ color: "#64748b" }}>Subtotal</span><span className="mono">{fmt(subtotal)}</span></div>
+              <div className="inv-tot-row"><span style={{ color: "#64748b" }}>VAT Total</span><span className="mono">{fmt(vatTotal)}</span></div>
               <div className="inv-tot-row divider"><span>Total</span><span className="mono">{fmt(total)}</span></div>
               <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(total)}</span></div>
             </div>
@@ -1629,7 +1629,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 <div><div className="inv-bank-lbl">Sort Code</div><div className="inv-bank-val mono">{COMPANY.sortCode}</div></div>
                 <div><div className="inv-bank-lbl">Account</div><div className="inv-bank-val mono">{COMPANY.accountNumber}</div></div>
               </div>
-              <div style={{ marginTop: 16, fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>All goods remain our property until payment is received in full. VAT Reg No: {COMPANY.vatNumber}</div>
+              <div style={{ marginTop: 16, fontSize: 11, color: "#94a3b8", lineHeight: 1.6 }}>All goods remain our property until payment is received in full. VAT Reg No: {COMPANY.vatNumber}</div>
             </div>
           </div>
         )}
