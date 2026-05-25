@@ -1855,9 +1855,13 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     setSubmitted(true);
     if (!f.customer) return;
     setSaving(true);
-    const existing = await sb.get(token, "invoices", "select=id");
-    const count = Array.isArray(existing) ? existing.length + 1 : 1;
-    const invoice_number = `INV-${String(count).padStart(4, "0")}`;
+    const existing = await sb.get(token, "invoices", "select=invoice_number&order=invoice_number.desc&limit=1");
+    let nextNum = 1;
+    if (Array.isArray(existing) && existing.length > 0 && existing[0].invoice_number) {
+      const lastNum = parseInt(existing[0].invoice_number.replace("INV-", ""), 10);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+    const invoice_number = `INV-${String(nextNum).padStart(4, "0")}`;
     const inv = await sb.post(token, "invoices", {
       customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || null,
       status: f.status, notes: f.notes || null,
