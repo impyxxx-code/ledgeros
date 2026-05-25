@@ -733,9 +733,9 @@ tr:hover td{background:#f8fafd}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
-.inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px}
+.inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
-.inv-tot-row.divider{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:13px;font-weight:600}
+.inv-tot-row.divider{border-top:2px solid #e2e8f0;margin-top:8px;padding-top:10px;font-size:13px;font-weight:600}
 .inv-balance-box{background:#1e1b4b;border-radius:9px;padding:11px 14px;margin-top:16px;display:flex;justify-content:space-between;align-items:center}
 .inv-balance-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .inv-balance-val{color:#fff;font-size:17px;font-weight:800}
