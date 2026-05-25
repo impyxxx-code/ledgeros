@@ -169,11 +169,11 @@ const CSS = `
   --white:#ffffff;
 
   /* ── Sidebar ── */
-  --sidebar:#0b1120;
+  --sidebar:#060d1f;
   --sidebar-border:rgba(255,255,255,.06);
   --sidebar-hover:rgba(255,255,255,.05);
-  --sidebar-active:rgba(99,102,241,.15);
-  --sidebar-active-border:rgba(99,102,241,.5);
+  --sidebar-active:rgba(37,99,235,.18);
+  --sidebar-active-border:rgba(37,99,235,.35);
 
   /* ── Text ── */
   --text:#0d1117;
@@ -240,17 +240,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   padding:16px 10px;
   position:sticky;top:0;height:100vh;overflow-y:auto;
   border-right:1px solid var(--sidebar-border);
+  overflow:hidden;
 }
+.sidebar::before{
+  content:'';position:absolute;top:-80px;left:-80px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,.1) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.sidebar>*{position:relative;z-index:1}
 .sidebar::-webkit-scrollbar{width:0}
 
 .sidebar-logo{
   display:flex;align-items:center;gap:10px;
-  padding:6px 10px 24px;
+  padding:6px 10px 20px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  margin-bottom:8px;
+}
+.logo-mark{
+  width:34px;height:34px;background:#1e1b4b;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .logo-text{
-  font-size:15px;font-weight:700;color:#fff;
-  letter-spacing:-.3px;
+  font-size:14px;font-weight:800;color:#fff;
+  letter-spacing:-.3px;line-height:1.1;
 }
+.logo-sub{font-size:10px;color:rgba(255,255,255,.28);margin-top:2px}
 
 .nav-section{margin-bottom:24px}
 .nav-label{
@@ -263,7 +278,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .nav-item{
   display:flex;align-items:center;gap:10px;
   padding:10px 12px;border-radius:var(--r);
-  color:rgba(255,255,255,.38);font-size:13px;font-weight:500;
+  color:rgba(255,255,255,.42);font-size:13px;font-weight:500;
   cursor:pointer;
   transition:color .12s var(--ease),background .12s var(--ease);
   margin-bottom:2px;user-select:none;letter-spacing:-.1px;
@@ -276,8 +291,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .nav-item.active{
   background:var(--sidebar-active);
-  color:#a5b4fc;font-weight:600;
-  border-left-color:var(--sidebar-active-border);
+  color:#93c5fd;font-weight:700;
+  border:1px solid rgba(37,99,235,.25);
+  border-radius:var(--r);
 }
 .nav-item i{font-size:16px;flex-shrink:0;opacity: 0.9}
 .nav-badge{
@@ -320,9 +336,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ── Topbar ── */
 .topbar{
   height:54px;
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  background:#0d1829;
+  border-bottom:1px solid rgba(255,255,255,.07);
   display:flex;align-items:center;
   padding:0 24px;gap:12px;
   position:sticky;top:0;z-index:50;
@@ -332,55 +347,56 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .search-wrap i{
   position:absolute;left:10px;top:50%;
   transform:translateY(-50%);
-  color:var(--text3);font-size:15px;pointer-events:none;
+  color:rgba(255,255,255,.28);font-size:15px;pointer-events:none;
 }
 .search-input{
   width:100%;
-  background:#f4f6f9;
-  border:1px solid var(--border);
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.09);
   border-radius:var(--r);
   padding:7px 12px 7px 32px;
-  font-size:13px;color:var(--text2);
+  font-size:13px;color:rgba(255,255,255,.55);
   font-family:var(--sans);outline:none;
   transition:border .14s,box-shadow .14s,background .14s;
 }
 .search-input:focus{
-  border-color:var(--blue);
-  background:var(--white);
-  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+  border-color:rgba(37,99,235,.5);
+  background:rgba(255,255,255,.08);
+  box-shadow:0 0 0 3px rgba(37,99,235,.12);
 }
-.search-input::placeholder{color:var(--text3)}
+.search-input::placeholder{color:rgba(255,255,255,.25)}
 
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px}
 .tb-btn{
   width:32px;height:32px;border-radius:var(--r);
-  border:1px solid var(--border);
-  background:var(--white);
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.06);
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--text2);
+  cursor:pointer;color:rgba(255,255,255,.5);
   transition:all .12s;position:relative;
 }
-.tb-btn:hover{background:#f4f6f9;border-color:var(--border2);color:var(--text)}
+.tb-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.8)}
 .tb-btn i{font-size:16px}
 .tb-notif::after{
   content:'';position:absolute;top:6px;right:6px;
   width:6px;height:6px;
   background:var(--red);border-radius:50%;
-  border:1.5px solid var(--white);
+  border:1.5px solid #0d1829;
 }
 .tb-av{
   width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:#fff;
+  font-size:12px;font-weight:800;color:#fff;
   cursor:pointer;
-  box-shadow:0 0 0 2px var(--white),0 0 0 3.5px rgba(99,102,241,.35);
+  box-shadow:0 0 0 2px #0d1829,0 0 0 3.5px rgba(37,99,235,.4);
 }
 .tb-role{
-  font-size:11px;font-weight:600;
-  background:var(--blue-lt);color:var(--blue);
+  font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);
   padding:3px 10px;border-radius:20px;
   text-transform:uppercase;letter-spacing:.4px;
+  border:1px solid rgba(255,255,255,.08);
 }
 
 /* ── Content ── */
@@ -399,8 +415,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   margin-bottom:26px;flex-wrap:wrap;gap:14px;
 }
 .welcome-h{
-  font-size:22px;font-weight:700;color:var(--text);
-  letter-spacing:-.5px;line-height:1.2;
+  font-size:22px;font-weight:800;color:var(--text);
+  letter-spacing:-.6px;line-height:1.2;
 }
 .welcome-sub{
   font-size:13px;color:var(--text2);
@@ -552,10 +568,10 @@ tr:hover td{background:#f8fafd}
 .btn i{font-size:14px}
 
 .bp{
-  background:var(--blue);color:#fff;
-  box-shadow:0 1px 2px rgba(37,99,235,.2),0 2px 8px rgba(37,99,235,.15);
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
+  box-shadow:0 2px 8px rgba(37,99,235,.28);
 }
-.bp:hover{background:var(--blue-dk);box-shadow:var(--sh-blue);transform:translateY(-1px)}
+.bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 4px 14px rgba(37,99,235,.35);transform:translateY(-1px)}
 .bp:disabled{opacity: 0.45;cursor:not-allowed;transform:none;box-shadow:none}
 
 .bo{
@@ -5199,8 +5215,20 @@ export default function App() {
       <style>{CSS}</style>
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
         <aside className="sidebar">
-          <div className="sidebar-logo" style={{ paddingBottom: 20 }}>
-            <img src={LOGO} alt="Arkham Retail" style={{ width: 190, height: 54, objectFit: "contain", borderRadius: 8 }} />
+          <div className="sidebar-logo">
+            <div className="logo-mark">
+              <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+                <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
+                <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
+                <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
+                <rect x="30" y="21" width="2.5" height="14" rx="1.25" fill="#60a5fa"/>
+                <polygon points="36,27 30,21 30,35" fill="#60a5fa" fillOpacity=".4"/>
+              </svg>
+            </div>
+            <div>
+              <div className="logo-text">LedgerOS</div>
+              <div className="logo-sub">Arkham Retail Ltd</div>
+            </div>
           </div>
           <div className="nav-section">
             <div className="nav-label">Main</div>
