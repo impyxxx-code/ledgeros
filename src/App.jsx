@@ -4361,42 +4361,152 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const unpaidInv = invoices.filter(i=>i.status!=="paid"&&i.status!=="draft"&&i.status!=="cancelled");
         const age = inv => Math.floor((nowD - new Date(inv.due_date||inv.invoice_date)) / 86400000);
         const buckets = [
-          {label:"Current",    color:"var(--green)", invs: unpaidInv.filter(i=>age(i)<=0)},
-          {label:"1–30 days",  color:"var(--amber)", invs: unpaidInv.filter(i=>age(i)>0&&age(i)<=30)},
-          {label:"31–60 days", color:"#f97316",      invs: unpaidInv.filter(i=>age(i)>30&&age(i)<=60)},
-          {label:"61–90 days", color:"var(--red)",   invs: unpaidInv.filter(i=>age(i)>60&&age(i)<=90)},
-          {label:"90+ days",   color:"#7f1d1d",      invs: unpaidInv.filter(i=>age(i)>90)},
+          {label:"Current",   sub:"Not yet due",  color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", invs: unpaidInv.filter(i=>age(i)<=0)},
+          {label:"1–15 Days", sub:"Early warning", color:"#d97706", bg:"#fffbeb", border:"#fde68a", invs: unpaidInv.filter(i=>age(i)>0&&age(i)<=15)},
+          {label:"16–30 Days",sub:"Chase now",     color:"#ea580c", bg:"#fff7ed", border:"#fed7aa", invs: unpaidInv.filter(i=>age(i)>15&&age(i)<=30)},
+          {label:"31–60 Days",sub:"Urgent",        color:"#dc2626", bg:"#fef2f2", border:"#fecaca", invs: unpaidInv.filter(i=>age(i)>30&&age(i)<=60)},
+          {label:"61–90 Days",sub:"Critical",      color:"#b91c1c", bg:"#fff1f2", border:"#fecdd3", invs: unpaidInv.filter(i=>age(i)>60&&age(i)<=90)},
+          {label:"90+ Days",  sub:"Write-off risk",color:"#7f1d1d", bg:"#fef2f2", border:"#fca5a5", invs: unpaidInv.filter(i=>age(i)>90)},
         ];
-        const total = unpaidInv.reduce((s,i)=>s+i.amount,0);
-        const customerBuckets = [...new Set(unpaidInv.map(i=>i.customer))].map(cust=>({
-          name:cust,
-          current:buckets[0].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-          d30:buckets[1].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-          d60:buckets[2].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-          d90:buckets[3].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-          d90p:buckets[4].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-          total:unpaidInv.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-        })).sort((a,b)=>b.total-a.total);
+        const grandTotal = unpaidInv.reduce((s,i)=>s+i.amount,0);
+        const maxBucket = Math.max(...buckets.map(b=>b.invs.reduce((s,i)=>s+i.amount,0)),1);
+        const customerRows = [...new Set(unpaidInv.map(i=>i.customer))].map(cust=>{
+          const cinvs = unpaidInv.filter(i=>i.customer===cust);
+          return {
+            name:cust,
+            contact: contacts.find(c=>c.name===cust),
+            current: buckets[0].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            d15:     buckets[1].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            d30:     buckets[2].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            d60:     buckets[3].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            d90:     buckets[4].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            d90p:    buckets[5].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
+            total:   cinvs.reduce((s,i)=>s+i.amount,0),
+            count:   cinvs.length,
+            oldest:  Math.max(...cinvs.map(i=>age(i))),
+            invs:    cinvs,
+          };
+        }).sort((a,b)=>b.total-a.total);
+        const riskTotal = buckets.slice(3).reduce((s,b)=>s+b.invs.reduce((ss,i)=>ss+i.amount,0),0);
         return (
           <div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
-              {buckets.map(b=>(
-                <div key={b.label} className="kpi" style={{marginBottom:0}}>
-                  <div className="kpi-label" style={{fontSize:11}}>{b.label}</div>
-                  <div className="kpi-val" style={{color:b.color,fontSize:18}}>{fmt(b.invs.reduce((s,i)=>s+i.amount,0))}</div>
-                  <div style={{fontSize:11,color:"var(--text3)",marginTop:4}}>{b.invs.length} invoice{b.invs.length!==1?"s":""}</div>
-                </div>
-              ))}
+            {/* Summary KPI cards */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,marginBottom:20}}>
+              {buckets.map(b=>{
+                const amt = b.invs.reduce((s,i)=>s+i.amount,0);
+                const pct = Math.round((amt/Math.max(grandTotal,1))*100);
+                return (
+                  <div key={b.label} style={{background:b.bg,border:"1px solid "+b.border,borderRadius:10,padding:"12px 14px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:b.color,textTransform:"uppercase",letterSpacing:".6px",marginBottom:4}}>{b.label}</div>
+                    <div style={{fontSize:16,fontWeight:800,color:b.color,letterSpacing:"-.5px"}}>{fmt(amt)}</div>
+                    <div style={{fontSize:10,color:b.color,opacity:.7,marginTop:3}}>{b.invs.length} inv · {pct}%</div>
+                    <div style={{height:3,background:b.border,borderRadius:2,marginTop:8}}><div style={{height:"100%",background:b.color,borderRadius:2,width:Math.round((amt/maxBucket)*100)+"%",transition:"width .3s"}}/></div>
+                    <div style={{fontSize:9,color:b.color,opacity:.6,marginTop:4}}>{b.sub}</div>
+                  </div>
+                );
+              })}
             </div>
+
+            {/* Risk alert bar */}
+            {riskTotal > 0 && (
+              <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:36,height:36,background:"#fee2e2",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:13,color:"#dc2626"}}>High risk debt: {fmt(riskTotal)}</div>
+                  <div style={{fontSize:11,color:"#ef4444",marginTop:2}}>Invoices over 30 days old — immediate action required</div>
+                </div>
+                <div style={{marginLeft:"auto",textAlign:"right"}}>
+                  <div style={{fontSize:11,color:"#dc2626",fontWeight:600}}>{Math.round((riskTotal/Math.max(grandTotal,1))*100)}% of total debt</div>
+                  <div style={{fontSize:10,color:"#ef4444"}}>{buckets.slice(3).reduce((s,b)=>s+b.invs.length,0)} invoices affected</div>
+                </div>
+              </div>
+            )}
+
+            {/* Customer breakdown table */}
             <div className="card">
-              <div className="ch"><div className="ct">Aged Debtors Report</div><div className="cs">Total outstanding: {fmt(total)}</div></div>
-              <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}>
-                <thead><tr><th>Customer</th><th>Current</th><th>1–30 Days</th><th className="hm">31–60 Days</th><th className="hm">61–90 Days</th><th className="hm">90+ Days</th><th>Total</th></tr></thead>
-                <tbody>
-                  {customerBuckets.map(c=>(<tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono" style={{color:"var(--green)"}}>{c.current>0?fmt(c.current):"—"}</td><td className="mono" style={{color:"var(--amber)"}}>{c.d30>0?fmt(c.d30):"—"}</td><td className="mono hm" style={{color:"#f97316"}}>{c.d60>0?fmt(c.d60):"—"}</td><td className="mono hm" style={{color:"var(--red)"}}>{c.d90>0?fmt(c.d90):"—"}</td><td className="mono hm" style={{color:"#7f1d1d"}}>{c.d90p>0?fmt(c.d90p):"—"}</td><td className="mono" style={{fontWeight:700,color:"var(--red)"}}>{fmt(c.total)}</td></tr>))}
-                  {customerBuckets.length===0&&<tr><td colSpan={7} className="empty">No outstanding invoices 🎉</td></tr>}
-                </tbody>
-              </table></div>
+              <div className="ch">
+                <div>
+                  <div className="ct">Aged Debtors — Customer Breakdown</div>
+                  <div className="cs">Total outstanding: <strong style={{color:"var(--red)"}}>{fmt(grandTotal)}</strong> across {customerRows.length} customer{customerRows.length!==1?"s":""}</div>
+                </div>
+                <button className="btn bo bsm" onClick={() => {
+                  const hdr = ["Customer","Current","1-15d","16-30d","31-60d","61-90d","90+d","Total","Days Oldest"].join(","); const data = customerRows.map(c=>[c.name,c.current,c.d15,c.d30,c.d60,c.d90,c.d90p,c.total,c.oldest].join(",")).join("\n"); const rows = hdr+"\n"+data;
+                  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows],{type:"text/csv"}));a.download="aged-debtors.csv";a.click();
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export CSV
+                </button>
+              </div>
+              <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+                <table style={{minWidth:700,width:"100%",borderCollapse:"collapse"}}>
+                  <thead>
+                    <tr style={{background:"#f8fafc"}}>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid #e2e8f0"}}>Customer</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#16a34a",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>Current</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>1–15d</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#ea580c",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>16–30d</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#dc2626",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>31–60d</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#b91c1c",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>61–90d</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#7f1d1d",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>90+d</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".6px",textAlign:"right",borderBottom:"1px solid #e2e8f0"}}>Total</th>
+                      <th style={{padding:"10px 14px",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".6px",textAlign:"center",borderBottom:"1px solid #e2e8f0"}}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customerRows.map((c,idx)=>(
+                      <tr key={c.name} style={{background:idx%2===0?"#fff":"#fafbfc"}}>
+                        <td style={{padding:"11px 14px",borderBottom:"1px solid #f1f5f9"}}>
+                          <div style={{fontWeight:700,color:"#0f172a",fontSize:13}}>{c.name}</div>
+                          <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{c.count} invoice{c.count!==1?"s":""} · oldest {c.oldest}d</div>
+                        </td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#16a34a",borderBottom:"1px solid #f1f5f9"}}>{c.current>0?fmt(c.current):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#d97706",borderBottom:"1px solid #f1f5f9"}}>{c.d15>0?fmt(c.d15):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#ea580c",borderBottom:"1px solid #f1f5f9"}}>{c.d30>0?fmt(c.d30):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#dc2626",borderBottom:"1px solid #f1f5f9"}}>{c.d60>0?fmt(c.d60):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#b91c1c",borderBottom:"1px solid #f1f5f9"}}>{c.d90>0?fmt(c.d90):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#7f1d1d",fontWeight:700,borderBottom:"1px solid #f1f5f9"}}>{c.d90p>0?fmt(c.d90p):<span style={{color:"#e2e8f0"}}>—</span>}</td>
+                        <td style={{padding:"11px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:13,fontWeight:800,color:c.oldest>30?"#dc2626":c.oldest>15?"#ea580c":"#0f172a",borderBottom:"1px solid #f1f5f9"}}>{fmt(c.total)}</td>
+                        <td style={{padding:"11px 14px",textAlign:"center",borderBottom:"1px solid #f1f5f9"}}>
+                          <div style={{display:"flex",gap:5,justifyContent:"center"}}>
+                            {c.contact?.phone && <button className="btn bo bsm" style={{fontSize:10,padding:"3px 8px"}} onClick={()=>window.open("tel:"+c.contact.phone)}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2.76h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l1.46-1.46a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                              Call
+                            </button>}
+                            {c.contact?.email && <button className="btn bo bsm" style={{fontSize:10,padding:"3px 8px"}} onClick={()=>window.open("mailto:"+c.contact.email+"?subject=Payment+Reminder+%E2%80%94+"+c.invs.map(i=>i.invoice_number).join(",")+"&body=Dear+"+encodeURIComponent(c.name)+"%2C%0A%0AWe+are+writing+to+remind+you+that+the+following+invoices+are+outstanding%3A%0A%0A"+c.invs.map(i=>i.invoice_number+"+%E2%80%94+"+fmt(i.amount)).join("%0A")+"%0A%0ATotal+outstanding%3A+"+fmt(c.total)+"%0A%0APlease+arrange+payment+at+your+earliest+convenience.%0A%0AKind+regards%2C%0A"+COMPANY.name)} >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                              Email
+                            </button>}
+                            {c.contact?.phone && <button className="btn bo bsm" style={{fontSize:10,padding:"3px 8px",color:"#16a34a",borderColor:"#16a34a"}} onClick={()=>window.open("https://wa.me/"+c.contact.phone.replace(/\D/g,"")+"?text="+encodeURIComponent("Hi "+c.name+", this is a reminder that you have "+c.count+" outstanding invoice"+(c.count!==1?"s":"")+" totalling "+fmt(c.total)+" with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you."))}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                              WA
+                            </button>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totals row */}
+                    {customerRows.length > 0 && (
+                      <tr style={{background:"#1e1b4b"}}>
+                        <td style={{padding:"12px 14px",fontWeight:800,fontSize:13,color:"#fff"}}>TOTALS</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#86efac",fontWeight:700}}>{fmt(buckets[0].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fde68a",fontWeight:700}}>{fmt(buckets[1].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fed7aa",fontWeight:700}}>{fmt(buckets[2].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[3].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[4].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[5].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:14,color:"#fff",fontWeight:800}}>{fmt(grandTotal)}</td>
+                        <td style={{padding:"12px 14px"}}></td>
+                      </tr>
+                    )}
+                    {customerRows.length===0 && <tr><td colSpan={9} style={{padding:40,textAlign:"center",color:"#94a3b8"}}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"block",margin:"0 auto 10px",color:"#22c55e"}}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      No outstanding invoices — all paid up! 🎉
+                    </td></tr>}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         );
