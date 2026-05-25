@@ -3258,7 +3258,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         products={products}
         token={token}
         onSaved={() => {
-          sb.get(token, "invoices", "order=created_at.desc").then(d => Array.isArray(d) && setInvoices(d));
+          sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
           setEditInvoice(null);
         }}
       />}
@@ -3333,8 +3333,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           </button>
         ))}
       </div>
-      {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => setInvoices(prev => [inv, ...prev])} onClose={() => setShowForm(false)} />}
-      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => [inv, ...prev]); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
+      {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} />}
+      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
@@ -5104,7 +5104,7 @@ export default function App() {
           setInvoices(isAdminPoll ? freshInvs : freshInvs.filter(i => i.created_by === auth.user?.id));
         }
       });
-    }, 5000);
+    }, 3000);
     return () => clearInterval(poll);
   }, [auth, profile]);
 
@@ -5149,10 +5149,15 @@ export default function App() {
 
             if (msg.topic === "realtime:public:invoices") {
               if (eventType === "INSERT") {
-                setInvoices(prev => {
-                  if (prev.find(i => i.id === record.id)) return prev;
-                  return [record, ...prev];
-                });
+                // Short delay so invoice_lines are also written before we refetch
+                setTimeout(() => {
+                  const adminRoles = ["admin", "manager"];
+                  const isAdm = !profile || adminRoles.includes(profile?.role);
+                  const q = isAdm ? "order=created_at.desc&limit=1000" : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
+                  sb.get(auth.token, "invoices", q).then(fresh => {
+                    if (Array.isArray(fresh)) setInvoices(fresh);
+                  });
+                }, 800);
               } else if (eventType === "UPDATE") {
                 setInvoices(prev => prev.map(i => i.id === record.id ? { ...i, ...record } : i));
               } else if (eventType === "DELETE") {
