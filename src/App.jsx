@@ -2568,19 +2568,32 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           <div key={`${i}-${l.product_id||"empty"}`} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={async p => {
-                      updateLine(i, "product_id", p.id);
-                      // Check for customer-specific price
+                      // Check for customer-specific price first, then do single atomic update
+                      let customPrice = null;
                       const custName = f?.customer || f?.customer_name;
                       if (custName) {
                         const contact = contacts?.find(c => c.name === custName);
                         if (contact) {
                           const prices = await sb.get(token, "customer_prices", `contact_id=eq.${contact.id}&product_id=eq.${p.id}`);
                           if (Array.isArray(prices) && prices[0]) {
-                            updateLine(i, "unit_price", prices[0].custom_price);
-                            updateLine(i, "custom_price_applied", true);
+                            customPrice = prices[0].custom_price;
                           }
                         }
                       }
+                      // Single atomic update — avoids stale state from multiple setLines calls
+                      setLines(prev => {
+                        const next = [...prev];
+                        next[i] = {
+                          ...next[i],
+                          product_id: p.id,
+                          description: p.name || "",
+                          unit_price: customPrice !== null ? customPrice : (p.sale_price || ""),
+                          vat_rate: p.vat_rate ?? 20,
+                          unit: p.unit || "unit",
+                          custom_price_applied: customPrice !== null,
+                        };
+                        return next;
+                      });
                     }} displayKey="name" value={l.description} />
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
