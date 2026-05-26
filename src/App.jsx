@@ -3704,7 +3704,11 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
 function Inventory({ products, setProducts, token, userId }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [invSearch, setInvSearch] = useState("");
+  const [editingQty, setEditingQty] = useState({});
+  const [updatingId, setUpdatingId] = useState(null);
   const [f, setF] = useState({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
+
   const save = async () => {
     if (!f.name) return; setSaving(true);
     const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price)||0, sale_price: parseFloat(f.sale_price)||0, vat_rate: parseFloat(f.vat_rate)||20, stock_qty: parseFloat(f.stock_qty)||0, reorder_level: parseFloat(f.reorder_level)||0, created_by: userId });
@@ -3712,16 +3716,95 @@ function Inventory({ products, setProducts, token, userId }) {
     setF({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
     setShowForm(false); setSaving(false);
   };
+
+  const updateStock = async (p, newQty) => {
+    const qty = Math.max(0, parseInt(newQty) || 0);
+    setUpdatingId(p.id);
+    await sb.patch(token, "products", p.id, { stock_qty: qty });
+    setProducts(prev => prev.map(x => x.id === p.id ? { ...x, stock_qty: qty } : x));
+    logAudit(token, userId, "stock_adjusted", "product", p.id, `${p.name} stock updated: ${p.stock_qty} → ${qty} ${p.unit||"units"}`);
+    setEditingQty(prev => { const n = {...prev}; delete n[p.id]; return n; });
+    setUpdatingId(null);
+  };
+
   const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
+  const filtered = invSearch
+    ? products.filter(p => p.name?.toLowerCase().includes(invSearch.toLowerCase()) || p.code?.toLowerCase().includes(invSearch.toLowerCase()) || p.category?.toLowerCase().includes(invSearch.toLowerCase()))
+    : products;
+
   return (
     <div>
-      <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button></div>
-      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
+      <div className="ph">
+        <div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div>
+        <div style={{ display:"flex",gap:8,alignItems:"center" }}>
+          <div style={{ position:"relative" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:"var(--text3)",pointerEvents:"none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder="Search products..." style={{ paddingLeft:28,paddingRight:invSearch?26:10,height:34,border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",width:180,outline:"none" }} />
+            {invSearch && <button onClick={()=>setInvSearch("")} style={{ position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"var(--text3)",display:"flex",alignItems:"center",padding:0 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
+          </div>
+          <button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
+        </div>
+      </div>
+
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
+        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
+        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div>
+        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div>
+        <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div>
+      </div>
+
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
-      <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
-        {products.map(p => <tr key={p.id}><td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td className="tm">{p.category||"—"}</td><td className="mono hm">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span className="tag">{p.vat_rate}%</span></td><td className="mono">{p.stock_qty} {p.unit}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td></tr>)}
-        {products.length===0&&<tr><td colSpan={8} className="empty">No products yet</td></tr>}
-      </tbody></table></div></div>
+
+      <div className="card">
+        {invSearch && <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{filtered.length} of {products.length} products</div>}
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+          <table style={{minWidth:580}}>
+            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
+            <tbody>
+              {filtered.map(p => {
+                const isEditing = editingQty[p.id] !== undefined;
+                const isUpdating = updatingId === p.id;
+                return (
+                  <tr key={p.id}>
+                    <td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td>
+                    <td style={{fontWeight:500}}>{p.name}</td>
+                    <td className="tm">{p.category||"—"}</td>
+                    <td className="mono hm">{fmt(p.cost_price)}</td>
+                    <td className="mono">{fmt(p.sale_price)}</td>
+                    <td><span className="tag">{p.vat_rate}%</span></td>
+                    <td>
+                      {isEditing ? (
+                        <div style={{ display:"flex",alignItems:"center",gap:4 }}>
+                          <input
+                            type="number"
+                            value={editingQty[p.id]}
+                            onChange={e => setEditingQty(prev => ({...prev,[p.id]:e.target.value}))}
+                            onKeyDown={e => { if(e.key==="Enter") updateStock(p,editingQty[p.id]); if(e.key==="Escape") setEditingQty(prev=>{const n={...prev};delete n[p.id];return n;}); }}
+                            style={{ width:60,padding:"3px 6px",border:"1px solid var(--blue)",borderRadius:5,fontSize:12,outline:"none",fontFamily:"var(--mono)" }}
+                            autoFocus
+                          />
+                          <span style={{ fontSize:11,color:"var(--text3)" }}>{p.unit}</span>
+                          <button className="btn bp bsm" style={{ padding:"3px 8px",fontSize:11 }} onClick={() => updateStock(p,editingQty[p.id])} disabled={isUpdating}>{isUpdating?"...":"✓"}</button>
+                          <button className="btn bo bsm" style={{ padding:"3px 6px",fontSize:11 }} onClick={() => setEditingQty(prev=>{const n={...prev};delete n[p.id];return n;})}>✕</button>
+                        </div>
+                      ) : (
+                        <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+                          <button onClick={() => updateStock(p, (p.stock_qty||0)-1)} style={{ width:20,height:20,borderRadius:4,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"var(--text2)",lineHeight:1 }}>−</button>
+                          <span className="mono" style={{ fontWeight:600,fontSize:14,minWidth:28,textAlign:"center",cursor:"pointer" }} onClick={() => setEditingQty(prev=>({...prev,[p.id]:p.stock_qty}))} title="Click to edit">{p.stock_qty||0}</span>
+                          <button onClick={() => updateStock(p, (p.stock_qty||0)+1)} style={{ width:20,height:20,borderRadius:4,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"var(--text2)",lineHeight:1 }}>+</button>
+                          <span style={{ fontSize:11,color:"var(--text3)" }}>{p.unit}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td><span className={"badge "+(p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td>
+                  </tr>
+                );
+              })}
+              {filtered.length===0&&<tr><td colSpan={8} className="empty">{invSearch?"No products found for ""+invSearch+""":"No products yet"}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
