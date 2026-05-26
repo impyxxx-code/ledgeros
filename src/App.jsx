@@ -1193,6 +1193,32 @@ function Auth({ onAuth }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(() => {
+    const hash = window.location.hash;
+    return hash.includes("type=recovery");
+  });
+  const [recoveryToken] = useState(() => {
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      const params = new URLSearchParams(hash.replace("#","?"));
+      const token = params.get("access_token");
+      if (token) window.history.replaceState(null,"",window.location.pathname);
+      return token || "";
+    }
+    return "";
+  });
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+
+  const submitNewPassword = async () => {
+    if (newPw.length < 6) { setErr("Password must be at least 6 characters."); return; }
+    if (newPw !== confirmPw) { setErr("Passwords do not match."); return; }
+    setLoading(true);
+    const res = await sb.updatePassword(recoveryToken, newPw);
+    if (res.id || res.email) { setErr("✓ Password updated — you can now sign in."); setRecoveryMode(false); setNewPw(""); setConfirmPw(""); }
+    else { setErr("Failed — the reset link may have expired. Request a new one."); }
+    setLoading(false);
+  };
 
   const go = async () => {
     setLoading(true); setErr("");
@@ -1241,6 +1267,24 @@ function Auth({ onAuth }) {
 
   const mob = isMobile();
   const isSuccess = err.startsWith("✓");
+
+  if (recoveryMode) return (
+    <div style={{ minHeight:"100vh",background:"#f4f6f9",display:"flex",alignItems:"center",justifyContent:"center",padding:24 }}>
+      <div style={{ background:"#fff",borderRadius:16,padding:32,maxWidth:400,width:"100%",boxShadow:"0 4px 24px rgba(0,0,0,.08)" }}>
+        <div style={{ width:44,height:44,background:"#1e1b4b",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20 }}>
+          <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/><rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/><rect x="30" y="21" width="2.5" height="12" rx="1.25" fill="#60a5fa"/><polygon points="36,26 30,21 30,33" fill="#60a5fa" fillOpacity=".4"/></svg>
+        </div>
+        <div style={{ fontSize:22,fontWeight:800,color:"#0f172a",marginBottom:4 }}>Set New Password</div>
+        <div style={{ fontSize:13,color:"#64748b",marginBottom:24 }}>Choose a new password for your account.</div>
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          <input type="password" placeholder="New password" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{ padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,outline:"none",color:"#0f172a" }} />
+          <input type="password" placeholder="Confirm new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} style={{ padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,outline:"none",color:"#0f172a" }} onKeyDown={e=>e.key==="Enter"&&submitNewPassword()} />
+          {err && <div style={{ fontSize:13,color:err.startsWith("✓")?"#16a34a":"#dc2626",padding:"8px 12px",background:err.startsWith("✓")?"#f0fdf4":"#fef2f2",borderRadius:6 }}>{err}</div>}
+          <button onClick={submitNewPassword} disabled={loading} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer" }}>{loading?"Updating...":"Set New Password"}</button>
+        </div>
+      </div>
+    </div>
+  );
 
   // ── Concept B SVG logo mark ──
   const LogoMark = () => (
