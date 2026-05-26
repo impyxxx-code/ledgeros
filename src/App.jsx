@@ -35,8 +35,8 @@ import { createPortal } from "react-dom";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://wgpzinriughgbquurrae.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndncHppbnJpdWdoZ2JxdXVycmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3ODQ4MTgsImV4cCI6MjA5NTM2MDgxOH0.7ChjJE2-r88hiBmUdJiw6LrbsKR7FYIGSqJjHMHnVOI";
 
 const isMobile = () => window.innerWidth < 768;
 const DEFAULT_REORDER = 5;
