@@ -3436,13 +3436,26 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
   const filtered = contacts.filter(c => c.type === tab || c.type === "both");
   const save = async () => {
     if (!f.name) return; setSaving(true);
-    const data = await sb.post(token, "contacts", { ...f, created_by: userId });
-    if (data[0]) { setContacts(prev => [data[0], ...prev]); logAudit(token, userId, "contact_created", "contact", data[0].id, `${f.type} contact created: ${f.name}${f.email ? ' · ' + f.email : ''}`); }
+    if (editingContact) {
+      // Update existing contact
+      const { id, created_by, created_at, ...updateData } = f;
+      const data = await sb.patch(token, "contacts", editingContact.id, updateData);
+      if (data) {
+        setContacts(prev => prev.map(c => c.id === editingContact.id ? { ...c, ...updateData } : c));
+        logAudit(token, userId, "contact_updated", "contact", editingContact.id, `Contact updated: ${f.name}`);
+      }
+      setEditingContact(null);
+    } else {
+      // Create new contact
+      const data = await sb.post(token, "contacts", { ...f, created_by: userId });
+      if (data[0]) { setContacts(prev => [data[0], ...prev]); logAudit(token, userId, "contact_created", "contact", data[0].id, `${f.type} contact created: ${f.name}${f.email ? ' · ' + f.email : ''}`); }
+    }
     setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
     setShowForm(false); setSaving(false);
   };
@@ -3528,7 +3541,10 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
             </div>
             <div className="modal-actions">
               <div style={{ display:"flex",gap:8 }}>
-                <button className="btn bo bsm" onClick={()=>{setViewContact(null);setF({...viewContact});setShowForm(true);}}><i className="ti ti-edit" />Edit</button>
+                <button className="btn bo bsm" onClick={()=>{setEditingContact(viewContact);setF({...viewContact});setViewContact(null);setShowForm(true);}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
                 {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
                 {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
               </div>
@@ -3548,7 +3564,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
         </div>
       </div>
       <div className="tabs">{[["customer","👥 Customers"],["supplier","🏭 Suppliers"]].map(([k,l]) => <div key={k} className={"tab " + (tab === k ? "active" : "")} onClick={() => setTab(k)}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}</div>
-      {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Contact</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Contact"}</button></div></div>}
+      {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">{editingContact ? "Edit Contact" : "New Contact"}</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" }); }}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editingContact ? "Update Contact" : "Save Contact"}</button></div></div>}
       {contactView === "list" ? (
         <div className="card">
           <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
