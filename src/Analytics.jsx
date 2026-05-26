@@ -110,27 +110,27 @@ const CSS = `
     --blue:#2563eb;--blue-bg:#eff6ff;
     --amber:#d97706;--amber-bg:#fffbeb;
     --purple:#7c3aed;--purple-bg:#f5f3ff;
-    --qb:#2ca01c;--qb-dark:#1a3a2a;
+    --qb:#2563eb;--qb-dark:#0d1829;
     --sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
     --sh:0 1px 3px rgba(0,0,0,.08);--sh2:0 4px 16px rgba(0,0,0,.1);
   }
   body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
   /* TOPNAV */
-  .tnav{background:var(--qb-dark);height:52px;display:flex;align-items:center;padding:0 24px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-  .tlogo{width:32px;height:32px;background:var(--qb);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
-  .tname{font-size:15px;font-weight:700;color:#fff}
+  .tnav{background:#0d1829;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+  .tlogo{width:32px;height:32px;background:#1e1b4b;border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .tname{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
   .tco{font-size:10px;color:rgba(255,255,255,.4)}
-  .tbadge{margin-left:auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 12px;font-size:12px;color:#fff}
-  .tback{background:var(--qb);border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+  .tbadge{margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.7)}
+  .tback{background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
   /* LAYOUT */
   .page{padding:24px;max-width:1300px;margin:0 auto}
   .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
   .pt{font-size:22px;font-weight:700}
   .ps{font-size:13px;color:var(--text2);margin-top:3px}
   .period-btns{display:flex;gap:6px}
-  .pb{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:#fff;color:var(--text2);font-family:var(--sans);transition:all .15s}
-  .pb:hover{border-color:var(--qb);color:var(--qb)}
-  .pb.active{background:var(--qb);color:#fff;border-color:var(--qb)}
+    .pb{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s}
+  .pb:hover{border-color:#2563eb;color:#2563eb}
+  .pb.active{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:#2563eb}
   /* CARDS */
   .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);margin-bottom:20px;overflow:hidden}
   .ch{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -168,7 +168,7 @@ const CSS = `
   .mono{font-family:var(--mono)}.tr{text-align:right}.tg{color:var(--green)}.tr-c{color:var(--red)}.tm{color:var(--text2)}
   /* RANK BAR */
   .rank-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}
-  .rank-fill{height:100%;border-radius:3px;background:var(--qb)}
+  .rank-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#2563eb,#1d4ed8)}
   /* GROWTH BADGE */
   .growth{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
   .growth.up{background:var(--green-bg);color:var(--green)}
@@ -284,7 +284,7 @@ function SparkLine({ values, color }) {
   const max = Math.max(...values); const min = Math.min(...values);
   const w = 120; const h = 36; const pad = 4;
   const pts = values.map((v, i) => { const x = pad + (i / (values.length - 1)) * (w - pad * 2); const y = h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2); return `${x},${y}`; }).join(" ");
-  return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}><polyline points={pts} fill="none" stroke={color || "var(--qb)"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}><polyline points={pts} fill="none" stroke={color || "#2563eb"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -328,7 +328,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
     <>
       <style>{CSS}</style>
       <nav className="tnav">
-        <div className="tlogo">L</div>
+        <div className="tlogo"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/><rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/><rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/><rect x="30" y="21" width="2.5" height="12" rx="1.25" fill="#60a5fa"/><polygon points="36,26 30,21 30,33" fill="#60a5fa" fillOpacity=".4"/></svg></div>
         <div><div className="tname">LedgerOS</div><div className="tco">Analytics</div></div>
         <div className="tbadge">Sales Analytics</div>
         <a className="tback" href="https://ledgeros-lac.vercel.app" style={{ marginLeft: 8 }}>Back to App</a>
@@ -348,7 +348,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
         <div className="kg">
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--green)" }} />
-            <div className="ki"><i className="ti ti-currency-pound" style={{color:"var(--green)"}} /></div>
+            <div className="ki" style={{color:"var(--green)",fontWeight:700,fontSize:16}}>£</div>
             <div className="kl">Total Revenue</div>
             <div className="kv" style={{ color: "var(--green)" }}>{fmt(totalRevenue)}</div>
             <div className="kd up">{revGrowth >= 0 ? "+" : ""}{revGrowth}% vs last month</div>
@@ -356,7 +356,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
           </div>
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--red)" }} />
-            <div className="ki"><i className="ti ti-trending-up" style={{color:"var(--red)"}} /></div>
+            <div className="ki"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
             <div className="kl">{expenses.length > 0 ? "Total Expenses" : "Est. Expenses"}</div>
             <div className="kv" style={{ color: "var(--red)" }}>{fmt(totalExpenses)}</div>
             <div className="kd down">{expenses.length > 0 ? `${expenses.length} transactions` : "Estimated at 60% of revenue"}</div>
@@ -372,7 +372,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
           </div>
           <div className="kpi">
             <div className="kpi-accent" style={{ background: "var(--purple)" }} />
-            <div className="ki"><i className="ti ti-file-invoice" style={{color:"var(--purple)"}} /></div>
+            <div className="ki"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
             <div className="kl">Total Invoices</div>
             <div className="kv" style={{ color: "var(--purple)" }}>{totalInvoices}</div>
             <div className="kd flat">Avg {fmt(totalRevenue / totalInvoices)} per invoice</div>
@@ -403,7 +403,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
               <tbody>
                 {TOP_PRODUCTS.sort((a, b) => b.units - a.units).map((p, i) => (
                   <tr key={i}>
-                    <td><div style={{ width: 24, height: 24, borderRadius: "50%", background: i < 3 ? "var(--qb)" : "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i < 3 ? "#fff" : "var(--text2)" }}>{i + 1}</div></td>
+                    <td><div style={{ width: 24, height: 24, borderRadius: "50%", background: i < 3 ? "#1e1b4b" : "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i < 3 ? "#fff" : "var(--text2)" }}>{i + 1}</div></td>
                     <td style={{ fontWeight: 600 }}>{p.name}</td>
                     <td><span style={{ padding: "2px 8px", background: "var(--blue-bg)", color: "var(--blue)", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{p.category}</span></td>
                     <td className="hm"><div className="mono">{p.units.toLocaleString()}</div><div className="rank-bar"><div className="rank-fill" style={{ width: `${(p.units / Math.max(...TOP_PRODUCTS.map(x => x.units))) * 100}%` }} /></div></td>
@@ -429,7 +429,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
                     <tr key={i}>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--qb)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.name[0]}</div>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e1b4b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.name[0]}</div>
                           <div><div style={{ fontWeight: 600, fontSize: 13 }}>{c.name}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>Last: {fmtDate(c.lastOrder)}</div></div>
                         </div>
                       </td>
