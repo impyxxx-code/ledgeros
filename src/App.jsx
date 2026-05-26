@@ -175,11 +175,11 @@ const CSS = `
   --white:#ffffff;
 
   /* ── Sidebar ── */
-  --sidebar:#060d1f;
-  --sidebar-border:rgba(255,255,255,.06);
-  --sidebar-hover:rgba(255,255,255,.05);
-  --sidebar-active:rgba(37,99,235,.18);
-  --sidebar-active-border:rgba(37,99,235,.35);
+  --sidebar:#0d1117;
+  --sidebar-border:rgba(255,255,255,.07);
+  --sidebar-hover:rgba(255,255,255,.06);
+  --sidebar-active:rgba(99,102,241,.18);
+  --sidebar-active-border:rgba(99,102,241,.35);
 
   /* ── Text ── */
   --text:#0d1117;
@@ -240,7 +240,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
    SIDEBAR — Premium dark navigation
    ──────────────────────────────────── */
 .sidebar{
-  width:234px;min-width:234px;
+  width:220px;min-width:220px;
   background:var(--sidebar);
   display:flex;flex-direction:column;
   padding:16px 10px;
@@ -251,7 +251,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .sidebar::before{
   content:'';position:absolute;top:-80px;left:-80px;
   width:240px;height:240px;border-radius:50%;
-  background:radial-gradient(circle,rgba(37,99,235,.1) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(99,102,241,.12) 0%,transparent 70%);
   pointer-events:none;z-index:0;
 }
 .sidebar>*{position:relative;z-index:1}
@@ -277,14 +277,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .nav-label{
   font-size:10px;font-weight:600;
   color:rgba(255,255,255,.25);
-  text-transform:uppercase;letter-spacing:1.4px;
+  text-transform:uppercase;letter-spacing:1.2px;
   padding:0 12px 8px;
 }
 
 .nav-item{
   display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:var(--r);
-  color:rgba(255,255,255,.42);font-size:13px;font-weight:500;
+  padding:8px 12px;border-radius:var(--r);
+  color:rgba(255,255,255,.42);font-size:12.5px;font-weight:500;
   cursor:pointer;
   transition:color .12s var(--ease),background .12s var(--ease);
   margin-bottom:2px;user-select:none;letter-spacing:-.1px;
@@ -293,12 +293,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .nav-item:hover{
   background:var(--sidebar-hover);
-  color:rgba(255,255,255,.78);
+  color:rgba(255,255,255,.8);
 }
 .nav-item.active{
   background:var(--sidebar-active);
-  color:#93c5fd;font-weight:700;
-  border:1px solid rgba(37,99,235,.25);
+  color:#c4b5fd;font-weight:700;
+  border:1px solid rgba(99,102,241,.25);
   border-radius:var(--r);
 }
 .nav-item i{font-size:16px;flex-shrink:0;opacity: 0.9}
