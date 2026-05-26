@@ -1032,7 +1032,7 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
       <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "var(--sh3)", overflow: "hidden", border: "1px solid var(--border)", animation: "scaleIn .15s var(--ease)" }}>
         {/* Search input */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
-          <i className="ti ti-search" style={{ color: "var(--text3)", fontSize: 18, flexShrink: 0 }} />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && all[0]) { all[0].action(); onClose(); } }} placeholder="Search or type a command..." style={{ flex: 1, border: "none", outline: "none", fontSize: 16, fontFamily: "var(--sans)", color: "var(--text)", background: "transparent" }} />
           <kbd style={{ background: "var(--border)", borderRadius: 5, padding: "2px 7px", fontSize: 11, color: "var(--text3)", fontFamily: "var(--sans)", flexShrink: 0 }}>ESC</kbd>
         </div>
@@ -1113,7 +1113,7 @@ function EmptyState({ icon, title, sub, action, actionLabel }) {
       <div className="empty-state-icon">{icons[icon] || icons.default}</div>
       <div className="empty-state-title">{title}</div>
       <div className="empty-state-sub">{sub}</div>
-      {action && <button className="btn bp" onClick={action}><i className="ti ti-plus" />{actionLabel || "Get started"}</button>}
+      {action && <button className="btn bp" onClick={action}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{actionLabel || "Get started"}</button>}
     </div>
   );
 }
@@ -1162,7 +1162,7 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: step.done ? "var(--text3)" : "var(--text)", textDecoration: step.done ? "line-through" : "none" }}>{step.label}</div>
             </div>
-            {!step.done && step.page && <i className="ti ti-arrow-right" style={{ color: "var(--text3)", fontSize: 14 }} />}
+            {!step.done && step.page && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>}
             {step.done && <span style={{ color: "var(--green)", fontSize: 18 }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>}
           </div>
         ))}
@@ -1375,7 +1375,7 @@ function Auth({ onAuth }) {
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>Full name</label>
               <div style={{ position: "relative" }}>
-                <i className="ti ti-user" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                 <input style={{ width: "100%", padding: "11px 14px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.full_name} onChange={e => setF({ ...f, full_name: e.target.value })} placeholder="Jane Smith" onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
               </div>
             </div>
@@ -1385,7 +1385,7 @@ function Auth({ onAuth }) {
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>Email address</label>
             <div style={{ position: "relative" }}>
-              <i className="ti ti-mail" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+              <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
               <input type="email" style={{ width: "100%", padding: "11px 14px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="you@arkhamretail.com" onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
             </div>
           </div>
@@ -1396,7 +1396,7 @@ function Auth({ onAuth }) {
               Password
             </label>
             <div style={{ position: "relative" }}>
-              <i className="ti ti-lock" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", fontSize: 15, pointerEvents: "none" }} />
+              <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
               <input type={showPw ? "text" : "password"} style={{ width: "100%", padding: "11px 40px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="Enter your password" onKeyDown={e => e.key === "Enter" && go()} onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
               <button onClick={() => setShowPw(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9aa5b4", padding: 2, display: "flex", alignItems: "center" }}>
                 {showPw
@@ -1708,7 +1708,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             {/* WA number input */}
             {showWaInput && (
               <div style={{ display: "flex", gap: 8, alignItems: "center", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "var(--r)", padding: "10px 14px", marginBottom: 16 }}>
-                <i className="ti ti-brand-whatsapp" style={{ color: "#25D366", fontSize: 18 }} />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                 <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }} placeholder="Enter WhatsApp number e.g. 07700 900000" value={waNumber} onChange={e => setWaNumber(e.target.value)} onKeyDown={e => e.key === "Enter" && waNumber && sendWhatsApp(waNumber)} autoFocus />
                 <button className="btn bwa bsm" onClick={() => sendWhatsApp(waNumber)} disabled={!waNumber}>Send</button>
                 <button className="btn bo bsm" onClick={() => setShowWaInput(false)}>Cancel</button>
@@ -1765,8 +1765,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>More Actions</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="btn bo" onClick={() => onDuplicate && onDuplicate(invoice)}><i className="ti ti-copy" />Duplicate Invoice</button>
-                <button className="btn bo" onClick={() => handleEmail(true)}><i className="ti ti-bell" />Send Reminder</button>
+                <button className="btn bo" onClick={() => onDuplicate && onDuplicate(invoice)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplicate Invoice</button>
+                <button className="btn bo" onClick={() => handleEmail(true)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Send Reminder</button>
               </div>
             </div>
           </div>
@@ -1780,7 +1780,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <span style={{ fontSize: 12, color: "var(--text3)" }}>· {invoice.invoice_number}</span>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              {savedPhone && <button className="btn bwa bsm" onClick={() => sendWhatsApp(savedPhone)}><i className="ti ti-brand-whatsapp" />{savedPhone}</button>}
+              {savedPhone && <button className="btn bwa bsm" onClick={() => sendWhatsApp(savedPhone)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>{savedPhone}</button>}
               <button className="btn bo bsm" onClick={handleEmail} disabled={emailStatus==="sending"} style={{color:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined,borderColor:emailStatus==="sent"?"var(--green)":emailStatus==="error"?"var(--red)":undefined}}>
                 {emailStatus==="sending" ? <div className="spin" style={{width:13,height:13,borderWidth:2,flexShrink:0}}/> : emailStatus==="sent" ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> : emailStatus==="error" ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
                 {emailStatus==="sending"?"Sending...":emailStatus==="sent"?"Sent!":emailStatus==="error"?"Failed":"Email"}
@@ -2280,10 +2280,10 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
                   style={{ background: "#0f172a" }}>
                   {creatingDN === true
                     ? <><div className="spin" style={{ width: 13, height: 13, borderWidth: 2 }} />Saving...</>
-                    : <><i className="ti ti-device-floppy" />Save Delivery Note</>}
+                    : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Delivery Note</>}
                 </button>
-                <button className="btn bo" onClick={() => emailDN(buildQuickDN())}><i className="ti ti-mail" />Email DN</button>
-                <button className="btn bwa" onClick={() => whatsappDN(buildQuickDN())}><i className="ti ti-brand-whatsapp" />WhatsApp DN</button>
+                <button className="btn bo" onClick={() => emailDN(buildQuickDN())}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email DN</button>
+                <button className="btn bwa" onClick={() => whatsappDN(buildQuickDN())}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp DN</button>
               </div>
             </div>
           </div>
@@ -2320,12 +2320,12 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-              <button className="btn bo" onClick={() => emailDN(dnSaved)}><i className="ti ti-mail" />Email DN</button>
-              <button className="btn bwa" onClick={() => whatsappDN(dnSaved)}><i className="ti ti-brand-whatsapp" />WhatsApp DN</button>
+              <button className="btn bo" onClick={() => emailDN(dnSaved)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email DN</button>
+              <button className="btn bwa" onClick={() => whatsappDN(dnSaved)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp DN</button>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="btn bp" onClick={onClose}><i className="ti ti-check" />Done</button>
+              <button className="btn bp" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Done</button>
             </div>
           </div>
         )}
@@ -2364,7 +2364,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:160 }}>
       <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:54, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><i className="ti ti-arrow-left" style={{ fontSize:20 }} /></button>
+          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
           <div><div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>New Invoice</div><div style={{ fontSize:11, color:"var(--text3)" }}>{mobActiveLines.length} item{mobActiveLines.length!==1?"s":""}</div></div>
         </div>
         <div style={{ fontSize:16, fontWeight:700, color:"var(--blue)" }}>{fmt(total)}</div>
@@ -2414,7 +2414,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
       <div style={{ padding:"0 12px" }}>
         <button onClick={() => setMobPickerOpen(true)} style={{ width:"100%", background:"var(--blue)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, boxShadow:"0 4px 14px rgba(37,99,235,.35)" }}>
-          <i className="ti ti-plus" style={{ fontSize:20 }} />Add Product
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product
         </button>
       </div>
 
@@ -2466,7 +2466,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
                     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                       {inBasket && <span style={{ fontSize:12, fontWeight:700, color:"var(--blue)", background:"var(--blue-lt)", padding:"3px 8px", borderRadius:20 }}>×{inBasket.qty}</span>}
                       <div style={{ width:36, height:36, borderRadius:10, background: inBasket ? "var(--blue)" : "var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        <i className="ti ti-plus" style={{ color: inBasket ? "#fff" : "var(--text3)", fontSize:16 }} />
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       </div>
                     </div>
                   </button>
@@ -2504,7 +2504,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           </div>
         ))}
         <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc", borderTop: "0.5px solid var(--border)" }}>
-          <button className="btn bo bsm" onClick={() => setLines([...lines, { description: "", qty: 1, unit_price: "", vat_rate: 20 }])}><i className="ti ti-plus" />Add Line</button>
+          <button className="btn bo bsm" onClick={() => setLines([...lines, { description: "", qty: 1, unit_price: "", vat_rate: 20 }])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Line</button>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4 }}>Subtotal: {fmt(subtotal)} &nbsp;·&nbsp; VAT: {fmt(vatTotal)}</div>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Total: {fmt(total)}</div>
@@ -2567,8 +2567,8 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
-          <div className="qa-btn" onClick={() => setPage("invoices")}><i className="ti ti-plus" />New Invoice</div>
-          <div className="qa-btn" onClick={() => setPage("contacts")}><i className="ti ti-user-plus" />Add Customer</div>
+          <div className="qa-btn" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice</div>
+          <div className="qa-btn" onClick={() => setPage("contacts")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer</div>
         </div>
       </div>
       <div className="kgrid">
@@ -2577,9 +2577,9 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
         <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--amber-lt)" }}><span style={{ color: "var(--amber)" }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>Pending</span></div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(myPending)}</div><div className="kpi-label">Awaiting Payment</div></div>
         <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><span style={{ color: "var(--purple)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>{myCusts.length}</span></div><div className="kpi-val" style={{ color: "var(--purple)" }}>{myCusts.length}</div><div className="kpi-label">My Customers</div></div>
       </div>
-      {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><i className="ti ti-alert-triangle" style={{ color: "#fff", fontSize: 20 }} /></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: 0.7 }}>Please follow up with your customers</div></div></div>}
+      {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: 0.7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
-        <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button></div>
+        <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>View all</button></div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {myInv.slice(0, 8).map(inv => (
             <tr key={inv.id}>
@@ -2730,8 +2730,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className="qa-btn" onClick={() => setPage("invoices")}><i className="ti ti-plus" />New Invoice</button>
-          <button className="qa-btn" onClick={() => setPage("contacts")}><i className="ti ti-user-plus" />Add Customer</button>
+          <button className="qa-btn" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice</button>
+          <button className="qa-btn" onClick={() => setPage("contacts")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer</button>
           <button className="qa-btn" onClick={() => setPage("delivery-notes")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery</button>
           <button className="qa-btn primary" onClick={() => setPage("analytics")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
         </div>
@@ -2873,7 +2873,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
                   <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity: 0.6}} />Pending
                 </div>
-                <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><i className="ti ti-arrow-right"/>Reports</button>
+                <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Reports</button>
               </div>
             </div>
             <div style={{padding:"20px 24px"}}>
@@ -2945,7 +2945,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="ch">
             <div><div className="ct">Recent Invoices</div><div className="cs">{invoices.length} total · {paidCount} paid · {pendingCount} pending</div></div>
-            <button className="btn bo bsm" onClick={() => setPage("invoices")}><i className="ti ti-arrow-right" />View all</button>
+            <button className="btn bo bsm" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>View all</button>
           </div>
           <div className="tw">
             <table>
@@ -3038,7 +3038,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       <div className="card" style={{ marginTop: 18 }}>
         <div className="ch">
           <div><div className="ct">🏆 Agent Leaderboard</div><div className="cs">Ranked by total sales value</div></div>
-          <button className="btn bo bsm" onClick={() => setPage("agent-report")}><i className="ti ti-arrow-right" />Full report</button>
+          <button className="btn bo bsm" onClick={() => setPage("agent-report")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Full report</button>
         </div>
         <div className="tw">
           <table>
@@ -3297,10 +3297,10 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         <div><div className="pt">Invoices</div><div className="psub">{filtered.length} of {invoices.length} invoices</div></div>
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ position: "relative" }}>
-            <i className="ti ti-search" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text3)", fontSize: 14, pointerEvents: "none" }} />
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text3)", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
             <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search invoices..." style={{ paddingLeft: 32, paddingRight: 12, paddingTop: 7, paddingBottom: 7, border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "var(--white)", width: 200 }} />
           </div>
-          <button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Invoice</button>
+          <button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice</button>
         </div>
       </div>
 
@@ -3343,8 +3343,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => setViewMode("table")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="table"?"var(--blue)":"var(--border)"),background:viewMode==="table"?"var(--blue-lt)":"var(--white)",color:viewMode==="table"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><i className="ti ti-table" style={{fontSize:14}} /></button>
-            <button onClick={() => setViewMode("card")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="card"?"var(--blue)":"var(--border)"),background:viewMode==="card"?"var(--blue-lt)":"var(--white)",color:viewMode==="card"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><i className="ti ti-layout-grid" style={{fontSize:14}} /></button>
+            <button onClick={() => setViewMode("table")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="table"?"var(--blue)":"var(--border)"),background:viewMode==="table"?"var(--blue-lt)":"var(--white)",color:viewMode==="table"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
+            <button onClick={() => setViewMode("card")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="card"?"var(--blue)":"var(--border)"),background:viewMode==="card"?"var(--blue-lt)":"var(--white)",color:viewMode==="card"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
           </div>
         </div>
         {viewMode === "card" ? (
@@ -3514,7 +3514,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
                     <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",marginBottom:10 }}>Transaction History</div>
                     {custInvoices.length===0 ? (
                       <div style={{ padding:24,textAlign:"center",color:"var(--text3)",background:"#f8fafd",borderRadius:"var(--rl)",border:"1px solid var(--border)" }}>
-                        <i className="ti ti-file-off" style={{ fontSize:28,display:"block",marginBottom:8,opacity: 0.3 }} />
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style="display:block;margin-bottom:8px;opacity:0.3"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
                         No invoices yet for this customer
                       </div>
                     ) : (
@@ -3546,8 +3546,8 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Edit
                 </button>
-                {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><i className="ti ti-mail" />Email</button>}
-                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><i className="ti ti-brand-whatsapp" />WhatsApp</button>}
+                {viewContact.email&&<button className="btn bo bsm" onClick={()=>window.open("mailto:"+viewContact.email)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>}
+                {viewContact.phone&&<button className="btn bwa bsm" onClick={()=>window.open("https://wa.me/"+viewContact.phone.split("").filter(c=>c>="0"&&c<="9").join(""))}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>}
               </div>
               <button className="btn bp bsm" onClick={()=>setViewContact(null)}>Close</button>
             </div>
@@ -3593,14 +3593,14 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
                 <td style={{fontSize:12,color:"var(--text2)"}}>{c.email||"—"}</td>
                 <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{c.phone||"—"}</td>
                 <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{[c.city,c.postcode].filter(Boolean).join(", ")||"—"}</td>
-                <td><button className="btn bo bsm" onClick={()=>window.open(`mailto:${c.email}`)}><i className="ti ti-mail" />Email</button></td>
+                <td><button className="btn bo bsm" onClick={()=>window.open(`mailto:${c.email}`)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button></td>
               </tr>
             ))}
           </tbody></table></div>
         </div>
       ) : (
       <div className="contact-grid">
-        {filtered.map(c => <div key={c.id} className="contact-card" onClick={() => setViewContact(c)}><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><i className="ti ti-mail" />{c.email}</div>}{c.phone && <div className="cc-detail"><i className="ti ti-phone" />{c.phone}</div>}{c.city && <div className="cc-detail"><i className="ti ti-map-pin" />{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
+        {filtered.map(c => <div key={c.id} className="contact-card" onClick={() => setViewContact(c)}><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>{c.email}</div>}{c.phone && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2.76h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l1.46-1.46a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>{c.phone}</div>}{c.city && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
         {filtered.length === 0 && <div style={{ padding: 48, textAlign: "center", color: "var(--text3)", gridColumn: "1/-1" }}>No {tab}s yet — add your first one!</div>}
       </div>
       )}
@@ -3628,7 +3628,7 @@ function Inventory({ products, setProducts, token, userId }) {
   const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
   return (
     <div>
-      <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />Add Product</button></div>
+      <div className="ph"><div><div className="pt">Stock & Inventory</div><div className="psub">Track your products and stock levels</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button></div>
       <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Low Stock</div><div className="kpi-val" style={{ color: lowStock.length > 0 ? "var(--red)" : "var(--green)" }}>{lowStock.length}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Stock Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price,0))}</div></div><div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Retail Value</div><div className="kpi-val">{fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price,0))}</div></div></div>
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
@@ -3670,8 +3670,8 @@ function Purchases({ contacts, products, token, userId }) {
   const updateStatus = async (id, status) => { await sb.patch(token,"purchase_orders",id,{status}); setPOs(prev => prev.map(p => p.id===id?{...p,status}:p)); };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Purchase Orders</div><div className="psub">Order stock from your suppliers</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New PO</button></div>
-      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><i className="ti ti-plus" />Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
+      <div className="ph"><div><div className="pt">Purchase Orders</div><div className="psub">Order stock from your suppliers</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button></div>
+      {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{po.status==="sent"&&<button className="btn bp bsm" onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}</td></tr>)}
         {pos.length===0&&<tr><td colSpan={6}><EmptyState icon="report" title="No purchase orders yet" sub="Create your first purchase order to start ordering from suppliers" action={() => setShowForm(true)} actionLabel="New PO" /></td></tr>}
@@ -3705,7 +3705,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
   const updateStatus = async (id,status) => { await sb.patch(token,"credit_notes",id,{status}); setCNs(prev => prev.map(c => c.id===id?{...c,status}:c)); };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Credit Notes</div><div className="psub">Issue and apply credit notes</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Credit Note</button></div>
+      <div className="ph"><div><div className="pt">Credit Notes</div><div className="psub">Issue and apply credit notes</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button></div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {cns.map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
@@ -3782,7 +3782,7 @@ function CustomerStatement({ contacts, invoices, token }) {
           <div className="ch">
             <div><div className="ct">Statement — {selectedContact.name}</div><div className="cs">{selectedContact.phone || ""} {selectedContact.email ? `· ${selectedContact.email}` : ""}</div></div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn bwa bsm" onClick={handleWhatsApp}><i className="ti ti-brand-whatsapp" />Send Statement</button>
+              <button className="btn bwa bsm" onClick={handleWhatsApp}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Send Statement</button>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, padding: "16px 20px", borderBottom: "0.5px solid var(--border)" }}>
@@ -4327,7 +4327,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--blue-lt)"}}><span style={{color:"var(--blue)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 7a4 4 0 0 0-8 0v9"/><path d="M6 17h12"/><path d="M6 13h8"/></svg></span></div><span className="kpi-badge" style={{background:"var(--blue-lt)",color:"#1e40af"}}>{periodLabels[period]}</span></div><div className="kpi-val">{fmt(totalSales)}</div><div className="kpi-label">Total Sales</div></div>
           <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--green-lt)"}}><span style={{color:"var(--green)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span></div></div><div className="kpi-val tg">{fmt(totalPaid)}</div><div className="kpi-label">Collected</div></div>
           <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--amber-lt)"}}><span style={{color:"var(--amber)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div></div><div className="kpi-val" style={{color:"var(--amber)"}}>{fmt(totalPending)}</div><div className="kpi-label">Pending</div></div>
-          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--red-lt)"}}><i className="ti ti-alert-circle" style={{color:"var(--red)"}} /></div></div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div><div className="kpi-label">Overdue</div></div>
+          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--red-lt)"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div><div className="kpi-label">Overdue</div></div>
         </div>
         <div className="card">
           <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
@@ -4860,7 +4860,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     <div>
       <div className="ph">
         <div><div className="pt">Delivery Notes</div><div className="psub">Create and manage delivery notes</div></div>
-        <button className="btn bp" onClick={() => setShowForm(!showForm)}><i className="ti ti-plus" />New Delivery Note</button>
+        <button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
       </div>
 
       {/* Summary KPIs */}
@@ -4921,7 +4921,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
               </div>
             ))}
             <div style={{ padding: "12px 18px", background: "#fafbfc", borderTop: "0.5px solid var(--border)" }}>
-              <button className="btn bo bsm" onClick={() => setLines([...lines, { product_id: "", description: "", qty: 1, unit: "unit" }])}><i className="ti ti-plus" />Add Item</button>
+              <button className="btn bo bsm" onClick={() => setLines([...lines, { product_id: "", description: "", qty: 1, unit: "unit" }])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Item</button>
             </div>
           </div>
           <div className="ff">
@@ -4958,9 +4958,9 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <button className="btn bo bsm" onClick={() => printDN(dn)}><i className="ti ti-file-download" />Download</button>
-                      <button className="btn bo bsm" onClick={() => sendEmail(dn)}><i className="ti ti-mail" />Email</button>
-                      <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><i className="ti ti-brand-whatsapp" />WhatsApp</button>
+                      <button className="btn bo bsm" onClick={() => printDN(dn)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
+                      <button className="btn bo bsm" onClick={() => sendEmail(dn)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
+                      <button className="btn bwa bsm" onClick={() => sendWhatsApp(dn)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>
                     </div>
                   </td>
                 </tr>
@@ -5095,7 +5095,7 @@ function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
           style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
         />
         <button onClick={send} disabled={!input.trim() || loading} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <i className="ti ti-send" style={{ fontSize: 15, color: "#fff" }} />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
@@ -5141,7 +5141,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",gap:16,fontFamily:"sans-serif",color:"#333" }}>
-          <i className="ti ti-alert-triangle" style={{ fontSize:48,color:"#ef4444" }} />
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div style={{ fontSize:20,fontWeight:600 }}>Something went wrong</div>
           <div style={{ fontSize:14,color:"#666",maxWidth:400,textAlign:"center" }}>{this.state.error?.message || "An unexpected error occurred."}</div>
           <button style={{ padding:"10px 20px",background:"#2563eb",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
@@ -5426,7 +5426,7 @@ export default function App() {
             <div className="user-row">
               <div className="user-av">{initials}</div>
               <div><div className="user-name">{profile?.full_name||auth.user.email}</div><div className="user-role">{profile?.role||"agent"}</div></div>
-              <button className="signout-btn" onClick={signOut} title="Sign out"><i className="ti ti-logout" /></button>
+              <button className="signout-btn" onClick={signOut} title="Sign out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
             </div>
           </div>
         </aside>
@@ -5446,7 +5446,7 @@ export default function App() {
               </div>
             </div>
             <div className="search-wrap topbar-search" style={{ position: "relative" }}>
-              <i className="ti ti-search" />
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
                 className="search-input"
                 placeholder="Search invoices, customers, products..."
@@ -5566,7 +5566,7 @@ export default function App() {
                         <div style={{maxHeight:400,overflowY:"auto"}}>
                           {notifs.length===0?(
                             <div style={{padding:"32px 16px",textAlign:"center",color:"var(--text3)"}}>
-                              <i className="ti ti-bell-check" style={{fontSize:32,display:"block",marginBottom:8,opacity: 0.4}} />
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style="display:block;margin:0 auto 8px;opacity:0.4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                               <div style={{fontSize:13}}>All caught up!</div>
                             </div>
                           ):notifs.map(n=>(
@@ -5747,7 +5747,7 @@ export default function App() {
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}><i className={"ti "+n.icon} style={{fontSize:20}} /><span className="mob-nav-lbl">{n.label}</span></div>)}
-            <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><i className="ti ti-dots" style={{fontSize:20}} /><span className="mob-nav-lbl">More</span></div>
+            <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span className="mob-nav-lbl">More</span></div>
           </div>
         </nav>
         {showMobMore && (
@@ -5863,7 +5863,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
                 <button onClick={() => removeLine(i)} style={{ background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 16 }}>x</button>
               </div>
             ))}
-            <button className="btn bo bsm" onClick={addLine} style={{ marginTop: 12 }}><i className="ti ti-plus" /> Add Line</button>
+            <button className="btn bo bsm" onClick={addLine} style={{ marginTop: 12 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Line</button>
           </div>
           <div style={{ textAlign: "right", padding: "12px 0", borderTop: "1px solid var(--border)" }}>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 4 }}>Subtotal: {fmt(subtotal)} · VAT: {fmt(vatTotal)}</div>
@@ -5895,7 +5895,7 @@ function UserApproval({ token, profile }) {
   const [loading, setLoading] = useState(true);
   if (profile?.role !== "admin") return (
     <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--text3)" }}>
-      <i className="ti ti-lock" style={{ fontSize: 28, marginBottom: 10, display: "block" }} />
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Admin access required</div>
     </div>
   );
@@ -5993,7 +5993,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
   const [activeTab, setActiveTab] = useState("company");
   if (profile?.role !== "admin" && profile?.role !== "manager") return (
     <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text3)" }}>
-      <i className="ti ti-lock" style={{ fontSize: 32, marginBottom: 12, display: "block" }} />
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div style={{ fontWeight: 600, marginBottom: 4 }}>Access restricted</div>
       <div style={{ fontSize: 13 }}>Settings are only available to admins.</div>
     </div>
