@@ -301,7 +301,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   border:1px solid rgba(37,99,235,.25);
   border-radius:var(--r);
 }
-.nav-item i{font-size:16px;flex-shrink:0;opacity: 0.9}
+.nav-item i,.nav-item svg{font-size:16px;flex-shrink:0;opacity:0.9;width:16px;height:16px}
 .nav-badge{
   margin-left:auto;background:var(--red);color:#fff;
   font-size:10px;font-weight:700;
@@ -860,7 +860,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   transition:color .12s;font-size:10px;
 }
 .mob-nav-item.active{color:var(--blue)}
-.mob-nav-item i{font-size:20px}
+.mob-nav-item i,.mob-nav-item svg{font-size:20px;width:20px;height:20px}
 .mob-nav-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 
 /* ────────────────────────────────────
@@ -5892,7 +5892,7 @@ export default function App() {
             {/* Dark mode + version */}
             <div style={{ padding: "6px 12px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", padding: "4px 0" }} onClick={() => { const next = !darkMode; setDarkMode(next); localStorage.setItem("ledgeros_dark", next?"1":"0"); }}>
-                <i className={"ti " + (darkMode ? "ti-sun" : "ti-moon")} style={{ color: "rgba(255,255,255,.35)", fontSize: 14 }} />
+                {darkMode ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)", fontWeight: 500 }}>{darkMode ? "Light mode" : "Dark mode"}</span>
               </div>
               <span className="version-badge">v2.1</span>
