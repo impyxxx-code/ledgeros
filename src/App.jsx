@@ -99,6 +99,12 @@ const sb = {
     return d;
   },
   async signOut(t) { await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) }); },
+  async resetPassword(email) {
+    return (await fetch(`${SUPABASE_URL}/auth/v1/recover`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email }) })).json();
+  },
+  async updatePassword(t, password) {
+    return (await fetch(`${SUPABASE_URL}/auth/v1/user`, { method: "PUT", headers: { ...sb.h(t), "Content-Type": "application/json" }, body: JSON.stringify({ password }) })).json();
+  },
   async get(t, table, q = "") { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) })).json(); },
   async post(t, table, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
   async patch(t, table, id, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
@@ -1225,6 +1231,14 @@ function Auth({ onAuth }) {
     setLoading(false);
   };
 
+  const sendReset = async () => {
+    if (!f.email) { setErr("Enter your email address first."); return; }
+    setLoading(true);
+    await sb.resetPassword(f.email);
+    setErr("✓ Reset email sent — check your inbox.");
+    setLoading(false);
+  };
+
   const mob = isMobile();
   const isSuccess = err.startsWith("✓");
 
@@ -1414,6 +1428,13 @@ function Auth({ onAuth }) {
               ? <><div className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />Please wait...</>
               : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>{mode === "signin" ? "Sign in to dashboard" : "Request access"}</>}
           </button>
+
+          {/* Forgot password */}
+          {mode === "signin" && (
+            <div style={{ textAlign: "center", marginBottom: 4 }}>
+              <span style={{ color: "#2563eb", cursor: "pointer", fontSize: 13 }} onClick={sendReset}>Forgot password?</span>
+            </div>
+          )}
 
           {/* Switch mode */}
           <div style={{ textAlign: "center", fontSize: 13, color: "#5c677d" }}>
@@ -5985,6 +6006,7 @@ function UserApproval({ token, profile }) {
                 </div>
                 <div style={{ display:"flex",alignItems:"center",gap:8 }}>
                   <span className="badge b-green">Active</span>
+                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11 }}>Reset PW</button>
                   <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--text3)" }}>Revoke</button>
                 </div>
               </div>
@@ -6002,6 +6024,30 @@ function UserApproval({ token, profile }) {
 // │ Settings                                                   │
 // │ Settings page — company, appearance, account, users        │
 // └────────────────────────────────────────────────────────────┘
+function ChangePasswordForm({ token }) {
+  const [newPw, setNewPw] = React.useState("");
+  const [confirmPw, setConfirmPw] = React.useState("");
+  const [msg, setMsg] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const update = async () => {
+    if (newPw.length < 6) { setMsg("Minimum 6 characters."); return; }
+    if (newPw !== confirmPw) { setMsg("Passwords do not match."); return; }
+    setLoading(true);
+    const res = await sb.updatePassword(token, newPw);
+    if (res.id || res.email) { setMsg("✓ Password updated."); setNewPw(""); setConfirmPw(""); }
+    else { setMsg("Failed — please try again."); }
+    setLoading(false);
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 300 }}>
+      <input type="password" placeholder="New password" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, outline: "none", background: "var(--white)", color: "var(--text)" }} />
+      <input type="password" placeholder="Confirm new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, outline: "none", background: "var(--white)", color: "var(--text)" }} />
+      {msg && <div style={{ fontSize: 12, color: msg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{msg}</div>}
+      <button className="btn bp bsm" onClick={update} disabled={loading} style={{ alignSelf: "flex-start" }}>{loading ? "Updating..." : "Update Password"}</button>
+    </div>
+  );
+}
+
 function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
   const darkMode = darkModeProp;
   const [activeTab, setActiveTab] = useState("company");
@@ -6047,6 +6093,10 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
           <div style={{ display:"flex",alignItems:"center",gap:16,padding:"16px 0",borderBottom:"1px solid var(--border)" }}>
             <div style={{ width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
             <div><div style={{ fontWeight:700,fontSize:16 }}>{auth?.user?.email}</div><div style={{ fontSize:12,color:"var(--text3)",marginTop:3 }}>Administrator</div></div>
+          </div>
+          <div style={{ marginTop:20,paddingTop:20,borderTop:"1px solid var(--border)" }}>
+            <div style={{ fontWeight:600,fontSize:14,marginBottom:12 }}>Change Password</div>
+            <ChangePasswordForm token={auth?.token} />
           </div>
           <div style={{ marginTop:16,display:"flex",gap:10 }}>
             <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={async()=>{ await sb.signOut(auth?.token); setAuth(null); }}>Sign Out</button>
