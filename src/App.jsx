@@ -2567,10 +2567,27 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         {lines.map((l, i) => (
           <div key={`${i}-${l.product_id||"empty"}`} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={p => updateLine(i, "product_id", p.id)} displayKey="name" value={l.description} />
+              <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={async p => {
+                      updateLine(i, "product_id", p.id);
+                      // Check for customer-specific price
+                      const custName = f?.customer || f?.customer_name;
+                      if (custName) {
+                        const contact = contacts?.find(c => c.name === custName);
+                        if (contact) {
+                          const prices = await sb.get(token, "customer_prices", `contact_id=eq.${contact.id}&product_id=eq.${p.id}`);
+                          if (Array.isArray(prices) && prices[0]) {
+                            updateLine(i, "unit_price", prices[0].custom_price);
+                            updateLine(i, "custom_price_applied", true);
+                          }
+                        }
+                      }
+                    }} displayKey="name" value={l.description} />
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
-            <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
+            <div style={{ display:"flex",flexDirection:"column",gap:3 }}>
+              <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); }} />
+              {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
+            </div>
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
             <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{fmt((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0))}</span>
             <button className="ib" onClick={() => lines.length > 1 ? setLines(lines.filter((_, j) => j !== i)) : setLines([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -3518,7 +3535,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
 // │ Contacts                                                   │
 // │ Customer and supplier contact management                   │
 // └────────────────────────────────────────────────────────────┘
-function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
+function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
@@ -3526,6 +3543,38 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
+  const [customerPrices, setCustomerPrices] = useState([]);
+  const [showPricing, setShowPricing] = useState(false);
+  const [priceForm, setPriceForm] = useState({ product_id: "", custom_price: "" });
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  React.useEffect(() => {
+    if (viewContact) {
+      sb.get(token, "customer_prices", `contact_id=eq.${viewContact.id}&select=*`).then(d => {
+        if (Array.isArray(d)) setCustomerPrices(d);
+      });
+    }
+  }, [viewContact, token]);
+
+  const savePrice = async () => {
+    if (!priceForm.product_id || !priceForm.custom_price) return;
+    setSavingPrice(true);
+    const existing = customerPrices.find(p => p.product_id === priceForm.product_id);
+    if (existing) {
+      await sb.patch(token, "customer_prices", existing.id, { custom_price: parseFloat(priceForm.custom_price) });
+      setCustomerPrices(prev => prev.map(p => p.id === existing.id ? { ...p, custom_price: parseFloat(priceForm.custom_price) } : p));
+    } else {
+      const data = await sb.post(token, "customer_prices", { contact_id: viewContact.id, contact_name: viewContact.name, product_id: priceForm.product_id, custom_price: parseFloat(priceForm.custom_price) });
+      if (data[0]) setCustomerPrices(prev => [...prev, data[0]]);
+    }
+    setPriceForm({ product_id: "", custom_price: "" });
+    setSavingPrice(false);
+  };
+
+  const deletePrice = async (id) => {
+    await fetch(`${SUPABASE_URL}/rest/v1/customer_prices?id=eq.${id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
+    setCustomerPrices(prev => prev.filter(p => p.id !== id));
+  };
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
   const filtered = contacts.filter(c => (c.type === tab || c.type === "both") && (!contactSearch || c.name?.toLowerCase().includes(contactSearch.toLowerCase()) || c.email?.toLowerCase().includes(contactSearch.toLowerCase()) || c.phone?.includes(contactSearch) || c.city?.toLowerCase().includes(contactSearch.toLowerCase())));
   const save = async () => {
@@ -3627,6 +3676,50 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
                 );
               })()}
             </div>
+            {/* Custom Pricing Section — admin only */}
+            {(profile?.role === "admin" || profile?.role === "manager") && viewContact.type !== "supplier" && (
+              <div style={{ padding:"0 24px 20px" }}>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
+                  <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px" }}>
+                    Custom Prices <span style={{ fontWeight:400,color:"var(--text3)" }}>({customerPrices.length})</span>
+                  </div>
+                  <button className="btn bo bsm" onClick={()=>setShowPricing(v=>!v)} style={{ fontSize:11 }}>
+                    {showPricing ? "Hide" : "Manage Prices"}
+                  </button>
+                </div>
+                {customerPrices.length > 0 && (
+                  <div style={{ border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden",marginBottom:12 }}>
+                    {customerPrices.map(cp => {
+                      const prod = products.find(p => p.id === cp.product_id);
+                      return (
+                        <div key={cp.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",borderBottom:"1px solid var(--border)",fontSize:13 }}>
+                          <div>
+                            <div style={{ fontWeight:600 }}>{prod?.name || "Unknown product"}</div>
+                            <div style={{ fontSize:11,color:"var(--text3)" }}>Default: {fmt(prod?.sale_price||0)} → <span style={{ color:"var(--blue)",fontWeight:600 }}>Custom: {fmt(cp.custom_price)}</span></div>
+                          </div>
+                          <button onClick={()=>deletePrice(cp.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--red)",fontSize:18,lineHeight:1,padding:"2px 6px" }}>×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {showPricing && (
+                  <div style={{ background:"#f8fafd",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px" }}>
+                    <div style={{ fontSize:12,fontWeight:600,marginBottom:10,color:"var(--text2)" }}>Add custom price for a product</div>
+                    <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                      <select value={priceForm.product_id} onChange={e=>setPriceForm(v=>({...v,product_id:e.target.value}))} style={{ flex:2,minWidth:140,padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",outline:"none" }}>
+                        <option value="">Select product...</option>
+                        {products.filter(p=>p.name).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>(
+                          <option key={p.id} value={p.id}>{p.name} (£{p.sale_price})</option>
+                        ))}
+                      </select>
+                      <input type="number" placeholder="Custom price £" value={priceForm.custom_price} onChange={e=>setPriceForm(v=>({...v,custom_price:e.target.value}))} style={{ flex:1,minWidth:100,padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",outline:"none" }} />
+                      <button className="btn bp bsm" onClick={savePrice} disabled={savingPrice||!priceForm.product_id||!priceForm.custom_price}>{savingPrice?"Saving...":"Save Price"}</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="modal-actions">
               <div style={{ display:"flex",gap:8 }}>
                 <button className="btn bo bsm" onClick={()=>{setEditingContact(viewContact);setF({...viewContact});setViewContact(null);setShowForm(true);}}>
@@ -5813,7 +5906,7 @@ export default function App() {
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
-                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} />}
+                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
