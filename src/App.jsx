@@ -3800,7 +3800,7 @@ function Inventory({ products, setProducts, token, userId }) {
                   </tr>
                 );
               })}
-              {filtered.length===0&&<tr><td colSpan={8} className="empty">{invSearch?"No products found for ""+invSearch+""":"No products yet"}</td></tr>}
+              {filtered.length===0&&<tr><td colSpan={8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
             </tbody>
           </table>
         </div>
