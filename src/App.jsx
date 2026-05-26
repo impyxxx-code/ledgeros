@@ -3438,8 +3438,9 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
-  const filtered = contacts.filter(c => c.type === tab || c.type === "both");
+  const filtered = contacts.filter(c => (c.type === tab || c.type === "both") && (!contactSearch || c.name?.toLowerCase().includes(contactSearch.toLowerCase()) || c.email?.toLowerCase().includes(contactSearch.toLowerCase()) || c.phone?.includes(contactSearch) || c.city?.toLowerCase().includes(contactSearch.toLowerCase())));
   const save = async () => {
     if (!f.name) return; setSaving(true);
     if (editingContact) {
@@ -3555,15 +3556,33 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [] }) {
       )}
       <div className="ph">
         <div><div className="pt">Customers & Suppliers</div><div className="psub">Manage your business contacts</div></div>
-        <div style={{display:"flex",gap:8}}>
-          <div style={{display:"flex",gap:4}}>
-            <button onClick={() => setContactView("grid")} style={{width:32,height:32,borderRadius:"var(--r)",border:"1px solid "+(contactView==="grid"?"var(--blue)":"var(--border)"),background:contactView==="grid"?"var(--blue-lt)":"var(--white)",color:contactView==="grid"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ti ti-layout-grid" style={{fontSize:15}} /></button>
-            <button onClick={() => setContactView("list")} style={{width:32,height:32,borderRadius:"var(--r)",border:"1px solid "+(contactView==="list"?"var(--blue)":"var(--border)"),background:contactView==="list"?"var(--blue-lt)":"var(--white)",color:contactView==="list"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ti ti-list" style={{fontSize:15}} /></button>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <div style={{position:"relative"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"var(--text3)",pointerEvents:"none"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              value={contactSearch}
+              onChange={e => setContactSearch(e.target.value)}
+              placeholder="Search customers..."
+              style={{paddingLeft:32,paddingRight:contactSearch?30:12,height:34,border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",width:200,outline:"none"}}
+            />
+            {contactSearch && <button onClick={()=>setContactSearch("")} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"var(--text3)",display:"flex",alignItems:"center"}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>}
           </div>
-          <button className="btn bp" onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }}><i className="ti ti-user-plus" />Add {tab === "customer" ? "Customer" : "Supplier"}</button>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={() => setContactView("grid")} style={{width:32,height:32,borderRadius:"var(--r)",border:"1px solid "+(contactView==="grid"?"var(--blue)":"var(--border)"),background:contactView==="grid"?"var(--blue-lt)":"var(--white)",color:contactView==="grid"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            <button onClick={() => setContactView("list")} style={{width:32,height:32,borderRadius:"var(--r)",border:"1px solid "+(contactView==="list"?"var(--blue)":"var(--border)"),background:contactView==="list"?"var(--blue-lt)":"var(--white)",color:contactView==="list"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+          </div>
+          <button className="btn bp" onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Add {tab === "customer" ? "Customer" : "Supplier"}
+          </button>
         </div>
       </div>
-      <div className="tabs">{[["customer","👥 Customers"],["supplier","🏭 Suppliers"]].map(([k,l]) => <div key={k} className={"tab " + (tab === k ? "active" : "")} onClick={() => setTab(k)}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}</div>
+      <div className="tabs" style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{display:"flex",gap:4}}>{[["customer","👥 Customers"],["supplier","🏭 Suppliers"]].map(([k,l]) => <div key={k} className={"tab " + (tab === k ? "active" : "")} onClick={() => { setTab(k); setContactSearch(""); }}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}</div>
+        {contactSearch && <div style={{fontSize:12,color:"var(--text3)"}}>Showing {filtered.length} result{filtered.length!==1?"s":""} for "<strong>{contactSearch}</strong>"</div>}
+      </div>
       {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">{editingContact ? "Edit Contact" : "New Contact"}</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" }); }}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editingContact ? "Update Contact" : "Save Contact"}</button></div></div>}
       {contactView === "list" ? (
         <div className="card">
