@@ -4552,6 +4552,9 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
 // └────────────────────────────────────────────────────────────┘
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
+  const [reconPeriod, setReconPeriod] = useState("week");
+  const [reconFrom, setReconFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); });
+  const [reconTo, setReconTo] = useState(() => new Date().toISOString().slice(0,10));
   const [period, setPeriod] = useState("month");
   const now = new Date();
   const filterByPeriod = (inv) => {
@@ -4594,7 +4597,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       </div>
       {/* Tab bar — 2 rows */}
       <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:20}}>
-        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"],["agent-products","📋 Agent Products"],["product-tracker","🔍 Product Tracker"]].map(([k,l]) => (
+        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"],["agent-products","📋 Agent Products"],["product-tracker","🔍 Product Tracker"],["cash-recon","💵 Cash Recon"]].map(([k,l]) => (
           <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 14px",borderRadius:20,border:"1px solid "+(tab===k?"var(--blue)":"var(--border)"),background:tab===k?"var(--blue)":"var(--white)",color:tab===k?"#fff":"var(--text2)",fontSize:12,fontWeight:tab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",transition:"all .12s"}}>{l}</button>
         ))}
       </div>
@@ -4948,6 +4951,181 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
       </div>}
       {tab === "agent-products" && <AgentProductsReport invoices={invoices} allProfiles={allProfiles} period={period} filteredInv={period === "month" && filteredInv.length === 0 ? invoices : filteredInv} periodLabels={periodLabels} />}
       {tab === "product-tracker" && <ProductSalesTracker invoices={invoices} products={products} allProfiles={allProfiles} />}
+
+      {tab==="cash-recon" && (() => {
+        const fromDate = new Date(reconFrom + "T00:00:00");
+        const toDate = new Date(reconTo + "T23:59:59");
+        const paidInv = invoices.filter(inv => {
+          if (inv.status !== "paid" && inv.status !== "partial") return false;
+          const d = new Date(inv.invoice_date || inv.created_at);
+          return d >= fromDate && d <= toDate;
+        });
+        const methods = ["cash","bank","card","cheque"];
+        const methodLabels = { cash:"💵 Cash", bank:"🏦 Bank Transfer", card:"💳 Card", cheque:"📝 Cheque" };
+        const methodColors = { cash:"#16a34a", bank:"#2563eb", card:"#7c3aed", cheque:"#d97706" };
+        const methodTotals = methods.reduce((acc, m) => {
+          const invs = paidInv.filter(i => (i.payment_method||"cash") === m);
+          acc[m] = { count: invs.length, total: invs.reduce((s,i)=>s+(parseFloat(i.amount_paid||i.amount)||0),0) };
+          return acc;
+        }, {});
+        const grandTotal = Object.values(methodTotals).reduce((s,m)=>s+m.total,0);
+        const agentMap = {};
+        paidInv.forEach(inv => {
+          const agent = allProfiles?.find(p=>p.id===inv.created_by)?.full_name || inv.created_by || "Unknown";
+          if (!agentMap[agent]) agentMap[agent] = { name:agent, cash:0, bank:0, card:0, cheque:0, total:0, count:0 };
+          const method = inv.payment_method || "cash";
+          const amt = parseFloat(inv.amount_paid || inv.amount) || 0;
+          agentMap[agent][method] = (agentMap[agent][method]||0) + amt;
+          agentMap[agent].total += amt;
+          agentMap[agent].count += 1;
+        });
+        const agentRows = Object.values(agentMap).sort((a,b)=>b.total-a.total);
+
+        const DonutRecon = () => {
+          if (!grandTotal) return <div className="empty">No paid invoices in this period</div>;
+          let cum = 0;
+          const segs = methods.filter(m=>methodTotals[m].total>0).map(m => {
+            const pct = methodTotals[m].total / grandTotal;
+            const a1 = cum*360-90; cum+=pct; const a2 = cum*360-90;
+            const r=70,cx=85,cy=85,toRad=a=>a*Math.PI/180;
+            const x1=cx+r*Math.cos(toRad(a1)),y1=cy+r*Math.sin(toRad(a1));
+            const x2=cx+r*Math.cos(toRad(a2)),y2=cy+r*Math.sin(toRad(a2));
+            return { m, path:`M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${a2-a1>180?1:0} 1 ${x2} ${y2}Z`, pct:Math.round(pct*100) };
+          });
+          return (
+            <div style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
+              <svg width="170" height="170" viewBox="0 0 170 170">
+                {segs.map((s,i)=><path key={i} d={s.path} fill={methodColors[s.m]} opacity="0.9"/>)}
+                <circle cx="85" cy="85" r="44" fill="white"/>
+                <text x="85" y="80" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="sans-serif">Total</text>
+                <text x="85" y="98" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="sans-serif">{fmt(grandTotal)}</text>
+              </svg>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {segs.map(s=>(
+                  <div key={s.m} style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:12,height:12,borderRadius:3,background:methodColors[s.m],flexShrink:0}}/>
+                    <div style={{fontSize:13}}>{methodLabels[s.m]}</div>
+                    <div style={{fontFamily:"var(--mono)",fontSize:13,fontWeight:700,marginLeft:"auto",paddingLeft:24}}>{fmt(methodTotals[s.m].total)}</div>
+                    <div style={{fontSize:11,color:"var(--text3)",width:32,textAlign:"right"}}>{s.pct}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        };
+
+        const printRecon = () => {
+          const w = window.open("","_blank","width=900,height=700");
+          w.document.write(`<!DOCTYPE html><html><head><title>Cash Reconciliation</title><style>
+            *{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}
+            body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;padding:32px}
+            h1{font-size:20px;font-weight:800;color:#0f172a;margin-bottom:4px}
+            .sub{font-size:13px;color:#64748b;margin-bottom:24px}
+            .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+            .kpi{border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px}
+            .kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+            .kpi-val{font-size:20px;font-weight:800;font-family:'Courier New',monospace}
+            table{width:100%;border-collapse:collapse;margin-bottom:24px}
+            th{text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:8px 12px;border-bottom:2px solid #e2e8f0;background:#f8fafc}
+            td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:13px}
+            .mono{font-family:'Courier New',monospace;font-weight:700}
+            .total-row td{background:#f8fafc;font-weight:700}
+            .sig{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px;padding-top:24px;border-top:2px solid #e2e8f0}
+            .sig-box{border-bottom:2px solid #0a0f1e;height:56px;margin-bottom:8px}
+            .sig-lbl{font-size:11px;color:#64748b}
+          </style></head><body>
+          <h1>💵 Cash Reconciliation Report</h1>
+          <div class="sub">Period: ${reconFrom} to ${reconTo} · Generated: ${new Date().toLocaleDateString("en-GB")} · Arkham Retail Ltd</div>
+          <div class="kpis">
+            ${methods.map(m=>`<div class="kpi" style="border-left:4px solid ${methodColors[m]}"><div class="kpi-label">${methodLabels[m]}</div><div class="kpi-val" style="color:${methodColors[m]}">${fmt(methodTotals[m].total)}</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">${methodTotals[m].count} invoices</div></div>`).join("")}
+          </div>
+          <h2 style="font-size:14px;font-weight:700;margin-bottom:10px;color:#0f172a">Agent Breakdown</h2>
+          <table><thead><tr><th>Agent</th><th>Invoices</th><th style="color:#16a34a">Cash</th><th style="color:#2563eb">Bank</th><th style="color:#7c3aed">Card</th><th style="color:#d97706">Cheque</th><th>Total</th></tr></thead>
+          <tbody>
+            ${agentRows.map(a=>`<tr><td style="font-weight:600">${a.name}</td><td class="mono">${a.count}</td><td class="mono" style="color:#16a34a">${a.cash>0?fmt(a.cash):"—"}</td><td class="mono" style="color:#2563eb">${a.bank>0?fmt(a.bank):"—"}</td><td class="mono" style="color:#7c3aed">${a.card>0?fmt(a.card):"—"}</td><td class="mono" style="color:#d97706">${a.cheque>0?fmt(a.cheque):"—"}</td><td class="mono">${fmt(a.total)}</td></tr>`).join("")}
+            <tr class="total-row"><td>TOTAL</td><td class="mono">${paidInv.length}</td><td class="mono" style="color:#16a34a">${fmt(methodTotals.cash.total)}</td><td class="mono" style="color:#2563eb">${fmt(methodTotals.bank.total)}</td><td class="mono" style="color:#7c3aed">${fmt(methodTotals.card.total)}</td><td class="mono" style="color:#d97706">${fmt(methodTotals.cheque.total)}</td><td class="mono">${fmt(grandTotal)}</td></tr>
+          </tbody></table>
+          <div class="sig"><div><div class="sig-box"></div><div class="sig-lbl">Prepared by — Signature &amp; Name</div></div><div><div class="sig-box"></div><div class="sig-lbl">Approved by — Signature &amp; Name</div></div></div>
+          </body></html>`);
+          w.document.close(); w.focus(); setTimeout(()=>w.print(),500);
+        };
+
+        return (
+          <div>
+            <div className="card" style={{marginBottom:16}}>
+              <div className="ch" style={{flexWrap:"wrap",gap:10}}>
+                <div className="ct">Cash Reconciliation</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  {[["week","This Week"],["month","This Month"],["custom","Custom Range"]].map(([k,l])=>(
+                    <button key={k} className={"btn bsm "+(reconPeriod===k?"bp":"bo")} onClick={()=>{
+                      setReconPeriod(k);
+                      if(k==="week"){const d=new Date();const f=new Date(d);f.setDate(d.getDate()-7);setReconFrom(f.toISOString().slice(0,10));setReconTo(d.toISOString().slice(0,10));}
+                      if(k==="month"){const d=new Date();const f=new Date(d.getFullYear(),d.getMonth(),1);setReconFrom(f.toISOString().slice(0,10));setReconTo(d.toISOString().slice(0,10));}
+                    }}>{l}</button>
+                  ))}
+                  {reconPeriod==="custom" && <>
+                    <input type="date" value={reconFrom} onChange={e=>setReconFrom(e.target.value)} style={{padding:"5px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,outline:"none",background:"var(--white)",color:"var(--text)"}}/>
+                    <span style={{fontSize:13,color:"var(--text3)"}}>to</span>
+                    <input type="date" value={reconTo} onChange={e=>setReconTo(e.target.value)} style={{padding:"5px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,outline:"none",background:"var(--white)",color:"var(--text)"}}/>
+                  </>}
+                  <button className="btn bp bsm" onClick={printRecon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print Report
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:14,marginBottom:20}}>
+              {methods.map(m=>(
+                <div key={m} className="kpi" style={{marginBottom:0,borderLeft:`4px solid ${methodColors[m]}`}}>
+                  <div className="kpi-label">{methodLabels[m]}</div>
+                  <div className="kpi-val" style={{color:methodColors[m]}}>{fmt(methodTotals[m].total)}</div>
+                  <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>{methodTotals[m].count} invoice{methodTotals[m].count!==1?"s":""}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:16,alignItems:"start"}}>
+              <div className="card" style={{padding:24,marginBottom:0}}>
+                <div style={{fontSize:13,fontWeight:700,marginBottom:16}}>By Payment Method</div>
+                <DonutRecon/>
+              </div>
+              <div className="card" style={{marginBottom:0}}>
+                <div className="ch"><div className="ct">By Agent</div><div className="cs">{paidInv.length} paid invoices · {reconFrom} → {reconTo}</div></div>
+                {agentRows.length===0 ? <div className="empty">No paid invoices in this period</div> : (
+                  <div className="tw" style={{overflowX:"auto"}}>
+                    <table>
+                      <thead><tr><th>Agent</th><th>Invoices</th><th style={{color:"#16a34a"}}>Cash</th><th style={{color:"#2563eb"}}>Bank</th><th style={{color:"#7c3aed"}}>Card</th><th style={{color:"#d97706"}}>Cheque</th><th>Total</th></tr></thead>
+                      <tbody>
+                        {agentRows.map((a,i)=>(
+                          <tr key={i}>
+                            <td style={{fontWeight:600}}>{a.name}</td>
+                            <td className="mono tm">{a.count}</td>
+                            <td className="mono" style={{color:"#16a34a"}}>{a.cash>0?fmt(a.cash):"—"}</td>
+                            <td className="mono" style={{color:"#2563eb"}}>{a.bank>0?fmt(a.bank):"—"}</td>
+                            <td className="mono" style={{color:"#7c3aed"}}>{a.card>0?fmt(a.card):"—"}</td>
+                            <td className="mono" style={{color:"#d97706"}}>{a.cheque>0?fmt(a.cheque):"—"}</td>
+                            <td className="mono" style={{fontWeight:700}}>{fmt(a.total)}</td>
+                          </tr>
+                        ))}
+                        <tr style={{background:"#f8fafc",fontWeight:700}}>
+                          <td>TOTAL</td><td className="mono">{paidInv.length}</td>
+                          <td className="mono" style={{color:"#16a34a"}}>{fmt(methodTotals.cash.total)}</td>
+                          <td className="mono" style={{color:"#2563eb"}}>{fmt(methodTotals.bank.total)}</td>
+                          <td className="mono" style={{color:"#7c3aed"}}>{fmt(methodTotals.card.total)}</td>
+                          <td className="mono" style={{color:"#d97706"}}>{fmt(methodTotals.cheque.total)}</td>
+                          <td className="mono" style={{fontWeight:700}}>{fmt(grandTotal)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
