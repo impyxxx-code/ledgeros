@@ -2533,7 +2533,11 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const [payMethod, setPayMethod] = useState({});
   const [partPayId, setPartPayId] = useState(null);
   const [partPayAmount, setPartPayAmount] = useState({});
+  const [agentSearch, setAgentSearch] = useState("");
   const myInv = invoices.filter(i => i.created_by === profile?.id);
+  const filteredMyInv = agentSearch
+    ? myInv.filter(i => i.customer?.toLowerCase().includes(agentSearch.toLowerCase()) || i.invoice_number?.toLowerCase().includes(agentSearch.toLowerCase()))
+    : myInv;
   const myPaid = myInv.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   const myPending = myInv.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
   const myOverdue = myInv.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
@@ -2579,9 +2583,19 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
       </div>
       {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: 0.7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
-        <div className="ch"><div className="ct">My Recent Invoices</div><button className="btn bo bsm" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>View all</button></div>
+        <div className="ch">
+          <div className="ct">My Invoices <span style={{fontSize:12,fontWeight:400,color:"var(--text3)",marginLeft:4}}>{filteredMyInv.length} of {myInv.length}</span></div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <div style={{position:"relative"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:"var(--text3)",pointerEvents:"none"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input value={agentSearch} onChange={e=>setAgentSearch(e.target.value)} placeholder="Search invoices..." style={{paddingLeft:28,paddingRight:agentSearch?26:10,height:30,border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:12,background:"var(--white)",color:"var(--text)",width:160,outline:"none"}} />
+              {agentSearch && <button onClick={()=>setAgentSearch("")} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"var(--text3)",display:"flex",alignItems:"center",padding:0}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
+            </div>
+            <button className="btn bo bsm" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>View all</button>
+          </div>
+        </div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {myInv.slice(0, 8).map(inv => (
+          {filteredMyInv.slice(0, 20).map(inv => (
             <tr key={inv.id}>
               <td style={{ fontWeight: 500 }}>{inv.customer}</td>
               <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
@@ -2604,7 +2618,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
               </div></td>
             </tr>
           ))}
-          {myInv.length === 0 && <tr><td colSpan={5} className="empty">No invoices yet — create your first one!</td></tr>}
+          {filteredMyInv.length === 0 && <tr><td colSpan={5} className="empty">{agentSearch ? `No invoices found for "${agentSearch}"` : "No invoices yet — create your first one!"}</td></tr>}
         </tbody></table></div>
       </div>
     </div>
