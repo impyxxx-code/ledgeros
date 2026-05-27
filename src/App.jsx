@@ -347,23 +347,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   display:flex;align-items:center;
   padding:0 24px;gap:12px;
   position:sticky;top:0;z-index:50;
+  box-sizing:border-box;
 }
 
-.search-wrap{position:relative;flex:1;max-width:340px}
-.search-wrap i{
+.search-wrap{position:relative;flex:1;max-width:340px;display:flex;align-items:center}
+.search-wrap i,.search-wrap>svg{
   position:absolute;left:10px;top:50%;
   transform:translateY(-50%);
-  color:rgba(255,255,255,.28);font-size:15px;pointer-events:none;
+  color:rgba(255,255,255,.28);pointer-events:none;
+  width:15px;height:15px;flex-shrink:0;
 }
 .search-input{
   width:100%;
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.09);
   border-radius:var(--r);
-  padding:7px 12px 7px 32px;
+  padding:0 12px 0 32px;
+  height:34px;
   font-size:13px;color:rgba(255,255,255,.55);
   font-family:var(--sans);outline:none;
   transition:border .14s,box-shadow .14s,background .14s;
+  box-sizing:border-box;
 }
 .search-input:focus{
   border-color:rgba(37,99,235,.5);
@@ -372,7 +376,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .search-input::placeholder{color:rgba(255,255,255,.25)}
 
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px;height:100%}
 .tb-btn{
   width:32px;height:32px;border-radius:var(--r);
   border:1px solid rgba(255,255,255,.08);
