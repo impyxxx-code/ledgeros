@@ -4722,25 +4722,20 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const periodLabels = { week:"This Week", month:"This Month", quarter:"This Quarter", year:"This Year", all:"All Time" };
   return (
     <div>
-      <div className="ph">
-        <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1, flexWrap: "wrap", gap: 10 }}>
-            <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Admin Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Comprehensive business analytics</div></div>
-            <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-            {[{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
-              <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
-                <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
-                <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
-                <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
-              </div>
-            ))}
-          </div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1, flexWrap: "wrap", gap: 10 }}>
+          <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Admin Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Comprehensive business analytics</div></div>
+          <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
         </div>
-        <div style={{display:"flex",gap:6,background:"#f1f5f9",borderRadius:"var(--r)",padding:4}}>
-          {[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"var(--white)":"transparent",color:period===k?"var(--text)":"var(--text3)",boxShadow:period===k?"var(--sh)":"none"}} onClick={()=>setPeriod(k)}>{l}</button>)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
         </div>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
@@ -5462,21 +5457,21 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 
   return (
     <div>
-      <div className="ph">
-        <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
-          <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Delivery Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-            {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed"}].map((k,i)=>(
-              <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
-                <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
-                <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
-                <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
-              </div>
-            ))}
-          </div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1, flexWrap: "wrap", gap: 10 }}>
+          <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Delivery Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div></div>
+          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
         </div>
-        <button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Summary KPIs */}
