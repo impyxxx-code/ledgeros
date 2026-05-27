@@ -4003,7 +4003,22 @@ function Purchases({ contacts, products, token, userId }) {
   const updateStatus = async (id, status) => { await sb.patch(token,"purchase_orders",id,{status}); setPOs(prev => prev.map(p => p.id===id?{...p,status}:p)); };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Purchase Orders</div><div className="psub">Order stock from your suppliers</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1 }}>
+          <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Purchase Orders</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Order stock from your suppliers</div></div>
+          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Total POs",val:pos.length,sub:"all orders",accent:"#2563eb"},{label:"Pending",val:pos.filter(p=>p.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Received",val:pos.filter(p=>p.status==="received").length,sub:"completed",accent:"#16a34a"},{label:"Total Value",val:fmt(pos.reduce((s,p)=>s+(parseFloat(p.total)||0),0)),sub:"all orders",accent:"#7c3aed"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><select value={f.supplier_id} onChange={e => setF({...f,supplier_id:e.target.value})}><option value="">Select supplier...</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{po.status==="sent"&&<button className="btn bp bsm" onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}</td></tr>)}
@@ -4038,7 +4053,22 @@ function CreditNotes({ contacts, invoices, token, userId }) {
   const updateStatus = async (id,status) => { await sb.patch(token,"credit_notes",id,{status}); setCNs(prev => prev.map(c => c.id===id?{...c,status}:c)); };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Credit Notes</div><div className="psub">Issue and apply credit notes</div></div><button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1 }}>
+          <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Credit Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Issue and apply credit notes</div></div>
+          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb"},{label:"Open",val:cns.filter(c=>c.status==="open").length,sub:"outstanding",accent:"#d97706"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {cns.map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
@@ -4063,7 +4093,19 @@ function Reports({ accounts }) {
   const [tab, setTab] = useState("pl");
   return (
     <div>
-      <div className="ph"><div><div className="pt">Financial Reports</div><div className="psub">Profit & Loss and Balance Sheet</div></div></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Financial Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Profit & Loss and Balance Sheet</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Total Income",val:fmt(totalRev),sub:"revenue accounts",accent:"#16a34a"},{label:"Total Expenses",val:fmt(totalExp),sub:"expense accounts",accent:"#dc2626"},{label:"Net Profit",val:fmt(Math.abs(net)),sub:net>=0?"profit":"loss",accent:net>=0?"#16a34a":"#dc2626"},{label:"Accounts",val:accounts.length,sub:"chart of accounts",accent:"#2563eb"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div style={{display:"flex",gap:10,marginBottom:20}}>{[["pl","Profit & Loss"],["bs","Balance Sheet"]].map(([k,l]) => <button key={k} className={"btn "+(tab===k?"bp":"bo")} onClick={() => setTab(k)}>{l}</button>)}</div>
       {tab==="pl"&&<div className="card"><div className="ch"><div className="ct">Profit & Loss Statement</div><div className="cs">Year to date</div></div><div className="rs-title">Income</div>{revenue.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tg">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Income</span><span className="mono tg">{fmt(totalRev)}</span></div><div style={{height:12}}/><div className="rs-title">Expenses</div>{expenses.map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className="mono tr-c">{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total Expenses</span><span className="mono tr-c">{fmt(totalExp)}</span></div><div className="rrow total"><span>Net {net>=0?"Profit":"Loss"}</span><span className={"mono "+(net>=0?"tg":"tr-c")}>{fmt(Math.abs(net))}</span></div></div>}
       {tab==="bs"&&<div className="g2">{[["Assets & Liabilities",[["Asset","tg"],["Liability","tr-c"]]],["Equity",[["Equity","tg"]]]].map(([title,groups]) => <div key={title} className="card"><div className="ch"><div className="ct">{title}</div></div>{groups.map(([type,cls]) => <span key={type}><div className="rs-title">{type}</div>{accounts.filter(a => a.type===type).map(a => <div key={a.id} className="rrow indent"><span>{a.name}</span><span className={"mono "+cls}>{fmt(a.balance)}</span></div>)}<div className="rrow subtotal"><span>Total {type}</span><span className={"mono "+cls}>{fmt(accounts.filter(a => a.type===type).reduce((s,a) => s+a.balance,0))}</span></div></span>)}</div>)}</div>}
@@ -4096,7 +4138,19 @@ function CustomerStatement({ contacts, invoices, token }) {
   };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Customer Statement</div><div className="psub">View and share full account statements</div></div></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Customer Statements</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>View and share full account statements</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"active accounts",accent:"#2563eb"},{label:"With Balance",val:contacts.filter(c=>invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"outstanding balance",accent:"#d97706"},{label:"Fully Paid",val:contacts.filter(c=>!invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"clear accounts",accent:"#16a34a"},{label:"Total Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"across all",accent:"#dc2626"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="card" style={{ marginBottom: 20, overflow: "visible" }}>
         <div className="ch"><div className="ct">Select Customer</div></div>
         <div style={{ padding: 20, overflow: "visible" }}>
@@ -4160,7 +4214,19 @@ function StockAdjustment({ products, setProducts, token }) {
   };
   return (
     <div>
-      <div className="ph"><div><div className="pt">Stock Adjustment</div><div className="psub">Quickly update stock levels from anywhere</div></div></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Stock Adjustment</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Quickly update stock levels from anywhere</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Products",val:products.length,sub:"in catalogue",accent:"#2563eb"},{label:"Low Stock",val:products.filter(p=>p.stock_qty<=(p.reorder_level||5)).length,sub:"need restocking",accent:products.filter(p=>p.stock_qty<=(p.reorder_level||5)).length>0?"#dc2626":"#16a34a"},{label:"Stock Value",val:fmt(products.reduce((s,p)=>s+p.stock_qty*p.cost_price,0)),sub:"at cost price",accent:"#7c3aed"},{label:"Retail Value",val:fmt(products.reduce((s,p)=>s+p.stock_qty*p.sale_price,0)),sub:"at sale price",accent:"#16a34a"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--border)" }}>
           <input style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="🔍  Search products by name, SKU or category..." value={query} onChange={e => setQuery(e.target.value)} />
@@ -4214,7 +4280,19 @@ function AgentReport({ invoices, allProfiles, contacts }) {
   const totalOverdue = displayInvoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
   return (
     <div>
-      <div className="ph"><div><div className="pt">Sales by Agent</div><div className="psub">Detailed agent performance breakdown</div></div></div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Sales by Agent</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Detailed agent performance breakdown</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[{label:"Active Agents",val:allProfiles.filter(p=>p.role==="agent").length,sub:"field sales team",accent:"#2563eb"},{label:"Total Invoices",val:invoices.length,sub:"raised by all agents",accent:"#7c3aed"},{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all agents combined",accent:"#16a34a"},{label:"Avg Per Agent",val:allProfiles.filter(p=>p.role==="agent").length>0?fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)/allProfiles.filter(p=>p.role==="agent").length):"—",sub:"revenue per agent",accent:"#d97706"}].map((k,i)=>(
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "8px 14px", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }} value={selectedAgent} onChange={e => setSelectedAgent(e.target.value)}>
           <option value="all">All Agents</option>
@@ -4645,7 +4723,22 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   return (
     <div>
       <div className="ph">
-        <div><div className="pt">Admin Reports</div><div className="psub">Comprehensive business analytics</div></div>
+        <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1, flexWrap: "wrap", gap: 10 }}>
+            <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Admin Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Comprehensive business analytics</div></div>
+            <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+            {[{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
+              <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+                <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+                <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+                <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
         <div style={{display:"flex",gap:6,background:"#f1f5f9",borderRadius:"var(--r)",padding:4}}>
           {[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"var(--white)":"transparent",color:period===k?"var(--text)":"var(--text3)",boxShadow:period===k?"var(--sh)":"none"}} onClick={()=>setPeriod(k)}>{l}</button>)}
         </div>
@@ -5370,7 +5463,19 @@ function DeliveryNotes({ contacts, products, token, userId }) {
   return (
     <div>
       <div className="ph">
-        <div><div className="pt">Delivery Notes</div><div className="psub">Create and manage delivery notes</div></div>
+        <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+          <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Delivery Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div></div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+            {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed"}].map((k,i)=>(
+              <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+                <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+                <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+                <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
         <button className="btn bp" onClick={() => setShowForm(!showForm)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
       </div>
 
@@ -6553,8 +6658,25 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
     </div>
   );
   return (
-    <div style={{ maxWidth:720,margin:"0 auto",padding:"0 0 40px" }}>
-      <div className="ph"><div><div className="pt">Settings</div><div className="ps">Manage your LedgerOS configuration</div></div></div>
+    <div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Settings</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Manage your LedgerOS configuration</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[
+            { label: "Company", val: COMPANY.name, sub: "Arkham Retail Ltd", accent: "#2563eb" },
+            { label: "VAT Number", val: COMPANY.vatNumber, sub: "registered", accent: "#7c3aed" },
+            { label: "Role", val: profile?.role || "—", sub: "your access level", accent: "#16a34a" },
+            { label: "Version", val: "v1.1", sub: "LedgerOS", accent: "#d97706" },
+          ].map((k,i) => (
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontSize:14,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div style={{ display:"flex",gap:8,marginBottom:24,flexWrap:"wrap" }}>
         {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"]].map(([k,l])=>(
           <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px",borderRadius:20,border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"),background:activeTab===k?"var(--blue)":"var(--white)",color:activeTab===k?"#fff":"var(--text2)",fontSize:13,fontWeight:activeTab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)" }}>{l}</button>
