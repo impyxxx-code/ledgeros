@@ -78,14 +78,14 @@ function buildRecentActivity(invoices, products) {
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--bg:#f4f6f9;--white:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#64748b;--text3:#94a3b8;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;--blue:#2563eb;--blue-bg:#eff6ff;--amber:#d97706;--amber-bg:#fffbeb;--purple:#7c3aed;--mono:'Courier New',monospace;--sh:0 1px 3px rgba(0,0,0,.08)}
-  body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px}
-  .tnav{background:#0d1829;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+  *{box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;margin:0;padding:0}
+  .tnav{background:#0d1829;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px;margin:0}
   .tlogo{width:32px;height:32px;background:#1e1b4b;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .tname{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
   .tco{font-size:10px;color:rgba(255,255,255,.4)}
   .tbadge{margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.7)}
   .tback{background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-left:8px}
-  .page{padding:24px;max-width:1300px;margin:0 auto}
+  .page{padding:24px}
   .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
   .pt{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.4px}
   .ps{font-size:13px;color:var(--text2);margin-top:3px}
