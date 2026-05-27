@@ -278,48 +278,35 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
         <a className="tback" href="https://ledgeros-lac.vercel.app">← Back to App</a>
       </nav>
 
-      <div className="page">
-        <div className="ph">
-          <div><div className="pt">Sales Analytics</div><div className="ps">Performance overview · {now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</div></div>
-          <div className="period-btns">
-            {[["3m","3 Months"],["6m","6 Months"],["12m","12 Months"]].map(([k,l]) => (
-              <button key={k} className={"pb " + (period === k ? "active" : "")} onClick={() => setPeriod(k)}>{l}</button>
+      <div style={{background:"#0d1829",padding:"20px 24px 0"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontSize:20,fontWeight:800,color:"#fff",letterSpacing:"-.4px",marginBottom:3}}>Sales Analytics</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)"}}>Performance overview · {now.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</div>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            {[["3m","3M"],["6m","6M"],["12m","12M"]].map(([k,l]) => (
+              <button key={k} onClick={() => setPeriod(k)} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(period===k?"#2563eb":"rgba(255,255,255,.15)"),background:period===k?"#2563eb":"rgba(255,255,255,.07)",color:period===k?"#fff":"rgba(255,255,255,.7)",fontSize:12,fontWeight:500,cursor:"pointer"}}>{l}</button>
             ))}
           </div>
         </div>
-
-        <div className="kg">
-          <div className="kpi">
-            <div className="kpi-accent" style={{ background: "var(--green)" }} />
-            <div className="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-            <div className="kl">Total Invoiced</div>
-            <div className="kv" style={{ color: "var(--green)" }}>{fmt(totalRevenue)}</div>
-            <div className={"kd " + (revGrowth !== null ? (revGrowth >= 0 ? "up" : "down") : "")}>{revGrowth !== null ? (revGrowth >= 0 ? "+" : "") + revGrowth + "% vs prev month" : totalInvoices + " invoices"}</div>
-            <SparkLine values={MONTHLY.map(m => m.revenue)} color="var(--green)" />
-          </div>
-          <div className="kpi">
-            <div className="kpi-accent" style={{ background: "var(--blue)" }} />
-            <div className="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-            <div className="kl">Collected</div>
-            <div className="kv" style={{ color: "var(--blue)" }}>{fmt(totalPaid)}</div>
-            <div className="kd">{totalRevenue > 0 ? ((totalPaid / totalRevenue) * 100).toFixed(0) : 0}% collection rate</div>
-            <SparkLine values={MONTHLY.map(m => m.paid)} color="var(--blue)" />
-          </div>
-          <div className="kpi">
-            <div className="kpi-accent" style={{ background: "var(--red)" }} />
-            <div className="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-            <div className="kl">Outstanding</div>
-            <div className="kv" style={{ color: "var(--red)" }}>{fmt(totalOutstanding)}</div>
-            <div className="kd">{pInv.filter(i => i.status === "overdue").length} overdue invoices</div>
-          </div>
-          <div className="kpi">
-            <div className="kpi-accent" style={{ background: "var(--purple)" }} />
-            <div className="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div className="kl">Customers</div>
-            <div className="kv" style={{ color: "var(--purple)" }}>{TOP_CUSTOMERS.length}</div>
-            <div className="kd">{totalInvoices} invoices · {period}</div>
-          </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:"1px solid rgba(255,255,255,.08)"}}>
+          {[
+            {label:"Total Invoiced",val:fmt(totalRevenue),sub:revGrowth!==null?(revGrowth>=0?"+":"")+revGrowth+"% vs prev month":totalInvoices+" invoices",accent:"#16a34a"},
+            {label:"Collected",val:fmt(totalPaid),sub:totalRevenue>0?Math.round(totalPaid/totalRevenue*100)+"% collection rate":"0% collection rate",accent:"#2563eb"},
+            {label:"Outstanding",val:fmt(totalOutstanding),sub:pInv.filter(i=>i.status==="overdue").length+" overdue invoices",accent:"#dc2626"},
+            {label:"Customers",val:TOP_CUSTOMERS.length,sub:totalInvoices+" invoices · "+period,accent:"#7c3aed"},
+          ].map((k,i)=>(
+            <div key={i} style={{padding:"12px 18px",borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none",borderTop:`3px solid ${k.accent}`}}>
+              <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4}}>{k.label}</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#fff",fontFamily:"'Courier New',monospace",marginBottom:2}}>{k.val}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>{k.sub}</div>
+            </div>
+          ))}
         </div>
+      </div>
+      <div className="page">
+        <div style={{height:4}}/>
 
         <div className="g23">
           <div className="card">
