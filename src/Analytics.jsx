@@ -277,7 +277,6 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
         <div className="tbadge">Analytics Dashboard</div>
         <a className="tback" href="https://ledgeros-lac.vercel.app">← Back to App</a>
       </nav>
-
       <div style={{background:"#0d1829",padding:"20px 24px 0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <div>
