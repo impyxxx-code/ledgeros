@@ -269,14 +269,6 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
   return (
     <>
       <style>{CSS}</style>
-      <nav className="tnav">
-        <div className="tlogo">
-          <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/><rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/><rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/><rect x="30" y="21" width="2.5" height="12" rx="1.25" fill="#60a5fa"/><polygon points="36,26 30,21 30,33" fill="#60a5fa" fillOpacity=".4"/></svg>
-        </div>
-        <div><div className="tname">LedgerOS</div><div className="tco">Arkham Retail Ltd</div></div>
-        <div className="tbadge">Analytics Dashboard</div>
-        <a className="tback" href="https://ledgeros-lac.vercel.app">← Back to App</a>
-      </nav>
       <div style={{background:"#0d1829",padding:"20px 24px 0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <div>
