@@ -6076,6 +6076,7 @@ const NAV_ICONS = {
   "import":         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
   "delivery-notes": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
   "settings":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  "banking":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
 };
 
 const NAV = [
@@ -6091,6 +6092,7 @@ const NAV = [
   { id: "statement", label: "Statements", adminOnly: true },
   { id: "stock-adj", label: "Stock In/Out", adminOnly: true },
   { id: "agent-report", label: "Agent Sales", adminOnly: true },
+  { id: "banking", label: "Banking", adminOnly: true },
   { id: "import", label: "Import", adminOnly: true },
   { id: "delivery-notes", label: "Delivery Notes" },
   { id: "settings", label: "Settings", adminOnly: true },
@@ -6629,6 +6631,7 @@ export default function App() {
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} />}
+                {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
               </>
             )}
           </div>
@@ -6982,6 +6985,311 @@ function ChangePasswordForm({ token }) {
       <input type="password" placeholder="Confirm new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, outline: "none", background: "var(--white)", color: "var(--text)" }} />
       {msg && <div style={{ fontSize: 12, color: msg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{msg}</div>}
       <button className="btn bp bsm" onClick={update} disabled={loading} style={{ alignSelf: "flex-start" }}>{loading ? "Updating..." : "Update Password"}</button>
+    </div>
+  );
+}
+
+
+// ── BANKING PAGE ──────────────────────────────────────────────────────────────
+function BankingPage({ token, userId, profile }) {
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("week");
+  const [bankedDates, setBankedDates] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ledgeros_banked_dates") || "{}"); } catch { return {}; }
+  });
+  const [depositRefs, setDepositRefs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ledgeros_deposit_refs") || "{}"); } catch { return {}; }
+  });
+  const [editingRef, setEditingRef] = useState(null);
+  const [refInput, setRefInput] = useState("");
+
+  const saveBanked = (d) => { localStorage.setItem("ledgeros_banked_dates", JSON.stringify(d)); setBankedDates(d); };
+  const saveRefs = (d) => { localStorage.setItem("ledgeros_deposit_refs", JSON.stringify(d)); setDepositRefs(d); };
+
+  React.useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    const now = new Date();
+    let fromDate = "";
+    if (period === "today") { fromDate = now.toISOString().split("T")[0]; }
+    else if (period === "week") { const d = new Date(now); d.setDate(d.getDate() - 7); fromDate = d.toISOString().split("T")[0]; }
+    else if (period === "month") { const d = new Date(now); d.setDate(d.getDate() - 30); fromDate = d.toISOString().split("T")[0]; }
+    const q = fromDate ? `created_at=gte.${fromDate}T00:00:00&order=created_at.desc` : `order=created_at.desc&limit=200`;
+    sb.get(token, "invoice_payments", q)
+      .then(d => setPayments(Array.isArray(d) ? d : []))
+      .catch(() => setPayments([]))
+      .finally(() => setLoading(false));
+  }, [token, period]);
+
+  // Group by date
+  const byDate = {};
+  payments.forEach(p => {
+    const d = (p.created_at || p.payment_date || "").split("T")[0];
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(p);
+  });
+  const dates = Object.keys(byDate).sort((a,b) => b.localeCompare(a));
+
+  const fmtDay = (d) => {
+    const dt = new Date(d + "T12:00:00");
+    return dt.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  };
+  const fmtTime = (ts) => { try { return new Date(ts).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); } catch{return "";} };
+  const methodBadge = (m) => {
+    const map = { cash:["#dcfce7","#15803d","💵"], bank:["#dbeafe","#1d4ed8","🏦"], card:["#f3e8ff","#7e22ce","💳"], cheque:["#fef3c7","#92400e","📝"] };
+    const [bg,col,icon] = map[m] || ["#f1f5f9","#475569","💰"];
+    return <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:500,background:bg,color:col}}>{icon} {m}</span>;
+  };
+
+  // KPIs
+  const total = payments.reduce((s,p)=>s+parseFloat(p.amount||0),0);
+  const byMethod = {};
+  payments.forEach(p => { const m=p.method||"cash"; byMethod[m]=(byMethod[m]||0)+parseFloat(p.amount||0); });
+  const unbanked = dates.filter(d=>!bankedDates[d]).reduce((s,d)=>s+byDate[d].reduce((ss,p)=>ss+parseFloat(p.amount||0),0),0);
+
+  // CSV export
+  const exportCSV = () => {
+    const rows = [["Date","Time","Invoice","Customer","Amount","Method","Agent","Notes","Deposit Ref"]];
+    payments.forEach(p => {
+      const d = (p.created_at||"").split("T")[0];
+      rows.push([d, fmtTime(p.created_at), p.invoice_number||"", p.customer||"", parseFloat(p.amount||0).toFixed(2), p.method||"", p.recorded_by_name||"", p.notes||"", depositRefs[d]||""]);
+    });
+    const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+");
+    const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`banking-recon-${new Date().toISOString().split("T")[0]}.csv`; a.click();
+  };
+
+  // Print banking sheet
+  const printSheet = () => {
+    const w = window.open("","_blank");
+    let html = `<html><head><title>Banking Sheet</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#f1f5f9;padding:6px 8px;text-align:left;border:1px solid #e2e8f0}td{padding:6px 8px;border:1px solid #e2e8f0}.day-hdr{background:#0d1829;color:#fff;padding:8px 10px;font-weight:bold;margin-top:16px}.total{text-align:right;font-weight:bold;padding:6px 8px;border:1px solid #e2e8f0;background:#f8fafc}@media print{button{display:none}}</style></head><body>`;
+    html += "<h2 style='margin-bottom:4px'>Banking reconciliation sheet</h2><p style='color:#64748b;margin-bottom:20px'>Arkham Retail Ltd - Printed " + new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) + "</p>";
+    dates.forEach(d => {
+      const rows = byDate[d];
+      const dayTotal = rows.reduce((s,p)=>s+parseFloat(p.amount||0),0);
+      const ref = depositRefs[d] || "";
+      const banked = bankedDates[d];
+      html += "<div class='day-hdr'>" + fmtDay(d) + " - £" + dayTotal.toFixed(2) + " " + (banked ? "BANKED" + (ref ? " Ref: " + ref : "") : "NOT YET BANKED") + "</div>";
+      html += `<table><thead><tr><th>Time</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Method</th><th>Agent</th><th>Notes</th></tr></thead><tbody>`;
+      rows.forEach(p => { html += "<tr><td>" + fmtTime(p.created_at) + "</td><td>" + (p.invoice_number||"") + "</td><td>" + (p.customer||"") + "</td><td style='text-align:right'>&pound;" + parseFloat(p.amount||0).toFixed(2) + "</td><td>" + (p.method||"") + "</td><td>" + (p.recorded_by_name||"") + "</td><td>" + (p.notes||"") + "</td></tr>"; });
+      html += "<tr><td colspan='3' style='text-align:right;font-weight:bold;background:#f8fafc'>Day total</td><td class='total'>&pound;" + dayTotal.toFixed(2) + "</td><td colspan='3'></td></tr></tbody></table>";
+    });
+    html += "<p style='margin-top:20px;border-top:1px solid #e2e8f0;padding-top:10px;color:#64748b'>Total collected: &pound;" + total.toFixed(2) + " across " + payments.length + " payments</p></body></html>";
+    w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500);
+  };
+
+  return (
+    <div>
+      {/* Dark Header */}
+      <div style={{margin:"-26px -28px 20px -28px",background:"#0d1829",padding:"20px 24px 0",position:"relative",overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:600,color:"#fff"}}>Banking</div>
+            <div style={{fontSize:12,color:"#8aa0b8",marginTop:2}}>Detailed cash reconciliation for banking</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {["today","week","month","all"].map(p => (
+              <button key={p} onClick={()=>setPeriod(p)} style={{padding:"5px 14px",borderRadius:6,border:"1px solid "+(period===p?"var(--blue)":"rgba(255,255,255,0.15)"),background:period===p?"var(--blue)":"transparent",color:period===p?"#fff":"#8aa0b8",fontSize:12,cursor:"pointer",fontFamily:"var(--sans)",fontWeight:period===p?600:400}}>
+                {p==="today"?"Today":p==="week"?"This week":p==="month"?"This month":"All time"}
+              </button>
+            ))}
+            <button onClick={exportCSV} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:12,cursor:"pointer",fontWeight:500,fontFamily:"var(--sans)"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+            <button onClick={printSheet} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:6,border:"none",background:"#0f172a",color:"#fff",fontSize:12,cursor:"pointer",fontWeight:500,fontFamily:"var(--sans)"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Print sheet
+            </button>
+          </div>
+        </div>
+        {/* KPI row */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,borderTop:"1px solid rgba(255,255,255,0.08)",margin:"0 -24px"}}>
+          {[
+            {label:"Total collected",val:"£"+total.toFixed(2),sub:payments.length+" payments"},
+            {label:"Cash",val:"£"+(byMethod.cash||0).toFixed(2),sub:payments.filter(p=>p.method==="cash").length+" payments",col:"#22c55e"},
+            {label:"Bank transfer",val:"£"+(byMethod.bank||0).toFixed(2),sub:payments.filter(p=>p.method==="bank").length+" payments"},
+            {label:"Unbanked cash",val:"£"+unbanked.toFixed(2),sub:"Awaiting deposit",col:"#f59e0b"},
+          ].map((k,i) => (
+            <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none"}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#8aa0b8",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
+              <div style={{fontSize:20,fontWeight:600,color:k.col||"#fff",fontFamily:"var(--mono)"}}>{k.val}</div>
+              <div style={{fontSize:11,color:"#8aa0b8",marginTop:3}}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{textAlign:"center",padding:"60px 0",color:"var(--text3)"}}>
+          <div className="spin" style={{width:24,height:24,borderWidth:2,margin:"0 auto 12px"}} />
+          Loading payments...
+        </div>
+      ) : payments.length === 0 ? (
+        <div style={{textAlign:"center",padding:"60px 0",color:"var(--text3)"}}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+          No payments found for this period
+        </div>
+      ) : (
+        <>
+          {/* Transaction detail table */}
+          <div style={{marginBottom:24}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:600,color:"var(--text)"}}>Transaction detail</div>
+                <div style={{fontSize:12,color:"var(--text3)",marginTop:2}}>Every payment received — match each row against your bank statement</div>
+              </div>
+            </div>
+            <div className="card" style={{overflow:"hidden"}}>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:700}}>
+                  <thead>
+                    <tr style={{background:"var(--bg)"}}>
+                      {["Date","Time","Invoice","Customer","Amount","Method","Agent","Notes"].map(h => (
+                        <th key={h} style={{padding:"8px 12px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",textAlign:"left",borderBottom:"1px solid var(--border)",whiteSpace:"nowrap"}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p,i) => {
+                      const d = (p.created_at||"").split("T")[0];
+                      const agentName = p.recorded_by_name || "—";
+                      const agentCol = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"][agentName.charCodeAt(0)%5]||"#64748b";
+                      const isPartial = (p.notes||"").toLowerCase().includes("partial");
+                      return (
+                        <tr key={p.id||i} style={{borderBottom:"0.5px solid var(--border)"}}>
+                          <td style={{padding:"9px 12px",color:"var(--text2)",whiteSpace:"nowrap"}}>{d}</td>
+                          <td style={{padding:"9px 12px",color:"var(--text3)",whiteSpace:"nowrap"}}>{fmtTime(p.created_at)}</td>
+                          <td style={{padding:"9px 12px"}}><span style={{fontFamily:"var(--mono)",color:"var(--blue)",fontWeight:600,fontSize:12}}>{p.invoice_number||"—"}</span></td>
+                          <td style={{padding:"9px 12px",color:"var(--text)",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.customer||"—"}</td>
+                          <td style={{padding:"9px 12px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>£{parseFloat(p.amount||0).toFixed(2)}</span></td>
+                          <td style={{padding:"9px 12px"}}>{methodBadge(p.method)}</td>
+                          <td style={{padding:"9px 12px"}}>
+                            <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
+                              {agentName.split(" ")[0]}
+                            </div>
+                          </td>
+                          <td style={{padding:"9px 12px",color:"var(--text3)",fontSize:11}}>{p.notes||"—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{padding:"10px 14px",background:"var(--bg)",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",fontSize:12}}>
+                <span style={{color:"var(--text3)"}}>{payments.length} transactions</span>
+                <span style={{fontFamily:"var(--mono)",fontWeight:600}}>£{total.toFixed(2)} total</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily banking sheet */}
+          <div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:600,color:"var(--text)"}}>Daily banking sheet</div>
+                <div style={{fontSize:12,color:"var(--text3)",marginTop:2}}>Cash grouped by day — mark each day as banked once deposited, add your deposit slip reference</div>
+              </div>
+            </div>
+            <div className="card" style={{overflow:"hidden"}}>
+              {dates.map((d, di) => {
+                const rows = byDate[d];
+                const dayTotal = rows.reduce((s,p)=>s+parseFloat(p.amount||0),0);
+                const isBanked = !!bankedDates[d];
+                const ref = depositRefs[d] || "";
+                return (
+                  <div key={d} style={{borderBottom:di<dates.length-1?"1px solid var(--border)":"none"}}>
+                    {/* Day header */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"var(--bg)"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:isBanked?"#16a34a":"#f59e0b",flexShrink:0}} />
+                        <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{fmtDay(d)}</div>
+                        <span style={{padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:500,background:isBanked?"#dcfce7":"#fef3c7",color:isBanked?"#15803d":"#92400e"}}>
+                          {isBanked?"✓ Banked":"Unbanked"}
+                        </span>
+                        <span style={{fontSize:11,color:"var(--text3)"}}>{rows.length} payment{rows.length!==1?"s":""}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:14,color:"var(--text)"}}>£{dayTotal.toFixed(2)}</span>
+                        {!isBanked ? (
+                          <button onClick={()=>{saveBanked({...bankedDates,[d]:true});}} style={{padding:"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>
+                            Mark banked
+                          </button>
+                        ) : (
+                          <button onClick={()=>{const nb={...bankedDates};delete nb[d];saveBanked(nb);}} style={{padding:"4px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",fontSize:11,cursor:"pointer"}}>
+                            Unmark
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Transaction rows */}
+                    <div style={{overflowX:"auto"}}>
+                      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:600}}>
+                        <thead>
+                          <tr>
+                            {["Time","Invoice","Customer","Amount","Method","Agent","Notes"].map(h => (
+                              <th key={h} style={{padding:"7px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".4px",textAlign:"left",borderBottom:"0.5px solid var(--border)",whiteSpace:"nowrap"}}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((p,i) => {
+                            const agentName = p.recorded_by_name || "—";
+                            const agentCol = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"][agentName.charCodeAt(0)%5]||"#64748b";
+                            const isPartial = (p.notes||"").toLowerCase().includes("partial");
+                            return (
+                              <tr key={p.id||i} style={{borderBottom:i<rows.length-1?"0.5px solid var(--border)":"none"}}>
+                                <td style={{padding:"9px 14px",color:"var(--text3)",whiteSpace:"nowrap"}}>{fmtTime(p.created_at)}</td>
+                                <td style={{padding:"9px 14px"}}><span style={{fontFamily:"var(--mono)",color:"var(--blue)",fontWeight:600,fontSize:12}}>{p.invoice_number||"—"}</span></td>
+                                <td style={{padding:"9px 14px",color:"var(--text)",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.customer||"—"}</td>
+                                <td style={{padding:"9px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>£{parseFloat(p.amount||0).toFixed(2)}</span></td>
+                                <td style={{padding:"9px 14px"}}>{methodBadge(p.method)}</td>
+                                <td style={{padding:"9px 14px"}}>
+                                  <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
+                                    <div style={{width:16,height:16,borderRadius:"50%",background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
+                                    {agentName.split(" ")[0]}
+                                  </div>
+                                </td>
+                                <td style={{padding:"9px 14px",color:"var(--text3)",fontSize:11}}>{p.notes||"—"}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Day footer — total + deposit ref */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"var(--bg)",borderTop:"1px solid var(--border)"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{fontSize:11,color:"var(--text3)"}}>Deposit slip ref:</span>
+                        {editingRef === d ? (
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <input value={refInput} onChange={e=>setRefInput(e.target.value)} placeholder="e.g. DEP-2026-0089" style={{padding:"3px 8px",border:"1px solid var(--blue)",borderRadius:5,fontSize:11,outline:"none",width:160,fontFamily:"var(--mono)"}} />
+                            <button onClick={()=>{saveRefs({...depositRefs,[d]:refInput});setEditingRef(null);}} style={{padding:"3px 10px",borderRadius:5,border:"none",background:"var(--blue)",color:"#fff",fontSize:11,cursor:"pointer"}}>Save</button>
+                            <button onClick={()=>setEditingRef(null)} style={{padding:"3px 8px",borderRadius:5,border:"1px solid var(--border)",background:"var(--white)",fontSize:11,cursor:"pointer",color:"var(--text3)"}}>Cancel</button>
+                          </div>
+                        ) : (
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{fontFamily:"var(--mono)",fontSize:12,color:"var(--text)",fontWeight:600}}>{ref || "—"}</span>
+                            <button onClick={()=>{setEditingRef(d);setRefInput(ref);}} style={{padding:"2px 8px",borderRadius:5,border:"1px solid var(--border)",background:"transparent",fontSize:11,cursor:"pointer",color:"var(--text3)"}}>
+                              {ref?"Edit":"Add ref"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:13,color:isBanked?"#16a34a":"#d97706"}}>
+                        £{dayTotal.toFixed(2)} {isBanked?"✓ banked":"— unbanked"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
