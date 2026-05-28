@@ -112,6 +112,18 @@ const sb = {
 
 const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—";
+const fmtTime = (d) => d ? new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+const fmtRelative = (d) => {
+  if (!d) return { line1: "—", line2: "" };
+  const date = new Date(d); const now = new Date();
+  const diffDays = Math.floor((now - date) / 86400000);
+  if (diffDays === 0) return { line1: "Today", line2: fmtTime(d) };
+  if (diffDays === 1) return { line1: "Yesterday", line2: fmtTime(d) };
+  if (diffDays < 7) return { line1: diffDays + "d ago", line2: fmtTime(d) };
+  return { line1: fmtShort(d), line2: fmtTime(d) };
+};
+const dueDelta = (d) => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
 const today = () => new Date().toISOString().split("T")[0];
 
 // ── Send email via Vercel API + SendGrid ──────────────────────────────────────
@@ -3195,7 +3207,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, pendingInvoiceView, onClearPending }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending }) {
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
@@ -3488,49 +3500,93 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
         ) : (
-        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:460}}><thead><tr>
-          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer <i className={"ti "+(sortCol!=="customer"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-letters":"ti-sort-descending-letters")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="customer"?1:.3}} /></th>
-          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice # <i className={"ti "+(sortCol!=="invoice_number"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending":"ti-sort-descending")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_number"?1:.3}} /></th>
-          <th className="hm" style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_date")}>Date <i className={"ti "+(sortCol!=="invoice_date"?"ti-arrows-sort":"ti-calendar")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="invoice_date"?1:.3}} /></th>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:1000}}><thead><tr>
+          <th style={{width:36}}><input type="checkbox" checked={selectedIds.size===filtered.length&&filtered.length>0} onChange={()=>toggleSelectAll()} style={{accentColor:"var(--blue)"}} /></th>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
+          <th className="hm" style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_date")}>Date<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
           <th className="hm">Due</th>
-          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("amount")}>Amount <i className={"ti "+(sortCol!=="amount"?"ti-arrows-sort":sortDir==="asc"?"ti-sort-ascending-numbers":"ti-sort-descending-numbers")} style={{fontSize:10,marginLeft:3,opacity:sortCol==="amount"?1:.3}} /></th>
-          <th>Status</th><th>Actions</th>
+          <th style={{cursor:"pointer"}} onClick={()=>sortToggle("amount")}>Amount<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
+          <th>Status</th>
+          <th className="hm">Agent</th>
+          <th className="hm">Updated</th>
+          <th style={{textAlign:"right"}}>Actions</th>
         </tr></thead><tbody>
           {filtered.map(inv => (
             <tr key={inv.id}>
-              <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="c-av hm" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1" }}>{inv.customer?.[0]?.toUpperCase()}</div><span style={{ fontWeight: 500 }}>{inv.customer}</span></div></td>
-              <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td>
-              <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.invoice_date)}</td>
-              <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(inv.due_date)}</td>
-              <td className="mono" style={{ fontWeight: 600 }}>
-                {inv.status === "partial"
-                  ? <span>{fmt(inv.balance || 0)} <span style={{ fontSize:10, color:"var(--text3)", fontWeight:400 }}>of {fmt(inv.amount)}</span></span>
-                  : fmt(inv.amount)}
-              </td>
-              <td><div style={{ display: "flex", flexDirection: "column", gap: 3 }}><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>{inv.payment_method && <span style={{ fontSize: 10, color: "var(--text3)" }}>{inv.payment_method === "cash" ? "💵" : inv.payment_method === "bank" ? "🏦" : inv.payment_method === "card" ? "💳" : "📝"} {inv.payment_method}</span>}</div></td>
+              <td style={{width:36}}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={()=>toggleSelect(inv.id)} style={{accentColor:"var(--blue)"}} /></td>
+              <td><span className="mono" style={{color:"var(--blue)",fontSize:12,fontWeight:600}}>{inv.invoice_number}</span></td>
               <td>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <button className="btn bo bsm" onClick={() => setViewInvoice(inv)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>View</button>
-                  <button className="btn bsm" style={{ background: "#0f172a", color: "#fff" }} onClick={() => printDNFromInvoice(inv)} title="Download Delivery Note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>DN</button>
-                  {(profile?.role === "admin") && (
-                    <button className="btn bo bsm" style={{ color: "var(--red)", borderColor: "var(--red)", minWidth: 32, display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={() => deleteInvoice(inv)} title="Delete invoice"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div className="c-av hm" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0)%5]||"#6366f1",flexShrink:0}}>{inv.customer?.[0]?.toUpperCase()}</div>
+                  <div>
+                    <div style={{fontWeight:600,fontSize:13}}>{inv.customer}</div>
+                    {contacts.find(x=>x.name===inv.customer)?.email
+                      ? <div style={{fontSize:11,color:"var(--text3)"}}>{contacts.find(x=>x.name===inv.customer).email}</div>
+                      : <div style={{fontSize:11,color:"#fca5a5"}}>No email</div>}
+                  </div>
+                </div>
+              </td>
+              <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{fmtShort(inv.invoice_date)}</td>
+              <td className="hm">{(() => {
+                if (!inv.due_date) return <span style={{fontSize:12,color:"var(--text3)"}}>—</span>;
+                const dd = dueDelta(inv.due_date);
+                if (inv.status==="paid") return <span style={{fontSize:12,color:"var(--text3)"}}>{fmtShort(inv.due_date)}</span>;
+                if (dd < 0) return <span style={{fontSize:12,fontWeight:600,color:"var(--red)"}}>{fmtShort(inv.due_date)}<span style={{fontSize:10,marginLeft:3}}>↑{Math.abs(dd)}d</span></span>;
+                if (dd <= 3) return <span style={{fontSize:12,fontWeight:600,color:"var(--amber)"}}>{fmtShort(inv.due_date)}<span style={{fontSize:10,marginLeft:3}}>{dd}d</span></span>;
+                return <span style={{fontSize:12,color:"var(--text2)"}}>{fmtShort(inv.due_date)}</span>;
+              })()}</td>
+              <td>
+                <div className="mono" style={{fontWeight:600,fontSize:13}}>{inv.status==="partial"?<span>{fmt(inv.balance||0)}<span style={{fontSize:10,color:"var(--text3)",fontWeight:400,marginLeft:4}}>of {fmt(inv.amount)}</span></span>:fmt(inv.amount)}</div>
+                {inv.payment_method&&inv.status==="paid"&&<div style={{fontSize:10,color:"var(--text3)",marginTop:2}}>{inv.payment_method==="cash"?"💵":inv.payment_method==="bank"?"🏦":inv.payment_method==="card"?"💳":"📝"} {inv.payment_method}</div>}
+              </td>
+              <td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
+              <td className="hm">{(()=>{
+                const agent=(allProfiles||[]).find(p=>p.id===inv.created_by);
+                const aname=agent?.full_name||"—";
+                const col=["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#2563eb","#ec4899"][aname.charCodeAt(0)%7]||"#64748b";
+                return <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)",fontWeight:500}}>
+                  <div style={{width:16,height:16,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{aname[0]?.toUpperCase()||"?"}</div>
+                  {aname.split(" ")[0]}
+                </div>;
+              })()}</td>
+              <td className="hm">{(()=>{
+                const r=fmtRelative(inv.updated_at||inv.created_at);
+                return <div style={{fontSize:11,color:"var(--text3)",lineHeight:1.5}}><div>{r.line1}</div><div>{r.line2}</div></div>;
+              })()}</td>
+              <td>
+                <div style={{display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}}>
+                  <button onClick={()=>setViewInvoice(inv)} title="View" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button onClick={()=>printDNFromInvoice(inv)} title="Delivery note" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  </button>
+                  {inv.status!=="paid"&&(
+                    payingId===inv.id?(
+                      <div style={{display:"flex",gap:3,alignItems:"center"}}>
+                        <select style={{padding:"3px 5px",fontSize:11,border:"1px solid var(--border)",borderRadius:6,outline:"none",background:"var(--white)",color:"var(--text)"}} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(prev=>({...prev,[inv.id]:e.target.value}))}>
+                          <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
+                        </select>
+                        <button onClick={()=>markPaid(inv.id,payMethod[inv.id]||"cash")} style={{padding:"4px 8px",borderRadius:6,background:"#16a34a",color:"#fff",border:"none",fontSize:11,fontWeight:600,cursor:"pointer"}}>✓</button>
+                        <button onClick={()=>setPayingId(null)} style={{padding:"4px 6px",borderRadius:6,background:"var(--bg)",color:"var(--text2)",border:"1px solid var(--border)",fontSize:11,cursor:"pointer"}}>✕</button>
+                      </div>
+                    ):(
+                      <button onClick={()=>setPayingId(inv.id)} title="Mark paid" style={{width:28,height:28,borderRadius:6,border:"1px solid #bbf7d0",background:"#f0fdf4",color:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </button>
+                    )
                   )}
-                  {inv.status !== "paid" && payingId === inv.id ? (
-                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                      <select className="il-input" style={{ padding: "4px 8px", fontSize: 11, width: 80 }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
-                        <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
-                      </select>
-                      <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
-                      <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
-                    </div>
-                  ) : (
-                    <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
+                  {profile?.role==="admin"&&(
+                    <button onClick={()=>deleteInvoice(inv)} title="Delete" style={{width:28,height:28,borderRadius:6,border:"1px solid #fecaca",background:"#fef2f2",color:"var(--red)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                    </button>
                   )}
                 </div>
               </td>
             </tr>
           ))}
-          {filtered.length === 0 && <tr><td colSpan={7}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} /></td></tr>}
+          {filtered.length === 0 && <tr><td colSpan={10}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} /></td></tr>}
         </tbody></table></div>
         )}
       </div>
@@ -6271,7 +6327,7 @@ export default function App() {
             ) : (
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
