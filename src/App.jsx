@@ -108,6 +108,8 @@ const sb = {
   async get(t, table, q = "") { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) })).json(); },
   async post(t, table, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
   async patch(t, table, id, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
+  async getPayments(t, invoiceId) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments?invoice_id=eq.${invoiceId}&order=created_at.asc`, { headers: sb.h(t) })).json(); },
+  async addPayment(t, row) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(row) })).json(); },
 };
 
 const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
@@ -1527,7 +1529,7 @@ function Auth({ onAuth }) {
 // │ InvoiceModal                                               │
 // │ Invoice detail modal — 3 tabs: Invoice, Timeline, Actions  │
 // └────────────────────────────────────────────────────────────┘
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay, token }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
@@ -1535,6 +1537,18 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const [partPayMethod, setPartPayMethod] = useState("cash");
   const [partPayLoading, setPartPayLoading] = useState(false);
   const [partPayMsg, setPartPayMsg] = useState("");
+  const [payments, setPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (activeTab === "payments" && invoice?.id && token) {
+      setPaymentsLoading(true);
+      sb.getPayments(token, invoice.id)
+        .then(d => setPayments(Array.isArray(d) ? d : []))
+        .catch(() => setPayments([]))
+        .finally(() => setPaymentsLoading(false));
+    }
+  }, [activeTab, invoice?.id]);
 
   const lines = (() => {
     try {
@@ -1629,7 +1643,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ display: "flex", background: "#f4f6f9", borderRadius: "var(--r)", padding: 3, gap: 2 }}>
-              {[["invoice","ti-file-text","Invoice"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].map(([id, icon, lbl]) => (
+              {[["invoice","ti-file-text","Invoice"],["payments","ti-credit-card","Payments"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].map(([id, icon, lbl]) => (
                 <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, transition: "all .12s", background: activeTab === id ? "var(--white)" : "transparent", color: activeTab === id ? "var(--text)" : "var(--text3)", boxShadow: activeTab === id ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
                   <i className={"ti " + icon} style={{ fontSize: 13 }} />{isMobile() ? null : lbl}
                 </button>
@@ -1640,6 +1654,77 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               </button>
           </div>
         </div>
+        {/* ── PAYMENTS TAB ── */}
+        {activeTab === "payments" && (
+          <div style={{padding:"20px 24px"}}>
+            {/* Payment Summary */}
+            {(invoice.status === "partial" || invoice.status === "paid") && (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+                {[
+                  { label:"Invoice Total", val:fmt(invoice.amount), accent:"#2563eb" },
+                  { label:"Amount Paid", val:fmt(invoice.amount_paid||0), accent:"#16a34a" },
+                  { label:"Balance Owing", val:fmt(Math.max(0,(invoice.balance||invoice.amount))), accent:invoice.balance>0?"#dc2626":"#16a34a" },
+                ].map((k,i) => (
+                  <div key={i} style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"12px 16px",borderTop:`3px solid ${k.accent}`}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
+                    <div style={{fontSize:18,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)"}}>{k.val}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {invoice.amount_paid > 0 && invoice.amount > 0 && (
+              <div style={{marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text3)",marginBottom:6}}>
+                  <span>Collection progress</span>
+                  <span>{Math.round((invoice.amount_paid/invoice.amount)*100)}% collected</span>
+                </div>
+                <div style={{height:6,background:"var(--border)",borderRadius:4,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:Math.min(100,Math.round((invoice.amount_paid/invoice.amount)*100))+"%",background:invoice.status==="paid"?"#16a34a":"#2563eb",borderRadius:4,transition:"width .4s"}} />
+                </div>
+              </div>
+            )}
+            {/* Payment History */}
+            <div style={{marginBottom:16,fontWeight:700,fontSize:13,color:"var(--text)"}}>Payment History</div>
+            {paymentsLoading ? (
+              <div style={{textAlign:"center",padding:"32px 0",color:"var(--text3)",fontSize:13}}>Loading payments...</div>
+            ) : payments.length === 0 ? (
+              <div style={{textAlign:"center",padding:"32px 0",color:"var(--text3)"}}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{opacity:.3,marginBottom:8,display:"block",margin:"0 auto 8px"}}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <div style={{fontSize:13}}>No payments recorded yet</div>
+                <div style={{fontSize:11,marginTop:4}}>Payments will appear here when recorded</div>
+              </div>
+            ) : (
+              <div style={{border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead>
+                    <tr style={{background:"var(--bg)"}}>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Date</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Amount</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Method</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Notes</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Recorded By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p,i) => (
+                      <tr key={p.id} style={{borderBottom: i<payments.length-1?"1px solid var(--border)":"none"}}>
+                        <td style={{padding:"10px 14px",fontSize:12}}>{fmtDate(p.payment_date || p.created_at)}</td>
+                        <td style={{padding:"10px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:700,fontSize:13,color:"#16a34a"}}>{fmt(p.amount)}</span></td>
+                        <td style={{padding:"10px 14px"}}><span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12}}>{p.method==="cash"?"💵":p.method==="bank"?"🏦":p.method==="card"?"💳":"📝"} {p.method}</span></td>
+                        <td style={{padding:"10px 14px",fontSize:12,color:"var(--text2)"}}>{p.notes||"—"}</td>
+                        <td style={{padding:"10px 14px",fontSize:12,color:"var(--text3)"}}>{p.recorded_by_name||"—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{padding:"10px 14px",background:"var(--bg)",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",fontSize:12}}>
+                  <span style={{color:"var(--text3)"}}>{payments.length} payment{payments.length!==1?"s":""}</span>
+                  <span style={{fontFamily:"var(--mono)",fontWeight:700}}>{fmt(payments.reduce((s,p)=>s+(parseFloat(p.amount)||0),0))} total</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {/* ── INVOICE TAB ── */}
         {activeTab === "invoice" && (
           <div className="inv-doc">
@@ -2667,6 +2752,17 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const markPaid = async (id, method) => {
     const inv = invoices.find(i => i.id === id);
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
+    const prevPaidAmt = parseFloat(inv?.amount_paid || 0);
+    const remainingAmt = parseFloat(inv?.amount || 0) - prevPaidAmt;
+    if (remainingAmt > 0) {
+      await sb.addPayment(token, {
+        invoice_id: id, invoice_number: inv?.invoice_number, customer: inv?.customer,
+        amount: remainingAmt, method: method || "cash",
+        payment_date: new Date().toISOString().split("T")[0],
+        notes: "Full payment", recorded_by: userId,
+        recorded_by_name: profile?.full_name || "Admin"
+      }).catch(() => {});
+    }
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
@@ -2680,13 +2776,21 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
     await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    await sb.addPayment(token, {
+      invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
+      amount: paid, method: payMethod[inv.id] || "cash",
+      payment_date: new Date().toISOString().split("T")[0],
+      notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+      recorded_by: userId,
+      recorded_by_name: profile?.full_name || "Admin"
+    }).catch(() => {});
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
   };
   return (
     <div>
-      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} />}
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} token={token} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
@@ -3292,6 +3396,14 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
     await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    await sb.addPayment(token, {
+      invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
+      amount: paid, method: payMethod[inv.id] || "cash",
+      payment_date: new Date().toISOString().split("T")[0],
+      notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+      recorded_by: userId,
+      recorded_by_name: profile?.full_name || "Admin"
+    }).catch(() => {});
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
@@ -3537,7 +3649,18 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                 return <span style={{fontSize:12,color:"var(--text2)"}}>{fmtShort(inv.due_date)}</span>;
               })()}</td>
               <td>
-                <div className="mono" style={{fontWeight:600,fontSize:13}}>{inv.status==="partial"?<span>{fmt(inv.balance||0)}<span style={{fontSize:10,color:"var(--text3)",fontWeight:400,marginLeft:4}}>of {fmt(inv.amount)}</span></span>:fmt(inv.amount)}</div>
+                <div className="mono" style={{fontWeight:600,fontSize:13}}>{fmt(inv.amount)}</div>
+                {inv.status==="partial"&&(
+                  <div style={{marginTop:4}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--text3)",marginBottom:3}}>
+                      <span style={{color:"#16a34a"}}>£{(inv.amount_paid||0).toFixed(2)} paid</span>
+                      <span style={{color:"var(--red)"}}>£{(inv.balance||0).toFixed(2)} owing</span>
+                    </div>
+                    <div style={{height:3,background:"var(--border)",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:inv.amount>0?Math.round((inv.amount_paid||0)/inv.amount*100)+"%":"0%",background:"#16a34a",borderRadius:2}} />
+                    </div>
+                  </div>
+                )}
                 {inv.payment_method&&inv.status==="paid"&&<div style={{fontSize:10,color:"var(--text3)",marginTop:2}}>{inv.payment_method==="cash"?"💵":inv.payment_method==="bank"?"🏦":inv.payment_method==="card"?"💳":"📝"} {inv.payment_method}</div>}
               </td>
               <td><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
