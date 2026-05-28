@@ -1733,7 +1733,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                         </tr>
                       );
                     })}
-                  </tbody>>
+                  </tbody>
                 </table>
                 <div style={{padding:"10px 14px",background:"var(--bg)",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",fontSize:12}}>
                   <span style={{color:"var(--text3)"}}>{payments.length} payment{payments.length!==1?"s":""}</span>
