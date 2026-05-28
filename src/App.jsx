@@ -1541,7 +1541,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const [paymentsLoading, setPaymentsLoading] = useState(false);
 
   React.useEffect(() => {
-    if (activeTab === "payments" && invoice?.id && token) {
+    if ((activeTab === "payments" || activeTab === "timeline") && invoice?.id && token) {
       setPaymentsLoading(true);
       sb.getPayments(token, invoice.id)
         .then(d => setPayments(Array.isArray(d) ? d : []))
@@ -1613,10 +1613,24 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 
   // Timeline events derived from invoice data
   const timeline = [
-    { icon: "ti-file-plus", color: "var(--blue)", bg: "var(--blue-lt)", label: "Created", date: invoice.created_at || invoice.invoice_date, desc: `Invoice ${invoice.invoice_number} created` },
-    invoice.status === "paid" && { icon: "ti-circle-check", color: "var(--green)", bg: "var(--green-lt)", label: "Paid", date: invoice.updated_at || invoice.invoice_date, desc: `Payment received · ${invoice.payment_method || ""}` },
-    invoice.status === "overdue" && { icon: "ti-alert-circle", color: "var(--red)", bg: "var(--red-lt)", label: "Overdue", date: invoice.due_date, desc: "Payment overdue — chase required" },
-  ].filter(Boolean);
+    { icon: "ti-file-plus", color: "var(--blue)", bg: "var(--blue-lt)", label: "Created", date: invoice.created_at || invoice.invoice_date, desc: `Invoice ${invoice.invoice_number} created · ${fmt(invoice.amount)}` },
+    ...payments.map((p, idx) => {
+      const runningTotal = payments.slice(0, idx + 1).reduce((s, x) => s + parseFloat(x.amount || 0), 0);
+      const remaining = Math.max(0, parseFloat(invoice.amount || 0) - runningTotal);
+      const methodIcon = p.method === "cash" ? "💵" : p.method === "bank" ? "🏦" : p.method === "card" ? "💳" : "📝";
+      const isFinal = remaining <= 0;
+      return {
+        icon: isFinal ? "ti-circle-check" : "ti-credit-card",
+        color: isFinal ? "var(--green)" : "#2563eb",
+        bg: isFinal ? "var(--green-lt)" : "var(--blue-lt)",
+        label: isFinal ? "Paid in Full" : "Partial Payment",
+        date: p.created_at || p.payment_date,
+        desc: `${fmt(p.amount)} received ${methodIcon} ${p.method}${p.recorded_by_name ? " · by " + p.recorded_by_name : ""}`,
+        sub: remaining > 0 ? `Balance after: ${fmt(remaining)}` : "Invoice fully settled",
+      };
+    }),
+    invoice.status === "overdue" && (!payments.length) && { icon: "ti-alert-circle", color: "var(--red)", bg: "var(--red-lt)", label: "Overdue", date: invoice.due_date, desc: "Payment overdue — chase required" },
+  ].filter(Boolean).sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
   const statusConfig = {
     partial:  { label: "Partial",  cls: "b-orange",  icon: "ti-clock-dollar" },
@@ -1831,18 +1845,34 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 24 }}>Full history of {invoice.invoice_number}</div>
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", left: 16, top: 0, bottom: 0, width: 1, background: "var(--border)" }} />
-              {timeline.map((ev, i) => (
-                <div key={i} style={{ display: "flex", gap: 16, marginBottom: 24, position: "relative" }}>
-                  <div style={{ width: 33, height: 33, borderRadius: "50%", background: ev.bg, border: `2px solid var(--white)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1, boxShadow: "0 0 0 3px " + ev.bg }}>
-                    <i className={"ti " + ev.icon} style={{ color: ev.color, fontSize: 15 }} />
+              {timeline.map((ev, i) => {
+                const d = ev.date ? new Date(ev.date) : null;
+                const dateStr = d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+                const timeStr = d ? d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+                return (
+                  <div key={i} style={{ display: "flex", gap: 16, marginBottom: 24, position: "relative" }}>
+                    <div style={{ width: 33, height: 33, borderRadius: "50%", background: ev.bg, border: "2px solid var(--white)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1, boxShadow: "0 0 0 3px " + ev.bg }}>
+                      <span style={{ color: ev.color, fontSize: 15 }}>
+                        {ev.icon === "ti-file-plus" ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        : ev.icon === "ti-circle-check" ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        : ev.icon === "ti-credit-card" ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+                      </span>
+                    </div>
+                    <div style={{ flex: 1, paddingTop: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: ev.color }}>{ev.label}</div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)" }}>{dateStr}</div>
+                          <div style={{ fontSize: 11, color: "var(--text3)" }}>{timeStr}</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: ev.sub ? 4 : 0 }}>{ev.desc}</div>
+                      {ev.sub && <div style={{ fontSize: 11, color: "var(--text3)", fontStyle: "italic" }}>{ev.sub}</div>}
+                    </div>
                   </div>
-                  <div style={{ flex: 1, paddingTop: 4 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{ev.label}</div>
-                    <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4 }}>{ev.desc}</div>
-                    <div style={{ fontSize: 11, color: "var(--text3)" }}>{fmtDate(ev.date)}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {/* Invoice details summary */}
               <div style={{ background: "#f8fafd", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 20px", marginTop: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Invoice Summary</div>
