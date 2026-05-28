@@ -413,7 +413,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .content{
   flex:1;padding:26px 28px;
   overflow-y:auto;
-  max-width:1440px;width:100%;margin:0 auto;
+  width:100%;
   animation:fadeIn .22s var(--ease) both;
 }
 
