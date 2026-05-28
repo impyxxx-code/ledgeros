@@ -2877,7 +2877,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // └────────────────────────────────────────────────────────────┘
 function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={auth.user.id} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
@@ -3522,7 +3522,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
           setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
           const inv = invoices.find(i => i.id === id);
-          if (inv) logAudit(auth.token, auth.user.id, "status_changed", "invoice", id, `${inv.invoice_number} status changed to ${status.toUpperCase()} for ${inv.customer}`);
+          if (inv) logAudit(token, userId, "status_changed", "invoice", id, `${inv.invoice_number} status changed to ${status.toUpperCase()} for ${inv.customer}`);
         }}
         onDuplicate={(inv) => {
           setViewInvoice(null);
