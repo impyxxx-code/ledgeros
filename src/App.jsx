@@ -1539,16 +1539,19 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const [partPayMsg, setPartPayMsg] = useState("");
   const [payments, setPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsRefresh, setPaymentsRefresh] = useState(0);
+
+  const refreshPayments = () => setPaymentsRefresh(n => n + 1);
 
   React.useEffect(() => {
-    if ((activeTab === "payments" || activeTab === "timeline") && invoice?.id && token) {
+    if (invoice?.id && token) {
       setPaymentsLoading(true);
       sb.getPayments(token, invoice.id)
         .then(d => setPayments(Array.isArray(d) ? d : []))
         .catch(() => setPayments([]))
         .finally(() => setPaymentsLoading(false));
     }
-  }, [activeTab, invoice?.id]);
+  }, [activeTab, invoice?.id, paymentsRefresh]);
 
   const lines = (() => {
     try {
@@ -1972,6 +1975,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                       const newBal = Math.max(0, bal - amt);
                       setPartPayMsg(`✓ £${amt.toFixed(2)} recorded. Balance: £${newBal.toFixed(2)}`);
                       setPartPayAmount("");
+                      refreshPayments();
                       if (onLogPartPay) onLogPartPay(invoice, amt, partPayMethod, newBal);
                     } catch(err) { console.error("Part payment error:", err); setPartPayMsg("Error recording payment: " + (err?.message || String(err))); }
                     setPartPayLoading(false);
