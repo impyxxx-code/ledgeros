@@ -4743,6 +4743,7 @@ function AgentProductsReport({ invoices, allProfiles, period, filteredInv, perio
 // └────────────────────────────────────────────────────────────┘
 function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
   const [tab, setTab] = useState("overview");
+  const [hoveredBar, setHoveredBar] = React.useState(null);
   const [reconPeriod, setReconPeriod] = useState("week");
   const [reconFrom, setReconFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); });
   const [reconTo, setReconTo] = useState(() => new Date().toISOString().slice(0,10));
@@ -4794,31 +4795,121 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           ))}
         </div>
       </div>
-      <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-      </div>
-      {/* Tab bar — 2 rows */}
-      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:20}}>
-        {[["overview","📊 Overview"],["monthly","📅 Monthly"],["pl","📈 P&L"],["aged-debtors","💰 Aged Debtors"],["aged-creditors","🏦 Aged Creditors"],["cashflow","💵 Cash Flow"],["balance","⚖️ Balance Sheet"],["products","📦 Products"],["customers","👥 Customers"],["agents","🏆 Agents"],["stock","🏭 Stock"],["agent-products","📋 Agent Products"],["product-tracker","🔍 Product Tracker"],["cash-recon","💵 Cash Recon"]].map(([k,l]) => (
-          <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 14px",borderRadius:20,border:"1px solid "+(tab===k?"var(--blue)":"var(--border)"),background:tab===k?"var(--blue)":"var(--white)",color:tab===k?"#fff":"var(--text2)",fontSize:12,fontWeight:tab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",transition:"all .12s"}}>{l}</button>
+      <div style={{marginBottom:20,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden"}}>
+        {[
+          { label: "Revenue", tabs: [["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
+          { label: "Debtors", tabs: [["aged-debtors","Aged Debtors"],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
+          { label: "Operations", tabs: [["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+        ].map((group, gi) => (
+          <div key={gi} style={{display:"flex",alignItems:"stretch",borderBottom: gi < 2 ? "1px solid var(--border)" : "none"}}>
+            <div style={{width:90,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"8px 6px"}}>
+              <span style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",textAlign:"center",lineHeight:1.3}}>{group.label}</span>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:0,flex:1}}>
+              {group.tabs.map(([k,l], ti) => (
+                <button key={k} onClick={()=>setTab(k)} style={{
+                  padding:"10px 16px", border:"none",
+                  borderRight: ti < group.tabs.length-1 ? "1px solid var(--border)" : "none",
+                  background: tab===k ? "var(--blue)" : "transparent",
+                  color: tab===k ? "#fff" : "var(--text2)",
+                  fontSize:12, fontWeight: tab===k ? 600 : 400,
+                  cursor:"pointer", fontFamily:"var(--sans)", whiteSpace:"nowrap", transition:"all .12s", position:"relative",
+                }}>
+                  {l}
+                  {tab===k && <span style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"var(--blue)",borderRadius:"2px 2px 0 0"}} />}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
       {tab==="overview" && <div>
-        <div className="kgrid">
-          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--blue-lt)"}}><span style={{color:"var(--blue)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 7a4 4 0 0 0-8 0v9"/><path d="M6 17h12"/><path d="M6 13h8"/></svg></span></div><span className="kpi-badge" style={{background:"var(--blue-lt)",color:"#1e40af"}}>{periodLabels[period]}</span></div><div className="kpi-val">{fmt(totalSales)}</div><div className="kpi-label">Total Sales</div></div>
-          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--green-lt)"}}><span style={{color:"var(--green)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span></div></div><div className="kpi-val tg">{fmt(totalPaid)}</div><div className="kpi-label">Collected</div></div>
-          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--amber-lt)"}}><span style={{color:"var(--amber)"}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div></div><div className="kpi-val" style={{color:"var(--amber)"}}>{fmt(totalPending)}</div><div className="kpi-label">Pending</div></div>
-          <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{background:"var(--red-lt)"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div><div className="kpi-label">Overdue</div></div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+          {[
+            { label:"Total Sales", val:fmt(totalSales), sub:filteredInv.length+" invoices · "+periodLabels[period], accent:"#2563eb", pct:null },
+            { label:"Collected", val:fmt(totalPaid), sub:totalSales>0?Math.round(totalPaid/totalSales*100)+"% collection rate":"0% collection rate", accent:"#16a34a", pct:totalSales>0?totalPaid/totalSales:0 },
+            { label:"Pending", val:fmt(totalPending), sub:filteredInv.filter(i=>i.status==="pending").length+" invoices", accent:"#d97706", pct:totalSales>0?totalPending/totalSales:0 },
+            { label:"Overdue", val:fmt(totalOverdue), sub:filteredInv.filter(i=>i.status==="overdue").length+" invoices", accent:"#dc2626", pct:totalSales>0?totalOverdue/totalSales:0 },
+          ].map((k,i) => (
+            <div key={i} style={{background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"16px 18px",borderTop:`3px solid ${k.accent}`}}>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>{k.label}</div>
+              <div style={{fontSize:22,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)",letterSpacing:"-.5px",marginBottom:4}}>{k.val}</div>
+              <div style={{fontSize:11,color:"var(--text3)",marginBottom:k.pct!==null?10:0}}>{k.sub}</div>
+              {k.pct !== null && (
+                <div style={{height:3,background:"var(--border)",borderRadius:2,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:(k.pct*100)+"%",background:k.accent,borderRadius:2}} />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
         <div className="card">
-          <div className="ch"><div className="ct">Monthly Sales — Last 12 Months</div></div>
-          <div style={{padding:"20px 20px 8px"}}>
-            <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,marginBottom:8}}>
-              {monthlySales.map((m,i) => <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}><div style={{fontSize:9,color:"var(--text3)"}}>£{Math.round(m.total/1000)}k</div><div style={{width:"100%",background:"var(--blue)",borderRadius:"4px 4px 0 0",height:Math.max(4,(m.total/maxMonthly)*120)+"px",opacity: 0.85}} title={fmt(m.total)} /><div style={{fontSize:9,color:"var(--text3)"}}>{m.month}</div></div>)}
+          <div className="ch" style={{alignItems:"flex-start"}}>
+            <div><div className="ct">Monthly Revenue</div><div className="cs">Last 12 months — invoiced vs collected</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:16,fontSize:11,color:"var(--text3)"}}>
+              <span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:2,background:"#2563eb",display:"inline-block"}} />Invoiced</span>
+              <span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:2,background:"#16a34a",display:"inline-block"}} />Collected</span>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"0.5px solid var(--border)",paddingTop:8}}>
-              <span>Total: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
-              <span>Best: <strong>{monthlySales.reduce((a,b)=>a.total>b.total?a:b).month}</strong></span>
-              <span>Avg: <strong>{fmt(monthlySales.reduce((s,m)=>s+m.total,0)/12)}</strong></span>
+          </div>
+          <div style={{padding:"16px 20px 12px"}}>
+            {(() => {
+              const CHART_H = 180;
+              const yMax = Math.max(...monthlySales.map(m=>m.total), 1);
+              const ySteps = 4;
+              const yLabels = Array.from({length:ySteps+1},(_,i)=>Math.round(yMax/ySteps*i));
+              return (
+                <div style={{position:"relative"}}>
+                  <div style={{display:"flex",gap:0}}>
+                    <div style={{width:44,flexShrink:0,display:"flex",flexDirection:"column-reverse",justifyContent:"space-between",height:CHART_H}}>
+                      {yLabels.map((v,i)=>(
+                        <div key={i} style={{fontSize:10,color:"var(--text3)",textAlign:"right",lineHeight:1}}>
+                          £{v>=1000?Math.round(v/1000)+"k":v}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{flex:1,position:"relative",height:CHART_H,marginLeft:8}}>
+                      {yLabels.map((_,i)=>(
+                        <div key={i} style={{position:"absolute",left:0,right:0,bottom:(i/ySteps)*CHART_H,borderTop:i===0?"2px solid var(--border)":"1px solid #f1f5f9",zIndex:0}} />
+                      ))}
+                      <div style={{display:"flex",alignItems:"flex-end",height:"100%",gap:4,position:"relative",zIndex:1}}>
+                        {monthlySales.map((m,i)=>{
+                          const totalH = Math.max(0,(m.total/yMax)*CHART_H);
+                          const paidH = m.total>0?Math.max(0,(m.paid/m.total)*totalH):0;
+                          const isHov = hoveredBar===i;
+                          return (
+                            <div key={i} onMouseEnter={()=>setHoveredBar(i)} onMouseLeave={()=>setHoveredBar(null)}
+                              style={{flex:1,display:"flex",alignItems:"flex-end",height:"100%",cursor:"pointer",position:"relative"}}>
+                              <div style={{flex:1,height:totalH||2,background:isHov?"#1d4ed8":"#2563eb",borderRadius:"3px 3px 0 0",transition:"all .15s",opacity:isHov?1:0.85,position:"relative"}}>
+                                {m.paid>0&&<div style={{position:"absolute",bottom:0,left:0,right:0,height:paidH,background:isHov?"#15803d":"#16a34a",borderRadius:"3px 3px 0 0"}} />}
+                              </div>
+                              {isHov&&m.total>0&&(
+                                <div style={{position:"absolute",bottom:"100%",left:"50%",transform:"translateX(-50%)",background:"#0f172a",color:"#fff",padding:"8px 10px",borderRadius:8,fontSize:11,whiteSpace:"nowrap",zIndex:100,marginBottom:6,boxShadow:"0 4px 12px rgba(0,0,0,.2)"}}>
+                                  <div style={{fontWeight:700,marginBottom:3}}>{m.month}</div>
+                                  <div style={{color:"#93c5fd"}}>Invoiced: {fmt(m.total)}</div>
+                                  <div style={{color:"#86efac"}}>Collected: {fmt(m.paid)}</div>
+                                  <div style={{color:"#fca5a5"}}>Pending: {fmt(m.total-m.paid)}</div>
+                                  <div style={{position:"absolute",bottom:-4,left:"50%",transform:"translateX(-50%)",width:8,height:8,background:"#0f172a",rotate:"45deg"}} />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",marginLeft:52,gap:4,marginTop:6}}>
+                    {monthlySales.map((m,i)=>(
+                      <div key={i} style={{flex:1,textAlign:"center",fontSize:9,color:hoveredBar===i?"var(--blue)":"var(--text3)",fontWeight:hoveredBar===i?700:400,transition:"color .15s"}}>{m.month}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",borderTop:"1px solid var(--border)",paddingTop:10,marginTop:12}}>
+              <span>Total: <strong style={{color:"var(--text)"}}>{fmt(monthlySales.reduce((s,m)=>s+m.total,0))}</strong></span>
+              <span>Best: <strong style={{color:"var(--blue)"}}>{monthlySales.reduce((a,b)=>a.total>b.total?a:b).month}</strong></span>
+              <span>Collected: <strong style={{color:"#16a34a"}}>{fmt(monthlySales.reduce((s,m)=>s+m.paid,0))}</strong></span>
+              <span>Avg/month: <strong style={{color:"var(--text)"}}>{fmt(monthlySales.reduce((s,m)=>s+m.total,0)/12)}</strong></span>
             </div>
           </div>
         </div>
