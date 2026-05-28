@@ -1936,12 +1936,14 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                     setPartPayLoading(true); setPartPayMsg("");
                     try {
                       if (onPartPay) await onPartPay(invoice, amt, partPayMethod);
-                      const bal = invoice.balance > 0 ? invoice.balance : total;
+                      const currentBalance = invoice.balance != null ? parseFloat(invoice.balance) : parseFloat(invoice.amount || 0);
+                      const prevPaid = parseFloat(invoice.amount_paid || 0);
+                      const bal = currentBalance > 0 ? currentBalance : Math.max(0, parseFloat(invoice.amount || 0) - prevPaid);
                       const newBal = Math.max(0, bal - amt);
                       setPartPayMsg(`✓ £${amt.toFixed(2)} recorded. Balance: £${newBal.toFixed(2)}`);
                       setPartPayAmount("");
                       if (onLogPartPay) onLogPartPay(invoice, amt, partPayMethod, newBal);
-                    } catch { setPartPayMsg("Error recording payment"); }
+                    } catch(err) { console.error("Part payment error:", err); setPartPayMsg("Error recording payment: " + (err?.message || String(err))); }
                     setPartPayLoading(false);
                   }} style={{ whiteSpace: "nowrap" }}>
                     {partPayLoading ? "Saving..." : "Record Payment"}
@@ -3529,9 +3531,11 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         onPartPay={async (inv, amt, method) => {
           const prevPaid = parseFloat(inv.amount_paid || 0);
           const totalPaid = prevPaid + amt;
-          const balance = parseFloat(inv.amount) - totalPaid;
+          const invAmount = parseFloat(inv.amount || 0);
+          const balance = invAmount - totalPaid;
           const newStatus = balance <= 0 ? "paid" : "partial";
-          await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
+          const patchRes = await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
+          if (patchRes?.error || (Array.isArray(patchRes) && patchRes[0]?.code)) throw new Error(patchRes?.error?.message || patchRes[0]?.message || "Failed to update invoice");
           await sb.addPayment(token, {
             invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
             amount: amt, method: method || "cash",
