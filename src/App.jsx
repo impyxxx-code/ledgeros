@@ -3535,7 +3535,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           const balance = invAmount - totalPaid;
           const newStatus = balance <= 0 ? "paid" : "partial";
           const patchRes = await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
-          if (patchRes?.error || (Array.isArray(patchRes) && patchRes[0]?.code)) throw new Error(patchRes?.error?.message || patchRes[0]?.message || "Failed to update invoice");
+          if (patchRes?.code && !Array.isArray(patchRes)) throw new Error(patchRes?.message || "Failed to update invoice");
           await sb.addPayment(token, {
             invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
             amount: amt, method: method || "cash",
