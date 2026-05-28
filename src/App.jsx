@@ -3541,7 +3541,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
             amount: amt, method: method || "cash",
             payment_date: new Date().toISOString().split("T")[0],
             notes: newStatus === "paid" ? "Final payment" : "Partial payment",
-            recorded_by: auth.user?.id,
+            recorded_by: userId,
             recorded_by_name: profile?.full_name || "Admin"
           }).catch(e => console.error("Payment ledger insert failed:", e));
           setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
