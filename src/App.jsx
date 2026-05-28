@@ -7057,7 +7057,6 @@ function BankingPage({ token, userId, profile }) {
       rows.push([d, fmtTime(p.created_at), p.invoice_number||"", p.customer||"", parseFloat(p.amount||0).toFixed(2), p.method||"", p.recorded_by_name||"", p.notes||"", depositRefs[d]||""]);
     });
     const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
-");
     const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`banking-recon-${new Date().toISOString().split("T")[0]}.csv`; a.click();
   };
 
