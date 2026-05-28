@@ -3701,7 +3701,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           {filtered.map(inv => (
             <tr key={inv.id}>
               <td style={{width:36}}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={()=>toggleSelect(inv.id)} style={{accentColor:"var(--blue)"}} /></td>
-              <td><span className="mono" style={{color:"var(--blue)",fontSize:12,fontWeight:600}}>{inv.invoice_number}</span></td>
+              <td><span className="mono" style={{color:"var(--blue)",fontSize:12,fontWeight:600,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}} onClick={()=>setViewInvoice(inv)}>{inv.invoice_number}</span></td>
               <td>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div className="c-av hm" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0)%5]||"#6366f1",flexShrink:0}}>{inv.customer?.[0]?.toUpperCase()}</div>
