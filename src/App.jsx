@@ -3554,6 +3554,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
         contacts={contacts}
+        token={token}
         onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
           await sb.patch(token, "invoices", id, { status });
