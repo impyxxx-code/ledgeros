@@ -2751,7 +2751,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 // │ AgentDashboard                                             │
 // │ Dashboard view for agent role users                        │
 // └────────────────────────────────────────────────────────────┘
-function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token }) {
+function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token, userId }) {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
@@ -2875,9 +2875,9 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={auth.user.id} />;
 
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
@@ -6572,7 +6572,7 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
