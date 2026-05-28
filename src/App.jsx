@@ -2805,19 +2805,18 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     const prevPaidAmt = parseFloat(inv?.amount_paid || 0);
     const remainingAmt = parseFloat(inv?.amount || 0) - prevPaidAmt;
     if (remainingAmt > 0) {
-      await sb.addPayment(token, {
-        invoice_id: id, invoice_number: inv?.invoice_number, customer: inv?.customer,
-        amount: remainingAmt, method: method || "cash",
-        payment_date: new Date().toISOString().split("T")[0],
-        notes: "Full payment", recorded_by: userId,
-        recorded_by_name: profile?.full_name || "Admin"
-      }).catch(() => {});
+      const isUUID3 = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+    const markPayRow = { invoice_id: id, invoice_number: inv?.invoice_number, customer: inv?.customer, amount: remainingAmt, method: method || "cash", payment_date: new Date().toISOString().split("T")[0], notes: "Full payment", recorded_by_name: profile?.full_name || "Admin" };
+    if (isUUID3(userId)) markPayRow.recorded_by = userId;
+    const markPayRes = await sb.addPayment(token, markPayRow).catch(e => ({ error: e }));
+    if (markPayRes?.error || markPayRes?.code) console.error("Payment ledger insert failed:", markPayRes);
     }
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
   };
 
+  const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   const recordPartPayment = async (inv, amount, method) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
@@ -2827,14 +2826,16 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
     await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
-    await sb.addPayment(token, {
+    const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
       notes: newStatus === "paid" ? "Final payment" : "Partial payment",
-      recorded_by: userId,
       recorded_by_name: profile?.full_name || "Admin"
-    }).catch(e => console.error("Payment ledger insert failed:", e));
+    };
+    if (isUUID(userId)) payRow.recorded_by = userId;
+    const payRes = await sb.addPayment(token, payRow).catch(e => ({ error: e }));
+    if (payRes?.error || payRes?.code) console.error("Payment ledger insert failed:", payRes);
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
@@ -3439,6 +3440,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     } else { toast.error("Failed to delete invoice"); }
   };
 
+  const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   const recordPartPayment = async (inv, amount, method) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
@@ -3448,14 +3450,16 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
     await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
-    await sb.addPayment(token, {
+    const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
       notes: newStatus === "paid" ? "Final payment" : "Partial payment",
-      recorded_by: userId,
       recorded_by_name: profile?.full_name || "Admin"
-    }).catch(e => console.error("Payment ledger insert failed:", e));
+    };
+    if (isUUID(userId)) payRow.recorded_by = userId;
+    const payRes = await sb.addPayment(token, payRow).catch(e => ({ error: e }));
+    if (payRes?.error || payRes?.code) console.error("Payment ledger insert failed:", payRes);
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
@@ -3566,14 +3570,17 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           const newStatus = balance <= 0 ? "paid" : "partial";
           const patchRes = await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
           if (patchRes?.code && !Array.isArray(patchRes)) throw new Error(patchRes?.message || "Failed to update invoice");
-          await sb.addPayment(token, {
+          const isUUID2 = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+          const payRow2 = {
             invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
             amount: amt, method: method || "cash",
             payment_date: new Date().toISOString().split("T")[0],
             notes: newStatus === "paid" ? "Final payment" : "Partial payment",
-            recorded_by: userId,
             recorded_by_name: profile?.full_name || "Admin"
-          }).catch(e => console.error("Payment ledger insert failed:", e));
+          };
+          if (isUUID2(userId)) payRow2.recorded_by = userId;
+          const payRes2 = await sb.addPayment(token, payRow2).catch(e => ({ error: e }));
+          if (payRes2?.error || payRes2?.code) console.error("Payment ledger insert failed:", payRes2);
           setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
           setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
         }}
