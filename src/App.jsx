@@ -1698,24 +1698,42 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead>
                     <tr style={{background:"var(--bg)"}}>
-                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Date</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Date & Time</th>
                       <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Amount</th>
                       <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Method</th>
                       <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Notes</th>
-                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Recorded By</th>
+                      <th style={{padding:"8px 14px",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",textAlign:"left",borderBottom:"1px solid var(--border)"}}>Received By</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((p,i) => (
-                      <tr key={p.id} style={{borderBottom: i<payments.length-1?"1px solid var(--border)":"none"}}>
-                        <td style={{padding:"10px 14px",fontSize:12}}>{fmtDate(p.payment_date || p.created_at)}</td>
-                        <td style={{padding:"10px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:700,fontSize:13,color:"#16a34a"}}>{fmt(p.amount)}</span></td>
-                        <td style={{padding:"10px 14px"}}><span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12}}>{p.method==="cash"?"💵":p.method==="bank"?"🏦":p.method==="card"?"💳":"📝"} {p.method}</span></td>
-                        <td style={{padding:"10px 14px",fontSize:12,color:"var(--text2)"}}>{p.notes||"—"}</td>
-                        <td style={{padding:"10px 14px",fontSize:12,color:"var(--text3)"}}>{p.recorded_by_name||"—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
+                    {payments.map((p,i) => {
+                      const ts = p.created_at || p.payment_date;
+                      const d = ts ? new Date(ts) : null;
+                      const dateStr = d ? d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+                      const timeStr = d ? d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "";
+                      const agentName = p.recorded_by_name || "—";
+                      const agentInitial = agentName[0]?.toUpperCase() || "?";
+                      const agentColors = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"];
+                      const agentCol = agentColors[agentName.charCodeAt(0)%5] || "#64748b";
+                      return (
+                        <tr key={p.id} style={{borderBottom: i<payments.length-1?"1px solid var(--border)":"none"}}>
+                          <td style={{padding:"10px 14px"}}>
+                            <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>{dateStr}</div>
+                            <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>{timeStr}</div>
+                          </td>
+                          <td style={{padding:"10px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:700,fontSize:13,color:"#16a34a"}}>{fmt(p.amount)}</span></td>
+                          <td style={{padding:"10px 14px"}}><span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12}}>{p.method==="cash"?"💵":p.method==="bank"?"🏦":p.method==="card"?"💳":"📝"} {p.method}</span></td>
+                          <td style={{padding:"10px 14px",fontSize:12,color:"var(--text2)"}}>{p.notes||"—"}</td>
+                          <td style={{padding:"10px 14px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:26,height:26,borderRadius:"50%",background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0}}>{agentInitial}</div>
+                              <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>{agentName}</div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>>
                 </table>
                 <div style={{padding:"10px 14px",background:"var(--bg)",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",fontSize:12}}>
                   <span style={{color:"var(--text3)"}}>{payments.length} payment{payments.length!==1?"s":""}</span>
