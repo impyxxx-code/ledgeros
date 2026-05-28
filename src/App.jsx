@@ -2653,7 +2653,18 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         <div style={{ padding:"0 16px 16px", borderTop:"1px solid var(--border)" }}>
           <div style={{ marginTop:12 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Status</label><select className="il-input" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
           <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Invoice Date</label><input className="il-input" type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
-          <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Due Date</label><input className="il-input" type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
+          <div style={{marginTop:10}}>
+            <label style={{fontSize:11,fontWeight:600,color:"var(--text3)",display:"block",marginBottom:4}}>Due Date</label>
+            <div style={{display:"flex",gap:5,marginBottom:6}}>
+              {[{label:"Today",days:0},{label:"7d",days:7},{label:"14d",days:14},{label:"30d",days:30}].map(({label,days})=>{
+                const d=new Date(); d.setDate(d.getDate()+days);
+                const val=d.toISOString().split("T")[0];
+                const active=f.due_date===val;
+                return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"4px 0",borderRadius:5,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
+              })}
+            </div>
+            <input className="il-input" type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} />
+          </div>
           <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Notes</label><input className="il-input" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
         </div>
       </details>
@@ -2714,7 +2725,20 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
-        <div className="fgrp"><label>Due Date</label><input type="date" value={f.due_date} onChange={e => setF({ ...f, due_date: e.target.value })} /></div>
+        <div className="fgrp">
+          <label>Due Date</label>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{display:"flex",gap:6}}>
+              {[{label:"Today",days:0},{label:"7 days",days:7},{label:"14 days",days:14},{label:"30 days",days:30}].map(({label,days})=>{
+                const d = new Date(); d.setDate(d.getDate()+days);
+                const val = d.toISOString().split("T")[0];
+                const active = f.due_date === val;
+                return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"5px 0",borderRadius:6,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
+              })}
+            </div>
+            <input type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} style={{fontSize:13}} />
+          </div>
+        </div>
         <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes for this invoice..." /></div>
       </div>
       <div style={{ borderTop: "0.5px solid var(--border)" }}>
@@ -6755,6 +6779,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
   const existing = (() => { try { return invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : []; } catch(e) { return []; } })();
   const [customer, setCustomer] = useState(invoice.customer || "");
   const [invoiceDate, setInvoiceDate] = useState(invoice.invoice_date || "");
+  const [dueDate, setDueDate] = useState(invoice.due_date || "");
   const [status, setStatus] = useState(invoice.status || "pending");
   const [notes, setNotes] = useState(invoice.notes || "");
   const [lines, setLines] = useState(existing.length > 0 ? existing : [{ description:"", qty:1, unit_price:"", vat_rate:20 }]);
@@ -6774,6 +6799,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
     await sb.patch(token, "invoices", invoice.id, {
       customer,
       invoice_date: invoiceDate,
+      due_date: dueDate || null,
       status,
       notes,
       lines: JSON.stringify(validLines),
@@ -6809,6 +6835,20 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
             <div className="fgrp">
               <label>Invoice Date</label>
               <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+            </div>
+            <div className="fgrp">
+              <label>Due Date</label>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{display:"flex",gap:6}}>
+                  {[{label:"Today",days:0},{label:"7 days",days:7},{label:"14 days",days:14},{label:"30 days",days:30}].map(({label,days})=>{
+                    const d=new Date(); d.setDate(d.getDate()+days);
+                    const val=d.toISOString().split("T")[0];
+                    const active=dueDate===val;
+                    return <button key={days} type="button" onClick={()=>setDueDate(val)} style={{flex:1,padding:"5px 0",borderRadius:5,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
+                  })}
+                </div>
+                <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} />
+              </div>
             </div>
             <div className="fgrp">
               <label>Status</label>
