@@ -2768,22 +2768,23 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
   };
 
-  const recordPartPayment = async (inv, amount) => {
+  const recordPartPayment = async (inv, amount, method) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
+    const resolvedMethod = method || payMethod[inv.id] || "cash";
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
-    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
     await sb.addPayment(token, {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
-      amount: paid, method: payMethod[inv.id] || "cash",
+      amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
       notes: newStatus === "paid" ? "Final payment" : "Partial payment",
       recorded_by: userId,
       recorded_by_name: profile?.full_name || "Admin"
-    }).catch(() => {});
+    }).catch(e => console.error("Payment ledger insert failed:", e));
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
@@ -3388,22 +3389,23 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     } else { toast.error("Failed to delete invoice"); }
   };
 
-  const recordPartPayment = async (inv, amount) => {
+  const recordPartPayment = async (inv, amount, method) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
+    const resolvedMethod = method || payMethod[inv.id] || "cash";
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const balance = parseFloat(inv.amount) - totalPaid;
     const newStatus = balance <= 0 ? "paid" : "partial";
-    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: payMethod[inv.id] || "cash" });
+    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
     await sb.addPayment(token, {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
-      amount: paid, method: payMethod[inv.id] || "cash",
+      amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
       notes: newStatus === "paid" ? "Final payment" : "Partial payment",
       recorded_by: userId,
       recorded_by_name: profile?.full_name || "Admin"
-    }).catch(() => {});
+    }).catch(e => console.error("Payment ledger insert failed:", e));
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
