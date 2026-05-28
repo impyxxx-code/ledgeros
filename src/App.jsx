@@ -3513,7 +3513,15 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           const totalPaid = prevPaid + amt;
           const balance = parseFloat(inv.amount) - totalPaid;
           const newStatus = balance <= 0 ? "paid" : "partial";
-          await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method });
+          await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
+          await sb.addPayment(token, {
+            invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
+            amount: amt, method: method || "cash",
+            payment_date: new Date().toISOString().split("T")[0],
+            notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+            recorded_by: auth.user?.id,
+            recorded_by_name: profile?.full_name || "Admin"
+          }).catch(e => console.error("Payment ledger insert failed:", e));
           setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
           setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
         }}
