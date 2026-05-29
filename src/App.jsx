@@ -3164,14 +3164,16 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         const months = Array.from({length:6},(_,i)=>{
           const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
           const lbl = d.toLocaleDateString("en-GB",{month:"short"});
+          // Collected = all cash received (amount_paid) for invoices in that month
           const mPaid = invoices.filter(inv=>{
             const id = new Date(inv.invoice_date||inv.created_at);
-            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status==="paid";
-          }).reduce((s,i)=>s+i.amount,0);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear();
+          }).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+          // Pending = outstanding balance owed for unpaid invoices in that month
           const mPending = invoices.filter(inv=>{
             const id = new Date(inv.invoice_date||inv.created_at);
-            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid";
-          }).reduce((s,i)=>s+i.amount,0);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid"&&inv.status!=="draft";
+          }).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
           return {lbl, paid: mPaid, pending: mPending};
         });
         const maxVal = Math.max(...months.map(m=>Math.max(m.paid,m.pending)),1);
