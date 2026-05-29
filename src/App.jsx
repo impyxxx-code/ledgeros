@@ -2967,12 +2967,15 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
   const cash = accounts.find(a => a.code === "1000")?.balance || 0;
-  const cashCollected = invoices.filter(i => i.status === "paid" && i.payment_method === "cash").reduce((s, i) => s + (parseFloat(i.amount_paid || i.amount) || 0), 0);
-  const bankCollected = invoices.filter(i => i.status === "paid" && i.payment_method === "bank").reduce((s, i) => s + (parseFloat(i.amount_paid || i.amount) || 0), 0);
+  // Total cash received — all amount_paid across every invoice
+  const paid = invoices.reduce((s, i) => s + parseFloat(i.amount_paid || 0), 0);
+  // Outstanding — sum of balance on non-paid invoices
+  const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0);
+  const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0);
+  // Cash/bank collected — all payments by method across all invoices
+  const cashCollected = invoices.reduce((s, i) => i.payment_method === "cash" ? s + parseFloat(i.amount_paid || 0) : s, 0);
+  const bankCollected = invoices.reduce((s, i) => i.payment_method === "bank" ? s + parseFloat(i.amount_paid || 0) : s, 0);
   const net = revenue - expenses;
-  const unpaid = invoices.filter(i => i.status !== "paid" && i.status !== "draft").reduce((s, i) => s + i.amount, 0);
-  const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
-  const paid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
   
   // Trend calculations — compare last 30 days vs previous 30 days
   const now = new Date();
@@ -3100,10 +3103,10 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         {/* KPI strip embedded in banner */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Total Revenue", val: fmt(paid + unpaid), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${paidCount + pendingCount + overdueCount} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: drillRevenue },
+            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: drillRevenue },
             { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: drillOutstanding },
-            { label: "Collected", val: fmt(paid), delta: paid + unpaid > 0 ? `${Math.round(paid/(paid+unpaid)*100)}% collection rate` : "0% collection rate", deltaColor: "rgba(255,255,255,.35)", onClick: drillPaid },
-            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `Total: ${fmt(cashCollected)}`) },
+            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: drillPaid },
+            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.payment_method==="cash"&&parseFloat(i.amount_paid||0)>0).map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount_paid||i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `Total: ${fmt(cashCollected)}`) },
           ].map((k, i) => (
             <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "background .15s" }}
               onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.04)"}
@@ -3788,8 +3791,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
               <div style={{ fontSize: 10, fontWeight: 600, color: isActive ? k.color : "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span>{k.label}</span>
                 {isActive
-                  ? <span style={{ color: k.accent, fontSize: 9, fontWeight: 700, background: k.accent + "33", padding: "1px 5px", borderRadius: 4 }}>ACTIVE ✕</span>
-                  : <span style={{ color: "rgba(255,255,255,.2)", fontSize: 9 }}>↓ filter</span>}
+                  ? <span style={{ color: "#fff", fontSize: 9, fontWeight: 700, background: k.accent, padding: "2px 6px", borderRadius: 4, letterSpacing: ".3px" }}>ACTIVE ✕</span>
+                  : <span style={{ color: "rgba(255,255,255,.3)", fontSize: 9 }}>↓ FILTER</span>}
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", marginBottom: 2 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: isActive ? k.color : "rgba(255,255,255,.5)" }}>{k.sub}</div>
