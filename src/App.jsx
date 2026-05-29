@@ -3256,7 +3256,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                         </div>
                       </div>
                     </td>
-                    <td className="hm" style={{ fontSize: 12, color: "var(--blue)", fontWeight: 600 }}>{inv.invoice_number}</td>
+                    <td className="hm" style={{ fontSize: 12, color: "var(--blue)", fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>{inv.invoice_number}</td>
                     <td className="mono" style={{ fontWeight: 700 }}>{fmt(inv.amount)}</td>
                     <td>
                       <span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : inv.status === "pending" ? "b-amber" : "b-gray")}>{inv.status}</span>
