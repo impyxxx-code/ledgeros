@@ -2956,7 +2956,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, allProfiles, token, userId }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
@@ -3103,10 +3103,10 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         {/* KPI strip embedded in banner */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: drillRevenue },
-            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: drillOutstanding },
-            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: drillPaid },
-            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.payment_method==="cash"&&parseFloat(i.amount_paid||0)>0).map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount_paid||i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `Total: ${fmt(cashCollected)}`) },
+            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); } },
+            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); } },
+            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); } },
+            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); } },
           ].map((k, i) => (
             <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "background .15s" }}
               onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.04)"}
@@ -3458,7 +3458,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter }) {
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [bulkPayCustomer, setBulkPayCustomer] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -3516,7 +3516,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
 
   useEffect(() => {
     if (pendingInvoiceView) { setViewInvoice(pendingInvoiceView); onClearPending && onClearPending(); }
-  }, [pendingInvoiceView]);
+    if (pendingFilter) { setFilterStatus(pendingFilter); onClearFilter && onClearFilter(); }
+  }, [pendingInvoiceView, pendingFilter]);
 
   const markPaid = async (id, method) => {
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
@@ -6432,6 +6433,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
+  const [pendingFilter, setPendingFilter] = useState(null);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -6930,8 +6932,8 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
