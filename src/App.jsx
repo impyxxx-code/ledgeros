@@ -1538,6 +1538,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const [activeTab, setActiveTab] = useState("invoice");
   const [partPayAmount, setPartPayAmount] = useState("");
   const [partPayMethod, setPartPayMethod] = useState("cash");
+  const [partPayDate, setPartPayDate] = useState(new Date().toISOString().split("T")[0]);
   const [partPayLoading, setPartPayLoading] = useState(false);
   const [partPayMsg, setPartPayMsg] = useState("");
   const [payments, setPayments] = useState([]);
@@ -1966,18 +1967,20 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                     <option value="card">💳 Card</option>
                     <option value="cheque">📝 Cheque</option>
                   </select>
+                  <input type="date" value={partPayDate} onChange={e => setPartPayDate(e.target.value)} title="Date payment was received" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, outline: "none", fontFamily: "var(--sans)", background: "var(--white)", color: "var(--text)", cursor: "pointer" }} />
                   <button className="btn bp" disabled={!partPayAmount || partPayLoading} onClick={async () => {
                     const amt = parseFloat(partPayAmount);
                     if (!amt || amt <= 0) return;
                     setPartPayLoading(true); setPartPayMsg("");
                     try {
-                      if (onPartPay) await onPartPay(invoice, amt, partPayMethod);
+                      if (onPartPay) await onPartPay(invoice, amt, partPayMethod, partPayDate);
                       const currentBalance = invoice.balance != null ? parseFloat(invoice.balance) : parseFloat(invoice.amount || 0);
                       const prevPaid = parseFloat(invoice.amount_paid || 0);
                       const bal = currentBalance > 0 ? currentBalance : Math.max(0, parseFloat(invoice.amount || 0) - prevPaid);
                       const newBal = Math.max(0, bal - amt);
                       setPartPayMsg(`✓ £${amt.toFixed(2)} recorded. Balance: £${newBal.toFixed(2)}`);
                       setPartPayAmount("");
+                      setPartPayDate(new Date().toISOString().split("T")[0]);
                       refreshPayments();
                       if (onLogPartPay) onLogPartPay(invoice, amt, partPayMethod, newBal);
                     } catch(err) { console.error("Part payment error:", err); setPartPayMsg("Error recording payment: " + (err?.message || String(err))); }
@@ -2848,24 +2851,25 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   };
 
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-  const recordPartPayment = async (inv, amount, method) => {
+  const recordPartPayment = async (inv, amount, method, payDate) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
     const resolvedMethod = method || payMethod[inv.id] || "cash";
+    const resolvedDate = payDate || new Date().toISOString().split("T")[0];
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const invAmount = parseFloat(inv.amount || 0);
     const balance = invAmount - totalPaid;
     const overpayment = totalPaid > invAmount ? totalPaid - invAmount : 0;
     const actualPaid = overpayment > 0 ? invAmount : totalPaid;
-    const newStatus = "paid";
-    const newBalance = 0;
+    const newStatus = balance <= 0 ? "paid" : "partial";
+    const newBalance = Math.max(0, balance);
     await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance: newBalance, status: newStatus, payment_method: resolvedMethod });
     const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
-      payment_date: new Date().toISOString().split("T")[0],
-      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : "Full payment",
+      payment_date: resolvedDate,
+      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : newStatus === "paid" ? "Full payment" : "Partial payment",
       recorded_by_name: profile?.full_name || "Admin"
     };
     if (isUUID(userId)) payRow.recorded_by = userId;
@@ -3421,7 +3425,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
         setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
       }}
-      onPartPay={async (inv, amt, method) => {
+      onPartPay={async (inv, amt, method, payDate) => {
         const prevPaid = parseFloat(inv.amount_paid || 0);
         const totalPaid = prevPaid + amt;
         const balance = parseFloat(inv.amount || 0) - totalPaid;
@@ -3523,24 +3527,25 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   };
 
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-  const recordPartPayment = async (inv, amount, method) => {
+  const recordPartPayment = async (inv, amount, method, payDate) => {
     const paid = parseFloat(amount);
     if (!paid || paid <= 0 || paid > 999999) { toast.warn("Enter a valid amount between £0.01 and £999,999."); return; }
     const resolvedMethod = method || payMethod[inv.id] || "cash";
+    const resolvedDate = payDate || new Date().toISOString().split("T")[0];
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
     const invAmount = parseFloat(inv.amount || 0);
     const balance = invAmount - totalPaid;
     const overpayment = totalPaid > invAmount ? totalPaid - invAmount : 0;
     const actualPaid = overpayment > 0 ? invAmount : totalPaid;
-    const newStatus = "paid";
-    const newBalance = 0;
+    const newStatus = balance <= 0 ? "paid" : "partial";
+    const newBalance = Math.max(0, balance);
     await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance: newBalance, status: newStatus, payment_method: resolvedMethod });
     const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
-      payment_date: new Date().toISOString().split("T")[0],
-      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : "Full payment",
+      payment_date: resolvedDate,
+      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : newStatus === "paid" ? "Full payment" : "Partial payment",
       recorded_by_name: profile?.full_name || "Admin"
     };
     if (isUUID(userId)) payRow.recorded_by = userId;
@@ -3667,7 +3672,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           setViewInvoice(null);
           setShowForm(true);
         }}
-        onPartPay={async (inv, amt, method) => {
+        onPartPay={async (inv, amt, method, payDate) => {
           const prevPaid = parseFloat(inv.amount_paid || 0);
           const totalPaid = prevPaid + amt;
           const invAmount = parseFloat(inv.amount || 0);
@@ -3681,10 +3686,11 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           const actualPaid2 = overpayment2 > 0 ? invAmount2 : totalPaid;
           const finalStatus2 = overpayment2 > 0 ? "paid" : newStatus;
           const finalBalance2 = overpayment2 > 0 ? 0 : Math.max(0, balance);
+          const resolvedDate2 = payDate || new Date().toISOString().split("T")[0];
           const payRow2 = {
             invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
             amount: amt, method: method || "cash",
-            payment_date: new Date().toISOString().split("T")[0],
+            payment_date: resolvedDate2,
             notes: overpayment2 > 0 ? `Full payment + £${overpayment2.toFixed(2)} overpayment` : finalStatus2 === "paid" ? "Final payment" : "Partial payment",
             recorded_by_name: profile?.full_name || "Admin"
           };
