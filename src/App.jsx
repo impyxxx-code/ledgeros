@@ -4444,11 +4444,17 @@ function CustomerStatement({ contacts, invoices, token }) {
   const handleEmail = () => {
     if (!selectedContact) return;
     const subject = encodeURIComponent(`Account Statement — ${COMPANY.name}`);
-    const lines = custInvoices.map(inv => `${inv.invoice_number}  |  ${fmtDate(inv.invoice_date)}  |  ${fmt(inv.amount)}  |  ${inv.status.toUpperCase()}`).join("\n");
+    const lines = custInvoices.map(inv => {
+      const paid = parseFloat(inv.amount_paid||0);
+      const bal = parseFloat(inv.balance!=null?inv.balance:inv.amount);
+      const method = inv.payment_method ? " via "+inv.payment_method : "";
+      const balStr = inv.status==="paid" ? "Cleared" : "Bal: "+fmt(bal);
+      return `${inv.invoice_number}  |  ${fmtDate(inv.invoice_date)}  |  ${fmt(inv.amount)}  |  Paid: ${paid>0?fmt(paid):"—"}  |  ${balStr}${method}  |  ${inv.status.toUpperCase()}`;
+    }).join("\n");
     const body = encodeURIComponent(
       `Dear ${selectedContact.name},\n\nPlease find below your account statement as of ${fmtDate(new Date().toISOString())}.\n\n` +
-      `INVOICE #     DATE           AMOUNT       STATUS\n` +
-      `${"─".repeat(55)}\n${lines}\n${"─".repeat(55)}\n\n` +
+      `INVOICE #  |  DATE  |  TOTAL  |  PAID  |  BALANCE  |  STATUS\n` +
+      `${"─".repeat(65)}\n${lines}\n${"─".repeat(65)}\n\n` +
       `Total Invoiced:  ${fmt(totalPaid + totalOwed)}\n` +
       `Total Paid:      ${fmt(totalPaid)}\n` +
       `Balance Due:     ${fmt(totalOwed)}\n\n` +
@@ -4461,15 +4467,22 @@ function CustomerStatement({ contacts, invoices, token }) {
   const handlePrint = () => {
     if (!selectedContact) return;
     const statusColor = (s) => s === "paid" ? "#16a34a" : s === "overdue" ? "#dc2626" : s === "partial" ? "#d97706" : "#92400e";
-    const rows = custInvoices.map(inv =>
-      "<tr>" +
-      "<td style='font-family:monospace;color:#2563eb'>" + (inv.invoice_number||"") + "</td>" +
+    const rows = custInvoices.map(inv => {
+      const amtPaid = parseFloat(inv.amount_paid || 0);
+      const bal = parseFloat(inv.balance != null ? inv.balance : inv.amount);
+      const method = inv.payment_method || "";
+      const methodIcon = method === "cash" ? "Cash" : method === "bank" ? "Bank Transfer" : method === "card" ? "Card" : method || "—";
+      return "<tr>" +
+      "<td style='font-family:monospace;color:#2563eb;font-weight:600'>" + (inv.invoice_number||"") + "</td>" +
       "<td>" + fmtDate(inv.invoice_date) + "</td>" +
       "<td>" + (inv.due_date ? fmtDate(inv.due_date) : "—") + "</td>" +
       "<td style='text-align:right;font-family:monospace;font-weight:600'>" + fmt(inv.amount) + "</td>" +
+      "<td style='text-align:right;font-family:monospace;font-weight:600;color:" + (amtPaid>0?"#16a34a":"#94a3b8") + "'>" + (amtPaid>0?fmt(amtPaid):"—") + "</td>" +
+      "<td style='text-align:right;font-family:monospace;font-weight:700;color:" + (inv.status==="paid"?"#16a34a":"#dc2626") + "'>" + (inv.status==="paid"?"Cleared":fmt(bal)) + "</td>" +
+      "<td style='font-size:11px;color:#64748b'>" + methodIcon + "</td>" +
       "<td><span style='display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:" + statusColor(inv.status) + "22;color:" + statusColor(inv.status) + "'>" + inv.status.toUpperCase() + "</span></td>" +
-      "</tr>"
-    ).join("");
+      "</tr>";
+    }).join("");
     const html =
       "<!DOCTYPE html><html><head><title>Statement — " + selectedContact.name + "</title>" +
       "<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;padding:32px;color:#1e293b}" +
@@ -4501,7 +4514,7 @@ function CustomerStatement({ contacts, invoices, token }) {
       "<div class='kpi'><div class='kpi-label'>Total Paid</div><div class='kpi-val' style='color:#16a34a'>" + fmt(totalPaid) + "</div></div>" +
       "<div class='kpi'><div class='kpi-label'>Balance Due</div><div class='kpi-val' style='color:#dc2626'>" + fmt(totalOwed) + "</div></div>" +
       "</div>" +
-      "<table><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th style='text-align:right'>Amount</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+      "<table><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th style='text-align:right'>Total</th><th style='text-align:right'>Paid</th><th style='text-align:right'>Balance</th><th>Method</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>" +
       "<div class='footer'><div class='footer-note'>Thank you for your business. Please contact " + COMPANY.phone + " for any queries regarding this statement.</div>" +
       "<div class='balance'><div class='balance-label'>BALANCE DUE</div><div class='balance-val'>" + fmt(totalOwed) + "</div></div></div>" +
       "</body></html>";
@@ -4559,10 +4572,43 @@ function CustomerStatement({ contacts, invoices, token }) {
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Total Paid</div><div style={{ fontSize: 20, fontWeight: 700, color: "var(--green)" }}>{fmt(totalPaid)}</div></div>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Balance Due</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div>
           </div>
-          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-            {custInvoices.map(inv => <tr key={inv.id}><td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{inv.invoice_number}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.invoice_date)}</td><td style={{ fontSize: 12, color: "var(--text2)" }}>{fmtDate(inv.due_date)}</td><td className="mono" style={{ fontWeight: 600 }}>{fmt(inv.amount)}</td><td><span className={"badge " + (inv.status === "paid" ? "b-green" : inv.status === "overdue" ? "b-red" : "b-amber")}>{inv.status}</span></td></tr>)}
-            {custInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices found for this customer</td></tr>}
-          </tbody></table></div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+            <table style={{minWidth:760}}>
+              <thead><tr>
+                <th>Invoice #</th><th>Date</th><th>Due Date</th><th>Total</th>
+                <th>Paid</th><th>Balance</th><th>Method</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                {custInvoices.map(inv => {
+                  const amtPaid = parseFloat(inv.amount_paid || 0);
+                  const balance = parseFloat(inv.balance != null ? inv.balance : inv.amount);
+                  const method = inv.payment_method;
+                  const methodIcon = method === "cash" ? "💵" : method === "bank" ? "🏦" : method === "card" ? "💳" : method ? "📝" : null;
+                  return (
+                    <tr key={inv.id}>
+                      <td className="mono" style={{color:"var(--blue)",fontSize:12,fontWeight:600}}>{inv.invoice_number}</td>
+                      <td style={{fontSize:12,color:"var(--text2)"}}>{fmtDate(inv.invoice_date)}</td>
+                      <td style={{fontSize:12,color:"var(--text2)"}}>{fmtDate(inv.due_date)}</td>
+                      <td className="mono" style={{fontWeight:600}}>{fmt(inv.amount)}</td>
+                      <td className="mono" style={{fontWeight:600,color:amtPaid>0?"#16a34a":"var(--text3)"}}>{amtPaid>0?fmt(amtPaid):"—"}</td>
+                      <td className="mono" style={{fontWeight:700,color:inv.status==="paid"?"#16a34a":balance>0?"#dc2626":"#16a34a"}}>
+                        {inv.status==="paid"?"✓ Cleared":fmt(balance)}
+                      </td>
+                      <td style={{fontSize:12,color:"var(--text2)"}}>
+                        {methodIcon?<span style={{display:"inline-flex",alignItems:"center",gap:4}}>{methodIcon} {method}</span>:"—"}
+                      </td>
+                      <td>
+                        <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="partial"?"b-amber":"b-amber")}>
+                          {inv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {custInvoices.length === 0 && <tr><td colSpan={8} className="empty">No invoices found for this customer</td></tr>}
+              </tbody>
+            </table>
+          </div>
           {custInvoices.length > 0 && <div style={{ padding: "14px 20px", borderTop: "2px solid var(--border2)", display: "flex", justifyContent: "flex-end" }}><div style={{ textAlign: "right" }}><div style={{ fontSize: 11, color: "var(--text3)" }}>BALANCE DUE</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div></div>}
         </div>
       )}
