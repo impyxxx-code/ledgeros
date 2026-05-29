@@ -2117,7 +2117,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     const inv = await sb.post(token, "invoices", {
       customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || f.invoice_date || null,
       status: f.status, notes: f.notes || null,
-      amount: total, subtotal, vat_total: vatTotal, invoice_number, created_by: userId,
+      amount: total, subtotal, vat_total: vatTotal, balance: total, amount_paid: 0, invoice_number, created_by: userId,
       lines: JSON.stringify(lines.filter(l => l.description && l.description.trim() !== ""))
     });
     if (inv[0]) {
