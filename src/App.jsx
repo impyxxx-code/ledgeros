@@ -5484,13 +5484,26 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Total Revenue",val:fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
-            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
-              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
+          {[
+            {label:"Total Revenue",val:fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)),sub:"all time",accent:"#16a34a",filter:"all"},
+            {label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0)),sub:"unpaid invoices",accent:"#dc2626",filter:"overdue"},
+            {label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706",filter:"overdue"},
+            {label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb",filter:null},
+          ].map((k,i)=>{
+            const isActive = false;
+            return (
+            <div key={i} onClick={() => { if(k.filter){ setPendingFilter(k.filter); setPage("invoices"); } }}
+              style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}`, cursor:k.filter?"pointer":"default", transition:"background .15s" }}
+              onMouseEnter={e=>{ if(k.filter) e.currentTarget.style.background="rgba(255,255,255,.06)"; }}
+              onMouseLeave={e=>{ if(k.filter) e.currentTarget.style.background="transparent"; }}>
+              <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                <span>{k.label}</span>
+                {k.filter && <span style={{fontSize:9,color:"rgba(255,255,255,.25)"}}>↓ FILTER</span>}
+              </div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
       {/* ── PREMIUM GROUPED TAB NAV — pure CSS hover, no inline style mutation ── */}
