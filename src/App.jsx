@@ -5493,96 +5493,49 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           ))}
         </div>
       </div>
-      {/* ── PREMIUM GROUPED TAB NAVIGATION ── */}
-      <div style={{background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden",marginBottom:20}}>
-        <div style={{display:"flex",overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-          {[
-            { label:"Revenue", icon:"💰", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-            { label:"Debtors", icon:"⚠️", color:"#dc2626", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
-            { label:"Operations", icon:"⚙️", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
-          ].map((group, gi) => {
-            const groupActive = group.tabs.some(([k]) => k === tab);
-            return (
-              <div key={gi} style={{display:"flex",alignItems:"stretch",borderRight:gi<2?"1px solid var(--border)":"none",flexShrink:0}}>
-                {/* Group label */}
-                <div style={{
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  background:groupActive?`${group.color}10`:"var(--bg)",
-                  borderRight:"1px solid var(--border)",
-                  padding:"0 12px",minWidth:80,flexShrink:0,
-                  borderBottom:groupActive?`2px solid ${group.color}`:`2px solid transparent`,
+      <div style={{marginBottom:20,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden"}}>
+        {[
+          { label: "Revenue", tabs: [["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
+          { label: "Debtors", tabs: [["aged-debtors","Aged Debtors"],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
+          { label: "Operations", tabs: [["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+        ].map((group, gi) => (
+          <div key={gi} style={{display:"flex",alignItems:"stretch",borderBottom: gi < 2 ? "1px solid var(--border)" : "none"}}>
+            <div style={{width:90,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"8px 6px"}}>
+              <span style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",textAlign:"center",lineHeight:1.3}}>{group.label}</span>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:0,flex:1}}>
+              {group.tabs.map(([k,l], ti) => (
+                <button key={k} onClick={()=>setTab(k)} style={{
+                  padding:"10px 16px", border:"none",
+                  borderRight: ti < group.tabs.length-1 ? "1px solid var(--border)" : "none",
+                  background: tab===k ? "var(--blue)" : "transparent",
+                  color: tab===k ? "#fff" : "var(--text2)",
+                  fontSize:12, fontWeight: tab===k ? 600 : 400,
+                  cursor:"pointer", fontFamily:"var(--sans)", whiteSpace:"nowrap", transition:"all .12s", position:"relative",
                 }}>
-                  <span style={{
-                    fontSize:9,fontWeight:700,color:groupActive?group.color:"var(--text3)",
-                    textTransform:"uppercase",letterSpacing:".8px",textAlign:"center",lineHeight:1.4,
-                    whiteSpace:"nowrap"
-                  }}>{group.label}</span>
-                </div>
-                {/* Tabs in group */}
-                <div style={{display:"flex"}}>
-                  {group.tabs.map(([k, l, badge], ti) => (
-                    <button key={k} onClick={() => setTab(k)} style={{
-                      padding:"11px 15px",border:"none",
-                      borderRight:ti<group.tabs.length-1?"1px solid var(--border)":"none",
-                      borderBottom:tab===k?`2px solid ${group.color}`:`2px solid transparent`,
-                      background:tab===k?`${group.color}08`:"transparent",
-                      color:tab===k?group.color:"var(--text2)",
-                      fontSize:12,fontWeight:tab===k?600:400,
-                      cursor:"pointer",fontFamily:"var(--sans)",whiteSpace:"nowrap",
-                      transition:"all .12s",display:"flex",alignItems:"center",gap:5
-                    }}
-                    onMouseEnter={e=>{if(tab!==k){e.currentTarget.style.background="var(--bg)";e.currentTarget.style.color="var(--text)";}}}
-                    onMouseLeave={e=>{if(tab!==k){e.currentTarget.style.background="transparent";e.currentTarget.style.color="var(--text2)";}}}
-                    >
-                      {l}
-                      {badge>0 && <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:10,background:"#fee2e2",color:"#991b1b"}}>{badge}</span>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  {l}
+                  {tab===k && <span style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"var(--blue)",borderRadius:"2px 2px 0 0"}} />}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
       {tab==="overview" && <div>
-        {/* ── SECTION HEADER ── */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:"var(--text)",letterSpacing:"-.2px"}}>Revenue Overview</div>
-            <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>Performance summary · {periodLabels[period]}</div>
-          </div>
-          <div style={{display:"flex",gap:6}}>
-            <button style={{display:"inline-flex",alignItems:"center",gap:4,padding:"6px 12px",borderRadius:7,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",fontSize:11,cursor:"pointer",fontFamily:"var(--sans)"}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export CSV
-            </button>
-          </div>
-        </div>
-        {/* ── KPI CARDS ── */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
           {[
-            { label:"Total Sales", val:fmt(totalSales), sub:filteredInv.length+" invoices · "+periodLabels[period], accent:"#2563eb", bg:"#eff6ff", pct:null },
-            { label:"Collected", val:fmt(totalPaid), sub:totalSales>0?Math.round(totalPaid/totalSales*100)+"% collection rate":"0% collection rate", accent:"#16a34a", bg:"#f0fdf4", pct:totalSales>0?totalPaid/totalSales:0 },
-            { label:"Pending", val:fmt(totalPending), sub:filteredInv.filter(i=>i.status==="pending"||i.status==="partial").length+" invoices awaiting", accent:"#d97706", bg:"#fffbeb", pct:totalSales>0?totalPending/totalSales:0 },
-            { label:"Overdue", val:fmt(totalOverdue), sub:filteredInv.filter(i=>i.status==="overdue").length+" invoices past due", accent:"#dc2626", bg:"#fef2f2", pct:totalSales>0?totalOverdue/totalSales:0 },
+            { label:"Total Sales", val:fmt(totalSales), sub:filteredInv.length+" invoices · "+periodLabels[period], accent:"#2563eb", pct:null },
+            { label:"Collected", val:fmt(totalPaid), sub:totalSales>0?Math.round(totalPaid/totalSales*100)+"% collection rate":"0% collection rate", accent:"#16a34a", pct:totalSales>0?totalPaid/totalSales:0 },
+            { label:"Pending", val:fmt(totalPending), sub:filteredInv.filter(i=>i.status==="pending").length+" invoices", accent:"#d97706", pct:totalSales>0?totalPending/totalSales:0 },
+            { label:"Overdue", val:fmt(totalOverdue), sub:filteredInv.filter(i=>i.status==="overdue").length+" invoices", accent:"#dc2626", pct:totalSales>0?totalOverdue/totalSales:0 },
           ].map((k,i) => (
-            <div key={i} style={{background:"var(--white)",border:"1.5px solid var(--border)",borderRadius:12,padding:"16px 18px",borderTop:`3px solid ${k.accent}`}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px"}}>{k.label}</div>
-                <div style={{width:26,height:26,borderRadius:7,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={k.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {i===0&&<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>}
-                    {i===1&&<><polyline points="20 6 9 17 4 12"/></>}
-                    {i===2&&<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
-                    {i===3&&<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>}
-                  </svg>
-                </div>
-              </div>
-              <div style={{fontSize:20,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)",letterSpacing:"-.5px",marginBottom:4}}>{k.val}</div>
+            <div key={i} style={{background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"16px 18px",borderTop:`3px solid ${k.accent}`}}>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>{k.label}</div>
+              <div style={{fontSize:22,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)",letterSpacing:"-.5px",marginBottom:4}}>{k.val}</div>
               <div style={{fontSize:11,color:"var(--text3)",marginBottom:k.pct!==null?10:0}}>{k.sub}</div>
               {k.pct !== null && (
                 <div style={{height:3,background:"var(--border)",borderRadius:2,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:Math.round(k.pct*100)+"%",background:k.accent,borderRadius:2}} />
+                  <div style={{height:"100%",width:(k.pct*100)+"%",background:k.accent,borderRadius:2}} />
                 </div>
               )}
             </div>
