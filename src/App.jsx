@@ -4440,6 +4440,76 @@ function CustomerStatement({ contacts, invoices, token }) {
     if (clean) window.open(`https://wa.me/${clean}?text=${msg}`, "_blank");
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
+
+  const handleEmail = () => {
+    if (!selectedContact) return;
+    const subject = encodeURIComponent(`Account Statement — ${COMPANY.name}`);
+    const lines = custInvoices.map(inv => `${inv.invoice_number}  |  ${fmtDate(inv.invoice_date)}  |  ${fmt(inv.amount)}  |  ${inv.status.toUpperCase()}`).join("\n");
+    const body = encodeURIComponent(
+      `Dear ${selectedContact.name},\n\nPlease find below your account statement as of ${fmtDate(new Date().toISOString())}.\n\n` +
+      `INVOICE #     DATE           AMOUNT       STATUS\n` +
+      `${"─".repeat(55)}\n${lines}\n${"─".repeat(55)}\n\n` +
+      `Total Invoiced:  ${fmt(totalPaid + totalOwed)}\n` +
+      `Total Paid:      ${fmt(totalPaid)}\n` +
+      `Balance Due:     ${fmt(totalOwed)}\n\n` +
+      `If you have any queries please contact us at ${COMPANY.phone}.\n\nKind regards,\n${COMPANY.name}`
+    );
+    const email = selectedContact.email || "";
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+  };
+
+  const handlePrint = () => {
+    if (!selectedContact) return;
+    const statusColor = (s) => s === "paid" ? "#16a34a" : s === "overdue" ? "#dc2626" : s === "partial" ? "#d97706" : "#92400e";
+    const rows = custInvoices.map(inv =>
+      "<tr>" +
+      "<td style='font-family:monospace;color:#2563eb'>" + (inv.invoice_number||"") + "</td>" +
+      "<td>" + fmtDate(inv.invoice_date) + "</td>" +
+      "<td>" + (inv.due_date ? fmtDate(inv.due_date) : "—") + "</td>" +
+      "<td style='text-align:right;font-family:monospace;font-weight:600'>" + fmt(inv.amount) + "</td>" +
+      "<td><span style='display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:" + statusColor(inv.status) + "22;color:" + statusColor(inv.status) + "'>" + inv.status.toUpperCase() + "</span></td>" +
+      "</tr>"
+    ).join("");
+    const html =
+      "<!DOCTYPE html><html><head><title>Statement — " + selectedContact.name + "</title>" +
+      "<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;padding:32px;color:#1e293b}" +
+      ".header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #0d1829}" +
+      ".co-name{font-size:22px;font-weight:700;color:#0d1829}.co-sub{font-size:11px;color:#64748b;margin-top:4px}" +
+      ".stmt-title{font-size:14px;font-weight:700;color:#0d1829;text-align:right}.stmt-date{font-size:11px;color:#64748b;margin-top:4px;text-align:right}" +
+      ".customer-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin-bottom:24px}" +
+      ".customer-name{font-size:14px;font-weight:700;color:#0d1829}.customer-sub{font-size:11px;color:#64748b;margin-top:3px}" +
+      ".kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}" +
+      ".kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px}" +
+      ".kpi-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}" +
+      ".kpi-val{font-size:18px;font-weight:700;font-family:monospace}" +
+      "table{width:100%;border-collapse:collapse;margin-bottom:24px}" +
+      "th{background:#0d1829;color:#fff;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}" +
+      "td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}" +
+      "tr:last-child td{border-bottom:none}" +
+      "tr:nth-child(even) td{background:#f8fafc}" +
+      ".footer{border-top:2px solid #0d1829;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end}" +
+      ".footer-note{font-size:11px;color:#64748b;max-width:300px}" +
+      ".balance{text-align:right}.balance-label{font-size:11px;color:#64748b;margin-bottom:4px}" +
+      ".balance-val{font-size:22px;font-weight:700;font-family:monospace;color:#dc2626}" +
+      "@media print{body{padding:20px}button{display:none}}</style></head><body>" +
+      "<div class='header'><div><div class='co-name'>" + COMPANY.name + "</div><div class='co-sub'>" + (COMPANY.address||"") + " &bull; VAT: " + (COMPANY.vat||"") + "<br>" + COMPANY.phone + " &bull; " + (COMPANY.email||"") + "</div></div>" +
+      "<div><div class='stmt-title'>ACCOUNT STATEMENT</div><div class='stmt-date'>Date: " + fmtDate(new Date().toISOString()) + "</div></div></div>" +
+      "<div class='customer-box'><div class='customer-name'>" + selectedContact.name + "</div>" +
+      "<div class='customer-sub'>" + (selectedContact.phone||"") + (selectedContact.email ? " &bull; " + selectedContact.email : "") + (selectedContact.city ? " &bull; " + selectedContact.city : "") + "</div></div>" +
+      "<div class='kpis'>" +
+      "<div class='kpi'><div class='kpi-label'>Total Invoiced</div><div class='kpi-val'>" + fmt(totalPaid+totalOwed) + "</div></div>" +
+      "<div class='kpi'><div class='kpi-label'>Total Paid</div><div class='kpi-val' style='color:#16a34a'>" + fmt(totalPaid) + "</div></div>" +
+      "<div class='kpi'><div class='kpi-label'>Balance Due</div><div class='kpi-val' style='color:#dc2626'>" + fmt(totalOwed) + "</div></div>" +
+      "</div>" +
+      "<table><thead><tr><th>Invoice #</th><th>Date</th><th>Due Date</th><th style='text-align:right'>Amount</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+      "<div class='footer'><div class='footer-note'>Thank you for your business. Please contact " + COMPANY.phone + " for any queries regarding this statement.</div>" +
+      "<div class='balance'><div class='balance-label'>BALANCE DUE</div><div class='balance-val'>" + fmt(totalOwed) + "</div></div></div>" +
+      "</body></html>";
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
   return (
     <div>
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -4473,7 +4543,15 @@ function CustomerStatement({ contacts, invoices, token }) {
           <div className="ch">
             <div><div className="ct">Statement — {selectedContact.name}</div><div className="cs">{selectedContact.phone || ""} {selectedContact.email ? `· ${selectedContact.email}` : ""}</div></div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn bwa bsm" onClick={handleWhatsApp}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Send Statement</button>
+              <button className="btn bo bsm" onClick={handleEmail} style={{display:"flex",alignItems:"center",gap:6}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </button>
+              <button className="btn bo bsm" onClick={handlePrint} style={{display:"flex",alignItems:"center",gap:6}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print PDF
+              </button>
+              <button className="btn bwa bsm" onClick={handleWhatsApp}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, padding: "16px 20px", borderBottom: "0.5px solid var(--border)" }}>
