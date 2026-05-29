@@ -3629,7 +3629,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     partial: invoices.filter(i => i.status === "partial").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
   };
   const filtered = invoices.filter(i => {
-    const matchStatus = filterStatus === "all" || i.status === filterStatus;
+    const matchStatus = filterStatus === "all" || i.status === filterStatus || (filterStatus === "pending" && i.status === "partial");
     const matchSearch = !searchQ || i.customer?.toLowerCase().includes(searchQ.toLowerCase()) || i.invoice_number?.toLowerCase().includes(searchQ.toLowerCase());
     return matchStatus && matchSearch;
   }).sort((a, b) => {
@@ -3770,21 +3770,31 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Paid", val: fmt(totals.paid), sub: `${invoices.filter(i=>i.status==="paid").length} invoices`, color: "#86efac", filter: "paid", accent: "#16a34a" },
-            { label: "Pending", val: fmt(totals.pending + totals.partial), sub: `${invoices.filter(i=>i.status==="pending"||i.status==="partial").length} invoices`, color: "#fcd34d", filter: "pending", accent: "#d97706" },
+            { label: "Pending", val: fmt(totals.pending + totals.partial), sub: `${invoices.filter(i=>i.status==="pending"||i.status==="partial").length} invoices`, color: "#fcd34d", filter: "pending|partial", accent: "#d97706" },
             { label: "Overdue", val: fmt(totals.overdue), sub: `${invoices.filter(i=>i.status==="overdue").length} invoices`, color: "#fca5a5", filter: "overdue", accent: "#dc2626" },
             { label: "Total Invoiced", val: fmt(totals.paid + totals.pending + totals.overdue + totals.partial), sub: `${invoices.length} all invoices`, color: "rgba(255,255,255,.35)", filter: "all", accent: "#2563eb" },
-          ].map((k, i) => (
-            <div key={i} onClick={() => setFilterStatus(filterStatus === k.filter ? "all" : k.filter)}
-              style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "background .15s", background: filterStatus === k.filter ? "rgba(255,255,255,.06)" : "transparent", borderTop: `3px solid ${k.accent}` }}
-              onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.04)"}
-              onMouseLeave={e => e.currentTarget.style.background=filterStatus===k.filter?"rgba(255,255,255,.06)":"transparent"}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
-                {k.label}{filterStatus === k.filter && <span style={{ color: "#60a5fa", fontSize: 10 }}>●</span>}
+          ].map((k, i) => {
+            const isActive = k.filter === "all" ? filterStatus === "all" : filterStatus === k.filter || (k.filter === "pending|partial" && (filterStatus === "pending" || filterStatus === "partial"));
+            const handleClick = () => {
+              if (k.filter === "pending|partial") { setFilterStatus(isActive ? "all" : "pending"); }
+              else { setFilterStatus(isActive ? "all" : k.filter); }
+            };
+            return (
+            <div key={i} onClick={handleClick}
+              title={`Click to filter by ${k.label}`}
+              style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", background: isActive ? "rgba(255,255,255,.08)" : "transparent", borderTop: `3px solid ${isActive ? k.accent : "transparent"}`, outline: isActive ? `1px solid ${k.accent}33` : "none" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseLeave={e => { e.currentTarget.style.background=isActive?"rgba(255,255,255,.08)":"transparent"; e.currentTarget.style.borderTop=isActive?`3px solid ${k.accent}`:"3px solid transparent"; }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: isActive ? k.color : "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>{k.label}</span>
+                {isActive
+                  ? <span style={{ color: k.accent, fontSize: 9, fontWeight: 700, background: k.accent + "33", padding: "1px 5px", borderRadius: 4 }}>ACTIVE ✕</span>
+                  : <span style={{ color: "rgba(255,255,255,.2)", fontSize: 9 }}>↓ filter</span>}
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", marginBottom: 2 }}>{k.val}</div>
-              <div style={{ fontSize: 11, color: k.color }}>{k.sub}</div>
+              <div style={{ fontSize: 11, color: isActive ? k.color : "rgba(255,255,255,.5)" }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
 
