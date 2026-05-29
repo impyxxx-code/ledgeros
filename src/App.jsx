@@ -2636,9 +2636,16 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             </div>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ display:"flex", alignItems:"center", background:"var(--bg)", borderRadius:10, border:"1px solid var(--border)", overflow:"hidden" }}>
-                <button onClick={() => mobDec(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
-                <span style={{ minWidth:32, textAlign:"center", fontSize:15, fontWeight:700 }}>{l.qty}</span>
-                <button onClick={() => mobInc(i)} style={{ width:40, height:40, border:"none", background:"none", fontSize:20, cursor:"pointer", color:"var(--blue)", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+                <button onClick={() => mobDec(i)} style={{ width:44, height:44, border:"none", background:"none", fontSize:22, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>−</button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={l.qty}
+                  onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v > 0) { const nxt=[...lines]; nxt[i]={...nxt[i],qty:v}; setLines(nxt); } }}
+                  onFocus={e => e.target.select()}
+                  style={{ width:52, textAlign:"center", fontSize:15, fontWeight:700, border:"none", background:"transparent", outline:"none", fontFamily:"var(--mono)", color:"var(--text)", padding:"0 2px", WebkitAppearance:"none", MozAppearance:"textfield" }}
+                />
+                <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"none", background:"none", fontSize:22, cursor:"pointer", color:"var(--blue)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>+</button>
               </div>
               <button onClick={() => mobRemoveLine(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
             </div>
