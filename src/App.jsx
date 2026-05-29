@@ -3744,11 +3744,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search invoices..." style={{ paddingLeft: 29, paddingRight: 10, height: 32, border: "1px solid rgba(255,255,255,.15)", borderRadius: 8, fontSize: 12, outline: "none", color: "rgba(255,255,255,.8)", background: "rgba(255,255,255,.07)", width: 180, fontFamily: "var(--sans)" }} />
             </div>
-            <button onClick={() => {
-              const customers = [...new Set(invoices.filter(i => i.status !== "paid" && i.status !== "draft").map(i => i.customer))].sort();
-              const name = window.prompt("Bulk payment — enter customer name:\n\n" + customers.slice(0,15).join("\n") + (customers.length>15?"\n...":""));
-              if (name) { const match = customers.find(c => c.toLowerCase().includes(name.toLowerCase().trim())); if (match) setBulkPayCustomer(match); else alert("Customer not found: " + name); }
-            }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.1)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace:"nowrap", fontFamily:"var(--sans)" }}>
+            <button onClick={() => setBulkPayCustomer("__pick__")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.1)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace:"nowrap", fontFamily:"var(--sans)" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Bulk Payment
             </button>
@@ -7286,7 +7282,9 @@ function ChangePasswordForm({ token }) {
 
 
 // ── BULK PAYMENT MODAL ────────────────────────────────────────────────────────
-function BulkPaymentModal({ customer, invoices, token, userId, profile, onClose, onComplete }) {
+function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, profile, onClose, onComplete }) {
+  const [customer, setCustomer] = useState(initialCustomer === "__pick__" ? "" : initialCustomer);
+  const [custSearch, setCustSearch] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("cash");
   const [payDate, setPayDate] = useState(new Date().toISOString().split("T")[0]);
@@ -7294,6 +7292,12 @@ function BulkPaymentModal({ customer, invoices, token, userId, profile, onClose,
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [savedSummary, setSavedSummary] = useState(null);
+
+  const needsPick = initialCustomer === "__pick__" && !customer;
+  
+  // All customers with outstanding invoices
+  const allCustomers = [...new Set(invoices.filter(i => i.status !== "paid" && i.status !== "draft").map(i => i.customer))].sort();
+  const filteredCustomers = custSearch ? allCustomers.filter(c => c.toLowerCase().includes(custSearch.toLowerCase())) : allCustomers;
 
   // Filter to only outstanding invoices for this customer, oldest first
   const outstanding = invoices
@@ -7391,7 +7395,7 @@ function BulkPaymentModal({ customer, invoices, token, userId, profile, onClose,
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>Bulk Payment</div>
               </div>
-              <div style={{fontSize:12,color:"#8aa0b8"}}>{customer} · {outstanding.length} outstanding invoice{outstanding.length!==1?"s":""} · {fmt2(totalOutstanding)} total owed</div>
+              <div style={{fontSize:12,color:"#8aa0b8"}}>{customer || "Select customer"}{customer ? ` · ${outstanding.length} outstanding invoice${outstanding.length!==1?"s":""} · ${fmt2(totalOutstanding)} total owed` : ""}</div>
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",color:"#8aa0b8",cursor:"pointer",padding:4,fontSize:20,lineHeight:1}}>×</button>
           </div>
@@ -7425,6 +7429,37 @@ function BulkPaymentModal({ customer, invoices, token, userId, profile, onClose,
                   )}
                 </div>
                 <button onClick={onClose} className="btn bp" style={{width:"100%"}}>Done</button>
+              </div>
+            ) : needsPick ? (
+              /* Customer picker screen */
+              <div>
+                <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>Select customer to apply bulk payment to:</div>
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  value={custSearch}
+                  onChange={e => setCustSearch(e.target.value)}
+                  autoFocus
+                  style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid var(--border)",fontSize:13,outline:"none",marginBottom:10,fontFamily:"var(--sans)",boxSizing:"border-box"}}
+                />
+                <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:320,overflowY:"auto"}}>
+                  {filteredCustomers.map(c => {
+                    const owed = invoices.filter(i => i.customer===c && (i.status==="pending"||i.status==="overdue"||i.status==="partial")).reduce((s,i)=>s+(parseFloat(i.balance)||parseFloat(i.amount)||0),0);
+                    const count = invoices.filter(i => i.customer===c && (i.status==="pending"||i.status==="overdue"||i.status==="partial")).length;
+                    return (
+                      <div key={c} onClick={()=>setCustomer(c)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderRadius:8,border:"1px solid var(--border)",cursor:"pointer",background:"var(--white)"}}
+                        onMouseEnter={e=>e.currentTarget.style.borderColor="var(--blue)"}
+                        onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{c}</div>
+                          <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>{count} invoice{count!==1?"s":""} outstanding</div>
+                        </div>
+                        <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:13,color:"#dc2626"}}>£{owed.toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
+                  {filteredCustomers.length === 0 && <div style={{textAlign:"center",padding:"20px",color:"var(--text3)",fontSize:13}}>No customers with outstanding invoices</div>}
+                </div>
               </div>
             ) : !preview ? (
               /* Entry screen */
