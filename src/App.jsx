@@ -3622,7 +3622,12 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     setTimeout(() => { win.print(); }, 800);
   };
 
-  const totals = { paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0), pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0), overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0) };
+  const totals = {
+    paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + parseFloat(i.amount_paid || i.amount || 0), 0),
+    pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
+    overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
+    partial: invoices.filter(i => i.status === "partial").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
+  };
   const filtered = invoices.filter(i => {
     const matchStatus = filterStatus === "all" || i.status === filterStatus;
     const matchSearch = !searchQ || i.customer?.toLowerCase().includes(searchQ.toLowerCase()) || i.invoice_number?.toLowerCase().includes(searchQ.toLowerCase());
@@ -3765,9 +3770,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Paid", val: fmt(totals.paid), sub: `${invoices.filter(i=>i.status==="paid").length} invoices`, color: "#86efac", filter: "paid", accent: "#16a34a" },
-            { label: "Pending", val: fmt(totals.pending), sub: `${invoices.filter(i=>i.status==="pending").length} invoices`, color: "#fcd34d", filter: "pending", accent: "#d97706" },
+            { label: "Pending", val: fmt(totals.pending + totals.partial), sub: `${invoices.filter(i=>i.status==="pending"||i.status==="partial").length} invoices`, color: "#fcd34d", filter: "pending", accent: "#d97706" },
             { label: "Overdue", val: fmt(totals.overdue), sub: `${invoices.filter(i=>i.status==="overdue").length} invoices`, color: "#fca5a5", filter: "overdue", accent: "#dc2626" },
-            { label: "Total Invoiced", val: fmt(totals.paid + totals.pending + totals.overdue), sub: `${invoices.length} all invoices`, color: "rgba(255,255,255,.35)", filter: "all", accent: "#2563eb" },
+            { label: "Total Invoiced", val: fmt(totals.paid + totals.pending + totals.overdue + totals.partial), sub: `${invoices.length} all invoices`, color: "rgba(255,255,255,.35)", filter: "all", accent: "#2563eb" },
           ].map((k, i) => (
             <div key={i} onClick={() => setFilterStatus(filterStatus === k.filter ? "all" : k.filter)}
               style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "background .15s", background: filterStatus === k.filter ? "rgba(255,255,255,.06)" : "transparent", borderTop: `3px solid ${k.accent}` }}
