@@ -4205,16 +4205,25 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#c4b5fd":"rgba(255,255,255,.35)", accent: "#7c3aed", filter: "all", tabSwitch: "supplier" },
             { label: "With Email", val: contacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
             { label: "No Email", val: contacts.filter(c => !c.email).length, sub: "missing contact info", color: contacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: contacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
-          ].map((k, i) => (
+          ].map((k, i) => {
+            const isActive = k.tabSwitch ? tab === k.tabSwitch : contactFilter === k.filter && k.filter !== "all";
+            const isClickable = k.filter !== "all" || k.tabSwitch;
+            return (
             <div key={i} onClick={() => k.tabSwitch ? (setTab(k.tabSwitch), setContactFilter("all"), setContactSearch("")) : k.filter !== "all" && setContactFilter(contactFilter === k.filter ? "all" : k.filter)}
-              style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", borderTop: `3px solid ${k.accent}`, cursor: (k.filter !== "all" || k.tabSwitch) ? "pointer" : "default", background: (k.tabSwitch ? tab === k.tabSwitch : contactFilter === k.filter && k.filter !== "all") ? "rgba(255,255,255,.06)" : "transparent", transition: "background .15s" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
-                {k.label}{(k.tabSwitch ? tab === k.tabSwitch : contactFilter === k.filter && k.filter !== "all") && <span style={{ color: "#60a5fa" }}>●</span>}
+              title={isClickable ? `Click to filter by ${k.label}` : undefined}
+              style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", borderTop: `3px solid ${isActive ? k.accent : "transparent"}`, cursor: isClickable ? "pointer" : "default", background: isActive ? "rgba(255,255,255,.08)" : "transparent", transition: "all .15s" }}
+              onMouseEnter={e => { if(isClickable){ e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}}
+              onMouseLeave={e => { if(isClickable){ e.currentTarget.style.background=isActive?"rgba(255,255,255,.08)":"transparent"; e.currentTarget.style.borderTop=isActive?`3px solid ${k.accent}`:"3px solid transparent"; }}}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: isActive ? k.color : "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>{k.label}</span>
+                {isClickable && (isActive
+                  ? <span style={{ color: "#fff", fontSize: 9, fontWeight: 700, background: k.accent, padding: "2px 6px", borderRadius: 4, letterSpacing: ".3px" }}>ACTIVE ✕</span>
+                  : <span style={{ color: "rgba(255,255,255,.3)", fontSize: 9 }}>↓ FILTER</span>)}
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", marginBottom: 2 }}>{k.val}</div>
-              <div style={{ fontSize: 11, color: k.color || "rgba(255,255,255,.35)" }}>{k.sub}</div>
+              <div style={{ fontSize: 11, color: isActive ? k.color : "rgba(255,255,255,.5)" }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
       {/* Tabs row */}
