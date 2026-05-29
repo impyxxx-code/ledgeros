@@ -110,6 +110,9 @@ const sb = {
   async patch(t, table, id, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
   async getPayments(t, invoiceId) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments?invoice_id=eq.${invoiceId}&order=created_at.asc`, { headers: sb.h(t) })).json(); },
   async addPayment(t, row) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(row) })).json(); },
+  async getCredits(t, customer) { return (await fetch(`${SUPABASE_URL}/rest/v1/customer_credits?customer=eq.${encodeURIComponent(customer)}&order=created_at.desc`, { headers: sb.h(t) })).json(); },
+  async addCredit(t, row) { return (await fetch(`${SUPABASE_URL}/rest/v1/customer_credits`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(row) })).json(); },
+  async useCredit(t, id, amountUsed) { return (await fetch(`${SUPABASE_URL}/rest/v1/customer_credits?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify({ amount_used: amountUsed, status: "used" }) })).json(); },
 };
 
 const fmt = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n || 0);
@@ -2851,22 +2854,30 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     const resolvedMethod = method || payMethod[inv.id] || "cash";
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
-    const balance = parseFloat(inv.amount) - totalPaid;
-    const newStatus = balance <= 0 ? "paid" : "partial";
-    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
+    const invAmount = parseFloat(inv.amount || 0);
+    const balance = invAmount - totalPaid;
+    const overpayment = totalPaid > invAmount ? totalPaid - invAmount : 0;
+    const actualPaid = overpayment > 0 ? invAmount : totalPaid;
+    const newStatus = "paid";
+    const newBalance = 0;
+    await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance: newBalance, status: newStatus, payment_method: resolvedMethod });
     const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
-      notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : "Full payment",
       recorded_by_name: profile?.full_name || "Admin"
     };
     if (isUUID(userId)) payRow.recorded_by = userId;
     const payRes = await sb.addPayment(token, payRow).catch(e => ({ error: e }));
     if (payRes?.error || payRes?.code) console.error("Payment ledger insert failed:", payRes);
-    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
+    if (overpayment > 0) {
+      const outstanding = invoices.filter(i => i.customer === inv.customer && i.id !== inv.id && (i.status === "pending" || i.status === "overdue" || i.status === "partial"));
+      setOverpaymentData({ inv: { ...inv, amount_paid: actualPaid }, overpayment, outstandingInvoices: outstanding });
+    }
   };
   return (
     <div>
@@ -2939,6 +2950,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
   const [viewInvoice, setViewInvoice] = useState(null);
+  const [overpaymentData, setOverpaymentData] = useState(null);
 
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
@@ -3385,6 +3397,20 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         </div>
       </div>
     </div>
+    {overpaymentData && <OverpaymentModal
+      inv={overpaymentData.inv}
+      overpayment={overpaymentData.overpayment}
+      outstandingInvoices={overpaymentData.outstandingInvoices}
+      token={token}
+      userId={userId}
+      profile={profile}
+      onClose={() => setOverpaymentData(null)}
+      onAllocated={(id, totalPaid, balance, status) => {
+        setInvoices(prev => prev.map(i => i.id === id ? { ...i, amount_paid: totalPaid, balance, status } : i));
+        setOverpaymentData(null);
+      }}
+      onCredited={() => setOverpaymentData(null)}
+    />}
     {viewInvoice && <InvoiceModal
       invoice={viewInvoice}
       onClose={() => setViewInvoice(null)}
@@ -3419,6 +3445,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
 function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending }) {
+  const [overpaymentData, setOverpaymentData] = useState(null); // { inv, overpayment, outstandingInvoices }
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
@@ -3502,22 +3529,30 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
     const resolvedMethod = method || payMethod[inv.id] || "cash";
     const prevPaid = parseFloat(inv.amount_paid || 0);
     const totalPaid = prevPaid + paid;
-    const balance = parseFloat(inv.amount) - totalPaid;
-    const newStatus = balance <= 0 ? "paid" : "partial";
-    await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: resolvedMethod });
+    const invAmount = parseFloat(inv.amount || 0);
+    const balance = invAmount - totalPaid;
+    const overpayment = totalPaid > invAmount ? totalPaid - invAmount : 0;
+    const actualPaid = overpayment > 0 ? invAmount : totalPaid;
+    const newStatus = "paid";
+    const newBalance = 0;
+    await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance: newBalance, status: newStatus, payment_method: resolvedMethod });
     const payRow = {
       invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
       amount: paid, method: resolvedMethod,
       payment_date: new Date().toISOString().split("T")[0],
-      notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+      notes: overpayment > 0 ? `Full payment + £${overpayment.toFixed(2)} overpayment` : "Full payment",
       recorded_by_name: profile?.full_name || "Admin"
     };
     if (isUUID(userId)) payRow.recorded_by = userId;
     const payRes = await sb.addPayment(token, payRow).catch(e => ({ error: e }));
     if (payRes?.error || payRes?.code) console.error("Payment ledger insert failed:", payRes);
-    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+    setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
+    if (overpayment > 0) {
+      const outstanding = invoices.filter(i => i.customer === inv.customer && i.id !== inv.id && (i.status === "pending" || i.status === "overdue" || i.status === "partial"));
+      setOverpaymentData({ inv: { ...inv, amount_paid: actualPaid }, overpayment, outstandingInvoices: outstanding });
+    }
   };
 
   // Generate and download a delivery note from any invoice
@@ -3601,6 +3636,20 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           setEditInvoice(null);
         }}
       />}
+      {overpaymentData && <OverpaymentModal
+        inv={overpaymentData.inv}
+        overpayment={overpaymentData.overpayment}
+        outstandingInvoices={overpaymentData.outstandingInvoices}
+        token={token}
+        userId={userId}
+        profile={profile}
+        onClose={() => setOverpaymentData(null)}
+        onAllocated={(id, totalPaid, balance, status) => {
+          setInvoices(prev => prev.map(i => i.id === id ? { ...i, amount_paid: totalPaid, balance, status } : i));
+          setOverpaymentData(null);
+        }}
+        onCredited={() => setOverpaymentData(null)}
+      />}
       {viewInvoice && <InvoiceModal
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
@@ -3627,18 +3676,27 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           const patchRes = await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
           if (patchRes?.code && !Array.isArray(patchRes)) throw new Error(patchRes?.message || "Failed to update invoice");
           const isUUID2 = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+          const invAmount2 = parseFloat(inv.amount || 0);
+          const overpayment2 = totalPaid > invAmount2 ? totalPaid - invAmount2 : 0;
+          const actualPaid2 = overpayment2 > 0 ? invAmount2 : totalPaid;
+          const finalStatus2 = overpayment2 > 0 ? "paid" : newStatus;
+          const finalBalance2 = overpayment2 > 0 ? 0 : Math.max(0, balance);
           const payRow2 = {
             invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
             amount: amt, method: method || "cash",
             payment_date: new Date().toISOString().split("T")[0],
-            notes: newStatus === "paid" ? "Final payment" : "Partial payment",
+            notes: overpayment2 > 0 ? `Full payment + £${overpayment2.toFixed(2)} overpayment` : finalStatus2 === "paid" ? "Final payment" : "Partial payment",
             recorded_by_name: profile?.full_name || "Admin"
           };
           if (isUUID2(userId)) payRow2.recorded_by = userId;
           const payRes2 = await sb.addPayment(token, payRow2).catch(e => ({ error: e }));
           if (payRes2?.error || payRes2?.code) console.error("Payment ledger insert failed:", payRes2);
-          setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
-          setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
+          setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid2, balance: finalBalance2, status: finalStatus2 } : i));
+          setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: actualPaid2, balance: finalBalance2, status: finalStatus2 } : prev);
+          if (overpayment2 > 0) {
+            const outstanding2 = invoices.filter(i => i.customer === inv.customer && i.id !== inv.id && (i.status === "pending" || i.status === "overdue" || i.status === "partial"));
+            setOverpaymentData({ inv: { ...inv, amount_paid: actualPaid2 }, overpayment: overpayment2, outstandingInvoices: outstanding2 });
+          }
         }}
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
@@ -4429,9 +4487,23 @@ function CustomerStatement({ contacts, invoices, token }) {
   const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
   const filtered = customers.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [creditBalance, setCreditBalance] = useState(0);
   const custInvoices = selectedContact ? invoices.filter(i => i.customer === selectedContact.name) : [];
   const totalOwed = custInvoices.filter(i => i.status !== "paid").reduce((s, i) => s + i.amount, 0);
   const totalPaid = custInvoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+
+  React.useEffect(() => {
+    if (selectedContact && token) {
+      sb.getCredits(token, selectedContact.name)
+        .then(d => {
+          const available = Array.isArray(d) ? d.filter(c => c.status === "available").reduce((s,c) => s + parseFloat(c.amount||0), 0) : 0;
+          setCreditBalance(available);
+        })
+        .catch(() => setCreditBalance(0));
+    } else {
+      setCreditBalance(0);
+    }
+  }, [selectedContact, token]);
   const handleWhatsApp = () => {
     if (!selectedContact) return;
     const lines = custInvoices.map(inv => `${inv.invoice_number} — ${fmtDate(inv.invoice_date)} — ${fmt(inv.amount)} — ${inv.status.toUpperCase()}`).join("\n");
@@ -4567,10 +4639,11 @@ function CustomerStatement({ contacts, invoices, token }) {
               <button className="btn bwa bsm" onClick={handleWhatsApp}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, padding: "16px 20px", borderBottom: "0.5px solid var(--border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: creditBalance > 0 ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 16, padding: "16px 20px", borderBottom: "0.5px solid var(--border)" }}>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Total Invoiced</div><div style={{ fontSize: 20, fontWeight: 700 }}>{fmt(totalPaid + totalOwed)}</div></div>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Total Paid</div><div style={{ fontSize: 20, fontWeight: 700, color: "var(--green)" }}>{fmt(totalPaid)}</div></div>
             <div><div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Balance Due</div><div style={{ fontSize: 20, fontWeight: 700, color: totalOwed > 0 ? "var(--red)" : "var(--green)" }}>{fmt(totalOwed)}</div></div>
+            {creditBalance > 0 && <div style={{background:"#f0fdf4",borderRadius:8,padding:"12px 14px",border:"1px solid #bbf7d0"}}><div style={{ fontSize: 11, color: "#15803d", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".5px", fontWeight:700 }}>Credit Available</div><div style={{ fontSize: 20, fontWeight: 700, color: "#16a34a" }}>{fmt(creditBalance)}</div><div style={{fontSize:10,color:"#15803d",marginTop:2}}>Applied to next invoice</div></div>}
           </div>
           <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
             <table style={{minWidth:760}}>
@@ -7177,6 +7250,178 @@ function ChangePasswordForm({ token }) {
       {msg && <div style={{ fontSize: 12, color: msg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{msg}</div>}
       <button className="btn bp bsm" onClick={update} disabled={loading} style={{ alignSelf: "flex-start" }}>{loading ? "Updating..." : "Update Password"}</button>
     </div>
+  );
+}
+
+
+// ── OVERPAYMENT MODAL ─────────────────────────────────────────────────────────
+function OverpaymentModal({ inv, overpayment, outstandingInvoices, token, userId, profile, onClose, onAllocated, onCredited }) {
+  const [mode, setMode] = useState(null); // "allocate" | "credit"
+  const [selectedInv, setSelectedInv] = useState(null);
+  const [allocating, setAllocating] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleAllocate = async () => {
+    if (!selectedInv) return;
+    setAllocating(true);
+    const applyAmt = Math.min(overpayment, parseFloat(selectedInv.amount) - parseFloat(selectedInv.amount_paid || 0));
+    const prevPaid = parseFloat(selectedInv.amount_paid || 0);
+    const totalPaid = prevPaid + applyAmt;
+    const balance = parseFloat(selectedInv.amount) - totalPaid;
+    const newStatus = balance <= 0 ? "paid" : "partial";
+    await sb.patch(token, "invoices", selectedInv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: inv.payment_method || "cash" });
+    const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+    const payRow = { invoice_id: selectedInv.id, invoice_number: selectedInv.invoice_number, customer: selectedInv.customer, amount: applyAmt, method: inv.payment_method || "cash", payment_date: new Date().toISOString().split("T")[0], notes: `Credit allocation from ${inv.invoice_number} overpayment`, recorded_by_name: profile?.full_name || "Admin" };
+    if (isUUID(userId)) payRow.recorded_by = userId;
+    await sb.addPayment(token, payRow).catch(e => console.error(e));
+    await logAudit(token, userId, "credit_allocated", "invoice", selectedInv.id, `£${applyAmt.toFixed(2)} overpayment from ${inv.invoice_number} allocated to ${selectedInv.invoice_number}`);
+    setAllocating(false);
+    setDone(true);
+    onAllocated && onAllocated(selectedInv.id, totalPaid, Math.max(0, balance), newStatus);
+  };
+
+  const handleCredit = async () => {
+    setAllocating(true);
+    await sb.addCredit(token, { customer: inv.customer, amount: overpayment, source_invoice: inv.invoice_number, status: "available", notes: `Overpayment on ${inv.invoice_number}`, created_by: profile?.full_name || "Admin" }).catch(e => console.error(e));
+    await logAudit(token, userId, "credit_added", "invoice", inv.id, `£${overpayment.toFixed(2)} credit added to ${inv.customer} account from ${inv.invoice_number} overpayment`);
+    setAllocating(false);
+    setDone(true);
+    onCredited && onCredited();
+  };
+
+  return (
+    <ModalPortal>
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{alignItems:"center"}}>
+        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"var(--shadow-xl)",overflow:"hidden"}}>
+          {/* Header */}
+          <div style={{background:"#0d1829",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                <div style={{width:28,height:28,borderRadius:8,background:"#f59e0b22",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>Overpayment Detected</div>
+              </div>
+              <div style={{fontSize:12,color:"#8aa0b8"}}>{inv.invoice_number} — {inv.customer}</div>
+            </div>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#8aa0b8",cursor:"pointer",padding:4,fontSize:18,lineHeight:1}}>×</button>
+          </div>
+
+          <div style={{padding:"20px 24px"}}>
+            {done ? (
+              <div style={{textAlign:"center",padding:"20px 0"}}>
+                <div style={{width:48,height:48,borderRadius:"50%",background:"#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div style={{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:6}}>{mode==="allocate"?"Credit Allocated":"Credit Added to Account"}</div>
+                <div style={{fontSize:12,color:"var(--text3)",marginBottom:20}}>
+                  {mode==="allocate"?`£${overpayment.toFixed(2)} applied to ${selectedInv?.invoice_number}`:`£${overpayment.toFixed(2)} added to ${inv.customer}'s credit account`}
+                </div>
+                <button onClick={onClose} className="btn bp" style={{width:"100%"}}>Done</button>
+              </div>
+            ) : (
+              <>
+                {/* Overpayment summary */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
+                  {[
+                    {label:"Invoice Total",val:`£${parseFloat(inv.amount).toFixed(2)}`,col:"var(--text)"},
+                    {label:"Amount Paid",val:`£${parseFloat(inv.amount_paid).toFixed(2)}`,col:"#16a34a"},
+                    {label:"Overpayment",val:`£${overpayment.toFixed(2)}`,col:"#d97706"},
+                  ].map(k => (
+                    <div key={k.label} style={{background:"var(--bg)",borderRadius:8,padding:"10px 12px",border:"1px solid var(--border)"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>{k.label}</div>
+                      <div style={{fontSize:15,fontWeight:700,color:k.col,fontFamily:"var(--mono)"}}>{k.val}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {!mode ? (
+                  <>
+                    <div style={{fontSize:12,color:"var(--text2)",marginBottom:14,lineHeight:1.5}}>
+                      The customer paid <strong style={{color:"#d97706"}}>£{overpayment.toFixed(2)} more</strong> than the invoice total. How would you like to handle this?
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {outstandingInvoices.length > 0 && (
+                        <button onClick={()=>setMode("allocate")} style={{padding:"14px 16px",borderRadius:10,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",textAlign:"left",transition:"border-color .15s"}}
+                          onMouseEnter={e=>e.currentTarget.style.borderColor="var(--blue)"}
+                          onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <div style={{width:32,height:32,borderRadius:8,background:"var(--blue-lt)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            </div>
+                            <div>
+                              <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>Allocate to outstanding invoice</div>
+                              <div style={{fontSize:11,color:"var(--text3)"}}>{outstandingInvoices.length} outstanding invoice{outstandingInvoices.length!==1?"s":""} found for {inv.customer}</div>
+                            </div>
+                          </div>
+                        </button>
+                      )}
+                      <button onClick={()=>setMode("credit")} style={{padding:"14px 16px",borderRadius:10,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",textAlign:"left",transition:"border-color .15s"}}
+                        onMouseEnter={e=>e.currentTarget.style.borderColor="#16a34a"}
+                        onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{width:32,height:32,borderRadius:8,background:"#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                          </div>
+                          <div>
+                            <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>Add to customer credit account</div>
+                            <div style={{fontSize:11,color:"var(--text3)"}}>£{overpayment.toFixed(2)} stored as credit — deducted from their next invoice</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                ) : mode === "allocate" ? (
+                  <>
+                    <div style={{fontSize:12,color:"var(--text2)",marginBottom:12}}>Select which invoice to apply the £{overpayment.toFixed(2)} credit to:</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                      {outstandingInvoices.map(oi => {
+                        const owed = parseFloat(oi.amount) - parseFloat(oi.amount_paid||0);
+                        const apply = Math.min(overpayment, owed);
+                        const sel = selectedInv?.id === oi.id;
+                        return (
+                          <div key={oi.id} onClick={()=>setSelectedInv(oi)} style={{padding:"12px 14px",borderRadius:8,border:`1.5px solid ${sel?"var(--blue)":"var(--border)"}`,background:sel?"var(--blue-lt)":"var(--white)",cursor:"pointer"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                              <div>
+                                <span style={{fontFamily:"var(--mono)",fontWeight:600,color:"var(--blue)",fontSize:13}}>{oi.invoice_number}</span>
+                                <span style={{fontSize:11,color:"var(--text3)",marginLeft:8}}>{fmtDate(oi.invoice_date)}</span>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontSize:12,color:"var(--text3)"}}>Outstanding: <strong style={{color:"var(--text)",fontFamily:"var(--mono)"}}>£{owed.toFixed(2)}</strong></div>
+                                <div style={{fontSize:11,color:"#16a34a"}}>Will pay: £{apply.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>{setMode(null);setSelectedInv(null);}} style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",fontSize:13}}>Back</button>
+                      <button onClick={handleAllocate} disabled={!selectedInv||allocating} className="btn bp" style={{flex:2}}>
+                        {allocating?"Allocating...":"Allocate £"+overpayment.toFixed(2)}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{background:"var(--bg)",borderRadius:8,padding:"14px",border:"1px solid var(--border)",marginBottom:16}}>
+                      <div style={{fontSize:12,color:"var(--text2)",marginBottom:8}}>A credit of <strong style={{color:"#16a34a",fontFamily:"var(--mono)"}}>£{overpayment.toFixed(2)}</strong> will be added to <strong>{inv.customer}</strong>'s account.</div>
+                      <div style={{fontSize:11,color:"var(--text3)"}}>This credit can be applied when creating or paying their next invoice.</div>
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>setMode(null)} style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",fontSize:13}}>Back</button>
+                      <button onClick={handleCredit} disabled={allocating} className="btn bp" style={{flex:2,background:"#16a34a",borderColor:"#16a34a"}}>
+                        {allocating?"Saving...":"Add Credit to Account"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
   );
 }
 
