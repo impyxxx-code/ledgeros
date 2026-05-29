@@ -5258,18 +5258,18 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
     return true;
   };
   const filteredInv = invoices.filter(filterByPeriod);
-  const totalSales = filteredInv.reduce((s,i) => s+i.amount, 0);
-  const totalPaid = filteredInv.filter(i=>i.status==="paid").reduce((s,i) => s+i.amount, 0);
-  const totalPending = filteredInv.filter(i=>i.status==="pending").reduce((s,i) => s+i.amount, 0);
-  const totalOverdue = filteredInv.filter(i=>i.status==="overdue").reduce((s,i) => s+i.amount, 0);
+  const totalSales = filteredInv.reduce((s,i) => s+parseFloat(i.amount||0), 0);
+  const totalPaid = filteredInv.reduce((s,i) => s+parseFloat(i.amount_paid||0), 0);
+  const totalPending = filteredInv.filter(i=>i.status==="pending"||i.status==="partial").reduce((s,i) => s+parseFloat(i.balance||i.amount||0), 0);
+  const totalOverdue = filteredInv.filter(i=>i.status==="overdue").reduce((s,i) => s+parseFloat(i.balance||i.amount||0), 0);
   const monthlySales = Array.from({length:12}, (_,i) => {
     const d = new Date(now.getFullYear(), now.getMonth()-11+i, 1);
     const month = d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
     const invs = invoices.filter(inv => { const id = new Date(inv.invoice_date || inv.created_at); return id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear(); });
-    return { month, total: invs.reduce((s,i)=>s+i.amount,0), paid: invs.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0), count: invs.length };
+    return { month, total: invs.reduce((s,i)=>s+parseFloat(i.amount||0),0), paid: invs.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0), count: invs.length };
   });
   const maxMonthly = Math.max(...monthlySales.map(m=>m.total), 1);
-  const customerSales = contacts.filter(c=>c.type==="customer"||c.type==="both").map(c => ({ name: c.name, total: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+i.amount,0), count: filteredInv.filter(i=>i.customer===c.name).length, paid: filteredInv.filter(i=>i.customer===c.name&&i.status==="paid").reduce((s,i)=>s+i.amount,0) })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+  const customerSales = contacts.filter(c=>c.type==="customer"||c.type==="both").map(c => ({ name: c.name, total: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+parseFloat(i.amount||0),0), count: filteredInv.filter(i=>i.customer===c.name).length, paid: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0) })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
   const categories = [...new Set(products.map(p=>p.category||"General"))];
   const catData = categories.map(cat => ({ name: cat, products: products.filter(p=>(p.category||"General")===cat).length, stockValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0), retailValue: products.filter(p=>(p.category||"General")===cat).reduce((s,p)=>s+(p.stock_qty||0)*(p.sale_price||0),0), lowStock: products.filter(p=>(p.category||"General")===cat && p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)).length })).sort((a,b)=>b.retailValue-a.retailValue);
   const totalStockValue = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
@@ -5286,7 +5286,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
+          {[{label:"Total Revenue",val:fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)),sub:"all time",accent:"#16a34a"},{label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0)),sub:"unpaid invoices",accent:"#dc2626"},{label:"Overdue",val:invoices.filter(i=>i.status==="overdue").length,sub:"overdue invoices",accent:"#d97706"},{label:"Active Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"in system",accent:"#2563eb"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
@@ -5424,9 +5424,9 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         <div className="card"><div className="ch"><div className="ct">Full Product Report</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Margin</th><th>Value</th><th>Status</th></tr></thead><tbody>{productSales.map(p => <tr key={p.id}><td style={{fontWeight:500}}>{p.name}</td><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td><td className="mono">{fmt(p.cost_price)}</td><td className="mono">{fmt(p.sale_price)}</td><td><span style={{color:p.margin>30?"var(--green)":p.margin>15?"var(--amber)":"var(--red)",fontWeight:600,fontSize:12}}>{p.margin}%</span></td><td className="mono">{fmt(p.stockValue)}</td><td><span className={"badge "+(p.stock_qty<=p.reorder_level?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")} style={{fontSize:10}}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low":"OK"}</span></td></tr>)}</tbody></table></div></div>
       </div>}
       {tab==="customers" && <div className="card"><div className="ch"><div className="ct">Customer Sales</div><div className="cs">{periodLabels[period]} · {customerSales.length} customers</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>#</th><th>Customer</th><th>Invoices</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{customerSales.slice(0,50).map((c,i) => <tr key={c.name}><td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td><td style={{fontWeight:500}}>{c.name}</td><td className="mono">{c.count}</td><td className="mono" style={{fontWeight:600}}>{fmt(c.total)}</td><td className="mono tg">{fmt(c.paid)}</td><td className="mono" style={{color:c.total-c.paid>0?"var(--red)":"var(--green)"}}>{fmt(c.total-c.paid)}</td></tr>)}{customerSales.length===0&&<tr><td colSpan={6} className="empty">No sales data</td></tr>}</tbody></table></div></div>}
-      {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+i.amount,0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+i.amount,0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+i.amount,0); const agPaid=agInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
+      {tab==="agents" && <div className="card"><div className="ch"><div className="ct">Agent Performance — {periodLabels[period]}</div></div><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>#</th><th>Agent</th><th>Invoices</th><th>Total</th><th>Collected</th><th>Pending</th></tr></thead><tbody>{[...allProfiles].sort((a,b) => filteredInv.filter(i=>i.created_by===b.id).reduce((s,i)=>s+parseFloat(i.amount||0),0) - filteredInv.filter(i=>i.created_by===a.id).reduce((s,i)=>s+parseFloat(i.amount||0),0)).map((agent,i) => { const agInv = filteredInv.filter(i=>i.created_by===agent.id); const agTotal=agInv.reduce((s,i)=>s+parseFloat(i.amount||0),0); const agPaid=agInv.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0); const medals=["🥇","🥈","🥉"]; return <tr key={agent.id}><td><span style={{fontSize:16}}>{medals[i]||i+1}</span></td><td><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(agent.full_name||"U")[0].toUpperCase()}</div><span style={{fontWeight:600}}>{agent.full_name||"Unknown"}</span></div></td><td className="mono">{agInv.length}</td><td className="mono" style={{fontWeight:600,color:"var(--green)"}}>{fmt(agTotal)}</td><td className="mono tg">{fmt(agPaid)}</td><td className="mono" style={{color:"var(--amber)"}}>{fmt(agTotal-agPaid)}</td></tr>; })}</tbody></table></div></div>}
       {tab==="pl" && (() => {
-        const revenue = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
+        const revenue = filteredInv.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
         const vat = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+(i.vat_total||0),0);
         const netRevenue = revenue - vat;
         const cogs = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
@@ -5474,32 +5474,32 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           {label:"61–90 Days",sub:"Critical",      color:"#b91c1c", bg:"#fff1f2", border:"#fecdd3", invs: unpaidInv.filter(i=>age(i)>60&&age(i)<=90)},
           {label:"90+ Days",  sub:"Write-off risk",color:"#7f1d1d", bg:"#fef2f2", border:"#fca5a5", invs: unpaidInv.filter(i=>age(i)>90)},
         ];
-        const grandTotal = unpaidInv.reduce((s,i)=>s+i.amount,0);
-        const maxBucket = Math.max(...buckets.map(b=>b.invs.reduce((s,i)=>s+i.amount,0)),1);
+        const grandTotal = unpaidInv.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+        const maxBucket = Math.max(...buckets.map(b=>b.invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0)),1);
         const customerRows = [...new Set(unpaidInv.map(i=>i.customer))].map(cust=>{
           const cinvs = unpaidInv.filter(i=>i.customer===cust);
           return {
             name:cust,
             contact: contacts.find(c=>c.name===cust),
-            current: buckets[0].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            d15:     buckets[1].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            d30:     buckets[2].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            d60:     buckets[3].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            d90:     buckets[4].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            d90p:    buckets[5].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+i.amount,0),
-            total:   cinvs.reduce((s,i)=>s+i.amount,0),
+            current: buckets[0].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            d15:     buckets[1].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            d30:     buckets[2].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            d60:     buckets[3].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            d90:     buckets[4].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            d90p:    buckets[5].invs.filter(i=>i.customer===cust).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
+            total:   cinvs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0),
             count:   cinvs.length,
             oldest:  Math.max(...cinvs.map(i=>age(i))),
             invs:    cinvs,
           };
         }).sort((a,b)=>b.total-a.total);
-        const riskTotal = buckets.slice(3).reduce((s,b)=>s+b.invs.reduce((ss,i)=>ss+i.amount,0),0);
+        const riskTotal = buckets.slice(3).reduce((s,b)=>s+b.invs.reduce((ss,i)=>ss+parseFloat(i.balance||i.amount||0),0),0);
         return (
           <div>
             {/* Summary KPI cards */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,marginBottom:20}}>
               {buckets.map(b=>{
-                const amt = b.invs.reduce((s,i)=>s+i.amount,0);
+                const amt = b.invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 const pct = Math.round((amt/Math.max(grandTotal,1))*100);
                 return (
                   <div key={b.label} style={{background:b.bg,border:"1px solid "+b.border,borderRadius:10,padding:"12px 14px"}}>
@@ -5596,12 +5596,12 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
                     {customerRows.length > 0 && (
                       <tr style={{background:"#1e1b4b"}}>
                         <td style={{padding:"12px 14px",fontWeight:800,fontSize:13,color:"#fff"}}>TOTALS</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#86efac",fontWeight:700}}>{fmt(buckets[0].invs.reduce((s,i)=>s+i.amount,0))}</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fde68a",fontWeight:700}}>{fmt(buckets[1].invs.reduce((s,i)=>s+i.amount,0))}</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fed7aa",fontWeight:700}}>{fmt(buckets[2].invs.reduce((s,i)=>s+i.amount,0))}</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[3].invs.reduce((s,i)=>s+i.amount,0))}</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[4].invs.reduce((s,i)=>s+i.amount,0))}</td>
-                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[5].invs.reduce((s,i)=>s+i.amount,0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#86efac",fontWeight:700}}>{fmt(buckets[0].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fde68a",fontWeight:700}}>{fmt(buckets[1].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fed7aa",fontWeight:700}}>{fmt(buckets[2].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[3].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[4].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
+                        <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:12,color:"#fca5a5",fontWeight:700}}>{fmt(buckets[5].invs.reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0))}</td>
                         <td style={{padding:"12px 14px",textAlign:"right",fontFamily:"var(--mono)",fontSize:14,color:"#fff",fontWeight:800}}>{fmt(grandTotal)}</td>
                         <td style={{padding:"12px 14px"}}></td>
                       </tr>
@@ -5648,7 +5648,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
         const cfMonths = Array.from({length:6},(_,i)=>{
           const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
           const lbl = d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
-          const inflow = invoices.filter(inv=>{const id=new Date(inv.invoice_date||inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status==="paid";}).reduce((s,i)=>s+i.amount,0);
+          const inflow = invoices.filter(inv=>{const id=new Date(inv.invoice_date||inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status==="paid";}).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
           const pending = invoices.filter(inv=>{const id=new Date(inv.invoice_date||inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid";}).reduce((s,i)=>s+i.amount,0);
           const exp = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance/12,0);
           return {lbl, inflow, pending, expenses:Math.round(exp), net:inflow-Math.round(exp)};
