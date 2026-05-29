@@ -6472,10 +6472,21 @@ export default function App() {
       ]);
       if (Array.isArray(accs)) setAccounts(accs);
       if (Array.isArray(invs)) {
+        const today = new Date().toISOString().split("T")[0];
+        const processed = invs.map(i => {
+          if (i.status === "pending" && i.due_date && i.due_date < today) return { ...i, status: "overdue" };
+          return i;
+        });
+        // Patch any that need flipping in the DB silently
+        processed.forEach((i, idx) => {
+          if (invs[idx].status !== i.status) {
+            sb.patch(auth.token, "invoices", i.id, { status: "overdue" }).catch(()=>{});
+          }
+        });
         if (isAdmin) {
-          setInvoices(invs);
+          setInvoices(processed);
         } else {
-          setInvoices(invs.filter(i => i.created_by === auth.user?.id));
+          setInvoices(processed.filter(i => i.created_by === auth.user?.id));
         }
       }
       if (Array.isArray(cnts)) setContacts(cnts);
@@ -6554,7 +6565,10 @@ export default function App() {
                   const isAdm = !profile || adminRoles.includes(profile?.role);
                   const q = isAdm ? "order=created_at.desc&limit=1000" : `created_by=eq.${auth.user?.id}&order=created_at.desc`;
                   sb.get(auth.token, "invoices", q).then(fresh => {
-                    if (Array.isArray(fresh)) setInvoices(fresh);
+                    if (Array.isArray(fresh)) {
+                      const today2 = new Date().toISOString().split("T")[0];
+                      setInvoices(fresh.map(i => i.status === "pending" && i.due_date && i.due_date < today2 ? { ...i, status: "overdue" } : i));
+                    }
                   });
                 }, 800);
               } else if (eventType === "UPDATE") {
