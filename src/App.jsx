@@ -3623,7 +3623,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   };
 
   const totals = {
-    paid: invoices.filter(i => i.status === "paid").reduce((s, i) => s + parseFloat(i.amount_paid || i.amount || 0), 0),
+    paid: invoices.reduce((s, i) => s + parseFloat(i.amount_paid || 0), 0),
     pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
     overdue: invoices.filter(i => i.status === "overdue").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
     partial: invoices.filter(i => i.status === "partial").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
