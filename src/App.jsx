@@ -5493,49 +5493,83 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles }) {
           ))}
         </div>
       </div>
-      <div style={{marginBottom:20,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden"}}>
-        {[
-          { label: "Revenue", tabs: [["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-          { label: "Debtors", tabs: [["aged-debtors","Aged Debtors"],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
-          { label: "Operations", tabs: [["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
-        ].map((group, gi) => (
-          <div key={gi} style={{display:"flex",alignItems:"stretch",borderBottom: gi < 2 ? "1px solid var(--border)" : "none"}}>
-            <div style={{width:90,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"8px 6px"}}>
-              <span style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px",textAlign:"center",lineHeight:1.3}}>{group.label}</span>
-            </div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:0,flex:1}}>
-              {group.tabs.map(([k,l], ti) => (
-                <button key={k} onClick={()=>setTab(k)} style={{
-                  padding:"10px 16px", border:"none",
-                  borderRight: ti < group.tabs.length-1 ? "1px solid var(--border)" : "none",
-                  background: tab===k ? "var(--blue)" : "transparent",
-                  color: tab===k ? "#fff" : "var(--text2)",
-                  fontSize:12, fontWeight: tab===k ? 600 : 400,
-                  cursor:"pointer", fontFamily:"var(--sans)", whiteSpace:"nowrap", transition:"all .12s", position:"relative",
-                }}>
-                  {l}
-                  {tab===k && <span style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"var(--blue)",borderRadius:"2px 2px 0 0"}} />}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* ── PREMIUM GROUPED TAB NAV — pure CSS hover, no inline style mutation ── */}
+      <style>{`
+        .ar-nav { background: var(--white); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden; margin-bottom: 20px; }
+        .ar-nav-inner { display: flex; overflow-x: auto; }
+        .ar-group { display: flex; align-items: stretch; border-right: 1px solid var(--border); flex-shrink: 0; }
+        .ar-group:last-child { border-right: none; }
+        .ar-group-label { display: flex; align-items: center; justify-content: center; background: var(--bg); border-right: 1px solid var(--border); padding: 0 12px; min-width: 76px; flex-shrink: 0; }
+        .ar-group-label span { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; text-align: center; line-height: 1.4; white-space: nowrap; }
+        .ar-group-label.rev-active span { color: #2563eb; }
+        .ar-group-label.deb-active span { color: #dc2626; }
+        .ar-group-label.ops-active span { color: #7c3aed; }
+        .ar-tabs { display: flex; }
+        .ar-tab { padding: 11px 15px; border: none; font-size: 12px; font-weight: 400; cursor: pointer; font-family: var(--sans); white-space: nowrap; color: var(--text2); background: transparent; border-right: 1px solid var(--border); border-bottom: 2.5px solid transparent; transition: background .12s, color .12s; position: relative; }
+        .ar-tab:last-child { border-right: none; }
+        .ar-tab:hover { background: var(--bg); color: var(--text); }
+        .ar-tab.on-rev { color: #2563eb; font-weight: 600; border-bottom-color: #2563eb; background: #eff6ff08; }
+        .ar-tab.on-deb { color: #dc2626; font-weight: 600; border-bottom-color: #dc2626; background: #dc262608; }
+        .ar-tab.on-ops { color: #7c3aed; font-weight: 600; border-bottom-color: #7c3aed; background: #7c3aed08; }
+        .ar-tab .ar-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 10px; background: #fee2e2; color: #991b1b; margin-left: 4px; }
+      `}</style>
+      <div className="ar-nav">
+        <div className="ar-nav-inner">
+          {(() => {
+            const groups = [
+              { label:"Revenue", color:"rev", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
+              { label:"Debtors", color:"deb", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
+              { label:"Operations", color:"ops", tabs:[["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+            ];
+            return groups.map((group) => {
+              const groupActive = group.tabs.some(([k]) => k === tab);
+              return (
+                <div key={group.label} className="ar-group">
+                  <div className={`ar-group-label${groupActive ? " "+group.color+"-active" : ""}`}>
+                    <span>{group.label}</span>
+                  </div>
+                  <div className="ar-tabs">
+                    {group.tabs.map(([k, l, badge]) => (
+                      <button key={k} className={`ar-tab${tab===k ? " on-"+group.color : ""}`} onClick={() => setTab(k)}>
+                        {l}
+                        {badge > 0 && <span className="ar-badge">{badge}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
       </div>
       {tab==="overview" && <div>
+        {/* Section header */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--text)",letterSpacing:"-.2px"}}>Revenue Overview</div>
+            <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>Performance summary · {periodLabels[period]}</div>
+          </div>
+        </div>
+        {/* KPI cards */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
           {[
-            { label:"Total Sales", val:fmt(totalSales), sub:filteredInv.length+" invoices · "+periodLabels[period], accent:"#2563eb", pct:null },
-            { label:"Collected", val:fmt(totalPaid), sub:totalSales>0?Math.round(totalPaid/totalSales*100)+"% collection rate":"0% collection rate", accent:"#16a34a", pct:totalSales>0?totalPaid/totalSales:0 },
-            { label:"Pending", val:fmt(totalPending), sub:filteredInv.filter(i=>i.status==="pending").length+" invoices", accent:"#d97706", pct:totalSales>0?totalPending/totalSales:0 },
-            { label:"Overdue", val:fmt(totalOverdue), sub:filteredInv.filter(i=>i.status==="overdue").length+" invoices", accent:"#dc2626", pct:totalSales>0?totalOverdue/totalSales:0 },
+            { label:"Total Sales", val:fmt(totalSales), sub:filteredInv.length+" invoices · "+periodLabels[period], accent:"#2563eb", bg:"#eff6ff", icon:"ti-receipt-2", pct:null },
+            { label:"Collected", val:fmt(totalPaid), sub:totalSales>0?Math.round(totalPaid/totalSales*100)+"% collection rate":"0% collection rate", accent:"#16a34a", bg:"#f0fdf4", icon:"ti-circle-check", pct:totalSales>0?totalPaid/totalSales:0 },
+            { label:"Pending", val:fmt(totalPending), sub:filteredInv.filter(i=>i.status==="pending"||i.status==="partial").length+" invoices awaiting", accent:"#d97706", bg:"#fffbeb", icon:"ti-clock", pct:totalSales>0?totalPending/totalSales:0 },
+            { label:"Overdue", val:fmt(totalOverdue), sub:filteredInv.filter(i=>i.status==="overdue").length+" invoices past due", accent:"#dc2626", bg:"#fef2f2", icon:"ti-alert-triangle", pct:totalSales>0?totalOverdue/totalSales:0 },
           ].map((k,i) => (
-            <div key={i} style={{background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"16px 18px",borderTop:`3px solid ${k.accent}`}}>
-              <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>{k.label}</div>
-              <div style={{fontSize:22,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)",letterSpacing:"-.5px",marginBottom:4}}>{k.val}</div>
+            <div key={i} style={{background:"var(--white)",border:"1.5px solid var(--border)",borderRadius:12,padding:"16px 18px",borderTop:`3px solid ${k.accent}`}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px"}}>{k.label}</div>
+                <div style={{width:26,height:26,borderRadius:7,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <i className={`ti ${k.icon}`} style={{fontSize:13,color:k.accent}} />
+                </div>
+              </div>
+              <div style={{fontSize:20,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)",letterSpacing:"-.5px",marginBottom:4}}>{k.val}</div>
               <div style={{fontSize:11,color:"var(--text3)",marginBottom:k.pct!==null?10:0}}>{k.sub}</div>
               {k.pct !== null && (
                 <div style={{height:3,background:"var(--border)",borderRadius:2,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:(k.pct*100)+"%",background:k.accent,borderRadius:2}} />
+                  <div style={{height:"100%",width:Math.round(k.pct*100)+"%",background:k.accent,borderRadius:2}} />
                 </div>
               )}
             </div>
