@@ -4024,9 +4024,9 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
               {/* KPI row */}
               {(() => {
                 const custInvoices = invoices.filter(i => i.customer === viewContact.name);
-                const totalSpend = custInvoices.reduce((s,i)=>s+i.amount,0);
-                const paid = custInvoices.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
-                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue").reduce((s,i)=>s+i.amount,0);
+                const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
+                const paid = custInvoices.filter(i=>i.status==="paid").reduce((s,i)=>s+parseFloat(i.amount_paid||i.amount||0),0);
+                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
