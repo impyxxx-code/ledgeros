@@ -2938,6 +2938,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   const isAdmin = profile?.role === "admin";
   if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
+  const [viewInvoice, setViewInvoice] = useState(null);
+
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
   const expenses = accounts.filter(a => a.type === "Expense").reduce((s, a) => s + a.balance, 0);
@@ -3382,6 +3384,30 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         </div>
       </div>
     </div>
+    {viewInvoice && <InvoiceModal
+      invoice={viewInvoice}
+      onClose={() => setViewInvoice(null)}
+      contacts={contacts}
+      token={token}
+      onStatusChange={async (id, status) => {
+        await sb.patch(token, "invoices", id, { status });
+        setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+        setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
+      }}
+      onPartPay={async (inv, amt, method) => {
+        const prevPaid = parseFloat(inv.amount_paid || 0);
+        const totalPaid = prevPaid + amt;
+        const balance = parseFloat(inv.amount || 0) - totalPaid;
+        const newStatus = balance <= 0 ? "paid" : "partial";
+        await sb.patch(token, "invoices", inv.id, { amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus, payment_method: method || "cash" });
+        const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+        const payRow = { invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer, amount: amt, method: method || "cash", payment_date: new Date().toISOString().split("T")[0], notes: newStatus === "paid" ? "Final payment" : "Partial payment", recorded_by_name: profile?.full_name || "Admin" };
+        if (isUUID(userId)) payRow.recorded_by = userId;
+        await sb.addPayment(token, payRow).catch(e => console.error("Payment ledger insert failed:", e));
+        setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : i));
+        setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
+      }}
+    />}
   );
 }
 
