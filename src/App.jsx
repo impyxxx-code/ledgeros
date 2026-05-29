@@ -4226,37 +4226,226 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           );})}
         </div>
       </div>
-      {/* Tabs row */}
-      <div className="tabs" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 0 }}>
-        <div style={{ display: "flex", gap: 4 }}>{[["customer", "👥 Customers"], ["supplier", "🏭 Suppliers"]].map(([k, l]) => <div key={k} className={"tab " + (tab === k ? "active" : "")} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}>{l} <span style={{ color: "var(--text3)", fontSize: 12 }}>({contacts.filter(c => c.type === k || c.type === "both").length})</span></div>)}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {contactFilter !== "all" && <span style={{ fontSize: 11, background: "var(--blue-lt)", color: "var(--blue)", padding: "2px 10px", borderRadius: 20, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
-            {contactFilter === "has-email" ? "Has email" : "No email"} <button onClick={() => setContactFilter("all")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--blue)", fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
-          </span>}
-          {contactSearch && <div style={{ fontSize: 12, color: "var(--text3)" }}>Showing {filtered.length} of {contacts.filter(c=>c.type===tab||c.type==="both").length}</div>}
+      {/* ── TABS + UTILITY BAR ── */}
+      <div style={{ background:"#fff", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 4px", marginTop:0 }}>
+        <div style={{ display:"flex" }}>
+          {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
+            <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
+              style={{ padding:"11px 16px", fontSize:12, fontWeight:tab===k?600:400, color:tab===k?"#2563eb":"#64748b", borderBottom:tab===k?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", display:"flex", alignItems:"center", gap:5, transition:"all .15s" }}>
+              {l} <span style={{ fontSize:11, color:tab===k?"#2563eb":"#94a3b8" }}>({contacts.filter(c=>c.type===k||c.type==="both").length})</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:8 }}>
+          {contactFilter !== "all" && (
+            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
+              {contactFilter === "has-email" ? "Has email" : "No email"}
+              <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#2563eb", fontSize:14, lineHeight:1, padding:0 }}>×</button>
+            </span>
+          )}
+          {contactSearch && <span style={{ fontSize:11, color:"#94a3b8" }}>Showing {filtered.length} of {contacts.filter(c=>c.type===tab||c.type==="both").length}</span>}
         </div>
       </div>
-      {showForm && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">{editingContact ? "Edit Contact" : "New Contact"}</div></div><div className="fg"><div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div><div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div><div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div><div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div><div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div><div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div><div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div></div><div className="ff"><button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" }); }}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editingContact ? "Update Contact" : "Save Contact"}</button></div></div>}
-      {contactView === "list" ? (
-        <div className="card">
-          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:580}}><thead><tr><th>Name</th><th>Email</th><th className="hm">Phone</th><th className="hm">Location</th><th>Actions</th></tr></thead><tbody>
-            {filtered.map(c=>(
-              <tr key={c.id}>
-                <td><div style={{display:"flex",alignItems:"center",gap:10}}><div className="c-av" style={{background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1",width:30,height:30,fontSize:11}}>{c.name?.[0]?.toUpperCase()}</div><span style={{fontWeight:600}}>{c.name}</span></div></td>
-                <td style={{fontSize:12,color:"var(--text2)"}}>{c.email||"—"}</td>
-                <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{c.phone||"—"}</td>
-                <td className="hm" style={{fontSize:12,color:"var(--text2)"}}>{[c.city,c.postcode].filter(Boolean).join(", ")||"—"}</td>
-                <td><button className="btn bo bsm" onClick={()=>window.open(`mailto:${c.email}`)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button></td>
-              </tr>
-            ))}
-          </tbody></table></div>
+
+      {/* ── SEARCH + SORT BAR ── */}
+      <div style={{ background:"#fff", borderBottom:"1px solid var(--border)", padding:"9px 16px", display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ position:"relative", flex:1, maxWidth:300 }}>
+          <svg style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"#94a3b8", pointerEvents:"none" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search name, city, email..."
+            style={{ width:"100%", padding:"8px 12px 8px 32px", borderRadius:8, border:"1.5px solid var(--border)", fontSize:12, color:"var(--text)", outline:"none", background:"var(--bg)", fontFamily:"var(--sans)", transition:"border-color .15s" }} />
         </div>
-      ) : (
-      <div className="contact-grid">
-        {filtered.map(c => <div key={c.id} className="contact-card" onClick={() => setViewContact(c)}><div className="cc-av" style={{ background: avatarColors[c.name?.charCodeAt(0) % avatarColors.length] || "#6366f1" }}>{c.name?.[0]?.toUpperCase()}</div><div className="cc-name">{c.name}</div>{c.email && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>{c.email}</div>}{c.phone && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2.76h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l1.46-1.46a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>{c.phone}</div>}{c.city && <div className="cc-detail"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{c.city}{c.postcode ? `, ${c.postcode}` : ""}</div>}{c.vat_number && <div style={{ marginTop: 10 }}><span className="tag">VAT: {c.vat_number}</span></div>}</div>)}
-        {filtered.length === 0 && <div style={{ padding: 48, textAlign: "center", color: "var(--text3)", gridColumn: "1/-1" }}>No {tab}s yet — add your first one!</div>}
+        <div style={{ display:"flex", gap:5 }}>
+          {[["all","All"],["has-email","Has Email"],["no-email","No Email"]].map(([v,l]) => (
+            <div key={v} onClick={() => setContactFilter(v)}
+              style={{ padding:"6px 12px", borderRadius:20, fontSize:11, fontWeight:500, cursor:"pointer", background:contactFilter===v?"#2563eb":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#2563eb":"var(--border)"), transition:"all .12s" }}>
+              {l}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ fontSize:11, color:"#94a3b8" }}>Sort</span>
+          <select value={contactView} onChange={e => setContactView(e.target.value === "list" ? "list" : "grid")}
+            style={{ padding:"6px 10px", borderRadius:7, border:"1.5px solid var(--border)", fontSize:11, color:"var(--text2)", background:"var(--white)", outline:"none", cursor:"pointer", fontFamily:"var(--sans)" }}>
+            <option value="grid">Grid view</option>
+            <option value="list">List view</option>
+          </select>
+        </div>
       </div>
+
+      {/* ── ADD / EDIT FORM ── */}
+      {showForm && (
+        <div className="card" style={{ margin:"12px 0", borderRadius:12, border:"1.5px solid var(--border)" }}>
+          <div className="ch"><div className="ct">{editingContact ? "Edit Contact" : "New Contact"}</div></div>
+          <div className="fg">
+            <div className="fgrp"><label>Type</label><select value={f.type} onChange={e => setF({ ...f, type: e.target.value })}><option value="customer">Customer</option><option value="supplier">Supplier</option><option value="both">Both</option></select></div>
+            <div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div>
+            <div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div>
+            <div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div>
+            <div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div>
+            <div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div>
+            <div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div>
+            <div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div>
+          </div>
+          <div className="ff">
+            <button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type:"customer", name:"", email:"", phone:"", address:"", city:"", postcode:"", vat_number:"", notes:"" }); }}>Cancel</button>
+            <button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editingContact ? "Update Contact" : "Save Contact"}</button>
+          </div>
+        </div>
       )}
+
+      {/* ── PREMIUM TABLE ROWS ── */}
+      {(() => {
+        const avatarBg = (name) => ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f97316","#84cc16","#ec4899","#14b8a6"][name?.charCodeAt(0) % 10] || "#6366f1";
+        const custInvMap = {};
+        (invoices||[]).forEach(inv => {
+          if (!custInvMap[inv.customer]) custInvMap[inv.customer] = { count:0, revenue:0, outstanding:0 };
+          custInvMap[inv.customer].count++;
+          custInvMap[inv.customer].revenue += parseFloat(inv.amount||0);
+          custInvMap[inv.customer].outstanding += parseFloat(inv.balance||inv.amount||0) * (inv.status!=="paid"?1:0);
+        });
+        const fmt = (n) => "£" + parseFloat(n).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+        const hasOverdue = (name) => (invoices||[]).some(i => i.customer===name && i.status==="overdue");
+        const isVIP = (name) => (custInvMap[name]?.revenue||0) > 10000;
+        return (
+          <>
+            {/* Column headers */}
+            <div style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, padding:"8px 12px", margin:"12px 0 4px" }}>
+              {["Customer","Contact","Location","Status","Revenue","Health",""].map((h,i) => (
+                <div key={i} style={{ fontSize:10, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".6px" }}>{h}</div>
+              ))}
+            </div>
+
+            {/* Customer rows */}
+            <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+              {filtered.map(c => {
+                const bg = avatarBg(c.name);
+                const ci = custInvMap[c.name] || { count:0, revenue:0, outstanding:0 };
+                const overdue = hasOverdue(c.name);
+                const vip = isVIP(c.name);
+                const health = ci.revenue > 0 ? Math.min(100, Math.round(((ci.revenue - ci.outstanding) / ci.revenue) * 100)) : 50;
+                const healthCol = health >= 75 ? "#16a34a" : health >= 45 ? "#d97706" : "#dc2626";
+                const statusBg = !c.email ? "#fef3c7" : overdue ? "#fee2e2" : "#dcfce7";
+                const statusText = !c.email ? "#92400e" : overdue ? "#991b1b" : "#15803d";
+                const statusDot = !c.email ? "#d97706" : overdue ? "#dc2626" : "#16a34a";
+                const statusLabel = !c.email ? "No Email" : overdue ? "Overdue" : "Active";
+                return (
+                  <div key={c.id} onClick={() => setViewContact(c)}
+                    style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, background:"var(--white)", borderRadius:11, border:"1.5px solid var(--border)", padding:"12px", alignItems:"center", cursor:"pointer", transition:"box-shadow .15s, border-color .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #2563eb"; e.currentTarget.style.borderColor="#2563eb"; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow=""; e.currentTarget.style.borderColor="var(--border)"; }}>
+
+                    {/* Customer */}
+                    <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                      <div style={{ width:36, height:36, borderRadius:10, background:bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:"#fff", flexShrink:0, boxShadow:`0 3px 8px ${bg}44` }}>
+                        {c.name?.[0]?.toUpperCase()}
+                      </div>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap" }}>
+                          <span style={{ fontSize:12, fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
+                          {vip && <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:20, background:"linear-gradient(135deg,#f59e0b,#ef4444)", color:"#fff" }}>VIP</span>}
+                          {overdue && <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:20, background:"#fee2e2", color:"#991b1b" }}>OVERDUE</span>}
+                        </div>
+                        <div style={{ fontSize:10, color:"#94a3b8", marginTop:1 }}>{ci.count > 0 ? `${ci.count} invoice${ci.count!==1?"s":""}` : "No invoices"}</div>
+                      </div>
+                    </div>
+
+                    {/* Contact */}
+                    <div>
+                      {c.email ? (
+                        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#64748b", overflow:"hidden" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                          <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.email}</span>
+                        </div>
+                      ) : (
+                        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#d97706" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                          No email
+                        </div>
+                      )}
+                      {c.phone && <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#94a3b8", marginTop:3 }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2.76h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l1.46-1.46a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {c.phone}
+                      </div>}
+                    </div>
+
+                    {/* Location */}
+                    <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#64748b" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.city || "—"}{c.postcode ? `, ${c.postcode}` : ""}</span>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <div style={{ display:"inline-flex", alignItems:"center", gap:4, background:statusBg, color:statusText, padding:"3px 9px", borderRadius:20, fontSize:10, fontWeight:600 }}>
+                        <div style={{ width:5, height:5, borderRadius:"50%", background:statusDot }} />
+                        {statusLabel}
+                      </div>
+                    </div>
+
+                    {/* Revenue */}
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:600, color:"var(--text)" }}>{ci.revenue > 0 ? fmt(ci.revenue) : "—"}</div>
+                      {ci.outstanding > 0 && <div style={{ fontSize:10, color:"#dc2626", marginTop:2 }}>{fmt(ci.outstanding)} due</div>}
+                    </div>
+
+                    {/* Health bar */}
+                    <div>
+                      {ci.revenue > 0 ? (
+                        <>
+                          <div style={{ fontSize:11, fontWeight:600, color:healthCol, marginBottom:3 }}>{health}<span style={{ fontSize:9, color:"#94a3b8", fontWeight:400 }}>/100</span></div>
+                          <div style={{ height:4, background:"#f1f5f9", borderRadius:4, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${health}%`, background:healthCol, borderRadius:4 }} />
+                          </div>
+                        </>
+                      ) : <span style={{ fontSize:11, color:"#94a3b8" }}>—</span>}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
+                      {[
+                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, label:"View", action:() => setViewContact(c) },
+                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label:"Edit", action:(e) => { e.stopPropagation(); setEditingContact(c); setF({type:c.type||"customer",name:c.name||"",email:c.email||"",phone:c.phone||"",address:c.address||"",city:c.city||"",postcode:c.postcode||"",vat_number:c.vat_number||"",notes:c.notes||""}); setShowForm(true); } },
+                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label:"Email", action:(e) => { e.stopPropagation(); if(c.email) window.open(`mailto:${c.email}`); } }
+                      ].map(({icon,label,action},idx) => (
+                        <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}
+                          style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color:"#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}
+                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#2563eb"; e.currentTarget.style.color="#2563eb"; e.currentTarget.style.background="#eff6ff"; }}
+                          onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="#64748b"; e.currentTarget.style.background="var(--white)"; }}>
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div style={{ padding:"48px 0", textAlign:"center", color:"#94a3b8" }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{margin:"0 auto 12px"}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <div style={{ fontSize:13, fontWeight:500, color:"#64748b", marginBottom:6 }}>No {tab}s found</div>
+                  <div style={{ fontSize:12, color:"#94a3b8" }}>Try adjusting your search or filters</div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer summary */}
+            {filtered.length > 0 && (
+              <div style={{ marginTop:14, paddingTop:12, borderTop:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span style={{ fontSize:11, color:"#94a3b8" }}>Showing {filtered.length} of {contacts.filter(c=>c.type===tab||c.type==="both").length} {tab}s</span>
+                <div style={{ display:"flex", gap:8 }}>
+                  {(() => {
+                    const totalRev = filtered.reduce((s,c) => s + (custInvMap[c.name]?.revenue||0), 0);
+                    const totalDue = filtered.reduce((s,c) => s + (custInvMap[c.name]?.outstanding||0), 0);
+                    return <>
+                      <span style={{ fontSize:11, fontWeight:500, color:"#15803d", background:"#dcfce7", padding:"3px 10px", borderRadius:20 }}>£{totalRev.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})} revenue</span>
+                      {totalDue > 0 && <span style={{ fontSize:11, fontWeight:500, color:"#991b1b", background:"#fee2e2", padding:"3px 10px", borderRadius:20 }}>£{totalDue.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})} outstanding</span>}
+                    </>;
+                  })()}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
