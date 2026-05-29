@@ -7374,7 +7374,7 @@ function OverpaymentModal({ inv, overpayment, outstandingInvoices, token, userId
                 ) : mode === "allocate" ? (
                   <>
                     <div style={{fontSize:12,color:"var(--text2)",marginBottom:12}}>Select which invoice to apply the £{overpayment.toFixed(2)} credit to:</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,maxHeight:320,overflowY:"auto",paddingRight:4}}>
                       {outstandingInvoices.map(oi => {
                         const owed = parseFloat(oi.amount) - parseFloat(oi.amount_paid||0);
                         const apply = Math.min(overpayment, owed);
