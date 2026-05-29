@@ -4469,7 +4469,7 @@ function CustomerStatement({ contacts, invoices, token }) {
     const statusColor = (s) => s === "paid" ? "#16a34a" : s === "overdue" ? "#dc2626" : s === "partial" ? "#d97706" : "#92400e";
     const rows = custInvoices.map(inv => {
       const amtPaid = parseFloat(inv.amount_paid || 0);
-      const bal = parseFloat(inv.balance != null ? inv.balance : inv.amount);
+      const bal = (inv.status === "paid") ? 0 : (inv.balance != null && parseFloat(inv.balance) > 0) ? parseFloat(inv.balance) : parseFloat(inv.amount || 0);
       const method = inv.payment_method || "";
       const methodIcon = method === "cash" ? "Cash" : method === "bank" ? "Bank Transfer" : method === "card" ? "Card" : method || "—";
       return "<tr>" +
@@ -4581,7 +4581,7 @@ function CustomerStatement({ contacts, invoices, token }) {
               <tbody>
                 {custInvoices.map(inv => {
                   const amtPaid = parseFloat(inv.amount_paid || 0);
-                  const balance = parseFloat(inv.balance != null ? inv.balance : inv.amount);
+                  const balance = (inv.status === "paid") ? 0 : (inv.balance != null && parseFloat(inv.balance) > 0) ? parseFloat(inv.balance) : parseFloat(inv.amount || 0);
                   const method = inv.payment_method;
                   const methodIcon = method === "cash" ? "💵" : method === "bank" ? "🏦" : method === "card" ? "💳" : method ? "📝" : null;
                   return (
