@@ -3011,6 +3011,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
   ].filter(Boolean).slice(0, 3);
 
   return (
+    <>
     <div>
       {/* ── Drill-down Modal ── */}
       {drill && (
@@ -3408,7 +3409,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
       }}
     />}
-  );
+  </>;
 }
 
 // ── INVOICES ──────────────────────────────────────────────────────────────────
