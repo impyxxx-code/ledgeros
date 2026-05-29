@@ -3409,7 +3409,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
       }}
     />}
-  </>;
+  </>);
 }
 
 // ── INVOICES ──────────────────────────────────────────────────────────────────
