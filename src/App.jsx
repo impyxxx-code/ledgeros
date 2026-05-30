@@ -2225,32 +2225,45 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     setSubmitted(true);
     if (!f.customer) return;
     setSaving(true);
-    const existing = await sb.get(token, "invoices", "select=invoice_number&order=invoice_number.desc&limit=1");
-    let nextNum = 1;
-    if (Array.isArray(existing) && existing.length > 0 && existing[0].invoice_number) {
-      const lastNum = parseInt(existing[0].invoice_number.replace("INV-", ""), 10);
-      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    // Safety net — if anything hangs >15s on mobile network, reset button
+    const saveTimeout = setTimeout(() => {
+      setSaving(false);
+      toast.error("Request timed out. Check your connection and try again.");
+    }, 15000);
+    try {
+      const existing = await sb.get(token, "invoices", "select=invoice_number&order=invoice_number.desc&limit=1");
+      let nextNum = 1;
+      if (Array.isArray(existing) && existing.length > 0 && existing[0].invoice_number) {
+        const lastNum = parseInt(existing[0].invoice_number.replace("INV-", ""), 10);
+        if (!isNaN(lastNum)) nextNum = lastNum + 1;
+      }
+      const invoice_number = `INV-${String(nextNum).padStart(4, "0")}`;
+      const inv = await sb.post(token, "invoices", {
+        customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || f.invoice_date || null,
+        status: f.status, notes: f.notes || null,
+        amount: total, subtotal, vat_total: vatTotal, balance: total, amount_paid: 0, invoice_number, created_by: userId,
+        lines: JSON.stringify(lines.filter(l => l.description && l.description.trim() !== ""))
+      });
+      if (inv && inv[0]) {
+        const fullInv = { ...inv[0], lines };
+        onSave(fullInv);
+        logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}`);
+        // Pre-fill DN fields from customer contact
+        const cust = contacts.find(c => c.name === f.customer);
+        setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));
+        setDnNotes(f.notes || "");
+        setSavedInvoice(fullInv);
+      } else {
+        const errMsg = inv?.message || inv?.error || inv?.msg || "Failed to save invoice";
+        toast.error(errMsg + ". Please try again.");
+      }
+    } catch (err) {
+      console.error("Invoice save error:", err);
+      toast.error("Network error — check your connection and try again.");
+    } finally {
+      clearTimeout(saveTimeout);
+      setSaving(false);
     }
-    const invoice_number = `INV-${String(nextNum).padStart(4, "0")}`;
-    const inv = await sb.post(token, "invoices", {
-      customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || f.invoice_date || null,
-      status: f.status, notes: f.notes || null,
-      amount: total, subtotal, vat_total: vatTotal, balance: total, amount_paid: 0, invoice_number, created_by: userId,
-      lines: JSON.stringify(lines.filter(l => l.description && l.description.trim() !== ""))
-    });
-    if (inv[0]) {
-      const fullInv = { ...inv[0], lines };
-      onSave(fullInv);
-      logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}`);
-      // Pre-fill DN fields from customer contact
-      const cust = contacts.find(c => c.name === f.customer);
-      setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));
-      setDnNotes(f.notes || "");
-      setSavedInvoice(fullInv);
-    } else {
-      toast.error("Failed to save invoice. Please try again.");
-    }
-    setSaving(false);
   };
 
   // Print the saved invoice as HTML download
