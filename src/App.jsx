@@ -1008,6 +1008,120 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .mob-nav{display:none!important}
 }
 
+/* ═══════════════════════════════════════════════════
+   MOBILE BLOCKER FIXES — v1.8
+   SCOPE: @media only — zero impact on desktop (769px+)
+   ═══════════════════════════════════════════════════ */
+
+/* BLOCKER 1 — Tablet nav dead zone (769px–1023px)
+   iPad Air / Galaxy Tab S9 had zero navigation.
+   Show sidebar on tablets, hide mob nav. */
+@media(min-width:769px) and (max-width:1023px){
+  .sidebar{display:flex!important;flex-direction:column;width:200px;flex-shrink:0}
+  .mob-nav{display:none!important}
+  .content{margin-left:0}
+}
+
+/* BLOCKER 2 — KPI strip clips on small phones (≤390px)
+   4th KPI card was invisible on iPhone SE.
+   Wrap to 2×2 grid. */
+@media(max-width:390px){
+  .kpi-strip,
+  [style*="grid-template-columns: repeat(4"],
+  [style*="gridTemplateColumns: "repeat(4"]{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .kpi{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+}
+
+/* BLOCKER 3 — Touch targets below 44px minimum
+   All interactive elements on mobile need min 44px height/width.
+   Covers filter pills, tabs, search input, buttons. */
+@media(max-width:768px){
+  /* Search input */
+  input[type="text"],input[type="search"],input[type="email"],
+  input[type="password"],input[type="number"],select,textarea{
+    min-height:44px!important;
+    font-size:16px!important; /* prevents iOS zoom on focus */
+    padding-top:10px!important;
+    padding-bottom:10px!important;
+  }
+  /* Filter tabs and pills */
+  .tab, [class*="filter-pill"], [class*="fpill"],
+  .ar2-tab, .ar2-group, .opt-c-tab, .opt-c-group-btn{
+    min-height:44px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+  }
+  /* All buttons */
+  button:not(.act-btn):not(.mob-nav-item):not(.signout-btn){
+    min-height:44px!important;
+  }
+  /* Checkbox wrapper — make tap zone bigger */
+  input[type="checkbox"]{
+    width:20px!important;
+    height:20px!important;
+    cursor:pointer;
+  }
+  /* KPI cards — make them tappable */
+  .kpi{min-height:44px}
+  /* Invoice filter tab row */
+  .il-line button, [class*="tab"] button{min-height:44px!important}
+}
+
+/* BLOCKER 4 — Table overflow on mobile
+   Tables extending past viewport. Force contained scroll. */
+@media(max-width:768px){
+  .tw{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;max-width:100vw!important}
+  table{min-width:unset!important}
+  /* Hide non-essential columns on very small screens */
+  .col-hide-mobile{display:none!important}
+}
+
+/* BLOCKER 5 — Ultra-wide screens (2560px+)
+   Content was stretching to fill full 3440px.
+   Max-width constraint on the layout. */
+@media(min-width:2560px){
+  .app-root, [class*="app-wrap"], body > div:first-child{
+    max-width:1800px;
+    margin:0 auto;
+  }
+}
+
+/* HIGH — Mobile invoice rows: show amount + status without tapping */
+@media(max-width:768px){
+  /* Make invoice table rows show key data */
+  td.mono{font-size:13px!important;font-weight:600!important}
+  /* Status badges always visible */
+  .badge{display:inline-flex!important}
+  /* Mob nav More drawer — increase item size */
+  .mob-more-item{min-height:60px!important;font-size:12px!important}
+}
+
+/* HIGH — Bottom nav improvements on small phones */
+@media(max-width:375px){
+  .mob-nav-lbl{font-size:8px!important;letter-spacing:0!important}
+  .mob-nav-item{padding:8px 2px 6px!important}
+}
+
+/* MEDIUM — Modal safe area on iPhone notch */
+@media(max-width:768px){
+  .modal-overlay{
+    padding-bottom:max(16px, env(safe-area-inset-bottom))!important;
+  }
+  .modal{
+    margin-bottom:env(safe-area-inset-bottom,0px)!important;
+  }
+  /* Mob nav safe area */
+  .mob-nav{
+    padding-bottom:max(8px, env(safe-area-inset-bottom))!important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   END MOBILE BLOCKER FIXES v1.8
+   ═══════════════════════════════════════════════════ */
+
 /* ── Toast Notifications ── */
 .toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .25s var(--ease);border:1px solid rgba(0,0,0,.06)}
