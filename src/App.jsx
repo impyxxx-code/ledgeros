@@ -2563,6 +2563,17 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         {!dnSaved && (
           <div style={{ padding: "24px 24px 20px" }}>
 
+            {/* ── Back to LedgerOS — prominent button ── */}
+            <button onClick={onClose} style={{ display:"flex", alignItems:"center", gap:8, width:"100%", background:"var(--bg)", border:"1.5px solid var(--border)", borderRadius:"var(--rl)", padding:"12px 16px", cursor:"pointer", fontFamily:"var(--sans)", marginBottom:16, transition:"all .15s" }}
+              onMouseEnter={e=>e.currentTarget.style.borderColor="var(--blue)"}
+              onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <div style={{ textAlign:"left" }}>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--blue)" }}>← Back to Invoices</div>
+                <div style={{ fontSize:11, color:"var(--text3)" }}>Return to the invoices list</div>
+              </div>
+            </button>
+
             {/* Step label */}
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 16 }}>Print Documents</div>
 
@@ -2715,7 +2726,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   if (mobView) return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:160 }}>
       {/* ── IMPROVED HEADER — dark, shows running total ── */}
-      <div style={{ background:"#0d1829", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:54, zIndex:50 }}>
+      <div style={{ background:"#0d1829", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:50, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"rgba(255,255,255,.5)" }} onClick={onClose}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -2730,8 +2741,8 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           <div style={{ fontSize:9, color:"rgba(255,255,255,.35)" }}>running total</div>
         </div>
       </div>
-      {/* Progress bar */}
-      <div style={{ height:3, background:"rgba(255,255,255,.06)", display:"flex", gap:2 }}>
+      {/* Progress bar — sticky so it stays visible */}
+      <div style={{ height:3, background:"rgba(0,0,0,.08)", display:"flex", gap:2, position:"sticky", top:98, zIndex:49 }}>
         <div style={{ flex:1, height:3, background: f.customer ? "#2563eb" : "rgba(255,255,255,.15)", transition:"background .3s" }} />
         <div style={{ flex:1, height:3, background: mobActiveLines.length > 0 ? "#2563eb" : "rgba(255,255,255,.1)", transition:"background .3s" }} />
       </div>
@@ -2810,17 +2821,17 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
               </div>
             </div>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"center", background:"var(--bg)", borderRadius:10, border:"1px solid var(--border)", overflow:"hidden" }}>
-                <button onClick={() => mobDec(i)} style={{ width:44, height:44, border:"none", background:"none", fontSize:22, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>−</button>
+              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <button onClick={() => mobDec(i)} style={{ width:44, height:44, border:"1.5px solid var(--border)", borderRadius:10, background:"var(--bg)", fontSize:22, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>−</button>
                 <input
                   type="number"
                   inputMode="numeric"
                   value={l.qty}
                   onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v > 0) { const nxt=[...lines]; nxt[i]={...nxt[i],qty:v}; setLines(nxt); } }}
                   onFocus={e => e.target.select()}
-                  style={{ width:52, textAlign:"center", fontSize:15, fontWeight:700, border:"none", background:"transparent", outline:"none", fontFamily:"var(--mono)", color:"var(--text)", padding:"0 2px", WebkitAppearance:"none", MozAppearance:"textfield" }}
+                  style={{ width:64, height:44, textAlign:"center", fontSize:16, fontWeight:700, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--white)", outline:"none", fontFamily:"var(--mono)", color:"var(--text)", padding:"0 4px", WebkitAppearance:"none", MozAppearance:"textfield" }}
                 />
-                <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"none", background:"none", fontSize:22, cursor:"pointer", color:"var(--blue)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>+</button>
+                <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--blue)", fontSize:22, cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>+</button>
               </div>
               <button onClick={() => mobRemoveLine(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
             </div>
