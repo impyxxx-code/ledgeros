@@ -996,23 +996,26 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .g4{grid-template-columns:repeat(2,1fr)!important}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tw table{min-width:600px}
-  /* ── Mobile invoice card rows — CSS only, no JSX changes ── */
+  /* ── Mobile invoice card rows — CSS only ── */
   .inv-thead th { display:none!important; }
-  .inv-tr td { display:none!important; padding:0!important; border:none!important; }
-  /* Show as card row */
-  .inv-tr { display:flex!important; align-items:center!important; padding:11px 14px!important; border-bottom:1px solid var(--border)!important; background:var(--white)!important; cursor:pointer!important; gap:10px!important; }
-  /* td3 = customer — show, flex-grow */
-  .inv-tr td:nth-child(3) { display:flex!important; align-items:center!important; flex:1!important; min-width:0!important; }
-  /* td6 = amount — show, right aligned */
-  .inv-tr td:nth-child(6) { display:block!important; text-align:right!important; flex-shrink:0!important; font-size:14px!important; font-weight:700!important; }
-  /* td7 = status badge — show */
+  .inv-tr td { display:none!important; padding:0!important; border:none!important; vertical-align:middle!important; }
+  .inv-tr { display:flex!important; align-items:center!important; padding:12px 14px!important; border-bottom:1px solid var(--border)!important; background:var(--white)!important; cursor:pointer!important; gap:8px!important; width:100%!important; }
+  /* td3 = customer name — takes up remaining space */
+  .inv-tr td:nth-child(3) { display:block!important; flex:1!important; min-width:0!important; overflow:hidden!important; text-overflow:ellipsis!important; white-space:nowrap!important; }
+  .inv-tr td:nth-child(3) > div { display:block!important; }
+  /* Hide avatar and email on mobile */
+  .inv-tr td:nth-child(3) .c-av { display:none!important; }
+  .inv-tr td:nth-child(3) > div > div:last-child { display:none!important; }
+  /* td6 = amount — right side */
+  .inv-tr td:nth-child(6) { display:block!important; flex-shrink:0!important; font-size:14px!important; font-weight:700!important; text-align:right!important; }
+  .inv-tr td:nth-child(6) .mono { font-size:14px!important; font-weight:700!important; }
+  /* Hide partial bar on mobile */
+  .inv-tr td:nth-child(6) > div > div:nth-child(2) { display:none!important; }
+  /* td7 = status badge */
   .inv-tr td:nth-child(7) { display:block!important; flex-shrink:0!important; }
-  /* Remove table min-width on mobile */
+  /* table full width */
   .tw table { min-width:unset!important; width:100%!important; }
-  /* Customer avatar — hide on mobile to save space */
-  .inv-tr .c-av { display:none!important; }
-  /* Customer name — no email shown on mobile */
-  .inv-tr td:nth-child(3) > div > div:nth-child(2) { display:none!important; }
+  .inv-thead { display:none!important; }
   .modal{width:95vw!important;max-width:95vw!important;margin:10px auto}
   .modal-overlay{padding:10px}
   input,select,textarea{font-size:16px!important}
