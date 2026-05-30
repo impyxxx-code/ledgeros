@@ -879,12 +879,12 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .mob-nav-inner{display:flex;width:100%;justify-content:space-around;align-items:stretch}
 .mob-nav-item{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  padding:10px 4px 8px;cursor:pointer;color:var(--text3);flex:1;min-width:0;
+  padding:10px 4px 8px;cursor:pointer;color:#475569;flex:1;min-width:0;
   transition:color .12s;font-size:10px;
 }
 .mob-nav-item.active{color:var(--blue)}
 .mob-nav-item i,.mob-nav-item svg{font-size:20px;width:20px;height:20px}
-.mob-nav-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.mob-nav-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569}
 
 /* ────────────────────────────────────
    RESPONSIVE
