@@ -7597,8 +7597,8 @@ export default function App() {
               <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
               {/* Header */}
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 18px 8px" }}>
-                <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>More</div>
-                <button onClick={() => setShowMobMore(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text3)", padding:4, fontSize:18, lineHeight:1 }}>✕</button>
+                <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>More</div>
+                <button onClick={() => setShowMobMore(false)} style={{ background:"#f1f5f9", border:"none", cursor:"pointer", color:"#475569", padding:"4px 8px", fontSize:14, lineHeight:1, borderRadius:6, fontWeight:600 }}>✕</button>
               </div>
               {/* Grouped nav sections */}
               {[
@@ -7614,14 +7614,14 @@ export default function App() {
                 if (!visItems.length) return null;
                 return (
                   <div key={group.label} style={{ padding:"0 12px", marginBottom:4 }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".7px", padding:"6px 6px 4px" }}>{group.label}</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:".7px", padding:"8px 6px 4px" }}>{group.label}</div>
                     <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:4 }}>
                       {visItems.map(n => (
                         <button key={n.id}
                           onClick={() => { setPage(n.id); setShowMobMore(false); }}
-                          style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"10px 4px", borderRadius:10, border:"1px solid "+(page===n.id?group.color:"var(--border)"), background:page===n.id?group.color+"15":"var(--bg)", cursor:"pointer", fontFamily:"var(--sans)", minHeight:64, gap:4 }}>
-                          <i className={"ti "+(n.icon||"ti-file")} style={{ fontSize:22, color:page===n.id?group.color:"var(--text2)" }} />
-                          <span style={{ fontSize:9, fontWeight:600, color:page===n.id?group.color:"var(--text3)", textAlign:"center", lineHeight:1.3, textTransform:"uppercase", letterSpacing:".3px" }}>{n.label}</span>
+                          style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"12px 6px", borderRadius:12, border:"1.5px solid "+(page===n.id?group.color:"#e2e8f0"), background:page===n.id?group.color+"18":"#f8fafc", cursor:"pointer", fontFamily:"var(--sans)", minHeight:72, gap:6 }}>
+                          <i className={"ti "+(n.icon||"ti-file")} style={{ fontSize:24, color:page===n.id?group.color:"#334155" }} />
+                          <span style={{ fontSize:10, fontWeight:700, color:page===n.id?group.color:"#334155", textAlign:"center", lineHeight:1.3, textTransform:"uppercase", letterSpacing:".3px" }}>{n.label}</span>
                         </button>
                       ))}
                     </div>
