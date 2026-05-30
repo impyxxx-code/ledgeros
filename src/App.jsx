@@ -2714,21 +2714,78 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
   if (mobView) return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:160 }}>
-      <div style={{ background:"var(--white)", borderBottom:"1px solid var(--border)", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:54, zIndex:50 }}>
+      {/* ── IMPROVED HEADER — dark, shows running total ── */}
+      <div style={{ background:"#0d1829", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:54, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"var(--text2)" }} onClick={onClose}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
-          <div><div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>New Invoice</div><div style={{ fontSize:11, color:"var(--text3)" }}>{mobActiveLines.length} item{mobActiveLines.length!==1?"s":""}</div></div>
+          <button style={{ background:"none", border:"none", padding:0, cursor:"pointer", color:"rgba(255,255,255,.5)" }} onClick={onClose}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <div>
+            <div style={{ fontSize:15, fontWeight:700, color:"#fff" }}>New Invoice</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.4)" }}>{mobActiveLines.length > 0 ? `${mobActiveLines.length} item${mobActiveLines.length!==1?"s":""}` : "Select customer & add products"}</div>
+          </div>
         </div>
-        <div style={{ fontSize:16, fontWeight:700, color:"var(--blue)" }}>{fmt(total)}</div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontSize:18, fontWeight:800, color:"#60a5fa", fontFamily:"var(--mono)" }}>{fmt(total)}</div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,.35)" }}>running total</div>
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div style={{ height:3, background:"rgba(255,255,255,.06)", display:"flex", gap:2 }}>
+        <div style={{ flex:1, height:3, background: f.customer ? "#2563eb" : "rgba(255,255,255,.15)", transition:"background .3s" }} />
+        <div style={{ flex:1, height:3, background: mobActiveLines.length > 0 ? "#2563eb" : "rgba(255,255,255,.1)", transition:"background .3s" }} />
       </div>
 
-      <div style={{ background:"var(--white)", margin:"12px 12px 0", borderRadius:"var(--rl)", padding:"14px 16px", border:"1px solid var(--border)" }}>
-        <div style={{ fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>Customer *</div>
-        <SearchDropdown placeholder="Search customers..." items={mobCusts} onSelect={c => setF({ ...f, customer: c.name })} />
-        {f.customer && <div style={{ marginTop:8, fontSize:13, fontWeight:600, color:"var(--green)", display:"flex", alignItems:"center", gap:6 }}><span style={{ fontSize:14 }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>{f.customer}</div>}
+      {/* ── CUSTOMER SECTION — with recent list ── */}
+      <div style={{ background:"var(--white)", margin:"10px 12px 0", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
+        <div style={{ padding:"10px 14px 0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Customer *</div>
+          {f.customer && <button onClick={() => setF({...f, customer:""})} style={{ background:"none", border:"none", fontSize:11, color:"var(--blue)", cursor:"pointer", fontWeight:600, padding:0 }}>Change</button>}
+        </div>
+        {f.customer ? (
+          <div style={{ padding:"10px 14px 12px", display:"flex", alignItems:"center", gap:10, background:"#f0fdf4" }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff", flexShrink:0 }}>{f.customer?.[0]?.toUpperCase()}</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{f.customer}</div>
+              <div style={{ fontSize:10, color:"var(--green)", fontWeight:500 }}>✓ Selected</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding:"8px 14px 12px" }}>
+            <SearchDropdown placeholder="Search customers..." items={mobCusts} onSelect={c => setF({ ...f, customer: c.name })} />
+            {/* Recent customers — quick tap */}
+            {mobCusts.length > 0 && (
+              <div style={{ marginTop:10 }}>
+                <div style={{ fontSize:9, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", marginBottom:6 }}>Recent</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  {mobCusts.slice(0, 4).map(c => (
+                    <button key={c.id} onClick={() => setF({...f, customer: c.name})} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", background:"var(--bg)", cursor:"pointer", textAlign:"left", fontFamily:"var(--sans)" }}>
+                      <div style={{ width:28, height:28, borderRadius:7, background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>{c.name?.[0]?.toUpperCase()}</div>
+                      <span style={{ fontSize:12, fontWeight:500, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div style={{ padding:"12px 12px 0" }}>
+      {/* ── DUE DATE — visible by default, not hidden ── */}
+      <div style={{ background:"var(--white)", margin:"8px 12px 0", borderRadius:"var(--rl)", border:"1px solid var(--border)", padding:"10px 14px 12px" }}>
+        <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>Due Date</div>
+        <div style={{ display:"flex", gap:5, marginBottom:f.due_date ? 6 : 0 }}>
+          {[{label:"Today",days:0},{label:"7 days",days:7},{label:"14 days",days:14},{label:"30 days",days:30}].map(({label,days}) => {
+            const d = new Date(); d.setDate(d.getDate()+days);
+            const val = d.toISOString().split("T")[0];
+            const active = f.due_date === val;
+            return <button key={days} type="button" onClick={() => setF({...f, due_date: val})} style={{ flex:1, padding:"7px 2px", borderRadius:7, border:`1px solid ${active?"var(--blue)":"var(--border)"}`, background:active?"var(--blue)":"var(--white)", color:active?"#fff":"var(--text2)", fontSize:11, fontWeight:active?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{label}</button>;
+          })}
+        </div>
+        {f.due_date && <div style={{ fontSize:11, color:"var(--text3)", marginTop:4 }}>Due: {new Date(f.due_date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>}
+      </div>
+
+      <div style={{ margin:"0 12px", background:"var(--white)", borderRadius:"0 0 var(--rl) var(--rl)", border:"1px solid var(--border)", borderTop:"none" }}>
         {mobActiveLines.map((l, i) => (
           <div key={i} style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:10, border:"1px solid var(--border)", boxShadow:"var(--sh)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
@@ -2771,31 +2828,31 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
         ))}
       </div>
 
-      <div style={{ padding:"0 12px" }}>
-        <button onClick={() => setMobPickerOpen(true)} style={{ width:"100%", background:"var(--blue)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, boxShadow:"0 4px 14px rgba(37,99,235,.35)" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product
-        </button>
+      {/* ── ADD PRODUCT — compact, lives inside the products card ── */}
+      <div style={{ margin:"8px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
+        <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom: mobActiveLines.length > 0 ? "1px solid var(--border)" : "none" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Products {mobActiveLines.length > 0 ? `(${mobActiveLines.length})` : ""}</div>
+          <button onClick={() => setMobPickerOpen(true)} style={{ display:"flex", alignItems:"center", gap:5, background:"var(--blue)", border:"none", borderRadius:7, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--sans)" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product
+          </button>
+        </div>
+        {mobActiveLines.length === 0 && (
+          <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:12 }}>
+            <div style={{ fontSize:24, marginBottom:6 }}>📦</div>
+            <div style={{ fontWeight:500 }}>No products yet</div>
+            <div style={{ fontSize:11, marginTop:3 }}>Tap Add Product above to get started</div>
+          </div>
+        )}
       </div>
 
-      <details style={{ margin:"12px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
-        <summary style={{ padding:"14px 16px", fontSize:13, fontWeight:600, color:"var(--text2)", cursor:"pointer", listStyle:"none", display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ fontSize:14 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>Advanced Options
+      <details style={{ margin:"8px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
+        <summary style={{ padding:"12px 16px", fontSize:12, fontWeight:600, color:"var(--text2)", cursor:"pointer", listStyle:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+          <span>More options</span>
+          <span style={{ fontSize:10, color:"var(--text3)", fontWeight:400 }}>Status · Invoice date · Notes ▾</span>
         </summary>
         <div style={{ padding:"0 16px 16px", borderTop:"1px solid var(--border)" }}>
           <div style={{ marginTop:12 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Status</label><select className="il-input" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
           <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Invoice Date</label><input className="il-input" type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
-          <div style={{marginTop:10}}>
-            <label style={{fontSize:11,fontWeight:600,color:"var(--text3)",display:"block",marginBottom:4}}>Due Date</label>
-            <div style={{display:"flex",gap:5,marginBottom:6}}>
-              {[{label:"Today",days:0},{label:"7d",days:7},{label:"14d",days:14},{label:"30d",days:30}].map(({label,days})=>{
-                const d=new Date(); d.setDate(d.getDate()+days);
-                const val=d.toISOString().split("T")[0];
-                const active=f.due_date===val;
-                return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"4px 0",borderRadius:5,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
-              })}
-            </div>
-            <input className="il-input" type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} />
-          </div>
           <div style={{ marginTop:10 }}><label style={{ fontSize:11, fontWeight:600, color:"var(--text3)", display:"block", marginBottom:4 }}>Notes</label><input className="il-input" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
         </div>
       </details>
@@ -2805,7 +2862,13 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
           <span style={{ color:"var(--text2)" }}>{mobActiveLines.length} items · Subtotal {fmt(subtotal)}</span>
           <span style={{ color:"var(--text3)" }}>VAT {fmt(vatTotal)}</span>
         </div>
-        <button onClick={save} disabled={saving || !f.customer || !mobActiveLines.length} style={{ width:"100%", background:(!f.customer || !mobActiveLines.length) ? "var(--border2)" : "linear-gradient(135deg,#2563eb,#1d4ed8)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:"#fff", fontSize:16, fontWeight:700, cursor:(!f.customer || !mobActiveLines.length) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        {/* Hint when CTA is disabled */}
+        {(!f.customer || !mobActiveLines.length) && (
+          <div style={{ fontSize:11, color:"var(--text3)", textAlign:"center", marginBottom:6 }}>
+            {!f.customer ? "👆 Select a customer to continue" : "👆 Add at least one product"}
+          </div>
+        )}
+        <button onClick={save} disabled={saving || !f.customer || !mobActiveLines.length} style={{ width:"100%", background:(!f.customer || !mobActiveLines.length) ? "var(--border2)" : "linear-gradient(135deg,#2563eb,#1d4ed8)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:(!f.customer || !mobActiveLines.length) ? "var(--text3)" : "#fff", fontSize:16, fontWeight:700, cursor:(!f.customer || !mobActiveLines.length) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:(!f.customer || !mobActiveLines.length) ? "none" : "0 4px 14px rgba(37,99,235,.35)" }}>
           <span>{saving ? "Creating..." : "Create Invoice"}</span>
           <span style={{ fontSize:18, fontWeight:800 }}>{fmt(total)}</span>
         </button>
