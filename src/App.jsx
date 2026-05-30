@@ -290,13 +290,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .logo-sub{font-size:10px;color:rgba(255,255,255,.28);margin-top:2px}
 
-.nav-section{margin-bottom:24px}
+.nav-section{margin-bottom:4px}
 .nav-label{
-  font-size:10px;font-weight:600;
-  color:rgba(255,255,255,.25);
-  text-transform:uppercase;letter-spacing:1.4px;
-  padding:0 12px 8px;
+  font-size:9px;font-weight:700;
+  color:rgba(255,255,255,.22);
+  text-transform:uppercase;letter-spacing:1.2px;
+  padding:14px 12px 5px;
+  display:flex;align-items:center;gap:8px;
 }
+.nav-label::after{content:'';flex:1;height:0.5px;background:rgba(255,255,255,.07);}
 
 .nav-item{
   display:flex;align-items:center;gap:10px;
@@ -6630,6 +6632,36 @@ const NAV_ICONS = {
   "banking":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
 };
 
+const NAV_GROUPS = [
+  {
+    label: "Sales",
+    items: [
+      { id: "invoices",     label: "Invoices" },
+      { id: "contacts",     label: "Customers" },
+      { id: "statement",    label: "Statements", adminOnly: true },
+      { id: "agent-report", label: "Agent Sales", adminOnly: true },
+    ]
+  },
+  {
+    label: "Operations",
+    items: [
+      { id: "inventory",      label: "Inventory" },
+      { id: "purchases",      label: "Purchases", adminOnly: true },
+      { id: "stock-adj",      label: "Stock In/Out", adminOnly: true },
+      { id: "delivery-notes", label: "Delivery Notes" },
+      { id: "import",         label: "Import", adminOnly: true },
+    ]
+  },
+  {
+    label: "Finance",
+    items: [
+      { id: "admin-reports", label: "Reports", adminOnly: true },
+      { id: "banking",       label: "Banking", adminOnly: true },
+      { id: "credits",       label: "Credits", adminOnly: true },
+    ]
+  },
+];
+
 const NAV = [
   { id: "dashboard", label: "Dashboard" },
   { id: "invoices", label: "Invoices" },
@@ -6947,14 +6979,37 @@ export default function App() {
               <div className="logo-sub">Arkham Retail Ltd</div>
             </div>
           </div>
-          <div className="nav-section">
-            <div className="nav-label">Main</div>
-            {NAV.slice(0,5).map(n => <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}{n.label}{n.id==="invoices"&&invoices.filter(i=>i.status==="overdue").length>0&&<span className="nav-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}</div>)}
+          {/* Dashboard — standalone */}
+          <div style={{margin:"8px 8px 4px"}}>
+            <div className={"nav-item "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>
+              {NAV_ICONS["dashboard"]}Dashboard
+            </div>
           </div>
-          <div className="nav-section">
-            <div className="nav-label">Finance</div>
-            {NAV.slice(5).filter(n => !n.adminOnly || profile?.role === "admin" || profile?.role === "manager").map(n => <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}{n.label}</div>)}
-          </div>
+          {/* Grouped nav sections */}
+          {NAV_GROUPS.map(group => {
+            const visibleItems = group.items.filter(n => !n.adminOnly || profile?.role === "admin" || profile?.role === "manager");
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.label} className="nav-section">
+                <div className="nav-label">{group.label}</div>
+                {visibleItems.map(n => (
+                  <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>
+                    {NAV_ICONS[n.id]}{n.label}
+                    {n.id==="invoices" && invoices.filter(i=>i.status==="overdue").length>0 &&
+                      <span className="nav-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          {/* Settings — standalone at bottom */}
+          {(profile?.role === "admin" || profile?.role === "manager") && (
+            <div style={{margin:"4px 8px"}}>
+              <div className={"nav-item "+(page==="settings"?"active":"")} onClick={() => setPage("settings")}>
+                {NAV_ICONS["settings"]}Settings
+              </div>
+            </div>
+          )}
           <div className="nav-bottom">
             {/* Dark mode + version */}
             <div style={{ padding: "6px 12px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
