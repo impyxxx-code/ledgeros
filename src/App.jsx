@@ -996,6 +996,23 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .g4{grid-template-columns:repeat(2,1fr)!important}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tw table{min-width:600px}
+  /* ── Mobile invoice card rows — CSS only, no JSX changes ── */
+  .inv-thead th { display:none!important; }
+  .inv-tr td { display:none!important; padding:0!important; border:none!important; }
+  /* Show as card row */
+  .inv-tr { display:flex!important; align-items:center!important; padding:11px 14px!important; border-bottom:1px solid var(--border)!important; background:var(--white)!important; cursor:pointer!important; gap:10px!important; }
+  /* td3 = customer — show, flex-grow */
+  .inv-tr td:nth-child(3) { display:flex!important; align-items:center!important; flex:1!important; min-width:0!important; }
+  /* td6 = amount — show, right aligned */
+  .inv-tr td:nth-child(6) { display:block!important; text-align:right!important; flex-shrink:0!important; font-size:14px!important; font-weight:700!important; }
+  /* td7 = status badge — show */
+  .inv-tr td:nth-child(7) { display:block!important; flex-shrink:0!important; }
+  /* Remove table min-width on mobile */
+  .tw table { min-width:unset!important; width:100%!important; }
+  /* Customer avatar — hide on mobile to save space */
+  .inv-tr .c-av { display:none!important; }
+  /* Customer name — no email shown on mobile */
+  .inv-tr td:nth-child(3) > div > div:nth-child(2) { display:none!important; }
   .modal{width:95vw!important;max-width:95vw!important;margin:10px auto}
   .modal-overlay{padding:10px}
   input,select,textarea{font-size:16px!important}
@@ -1111,6 +1128,11 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .badge{display:inline-flex!important}
   /* Mob nav More drawer — increase item size */
   .mob-more-item{min-height:60px!important;font-size:12px!important}
+  /* Hide desktop-only invoice columns on mobile */
+  .hm-actions{display:none!important}
+  /* Make invoice table full width on mobile */
+  .tw table{min-width:unset!important;width:100%!important;}
+  .inv-thead{display:none!important;}
 }
 
 /* HIGH — Bottom nav improvements on small phones */
@@ -4068,7 +4090,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
         ) : (
-        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:1000}}><thead><tr>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:1000}}><thead className="inv-thead"><tr>
           <th style={{width:36}}><input type="checkbox" checked={selectedIds.size===filtered.length&&filtered.length>0} onChange={()=>toggleSelectAll()} style={{accentColor:"var(--blue)"}} /></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
@@ -4081,8 +4103,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           <th style={{textAlign:"right"}}>Actions</th>
         </tr></thead><tbody>
           {filtered.map(inv => (
-            <tr key={inv.id}>
-              <td style={{width:36}}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={()=>toggleSelect(inv.id)} style={{accentColor:"var(--blue)"}} /></td>
+            <tr key={inv.id} className="inv-tr" onClick={() => setViewInvoice(inv)}>
+              <td style={{width:36}}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={e=>{e.stopPropagation();toggleSelect(inv.id);}} style={{accentColor:"var(--blue)"}} /></td>
               <td><span className="mono" style={{color:"var(--blue)",fontSize:12,fontWeight:600,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}} onClick={()=>setViewInvoice(inv)}>{inv.invoice_number}</span></td>
               <td>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -4133,7 +4155,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                 const r=fmtRelative(inv.updated_at||inv.created_at);
                 return <div style={{fontSize:11,color:"var(--text3)",lineHeight:1.5}}><div>{r.line1}</div><div>{r.line2}</div></div>;
               })()}</td>
-              <td>
+              <td style={{textAlign:"right",whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}}>
                   <button onClick={()=>setViewInvoice(inv)} title="View" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -7564,17 +7586,43 @@ export default function App() {
           </div>
         </nav>
         {showMobMore && (
-          <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.45)" }} onClick={() => setShowMobMore(false)}>
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", padding:"16px 0 32px", boxShadow:"0 -4px 24px rgba(0,0,0,.15)" }} onClick={e => e.stopPropagation()}>
-              <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"0 auto 16px" }} />
-              <div style={{ padding:"0 8px", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:4 }}>
-                {NAV.filter(n => !MOBILE_NAV.find(m => m.id===n.id) && (!n.adminOnly || profile?.role==="admin" || profile?.role==="manager")).map(n => (
-                  <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => { setPage(n.id); setShowMobMore(false); }} style={{ flexDirection:"column", padding:"10px 4px" }}>
-                    <i className={"ti "+n.icon} style={{fontSize:22}} />
-                    <span className="mob-nav-lbl" style={{marginTop:4,fontSize:9,textAlign:"center"}}>{n.label}</span>
-                  </div>
-                ))}
+          <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.5)" }} onClick={() => setShowMobMore(false)}>
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(24px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
+              {/* Handle */}
+              <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
+              {/* Header */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 18px 8px" }}>
+                <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>More</div>
+                <button onClick={() => setShowMobMore(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text3)", padding:4, fontSize:18, lineHeight:1 }}>✕</button>
               </div>
+              {/* Grouped nav sections */}
+              {[
+                { label:"Sales", color:"#2563eb", items:["statement","agent-report"] },
+                { label:"Operations", color:"#7c3aed", items:["purchases","stock-adj","delivery-notes","import"] },
+                { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
+                { label:"Settings", color:"#64748b", items:["settings"] },
+              ].map(group => {
+                const visItems = NAV.filter(n =>
+                  group.items.includes(n.id) &&
+                  (!n.adminOnly || profile?.role==="admin" || profile?.role==="manager")
+                );
+                if (!visItems.length) return null;
+                return (
+                  <div key={group.label} style={{ padding:"0 12px", marginBottom:4 }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".7px", padding:"6px 6px 4px" }}>{group.label}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:4 }}>
+                      {visItems.map(n => (
+                        <button key={n.id}
+                          onClick={() => { setPage(n.id); setShowMobMore(false); }}
+                          style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"10px 4px", borderRadius:10, border:"1px solid "+(page===n.id?group.color:"var(--border)"), background:page===n.id?group.color+"15":"var(--bg)", cursor:"pointer", fontFamily:"var(--sans)", minHeight:64, gap:4 }}>
+                          <i className={"ti "+(n.icon||"ti-file")} style={{ fontSize:22, color:page===n.id?group.color:"var(--text2)" }} />
+                          <span style={{ fontSize:9, fontWeight:600, color:page===n.id?group.color:"var(--text3)", textAlign:"center", lineHeight:1.3, textTransform:"uppercase", letterSpacing:".3px" }}>{n.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
