@@ -1035,7 +1035,6 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
     border-bottom:1px solid rgba(255,255,255,.08)!important;
   }
 }
-}
 
 /* BLOCKER 3 — Touch targets below 44px minimum
    All interactive elements on mobile need min 44px height/width.
