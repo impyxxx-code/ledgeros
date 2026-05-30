@@ -5506,55 +5506,58 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles, set
           );})}
         </div>
       </div>
-      {/* ── PREMIUM GROUPED TAB NAV — pure CSS hover, no inline style mutation ── */}
+      {/* ── 2-ROW TAB NAV (Option C) — group row + tab row, pure CSS ── */}
       <style>{`
-        .ar-nav { background: var(--white); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden; margin-bottom: 20px; }
-        .ar-nav-inner { display: flex; overflow-x: auto; }
-        .ar-group { display: flex; align-items: stretch; border-right: 1px solid var(--border); flex-shrink: 0; }
-        .ar-group:last-child { border-right: none; }
-        .ar-group-label { display: flex; align-items: center; justify-content: center; background: var(--bg); border-right: 1px solid var(--border); padding: 0 12px; min-width: 76px; flex-shrink: 0; }
-        .ar-group-label span { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; text-align: center; line-height: 1.4; white-space: nowrap; }
-        .ar-group-label.rev-active span { color: #2563eb; }
-        .ar-group-label.deb-active span { color: #dc2626; }
-        .ar-group-label.ops-active span { color: #7c3aed; }
-        .ar-tabs { display: flex; }
-        .ar-tab { padding: 11px 15px; border: none; font-size: 12px; font-weight: 400; cursor: pointer; font-family: var(--sans); white-space: nowrap; color: var(--text2); background: transparent; border-right: 1px solid var(--border); border-bottom: 2.5px solid transparent; transition: background .12s, color .12s; position: relative; }
-        .ar-tab:last-child { border-right: none; }
-        .ar-tab:hover { background: var(--bg); color: var(--text); }
-        .ar-tab.on-rev { color: #2563eb; font-weight: 600; border-bottom-color: #2563eb; background: #eff6ff08; }
-        .ar-tab.on-deb { color: #dc2626; font-weight: 600; border-bottom-color: #dc2626; background: #dc262608; }
-        .ar-tab.on-ops { color: #7c3aed; font-weight: 600; border-bottom-color: #7c3aed; background: #7c3aed08; }
-        .ar-tab .ar-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 10px; background: #fee2e2; color: #991b1b; margin-left: 4px; }
+        .ar2-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden; margin-bottom: 20px; }
+        .ar2-row1 { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+        .ar2-group { padding: 10px 20px; font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .7px; cursor: pointer; border-bottom: 2.5px solid transparent; border: none; background: none; font-family: var(--sans); display: flex; align-items: center; gap: 6px; transition: color .12s, background .12s; white-space: nowrap; }
+        .ar2-group:hover { color: var(--text); background: var(--border); }
+        .ar2-group.gr-rev { color: #2563eb; border-bottom: 2.5px solid #2563eb; background: #eff6ff; }
+        .ar2-group.gr-deb { color: #dc2626; border-bottom: 2.5px solid #dc2626; background: #fef2f2; }
+        .ar2-group.gr-ops { color: #7c3aed; border-bottom: 2.5px solid #7c3aed; background: #f5f3ff; }
+        .ar2-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: #fee2e2; color: #991b1b; }
+        .ar2-row2 { display: flex; background: var(--white); }
+        .ar2-tab { padding: 10px 16px; font-size: 12px; font-weight: 400; color: var(--text2); cursor: pointer; border: none; background: none; font-family: var(--sans); white-space: nowrap; border-bottom: 2px solid transparent; transition: color .12s, background .12s; }
+        .ar2-tab:hover { color: var(--text); background: var(--bg); }
+        .ar2-tab.on-rev { color: #2563eb; font-weight: 600; border-bottom-color: #2563eb; }
+        .ar2-tab.on-deb { color: #dc2626; font-weight: 600; border-bottom-color: #dc2626; }
+        .ar2-tab.on-ops { color: #7c3aed; font-weight: 600; border-bottom-color: #7c3aed; }
       `}</style>
-      <div className="ar-nav">
-        <div className="ar-nav-inner">
-          {(() => {
-            const groups = [
-              { label:"Revenue", color:"rev", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-              { label:"Debtors", color:"deb", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
-              { label:"Operations", color:"ops", tabs:[["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
-            ];
-            return groups.map((group) => {
-              const groupActive = group.tabs.some(([k]) => k === tab);
-              return (
-                <div key={group.label} className="ar-group">
-                  <div className={`ar-group-label${groupActive ? " "+group.color+"-active" : ""}`}>
-                    <span>{group.label}</span>
-                  </div>
-                  <div className="ar-tabs">
-                    {group.tabs.map(([k, l, badge]) => (
-                      <button key={k} className={`ar-tab${tab===k ? " on-"+group.color : ""}`} onClick={() => setTab(k)}>
-                        {l}
-                        {badge > 0 && <span className="ar-badge">{badge}</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            });
-          })()}
-        </div>
-      </div>
+      {(() => {
+        const groups = [
+          { label:"Revenue", key:"rev", icon:"💰", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
+          { label:"Debtors", key:"deb", icon:"⚠️", color:"#dc2626", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
+          { label:"Operations", key:"ops", icon:"⚙️", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+        ];
+        const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
+        return (
+          <div className="ar2-wrap">
+            {/* ROW 1 — group selector */}
+            <div className="ar2-row1">
+              {groups.map(g => (
+                <button key={g.key}
+                  className={`ar2-group${activeGroup.key===g.key ? " gr-"+g.key : ""}`}
+                  onClick={() => { const firstTab = g.tabs[0][0]; setTab(firstTab); }}>
+                  {g.icon} {g.label}
+                  {g.key==="deb" && invoices.filter(i=>i.status==="overdue").length > 0 &&
+                    <span className="ar2-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
+                </button>
+              ))}
+            </div>
+            {/* ROW 2 — tabs for active group only */}
+            <div className="ar2-row2">
+              {activeGroup.tabs.map(([k, l, badge]) => (
+                <button key={k}
+                  className={`ar2-tab${tab===k ? " on-"+activeGroup.key : ""}`}
+                  onClick={() => setTab(k)}>
+                  {l}
+                  {badge > 0 && <span className="ar2-badge" style={{marginLeft:4}}>{badge}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
       {tab==="overview" && <div>
         {/* Section header */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
