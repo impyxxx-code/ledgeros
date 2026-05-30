@@ -1025,13 +1025,16 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 /* BLOCKER 2 — KPI strip clips on small phones (≤390px)
    4th KPI card was invisible on iPhone SE.
    Wrap to 2×2 grid. */
-@media(max-width:390px){
-  .kpi-strip,
-  [style*="grid-template-columns: repeat(4"],
-  [style*="gridTemplateColumns: "repeat(4"]{
+@media(max-width:768px){
+  .kpi-strip{
     grid-template-columns:1fr 1fr!important;
+    overflow-x:visible!important;
   }
-  .kpi{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+  .kpi-strip .kpi{
+    border-right:none!important;
+    border-bottom:1px solid rgba(255,255,255,.08)!important;
+  }
+}
 }
 
 /* BLOCKER 3 — Touch targets below 44px minimum
@@ -3217,7 +3220,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           </div>
         </div>
         {/* KPI strip embedded in banner */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); } },
             { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); } },
@@ -3889,7 +3892,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           </div>
         </div>
         {/* Stats strip — clickable filters */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Paid", val: fmt(totals.paid), sub: `${invoices.filter(i=>i.status==="paid").length} invoices`, color: "#86efac", filter: "paid", accent: "#16a34a" },
             { label: "Pending", val: fmt(totals.pending + totals.partial), sub: `${invoices.filter(i=>i.status==="pending"||i.status==="partial").length} invoices`, color: "#fcd34d", filter: "pending|partial", accent: "#d97706" },
@@ -4315,7 +4318,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           </div>
         </div>
         {/* Stats strip */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Customers", val: contacts.filter(c => c.type === "customer" || c.type === "both").length, sub: "click to view", color: tab==="customer"?"#60a5fa":"rgba(255,255,255,.35)", accent: "#2563eb", filter: "all", tabSwitch: "customer" },
             { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#c4b5fd":"rgba(255,255,255,.35)", accent: "#7c3aed", filter: "all", tabSwitch: "supplier" },
@@ -4631,7 +4634,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
             )}
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#2563eb" },
             { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a" },
@@ -4740,7 +4743,7 @@ function Purchases({ contacts, products, token, userId }) {
           <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Purchase Orders</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Order stock from your suppliers</div></div>
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Total POs",val:pos.length,sub:"all orders",accent:"#2563eb"},{label:"Pending",val:pos.filter(p=>p.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Received",val:pos.filter(p=>p.status==="received").length,sub:"completed",accent:"#16a34a"},{label:"Total Value",val:fmt(pos.reduce((s,p)=>s+(parseFloat(p.total)||0),0)),sub:"all orders",accent:"#7c3aed"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -4790,7 +4793,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
           <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Credit Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Issue and apply credit notes</div></div>
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb"},{label:"Open",val:cns.filter(c=>c.status==="open").length,sub:"outstanding",accent:"#d97706"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -4827,7 +4830,7 @@ function Reports({ accounts }) {
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Financial Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Profit & Loss and Balance Sheet</div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Total Income",val:fmt(totalRev),sub:"revenue accounts",accent:"#16a34a"},{label:"Total Expenses",val:fmt(totalExp),sub:"expense accounts",accent:"#dc2626"},{label:"Net Profit",val:fmt(Math.abs(net)),sub:net>=0?"profit":"loss",accent:net>=0?"#16a34a":"#dc2626"},{label:"Accounts",val:accounts.length,sub:"chart of accounts",accent:"#2563eb"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -4969,7 +4972,7 @@ function CustomerStatement({ contacts, invoices, token }) {
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Customer Statements</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>View and share full account statements</div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"active accounts",accent:"#2563eb"},{label:"With Balance",val:contacts.filter(c=>invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"outstanding balance",accent:"#d97706"},{label:"Fully Paid",val:contacts.filter(c=>!invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"clear accounts",accent:"#16a34a"},{label:"Total Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"across all",accent:"#dc2626"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -5087,7 +5090,7 @@ function StockAdjustment({ products, setProducts, token }) {
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Stock Adjustment</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Quickly update stock levels from anywhere</div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Products",val:products.length,sub:"in catalogue",accent:"#2563eb"},{label:"Low Stock",val:products.filter(p=>p.stock_qty<=(p.reorder_level||5)).length,sub:"need restocking",accent:products.filter(p=>p.stock_qty<=(p.reorder_level||5)).length>0?"#dc2626":"#16a34a"},{label:"Stock Value",val:fmt(products.reduce((s,p)=>s+p.stock_qty*p.cost_price,0)),sub:"at cost price",accent:"#7c3aed"},{label:"Retail Value",val:fmt(products.reduce((s,p)=>s+p.stock_qty*p.sale_price,0)),sub:"at sale price",accent:"#16a34a"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -5153,7 +5156,7 @@ function AgentReport({ invoices, allProfiles, contacts }) {
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Sales by Agent</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Detailed agent performance breakdown</div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Active Agents",val:allProfiles.filter(p=>p.role==="agent").length,sub:"field sales team",accent:"#2563eb"},{label:"Total Invoices",val:invoices.length,sub:"raised by all agents",accent:"#7c3aed"},{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all agents combined",accent:"#16a34a"},{label:"Avg Per Agent",val:allProfiles.filter(p=>p.role==="agent").length>0?fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)/allProfiles.filter(p=>p.role==="agent").length):"—",sub:"revenue per agent",accent:"#d97706"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -5599,7 +5602,7 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles, set
           <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Admin Reports</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Comprehensive business analytics</div></div>
           <div style={{display:"flex",gap:6,background:"rgba(255,255,255,.08)",borderRadius:8,padding:4}}>{[["week","Week"],["month","Month"],["quarter","Quarter"],["year","Year"],["all","All"]].map(([k,l]) => <button key={k} style={{padding:"5px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--sans)",background:period===k?"#2563eb":"transparent",color:period===k?"#fff":"rgba(255,255,255,.5)",transition:"all .12s"}} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[
             {label:"Total Revenue",val:fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)),sub:"all time",accent:"#16a34a",filter:"all"},
             {label:"Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0)),sub:"unpaid invoices",accent:"#dc2626",filter:"overdue"},
@@ -6474,7 +6477,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
           <div><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Delivery Notes</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div></div>
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -8514,7 +8517,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
       <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Settings</div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Manage your LedgerOS configuration</div></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+        <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[
             { label: "Company", val: COMPANY.name, sub: "Arkham Retail Ltd", accent: "#2563eb" },
             { label: "VAT Number", val: COMPANY.vatNumber, sub: "registered", accent: "#7c3aed" },
