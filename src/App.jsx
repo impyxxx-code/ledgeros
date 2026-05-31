@@ -1008,6 +1008,9 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .dn-list-table thead th:nth-child(4),
   .dn-list-table tbody td:nth-child(3),
   .dn-list-table tbody td:nth-child(4) { display:none!important; }
+  /* Stock Adj table — hide Category on mobile */
+  .sa-table thead th:nth-child(2),
+  .sa-table tbody td:nth-child(2) { display:none!important; }
   /* Agent Report table — hide Date on mobile, keep Amount + Status */
   .ar-table thead th:nth-child(3),
   .ar-table tbody td:nth-child(3) { display:none!important; }
@@ -5323,7 +5326,7 @@ function StockAdjustment({ products, setProducts, token }) {
         <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--border)" }}>
           <input style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="🔍  Search products by name, SKU or category..." value={query} onChange={e => setQuery(e.target.value)} />
         </div>
-        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="sa-table" style={{minWidth:420}}><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
           {filtered.slice(0, 30).map(p => {
             const adj = adjustments[p.id] || "";
             const delta = parseInt(adj) || 0;
