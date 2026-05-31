@@ -1054,6 +1054,13 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   /* Purchases po-line — stack on mobile */
   .po-line { grid-template-columns:2fr 1fr 1fr 30px!important; }
   .po-line > *:nth-child(4) { display:none!important; }
+  /* Contacts search bar — mobile fixes */
+  .ct-hdr-search { display:none!important; }
+  .ct-search-bar { flex-wrap:wrap!important; padding:8px 12px!important; gap:6px!important; }
+  .ct-search-bar > div:first-child { max-width:100%!important; width:100%!important; order:1; }
+  .ct-search-bar > div:nth-child(2) { order:2; flex-wrap:wrap!important; gap:4px!important; }
+  .ct-search-bar > div:last-child { order:3; margin-left:0!important; }
+
   /* Contacts list — mobile card layout */
   .ct-list-header { display:none!important; }
   .ct-list-row { grid-template-columns:1fr auto!important; gap:8px!important; padding:10px 12px!important; }
@@ -4568,7 +4575,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ position: "relative" }}>
+            <div className="ct-hdr-search" style={{ position: "relative" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts..." style={{ paddingLeft: 29, paddingRight: contactSearch ? 28 : 10, height: 32, border: "1px solid rgba(255,255,255,.15)", borderRadius: 8, fontSize: 12, outline: "none", color: "rgba(255,255,255,.8)", background: "rgba(255,255,255,.07)", width: 180, fontFamily: "var(--sans)" }} />
               {contactSearch && <button onClick={() => setContactSearch("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", padding: 0 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
@@ -4633,7 +4640,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
       </div>
 
       {/* ── SEARCH + SORT BAR ── */}
-      <div style={{ background:"#fff", borderBottom:"1px solid var(--border)", padding:"9px 16px", display:"flex", alignItems:"center", gap:10 }}>
+      <div className="ct-search-bar" style={{ background:"#fff", borderBottom:"1px solid var(--border)", padding:"9px 16px", display:"flex", alignItems:"center", gap:10 }}>
         <div style={{ position:"relative", flex:1, maxWidth:300 }}>
           <svg style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"#94a3b8", pointerEvents:"none" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search name, city, email..."
