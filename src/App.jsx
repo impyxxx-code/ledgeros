@@ -996,6 +996,17 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .g4{grid-template-columns:repeat(2,1fr)!important}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tw table{min-width:600px}
+  /* ── Mobile agent leaderboard cards ── */
+  .lb-thead { display:none!important; }
+  .lb-tr { display:flex!important; align-items:center!important; padding:12px 14px!important; border-bottom:1px solid var(--border)!important; background:var(--white)!important; gap:10px!important; width:100%!important; }
+  .lb-tr td { display:none!important; padding:0!important; border:none!important; }
+  .lb-tr td:nth-child(1) { display:flex!important; align-items:center!important; justify-content:center!important; flex-shrink:0!important; width:30px!important; }
+  .lb-tr td:nth-child(2) { display:flex!important; align-items:center!important; flex:1!important; min-width:0!important; }
+  .lb-tr td:nth-child(2) > div > div:first-child { display:none!important; }
+  .lb-tr td:nth-child(2) > div > div:nth-child(2) > div:nth-child(2) { display:none!important; }
+  .lb-tr td:nth-child(4) { display:block!important; flex-shrink:0!important; font-size:14px!important; font-weight:700!important; text-align:right!important; white-space:nowrap!important; }
+  .lb-tr td:nth-child(6) { display:none!important; }
+
   /* ── Mobile invoice card rows — CSS only ── */
   .inv-thead th { display:none!important; }
   .inv-tr td { display:none!important; padding:0!important; border:none!important; vertical-align:middle!important; }
@@ -3614,7 +3625,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         </div>
         <div className="tw">
           <table>
-            <thead><tr><th>#</th><th>Agent</th><th className="hm">Invoices</th><th>Total Sales</th><th className="hm">Paid</th><th>Performance</th></tr></thead>
+            <thead className="lb-thead"><tr><th>#</th><th>Agent</th><th className="hm">Invoices</th><th>Total Sales</th><th className="hm">Paid</th><th>Performance</th></tr></thead>
             <tbody>
               {[...allProfiles].sort((a, b) =>
                 invoices.filter(i => i.created_by === b.id).reduce((s, i) => s + i.amount, 0) -
@@ -3627,7 +3638,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 const medals = ["🥇","🥈","🥉"];
                 const colors = ["#f59e0b","#9ca3af","#cd7f32"];
                 return (
-                  <tr key={agent.id}>
+                  <tr key={agent.id} className="lb-tr">
                     <td><span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color: colors[i] || "var(--text3)" }}>{medals[i] || i + 1}</span></td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
