@@ -1002,9 +1002,9 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .contact-modal { max-width:calc(100vw - 16px)!important; margin:8px!important; }
   /* Invoice action buttons — stack to 1 column on mobile */
   .inv-action-grid { grid-template-columns:1fr!important; }
-  /* Inventory table — hide Code column */
-  .inv-table thead th:nth-child(1),
-  .inv-table tbody td:nth-child(1) { display:none!important; }
+  /* Inventory table — hide Code column on mobile */
+  .inventory-table thead th:nth-child(1),
+  .inventory-table tbody td:nth-child(1) { display:none!important; }
   /* Contacts customer grid — 2 columns max */
   .cust-grid { grid-template-columns:1fr 1fr!important; }
   /* KPI strip on contacts/inventory pages */
@@ -4896,7 +4896,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
       <div className="card">
         {invSearch && <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{filtered.length} of {products.length} products</div>}
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-          <table className="inv-table" style={{minWidth:580}}>
+          <table className="inventory-table" style={{minWidth:580}}>
             <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
             <tbody>
               {filtered.map(p => {
