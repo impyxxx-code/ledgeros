@@ -1027,6 +1027,30 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .dn-list-table thead th:nth-child(4),
   .dn-list-table tbody td:nth-child(3),
   .dn-list-table tbody td:nth-child(4) { display:none!important; }
+  /* ── Sprint 2: Contact modal + Inventory + Purchases ── */
+  /* Contact modal — full width on mobile */
+  .contact-modal { max-width: calc(100vw - 16px)!important; width: 100%!important; margin: 8px!important; }
+  /* Contact modal KPI grid — 2×2 on mobile */
+  .ct-modal-kpi { grid-template-columns:1fr 1fr!important; gap:8px!important; }
+  /* Inventory table — hide Code and VAT on mobile */
+  .inventory-table thead th:nth-child(1),
+  .inventory-table tbody td:nth-child(1) { display:none!important; }
+  .inventory-table thead th:nth-child(6),
+  .inventory-table tbody td:nth-child(6) { display:none!important; }
+  /* Purchases po-line — stack on mobile */
+  .po-line { grid-template-columns:2fr 1fr 1fr 30px!important; }
+  .po-line > *:nth-child(4) { display:none!important; }
+  /* Contacts list — mobile card layout */
+  .ct-list-header { display:none!important; }
+  .ct-list-row { grid-template-columns:1fr auto!important; gap:8px!important; padding:10px 12px!important; }
+  /* Show: col1 (customer name+avatar) and col4 (status badge) only */
+  .ct-list-row > div:nth-child(2),
+  .ct-list-row > div:nth-child(3),
+  .ct-list-row > div:nth-child(5),
+  .ct-list-row > div:nth-child(6),
+  .ct-list-row > div:nth-child(7) { display:none!important; }
+  .ct-list-row > div:nth-child(4) { display:flex!important; align-items:center!important; justify-content:flex-end!important; }
+
   /* Stock Adj table — hide Category on mobile */
   .sa-table thead th:nth-child(2),
   .sa-table tbody td:nth-child(2) { display:none!important; }
@@ -4395,7 +4419,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
     <div>
       {viewContact && (
         <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
-          <div className="modal contact-modal" style={{ maxWidth: 620 }}>
+          <div className="modal contact-modal" style={{ maxWidth: 620, width: "100%" }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
                 <div style={{ width:44,height:44,borderRadius:"50%",background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
@@ -4417,7 +4441,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                   custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
-                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
+                    <div className="ct-modal-kpi" style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
                       {[{l:"Total Spend",v:fmt(totalSpend),c:"var(--blue)"},{l:"Invoices",v:custInvoices.length,c:"var(--text)"},{l:"Paid",v:fmt(paid),c:"var(--green)"},{l:"Outstanding",v:fmt(outstanding),c:outstanding>0?"var(--amber)":"var(--green)"}].map(k=>(
                         <div key={k.l} style={{ background:"#f8fafd",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"12px 14px" }}>
                           <div style={{ fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.l}</div>
@@ -4669,7 +4693,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         return (
           <>
             {/* Column headers */}
-            <div style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, padding:"8px 12px", margin:"12px 0 4px" }}>
+            <div className="ct-list-header" style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, padding:"8px 12px", margin:"12px 0 4px" }}>
               {["Customer","Contact","Location","Status","Revenue","Health",""].map((h,i) => (
                 <div key={i} style={{ fontSize:10, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".6px" }}>{h}</div>
               ))}
@@ -4689,7 +4713,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                 const statusDot = !c.email ? "#d97706" : overdue ? "#dc2626" : "#16a34a";
                 const statusLabel = !c.email ? "No Email" : overdue ? "Overdue" : "Active";
                 return (
-                  <div key={c.id} onClick={() => setViewContact(c)}
+                  <div key={c.id} className="ct-list-row" onClick={() => setViewContact(c)}
                     style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, background:"var(--white)", borderRadius:11, border:"1.5px solid var(--border)", padding:"12px", alignItems:"center", cursor:"pointer", transition:"box-shadow .15s, border-color .15s" }}
                     onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #2563eb"; e.currentTarget.style.borderColor="#2563eb"; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow=""; e.currentTarget.style.borderColor="var(--border)"; }}>
@@ -4896,7 +4920,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
       <div className="card">
         {invSearch && <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{filtered.length} of {products.length} products</div>}
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-          <table className="inventory-table" style={{minWidth:580}}>
+          <table className="inventory-table" style={{minWidth:480}}>
             <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
             <tbody>
               {filtered.map(p => {
