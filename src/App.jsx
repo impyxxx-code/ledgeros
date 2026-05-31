@@ -4344,23 +4344,14 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
   const [custOutstanding, setCustOutstanding] = useState(null);
-  // When an agent opens a customer, fetch ALL invoices for that customer
-  // so Outstanding reflects the real total balance, not just the agent's own invoices
+  // Read total_outstanding from contacts table (kept up to date by DB trigger)
+  // This works for both admins and agents — agents can read contact records via RLS
   useEffect(() => {
-    const isAgent = profile?.role !== 'admin' && profile?.role !== 'manager';
-    if (!viewContact?.name || !isAgent) { setCustOutstanding(null); return; }
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const sbUrl = import.meta.env.VITE_SUPABASE_URL;
-    fetch(`${sbUrl}/rest/v1/invoices?customer=eq.${encodeURIComponent(viewContact.name)}&select=balance,amount,status`, {
-      headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + (auth?.token || anonKey) }
-    }).then(r => r.json()).then(data => {
-      if (Array.isArray(data)) {
-        const total = data.filter(i => i.status === 'pending' || i.status === 'overdue' || i.status === 'partial')
-          .reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0);
-        setCustOutstanding(total);
-      }
-    }).catch(() => setCustOutstanding(null));
-  }, [viewContact?.name, profile?.role]);
+    if (!viewContact?.id) { setCustOutstanding(null); return; }
+    // contacts.total_outstanding is maintained by a Postgres trigger on invoices
+    // — fires automatically on every INSERT/UPDATE/DELETE to invoices
+    setCustOutstanding(parseFloat(viewContact.total_outstanding || 0));
+  }, [viewContact?.id, viewContact?.total_outstanding]);
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
