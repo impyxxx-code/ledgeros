@@ -997,6 +997,25 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tw table{min-width:600px}
   /* ── Mobile agent leaderboard cards ── */
+  /* ── Sprint 2: Modal, grid, and button fixes ── */
+  /* Contact modal — full width on mobile */
+  .contact-modal { max-width:calc(100vw - 16px)!important; margin:8px!important; }
+  /* Invoice action buttons — stack to 1 column on mobile */
+  .inv-action-grid { grid-template-columns:1fr!important; }
+  /* Inventory table — hide Code column */
+  .inv-table thead th:nth-child(1),
+  .inv-table tbody td:nth-child(1) { display:none!important; }
+  /* Contacts customer grid — 2 columns max */
+  .cust-grid { grid-template-columns:1fr 1fr!important; }
+  /* KPI strip on contacts/inventory pages */
+  .kpi-strip { grid-template-columns:1fr 1fr!important; }
+  /* Modals — ensure they fit on mobile screen */
+  .modal { max-height:90vh!important; overflow-y:auto!important; }
+  .modal-overlay { padding:8px!important; }
+  /* Contact modal — full width centered */
+  .contact-modal { border-radius:16px!important; width:calc(100vw - 16px)!important; }
+  /* Purchase form — stack fields */
+  .purchase-form-grid { grid-template-columns:1fr!important; }
   /* ── Sprint 1: Table mobile fixes ── */
   /* Stock Adj — hide non-essential columns */
   .tw table { min-width:unset!important; }
@@ -2147,7 +2166,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             {/* Print & Share */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>Print & Share</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div className="inv-action-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 {[
                   { label: "Print Invoice", color: "var(--blue)", bg: "var(--blue-lt)", onClick: handlePrint,
                     svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> },
@@ -4376,7 +4395,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
     <div>
       {viewContact && (
         <ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewContact(null)}>
-          <div className="modal" style={{ maxWidth: 620 }}>
+          <div className="modal contact-modal" style={{ maxWidth: 620 }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
                 <div style={{ width:44,height:44,borderRadius:"50%",background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
@@ -4877,7 +4896,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
       <div className="card">
         {invSearch && <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{filtered.length} of {products.length} products</div>}
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-          <table style={{minWidth:580}}>
+          <table className="inv-table" style={{minWidth:580}}>
             <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
             <tbody>
               {filtered.map(p => {
