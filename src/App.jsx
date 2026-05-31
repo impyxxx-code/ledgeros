@@ -1008,15 +1008,13 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .dn-list-table thead th:nth-child(4),
   .dn-list-table tbody td:nth-child(3),
   .dn-list-table tbody td:nth-child(4) { display:none!important; }
-  /* Agent Report table — hide less important cols */
+  /* Agent Report table — hide Date on mobile, keep Amount + Status */
   .ar-table thead th:nth-child(3),
-  .ar-table thead th:nth-child(4),
-  .ar-table tbody td:nth-child(3),
-  .ar-table tbody td:nth-child(4) { display:none!important; }
-  /* Credits table — hide less important cols */
-  .cr-table thead th:nth-child(4),
+  .ar-table tbody td:nth-child(3) { display:none!important; }
+  /* Credits table — hide Date and Reason on mobile, keep Amount + Status */
+  .cr-table thead th:nth-child(3),
   .cr-table thead th:nth-child(5),
-  .cr-table tbody td:nth-child(4),
+  .cr-table tbody td:nth-child(3),
   .cr-table tbody td:nth-child(5) { display:none!important; }
   .lb-thead { display:none!important; }
   .lb-tr { display:flex!important; align-items:center!important; padding:12px 14px!important; border-bottom:1px solid var(--border)!important; background:var(--white)!important; gap:10px!important; width:100%!important; }
