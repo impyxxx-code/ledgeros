@@ -4343,15 +4343,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
-  const [custOutstanding, setCustOutstanding] = useState(null);
-  // Read total_outstanding from contacts table (kept up to date by DB trigger)
-  // This works for both admins and agents — agents can read contact records via RLS
-  useEffect(() => {
-    if (!viewContact?.id) { setCustOutstanding(null); return; }
-    // contacts.total_outstanding is maintained by a Postgres trigger on invoices
-    // — fires automatically on every INSERT/UPDATE/DELETE to invoices
-    setCustOutstanding(parseFloat(viewContact.total_outstanding || 0));
-  }, [viewContact?.id, viewContact?.total_outstanding]);
+  const [custOutstanding, setCustOutstanding] = useState(null); // kept for legacy compat
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -4439,11 +4431,15 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
               {/* KPI row */}
               {(() => {
                 const custInvoices = invoices.filter(i => i.customer === viewContact.name);
-                const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
-                const paid = custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-                // Use custOutstanding state (fetched at viewContact level for agents)
-                const outstanding = (custOutstanding !== null) ? custOutstanding :
-                  custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+                // Use DB trigger columns for all 3 financial KPIs — accurate across ALL agents
+                // Falls back to local calculation for admins who see all invoices anyway
+                const hasDbValues = viewContact.total_revenue != null;
+                const totalSpend = hasDbValues ? parseFloat(viewContact.total_revenue||0)
+                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
+                const paid = hasDbValues ? parseFloat(viewContact.total_paid||0)
+                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+                const outstanding = hasDbValues ? parseFloat(viewContact.total_outstanding||0)
+                  : custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div className="ct-modal-kpi" style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
