@@ -4299,7 +4299,18 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                 const custInvoices = invoices.filter(i => i.customer === viewContact.name);
                 const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
                 const paid = custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+                // For agents: fetch ALL invoices for this customer (not just their own)
+                // so Outstanding shows the real total balance, not just their invoices
+                const isAgent = profile?.role !== "admin" && profile?.role !== "manager";
+                const [custAllInvoices, setCustAllInvoices] = React.useState(null);
+                React.useEffect(() => {
+                  if (!isAgent || !viewContact?.name || !auth?.token) { setCustAllInvoices(null); return; }
+                  sb.get(auth.token, "invoices", `customer=eq.${encodeURIComponent(viewContact.name)}&select=balance,amount,status`)
+                    .then(data => { if (Array.isArray(data)) setCustAllInvoices(data); })
+                    .catch(() => {});
+                }, [viewContact?.name, isAgent]);
+                const outstandingSource = isAgent && custAllInvoices ? custAllInvoices : custInvoices;
+                const outstanding = outstandingSource.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
