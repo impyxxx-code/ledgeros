@@ -4264,6 +4264,24 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
+  const [custOutstanding, setCustOutstanding] = useState(null);
+  // When an agent opens a customer, fetch ALL invoices for that customer
+  // so Outstanding reflects the real total balance, not just the agent's own invoices
+  useEffect(() => {
+    const isAgent = profile?.role !== 'admin' && profile?.role !== 'manager';
+    if (!viewContact?.name || !isAgent) { setCustOutstanding(null); return; }
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const sbUrl = import.meta.env.VITE_SUPABASE_URL;
+    fetch(`${sbUrl}/rest/v1/invoices?customer=eq.${encodeURIComponent(viewContact.name)}&select=balance,amount,status`, {
+      headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + (auth?.token || anonKey) }
+    }).then(r => r.json()).then(data => {
+      if (Array.isArray(data)) {
+        const total = data.filter(i => i.status === 'pending' || i.status === 'overdue' || i.status === 'partial')
+          .reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0);
+        setCustOutstanding(total);
+      }
+    }).catch(() => setCustOutstanding(null));
+  }, [viewContact?.name, profile?.role]);
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -4353,18 +4371,9 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                 const custInvoices = invoices.filter(i => i.customer === viewContact.name);
                 const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
                 const paid = custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-                // Agents only load their own invoices — fetch ALL invoices for this customer
-                // so Outstanding shows the real total balance, not just their own invoices
-                const isAgent = profile?.role !== "admin" && profile?.role !== "manager";
-                const [custAllInvoices, setCustAllInvoices] = React.useState(null);
-                React.useEffect(() => {
-                  if (!isAgent || !viewContact?.name || !auth?.token) { setCustAllInvoices(null); return; }
-                  supabase.from("invoices").select("balance,amount,status").eq("customer", viewContact.name)
-                    .then(({data}) => { if (data) setCustAllInvoices(data); })
-                    .catch(() => {});
-                }, [viewContact?.name, isAgent]);
-                const outstandingSource = isAgent && custAllInvoices ? custAllInvoices : custInvoices;
-                const outstanding = outstandingSource.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+                // Use custOutstanding state (fetched at viewContact level for agents)
+                const outstanding = (custOutstanding !== null) ? custOutstanding :
+                  custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
