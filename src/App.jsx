@@ -1059,9 +1059,42 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
    4th KPI card was invisible on iPhone SE.
    Wrap to 2×2 grid. */
 @media(max-width:768px){
+  /* ── KPI strip — mobile 2×2 premium cards ── */
   .kpi-strip{
     grid-template-columns:1fr 1fr!important;
-    overflow-x:visible!important;
+    gap:0!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+    border:1px solid rgba(255,255,255,.1)!important;
+    box-shadow:0 4px 24px rgba(0,0,0,.25)!important;
+  }
+  .kpi-strip > div{
+    border-radius:0!important;
+    border:none!important;
+    border-right:1px solid rgba(255,255,255,.08)!important;
+    border-bottom:1px solid rgba(255,255,255,.08)!important;
+    padding:16px 14px!important;
+    min-height:90px!important;
+    position:relative!important;
+    overflow:hidden!important;
+  }
+  .kpi-strip > div:nth-child(2){ border-right:none!important; }
+  .kpi-strip > div:nth-child(3){ border-bottom:none!important; }
+  .kpi-strip > div:nth-child(4){ border-right:none!important; border-bottom:none!important; }
+  .kpi-strip > div > div:first-child{
+    font-size:9px!important;
+    letter-spacing:.8px!important;
+    margin-bottom:6px!important;
+  }
+  .kpi-strip > div > div:nth-child(2){
+    font-size:20px!important;
+    font-weight:800!important;
+    letter-spacing:-.5px!important;
+    margin-bottom:4px!important;
+  }
+  .kpi-strip > div > div:nth-child(3){
+    font-size:10px!important;
+    line-height:1.3!important;
   }
   /* Mobile invoice form — customer search visibility fix */
   .mob-customer-search input{
@@ -1075,10 +1108,6 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .mob-customer-search input:focus{
     border-color:var(--blue)!important;
     box-shadow:0 0 0 3px rgba(37,99,235,.15)!important;
-  }
-  .kpi-strip .kpi{
-    border-right:none!important;
-    border-bottom:1px solid rgba(255,255,255,.08)!important;
   }
 }
 
@@ -1112,9 +1141,23 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
     cursor:pointer;
   }
   /* KPI cards — make them tappable */
-  .kpi{min-height:44px}
+  .kpi{min-height:80px!important;padding:14px!important}
+  .kpi-val{font-size:20px!important;letter-spacing:-.5px!important}
+  .kpi-label{font-size:11px!important}
+  .kpi-icon{width:32px!important;height:32px!important}
+  .kgrid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  /* Stat pills — 2 col on mobile */
+  .stat-pills-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
   /* Invoice filter tab row */
   .il-line button, [class*="tab"] button{min-height:44px!important}
+  /* Dashboard header — hide quick action buttons on mobile, show below */
+  .dash-quick-actions{flex-wrap:wrap!important;gap:6px!important}
+  .dash-quick-actions button{padding:8px 12px!important;font-size:12px!important;min-height:40px!important;flex:1!important;justify-content:center!important}
+  /* Dashboard greeting smaller on mobile */
+  .dash-greeting{font-size:16px!important}
+  /* Stat pills label smaller */
+  .stat-pills-grid > div > div > div:first-child{font-size:10px!important}
+  .stat-pills-grid > div > div > div:nth-child(2){font-size:14px!important}
 }
 
 /* BLOCKER 4 — Table overflow on mobile
