@@ -1027,6 +1027,20 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .dn-list-table thead th:nth-child(4),
   .dn-list-table tbody td:nth-child(3),
   .dn-list-table tbody td:nth-child(4) { display:none!important; }
+  /* ── Sprint 3: Polish fixes ── */
+  /* Settings company info — 1-col on mobile */
+  .settings-info-grid { grid-template-columns:1fr!important; gap:10px!important; }
+  /* Page section headers — smaller on mobile */
+  .ph { font-size:14px!important; }
+  .cs { font-size:11px!important; }
+  /* Invoice filter tabs — allow wrap */
+  .inv-tabs { flex-wrap:wrap!important; gap:4px!important; }
+  /* Dashboard stat pills row — horizontal scroll if needed */
+  .kpi-strip { overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; }
+  /* Action button groups — wrap on mobile */
+  .quick-actions { flex-wrap:wrap!important; gap:6px!important; }
+  .qa-btn { flex:1 1 auto!important; min-width:80px!important; justify-content:center!important; }
+
   /* ── Sprint 2: Contact modal + Inventory + Purchases ── */
   /* Contact modal — full width on mobile */
   .contact-modal { max-width: calc(100vw - 16px)!important; width: 100%!important; margin: 8px!important; }
@@ -8847,7 +8861,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
       {activeTab==="company" && (
         <div className="card" style={{ padding:24 }}>
           <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+          <div className="settings-info-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
             {[{label:"Company Name",val:"Arkham Retail Ltd"},{label:"VAT Number",val:"GB462229106"},{label:"Address",val:"2 Fieldhead Street, Fieldhead Business Centre"},{label:"City",val:"Bradford, West Yorkshire BD7 1LW"},{label:"Phone",val:"07801 567209 / 07851 983151"},{label:"Email",val:"ARKHAMRETAIL@GMAIL.COM"},{label:"Bank",val:"Tide Bank"},{label:"Sort Code / Account",val:"04-06-05 / 23058246"}].map(f=>(
               <div key={f.label}><div style={{ fontSize:11,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:5 }}>{f.label}</div><div style={{ fontSize:14,fontWeight:600,color:"var(--text)",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--r)",padding:"10px 14px" }}>{f.val}</div></div>
             ))}
