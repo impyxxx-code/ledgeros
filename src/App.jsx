@@ -2415,8 +2415,23 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 
   const updateLine = (i, field, val) => {
     const next = [...lines];
-    if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, description: p?.name || "", unit_price: p?.sale_price || "", vat_rate: p?.vat_rate ?? 20, unit: p?.unit || "unit" }; }
-    else next[i] = { ...next[i], [field]: val };
+    if (field === "product_id") {
+      const p = products.find(x => x.id === val);
+      // Only set unit_price if the line doesn't already have a manually entered price
+      const existingPrice = next[i]?.unit_price;
+      const priceIsDefault = !existingPrice || existingPrice === "" || existingPrice === (next[i]?._lastAutoPrice);
+      next[i] = {
+        ...next[i],
+        product_id: val,
+        description: p?.name || "",
+        unit_price: priceIsDefault ? (p?.sale_price || "") : existingPrice,
+        _lastAutoPrice: p?.sale_price || "",
+        vat_rate: p?.vat_rate ?? 20,
+        unit: p?.unit || "unit"
+      };
+    } else {
+      next[i] = { ...next[i], [field]: val };
+    }
     setLines(next);
   };
 
@@ -3025,7 +3040,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             <div style={{ display:"flex", gap:8, marginBottom:10 }}>
               <div style={{ flex:1 }}>
                 <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>Unit Price £</label>
-                <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
+                <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value,_lastAutoPrice:null}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
               </div>
               <div style={{ width:100 }}>
                 <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>VAT Rate</label>
@@ -3198,7 +3213,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
             </div>
             <input type="number" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
             <div style={{ display:"flex",flexDirection:"column",gap:3 }}>
-              <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); }} />
+              <input type="number" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); updateLine(i, "_lastAutoPrice", null); }} />
               {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
             </div>
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
