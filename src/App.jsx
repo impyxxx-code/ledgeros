@@ -88,6 +88,16 @@ const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 
 const sb = {
   h: (t) => ({ "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}` }),
+  async refreshToken(refreshToken) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST", headers: sb.h(), body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      const data = await res.json();
+      if (data.access_token) return data;
+    } catch(e) {}
+    return null;
+  },
   async signIn(e, p) { return (await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p }) })).json(); },
   async signUp(e, p, n) {
     const d = await (await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: sb.h(), body: JSON.stringify({ email: e, password: p, data: { full_name: n } }) })).json();
@@ -105,9 +115,21 @@ const sb = {
   async updatePassword(t, password) {
     return (await fetch(`${SUPABASE_URL}/auth/v1/user`, { method: "PUT", headers: { ...sb.h(t), "Content-Type": "application/json" }, body: JSON.stringify({ password }) })).json();
   },
-  async get(t, table, q = "") { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) })).json(); },
-  async post(t, table, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
-  async patch(t, table, id, body) { return (await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) })).json(); },
+  async get(t, table, q = "") {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) });
+    if (res.status === 401) { window._jwtExpired = true; return []; }
+    return res.json();
+  },
+  async post(t, table, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) });
+    if (res.status === 401) { window._jwtExpired = true; return []; }
+    return res.json();
+  },
+  async patch(t, table, id, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(body) });
+    if (res.status === 401) { window._jwtExpired = true; return null; }
+    return res.json();
+  },
   async getPayments(t, invoiceId) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments?invoice_id=eq.${invoiceId}&order=created_at.asc`, { headers: sb.h(t) })).json(); },
   async addPayment(t, row) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(row) })).json(); },
   async getCredits(t, customer) { return (await fetch(`${SUPABASE_URL}/rest/v1/customer_credits?customer=eq.${encodeURIComponent(customer)}&order=created_at.desc`, { headers: sb.h(t) })).json(); },
@@ -1506,11 +1528,11 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
 // │ Auth                                                       │
 // │ Login / Signup page                                        │
 // └────────────────────────────────────────────────────────────┘
-function Auth({ onAuth }) {
+function Auth({ onAuth, sessionExpired }) {
   const [mode, setMode] = useState("signin");
   const [f, setF] = useState({ email: "", password: "", full_name: "" });
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [err, setErr] = useState(sessionExpired ? "Your session has expired — please sign in again." : "");
   const [showPw, setShowPw] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(() => {
     const hash = window.location.hash;
@@ -1568,6 +1590,7 @@ function Auth({ onAuth }) {
           }
         } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
         logAudit(d.access_token, d.user.id, "user_login", "user", d.user.id, `${d.user.email} signed in`);
+        if (d.refresh_token) localStorage.setItem('ledgeros_rt', d.refresh_token);
         onAuth({ token: d.access_token, user: d.user });
       } else {
         setErr(d.msg || d.error_description || "Authentication failed.");
@@ -6631,7 +6654,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/invoices?customer=eq.${encodeURIComponent(dn.customer_name)}&status=in.(overdue,pending,partial)&order=invoice_date.asc&select=invoice_number,invoice_date,amount,amount_paid,balance,status`,
-        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${auth?.token || SUPABASE_ANON_KEY}` } }
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token || SUPABASE_ANON_KEY}` } }
       );
       const data = await res.json();
       if (Array.isArray(data)) overdueInvs = data;
@@ -7363,7 +7386,28 @@ export default function App() {
     };
   }, [auth]);
 
-  const signOut = async () => { await sb.signOut(auth.token); setAuth(null); };
+  const signOut = async () => { await sb.signOut(auth.token); localStorage.removeItem('ledgeros_rt'); setAuth(null); };
+
+  // Auto-refresh JWT when it expires — check every 30s, refresh using stored refresh token
+  useEffect(() => {
+    const checkAndRefresh = async () => {
+      if (!window._jwtExpired) return;
+      window._jwtExpired = false;
+      const rt = localStorage.getItem('ledgeros_rt');
+      if (!rt) { setAuth(null); return; } // no refresh token — force re-login
+      const refreshed = await sb.refreshToken(rt);
+      if (refreshed?.access_token) {
+        if (refreshed.refresh_token) localStorage.setItem('ledgeros_rt', refreshed.refresh_token);
+        setAuth(prev => ({ ...prev, token: refreshed.access_token }));
+      } else {
+        // Refresh failed — session truly expired
+        localStorage.removeItem('ledgeros_rt');
+        setAuth(null);
+      }
+    };
+    const interval = setInterval(checkAndRefresh, 10000); // check every 10s
+    return () => clearInterval(interval);
+  }, []);
 
   // Cmd+K global keyboard shortcut
   useEffect(() => {
@@ -7390,7 +7434,7 @@ export default function App() {
   }, [auth, loading]);
   const initials = (profile?.full_name||auth?.user?.email||"U")[0]?.toUpperCase();
 
-  if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} /></>;
+  if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} sessionExpired={!!localStorage.getItem('ledgeros_rt')} /></>;
 
   // ── Mobile PWA install banner rendered inline in JSX ──────────────────────
 
