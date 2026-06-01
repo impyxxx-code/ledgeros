@@ -7388,26 +7388,34 @@ export default function App() {
 
   const signOut = async () => { await sb.signOut(auth.token); localStorage.removeItem('ledgeros_rt'); setAuth(null); };
 
-  // Auto-refresh JWT when it expires — check every 30s, refresh using stored refresh token
+  // Auto-refresh JWT when a 401 is detected — runs once on mount
   useEffect(() => {
     const checkAndRefresh = async () => {
       if (!window._jwtExpired) return;
       window._jwtExpired = false;
       const rt = localStorage.getItem('ledgeros_rt');
-      if (!rt) { setAuth(null); return; } // no refresh token — force re-login
-      const refreshed = await sb.refreshToken(rt);
-      if (refreshed?.access_token) {
-        if (refreshed.refresh_token) localStorage.setItem('ledgeros_rt', refreshed.refresh_token);
-        setAuth(prev => ({ ...prev, token: refreshed.access_token }));
-      } else {
-        // Refresh failed — session truly expired
+      if (!rt) { localStorage.removeItem('ledgeros_rt'); window.location.reload(); return; }
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ refresh_token: rt })
+        });
+        const data = await res.json();
+        if (data?.access_token) {
+          if (data.refresh_token) localStorage.setItem('ledgeros_rt', data.refresh_token);
+          setAuth(prev => prev ? { ...prev, token: data.access_token } : prev);
+        } else {
+          localStorage.removeItem('ledgeros_rt');
+          window.location.reload();
+        }
+      } catch(e) {
         localStorage.removeItem('ledgeros_rt');
-        setAuth(null);
+        window.location.reload();
       }
     };
-    const interval = setInterval(checkAndRefresh, 10000); // check every 10s
+    const interval = setInterval(checkAndRefresh, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [auth]);
 
   // Cmd+K global keyboard shortcut
   useEffect(() => {
