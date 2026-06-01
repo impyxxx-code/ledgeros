@@ -1905,9 +1905,10 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
     setTimeout(() => { win.print(); }, 800);
   };
 
+  const shortName = (d) => { const s = d && d.includes(':') ? d.split(':').pop().trim() : (d || ''); return s.length > 22 ? s.slice(0,22)+'\u2026' : s; };
   const buildWaMsg = () => encodeURIComponent(
     `*VAT Invoice — ${COMPANY.name}*\n\nInvoice: *${invoice.invoice_number}*\nCustomer: ${invoice.customer}\nDate: ${fmtDate(invoice.invoice_date)}\nDue: ${fmtDate(invoice.due_date)}\n\n` +
-    lines.map(l => `$((d) => { const s = d.includes(':') ? d.split(':').pop().trim() : d; return s.length > 22 ? s.slice(0,22)+'…' : s; })(l.description) x${l.qty} — ${fmt(l.qty * l.unit_price)}`).join("\n") +
+    lines.map(l => `${shortName(l.description)} x${l.qty} — ${fmt(l.qty * l.unit_price)}`).join("\n") +
     `\n\nSubtotal: ${fmt(subtotal)}\nVAT: ${fmt(vatTotal)}\n*Total Due: ${fmt(total)}*\n\nPayment to:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAcc No: ${COMPANY.accountNumber}\nRef: ${invoice.invoice_number}\n\nThank you for your business! 🙏`
   );
 
@@ -2772,7 +2773,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
       (dn.driver ? `Driver: ${dn.driver}\n` : "") +
       (dn.delivery_address ? `Address: ${dn.delivery_address}\n` : "") +
       `\n*Items:*\n` +
-      dnLines.map(l => `• $((d) => { const s = d.includes(':') ? d.split(':').pop().trim() : d; return s.length > 22 ? s.slice(0,22)+'…' : s; })(l.description) — Qty: ${l.qty} ${l.unit || "unit"}`).join("\n") +
+      dnLines.map(l => { const s = l.description && l.description.includes(':') ? l.description.split(':').pop().trim() : (l.description || ''); const short = s.length > 22 ? s.slice(0,22)+'\u2026' : s; return `• ${short} — Qty: ${l.qty} ${l.unit || 'unit'}`; }).join("\n") +
       (dn.notes ? `\n\n📋 Instructions: ${dn.notes}` : "") +
       `\n\nPlease confirm receipt. Thank you! 🙏\n${COMPANY.phone}`
     );
