@@ -6621,18 +6621,21 @@ function DeliveryNotes({ contacts, products, token, userId }) {
   const printDN = async (dn) => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
 
-    // Fetch live overdue/pending invoices for this customer from Supabase
+    // Use contacts.total_outstanding (maintained by DB trigger) for the balance figure
+    // Then fetch the individual overdue invoices using the agent's own JWT — agents may
+    // only see their own invoices, but total_outstanding always reflects ALL invoices
+    const contactRecord = contacts.find(c => c.name === dn.customer_name);
+    const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
+
     let overdueInvs = [];
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/invoices?customer=eq.${encodeURIComponent(dn.customer_name)}&status=in.(overdue,pending,partial)&order=invoice_date.asc&select=invoice_number,invoice_date,amount,amount_paid,balance,status`,
-        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${auth?.token || SUPABASE_ANON_KEY}` } }
       );
       const data = await res.json();
       if (Array.isArray(data)) overdueInvs = data;
     } catch(e) { overdueInvs = []; }
-
-    const totalOutstanding = overdueInvs.reduce((s,i) => s + parseFloat(i.balance || i.amount || 0), 0);
     const fmt = v => '£' + parseFloat(v||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
     const daysSince = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
@@ -6647,7 +6650,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       pending: '<span class="pending-badge">Pending</span>',
     };
 
-    const overdueSection = overdueInvs.length > 0 ? `
+    const overdueSection = (overdueInvs.length > 0 || totalOutstanding > 0) ? `
       <div class="os-section">
         <div class="os-hdr">
           <div class="os-lbl">Outstanding account balance</div>
