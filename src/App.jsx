@@ -6650,6 +6650,11 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     const contactRecord = contacts.find(c => c.name === dn.customer_name);
     const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
 
+    // Open window IMMEDIATELY — before any await — so browser popup security allows it
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><title>${dn.dn_number||'Delivery Note'}</title><style>body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#64748b;font-size:14px}</style></head><body><div style="text-align:center"><div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div><div>Preparing delivery note...</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></body></html>`);
+
     let overdueInvs = [];
     try {
       const res = await fetch(
@@ -6762,8 +6767,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </div>
     </body></html>`;
 
-    const win = window.open('', '_blank');
-    if (!win) return;
+    win.document.open();
     win.document.write(html);
     win.document.close();
     win.focus();
