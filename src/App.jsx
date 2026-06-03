@@ -8258,8 +8258,8 @@ function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, 
       }).catch(e => console.error(e));
     }
 
-    await logAudit(token, userId, "bulk_payment", "customer", customer,
-      `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} dated ${payDate} — ${preview.allocs.length} invoice(s) updated`
+    await logAudit(token, userId, "bulk_payment", "customer", null,
+      `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} for ${customer} dated ${payDate} — ${preview.allocs.length} invoice(s) updated`
     );
 
     setSaving(false);
