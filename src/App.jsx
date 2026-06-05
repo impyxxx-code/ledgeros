@@ -244,6 +244,7 @@ const CSS = `
   --red:#ef4444;--red-lt:#fff1f1;--red-dk:#991b1b;
   --amber:#f59e0b;--amber-lt:#fffbeb;--amber-dk:#92400e;
   --purple:#7c3aed;--purple-lt:#f5f3ff;--purple-dk:#4c1d95;
+  --orange:#f97316;--orange-lt:#fff7ed;--orange-dk:#c2410c;
 
   /* ── Elevation ── */
   --sh:0 1px 2px rgba(13,17,23,.04),0 2px 8px rgba(13,17,23,.04);
@@ -607,6 +608,7 @@ tr:hover td{background:#f8fafd}
 .b-blue{background:var(--blue-lt);color:#1e40af}.b-blue::before{background:var(--blue)}
 .b-purple{background:var(--purple-lt);color:var(--purple-dk)}.b-purple::before{background:var(--purple)}
 .b-gray{background:#f1f5f9;color:var(--text2)}.b-gray::before{background:var(--text3)}
+.b-orange{background:var(--orange-lt);color:var(--orange-dk)}.b-orange::before{background:var(--orange)}
 
 /* ────────────────────────────────────
    BUTTONS
