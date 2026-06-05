@@ -6943,7 +6943,16 @@ function DeliveryNotes({ contacts, products, token, userId }) {
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div className="fgrp"><label>Delivery Date</label><input type="date" value={f.delivery_date} onChange={e => setF({ ...f, delivery_date: e.target.value })} /></div>
+            <div className="fgrp">
+              <label>Delivery Date</label>
+              <div style={{display:"flex",gap:5,marginBottom:5}}>
+                {[{l:"Today",d:0},{l:"+1 day",d:1},{l:"+3 days",d:3},{l:"+7 days",d:7}].map(({l,d})=>{
+                  const v=new Date();v.setDate(v.getDate()+d);const val=v.toISOString().split("T")[0];const active=f.delivery_date===val;
+                  return <button key={d} type="button" onClick={()=>setF({...f,delivery_date:val})} style={{flex:1,padding:"5px 0",borderRadius:6,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{l}</button>;
+                })}
+              </div>
+              <input type="date" value={f.delivery_date} onChange={e=>setF({...f,delivery_date:e.target.value})} />
+            </div>
             <div className="fgrp"><label>Driver / Courier</label><input value={f.driver} onChange={e => setF({ ...f, driver: e.target.value })} placeholder="e.g. John Smith or DPD" /></div>
             <div className="fgrp"><label>Delivery Address</label><input value={f.delivery_address} onChange={e => setF({ ...f, delivery_address: e.target.value })} placeholder="Auto-filled from customer" /></div>
             <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Special delivery instructions..." /></div>
