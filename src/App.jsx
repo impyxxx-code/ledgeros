@@ -383,7 +383,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ────────────────────────────────────
    MAIN AREA
    ──────────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow-x:hidden;min-height:100vh}
+.main{flex:1;display:flex;flex-direction:column;overflow-x:clip;min-height:100vh}
 
 /* ── Topbar ── */
 .topbar{
