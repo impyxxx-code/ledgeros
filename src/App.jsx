@@ -4275,7 +4275,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
         ) : (
-        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:1000}}><thead className="inv-thead"><tr>
+        <div className="tw" style={{overflowX:"clip"}}><table style={{minWidth:1000}}><thead className="inv-thead"><tr>
           <th style={{width:36}}><input type="checkbox" checked={selectedIds.size===filtered.length&&filtered.length>0} onChange={()=>toggleSelectAll()} style={{accentColor:"var(--blue)"}} /></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("invoice_number")}>Invoice<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
           <th style={{cursor:"pointer"}} onClick={()=>sortToggle("customer")}>Customer<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:3,opacity:0.4,flexShrink:0,verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg></th>
