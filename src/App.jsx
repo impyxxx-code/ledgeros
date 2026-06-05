@@ -48,11 +48,15 @@ const toast = (() => {
     if (!container || !document.body.contains(container)) {
       container = document.createElement('div');
       container.className = 'toast-container';
+      container.setAttribute('role', 'status');
+      container.setAttribute('aria-live', 'polite');
+      container.setAttribute('aria-atomic', 'false');
       document.body.appendChild(container);
     }
     return container;
   };
   const show = (msg, type = 'info', duration = 3500) => {
+    if (type === 'error' || type === 'warn') duration = Math.max(duration, 6000);
     const el = document.createElement('div');
     el.className = `toast ${type}`;
     const icons = { success: 'ti-circle-check', error: 'ti-circle-x', info: 'ti-info-circle', warn: 'ti-alert-triangle' };
