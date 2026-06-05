@@ -7707,7 +7707,9 @@ export default function App() {
                 <span className="hm" style={{ fontSize: 10, fontWeight: 600, color: realtimeStatus==="live" ? "var(--green-dk)" : "var(--amber-dk)" }}>{realtimeStatus==="live" ? "Live" : "Syncing..."}</span>
               </div>
               {(() => {
+                const pendingUsers = profile?.role==="admin" ? allProfiles.filter(p=>p.approved===null&&p.role!=="admin") : [];
                 const notifs = [
+                  ...pendingUsers.map(p=>({ id:"pu-"+p.id, type:"approval", icon:"ti-user-check", color:"var(--blue)", bg:"var(--blue-lt)", title:"Approval Required", body:`${p.full_name||"New agent"} is awaiting account approval`, action:()=>setPage("settings") })),
                   ...invoices.filter(i=>i.status==="overdue").map(i=>({ id:"ov-"+i.id, type:"overdue", icon:"ti-alert-circle", color:"var(--red)", bg:"var(--red-lt)", title:"Overdue Invoice", body:`${i.customer} — ${fmt(i.amount)} overdue`, action:()=>setPage("invoices") })),
                   ...products.filter(p=>p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)).map(p=>({ id:"ls-"+p.id, type:"lowstock", icon:"ti-package-off", color:"var(--amber)", bg:"var(--amber-lt)", title:"Low Stock Alert", body:`${p.name} — only ${p.stock_qty} ${p.unit||"units"} left`, action:()=>setPage("inventory") })),
                   ...invoices.filter(i=>i.status==="paid").slice(0,3).map(i=>({ id:"pd-"+i.id, type:"paid", icon:"ti-circle-check", color:"var(--green)", bg:"var(--green-lt)", title:"Payment Received", body:`${i.customer} paid ${fmt(i.amount)}`, action:()=>setPage("invoices") })),
