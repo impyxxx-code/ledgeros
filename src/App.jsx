@@ -1869,7 +1869,7 @@ function Auth({ onAuth, sessionExpired }) {
 // │ InvoiceModal                                               │
 // │ Invoice detail modal — 3 tabs: Invoice, Timeline, Actions  │
 // └────────────────────────────────────────────────────────────┘
-function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay, token }) {
+function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay, token, profile }) {
   const [showWaInput, setShowWaInput] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
@@ -2001,7 +2001,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ display: "flex", background: "#f4f6f9", borderRadius: "var(--r)", padding: 3, gap: 2 }}>
-              {[["invoice","ti-file-text","Invoice"],["payments","ti-credit-card","Payments"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].map(([id, icon, lbl]) => (
+              {[["invoice","ti-file-text","Invoice"],["payments","ti-credit-card","Payments"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].filter(([id])=>!(id==="actions"&&profile?.role==="agent")).map(([id, icon, lbl]) => (
                 <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, transition: "all .12s", background: activeTab === id ? "var(--white)" : "transparent", color: activeTab === id ? "var(--text)" : "var(--text3)", boxShadow: activeTab === id ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
                   <i className={"ti " + icon} style={{ fontSize: 13 }} />{isMobile() ? null : lbl}
                 </button>
@@ -3364,7 +3364,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   };
   return (
     <div>
-      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} token={token} />}
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} token={token} profile={profile} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
@@ -3906,6 +3906,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       onClose={() => setViewInvoice(null)}
       contacts={contacts}
       token={token}
+      profile={profile}
       onStatusChange={async (id, status) => {
         await sb.patch(token, "invoices", id, { status });
         setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
@@ -4169,6 +4170,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         onClose={() => setViewInvoice(null)}
         contacts={contacts}
         token={token}
+        profile={profile}
         onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
           await sb.patch(token, "invoices", id, { status });
