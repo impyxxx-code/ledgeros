@@ -3287,6 +3287,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
 function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token, userId }) {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
+  const [markingPaidId, setMarkingPaidId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
   const [partPayId, setPartPayId] = useState(null);
   const [partPayAmount, setPartPayAmount] = useState({});
@@ -3303,6 +3304,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const markPaid = async (id, method) => {
+    setMarkingPaidId(id);
     const inv = invoices.find(i => i.id === id);
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
     const prevPaidAmt = parseFloat(inv?.amount_paid || 0);
@@ -3316,6 +3318,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     }
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
+    setMarkingPaidId(null);
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
   };
 
@@ -3395,8 +3398,10 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
                     <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none" }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
                       <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
                     </select>
-                    <button className="btn bp bsm" onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")}>✓</button>
-                    <button className="btn bo bsm" onClick={() => setPayingId(null)}>✕</button>
+                    <button className="btn bp bsm" disabled={markingPaidId === inv.id} onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")} style={{opacity: markingPaidId === inv.id ? 0.6 : 1, cursor: markingPaidId === inv.id ? "not-allowed" : "pointer"}}>
+                      {markingPaidId === inv.id ? <div className="spin" style={{width:12,height:12,borderWidth:2}}/> : "✓"}
+                    </button>
+                    <button className="btn bo bsm" disabled={markingPaidId === inv.id} onClick={() => setPayingId(null)}>✕</button>
                   </div>
                 ) : (
                     <button className="btn bp bsm" onClick={() => setPayingId(inv.id)}>Mark Paid</button>
