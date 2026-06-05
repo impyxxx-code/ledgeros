@@ -2038,7 +2038,16 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             {/* Payment History */}
             <div style={{marginBottom:16,fontWeight:700,fontSize:13,color:"var(--text)"}}>Payment History</div>
             {paymentsLoading ? (
-              <div style={{textAlign:"center",padding:"32px 0",color:"var(--text3)",fontSize:13}}>Loading payments...</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10,padding:"4px 0"}}>
+                {[1,2,3].map(i => (
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div className="skel" style={{width:90,height:13,borderRadius:4}}/>
+                    <div className="skel" style={{width:64,height:13,borderRadius:4}}/>
+                    <div className="skel" style={{width:48,height:13,borderRadius:4}}/>
+                    <div className="skel" style={{width:120,height:13,borderRadius:4,marginLeft:"auto"}}/>
+                  </div>
+                ))}
+              </div>
             ) : payments.length === 0 ? (
               <div style={{textAlign:"center",padding:"32px 0",color:"var(--text3)"}}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{opacity:.3,marginBottom:8,display:"block",margin:"0 auto 8px"}}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
