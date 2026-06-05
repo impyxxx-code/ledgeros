@@ -548,7 +548,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   border:1px solid var(--border);
   border-radius:var(--rl);
   box-shadow:var(--sh);
-  overflow:hidden;
+  overflow:clip;
   margin-bottom:18px;
   animation:fadeIn .2s var(--ease) both;
 }
