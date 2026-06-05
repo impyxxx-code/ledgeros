@@ -668,6 +668,9 @@ tr:hover td{background:#f8fafd}
   box-shadow:0 0 0 3px rgba(37,99,235,.1);
 }
 .fgrp input::placeholder,.fgrp textarea::placeholder{color:var(--text3)}
+.inp-error{border-color:var(--red)!important;background:var(--red-lt)!important;box-shadow:0 0 0 3px rgba(239,68,68,.1)!important}
+.inp-valid{border-color:var(--green)!important}
+.field-error-msg{font-size:11px;color:var(--red);margin-top:4px;display:flex;align-items:center;gap:4px}
 .ff{
   padding:12px 20px;border-top:1px solid var(--border);
   display:flex;gap:8px;justify-content:flex-end;
@@ -3163,7 +3166,13 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
                 return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"5px 0",borderRadius:6,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
               })}
             </div>
-            <input type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} style={{fontSize:13}} />
+            <input type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} style={{fontSize:13}} className={f.due_date && f.invoice_date && f.due_date < f.invoice_date ? "inp-error" : f.due_date ? "inp-valid" : ""} />
+            {f.due_date && f.invoice_date && f.due_date < f.invoice_date && (
+              <div className="field-error-msg">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Due date cannot be before the invoice date
+              </div>
+            )}
           </div>
         </div>
         <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes for this invoice..." /></div>
