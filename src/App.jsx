@@ -4409,6 +4409,8 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
   const [saving, setSaving] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [contactFilter, setContactFilter] = useState("all"); // all | no-email | has-email
+  const [ctSort, setCtSort] = useState({ field: "name", dir: "asc" });
+  const ctSortToggle = (field) => setCtSort(s => ({ field, dir: s.field === field && s.dir === "asc" ? "desc" : "asc" }));
   const [customerPrices, setCustomerPrices] = useState([]);
   const [showPricing, setShowPricing] = useState(false);
   const [priceForm, setPriceForm] = useState({ product_id: "", custom_price: "" });
@@ -4451,6 +4453,13 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
       return c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.includes(q) || c.city?.toLowerCase().includes(q);
     }
     return true;
+  });
+  const sortedContacts = [...filtered].sort((a, b) => {
+    const m = ctSort.dir === "asc" ? 1 : -1;
+    if (ctSort.field === "name") return m * (a.name || "").localeCompare(b.name || "");
+    if (ctSort.field === "outstanding") return m * ((a.total_outstanding || 0) - (b.total_outstanding || 0));
+    if (ctSort.field === "revenue") return m * ((a.total_revenue || 0) - (b.total_revenue || 0));
+    return 0;
   });
   const save = async () => {
     if (!f.name) return; setSaving(true);
@@ -4755,14 +4764,17 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           <>
             {/* Column headers */}
             <div className="ct-list-header" style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, padding:"8px 12px", margin:"12px 0 4px" }}>
-              {["Customer","Contact","Location","Status","Revenue","Health",""].map((h,i) => (
-                <div key={i} style={{ fontSize:10, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".6px" }}>{h}</div>
+              {[["Customer","name"],["Contact",null],["Location",null],["Status",null],["Revenue","revenue"],["Health",null],["",""]].map(([h,f],i) => (
+                <div key={i} onClick={f ? () => ctSortToggle(f) : undefined}
+                  style={{ fontSize:10, fontWeight:600, color: f ? "var(--blue)" : "#94a3b8", textTransform:"uppercase", letterSpacing:".6px", cursor: f ? "pointer" : "default", display:"flex", alignItems:"center", gap:3, userSelect:"none" }}>
+                  {h}{f && <span style={{opacity:.6}}>{ctSort.field===f ? (ctSort.dir==="asc"?"↑":"↓") : "↕"}</span>}
+                </div>
               ))}
             </div>
 
             {/* Customer rows */}
             <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-              {filtered.map(c => {
+              {sortedContacts.map(c => {
                 const bg = avatarBg(c.name);
                 const ci = custInvMap[c.name] || { count:0, revenue:0, outstanding:0 };
                 const overdue = hasOverdue(c.name);
