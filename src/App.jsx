@@ -2375,7 +2375,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 // shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
 const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };
 
-function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", value = "" }) {
+function SearchDropdown({ placeholder, items, onSelect, onCreateNew, displayKey = "name", value = "" }) {
   const [query, setQuery] = useState(shortName(value));
   const [open, setOpen] = useState(false);
   const ref = useRef();
@@ -2410,7 +2410,20 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
           Showing 12 of {allMatches.length} — type more to narrow results
         </div>
       )}
-      {open && query && filtered.length === 0 && <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, padding: "12px 14px", fontSize: 13, color: "var(--text3)", marginTop: 4 }}>No results found for "{query}"</div>}
+      {open && query && filtered.length === 0 && (
+        <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"var(--white)", border:"0.5px solid var(--border2)", borderRadius:"var(--r)", boxShadow:"var(--sh2)", zIndex:100, marginTop:4, overflow:"hidden" }}>
+          <div style={{ padding:"10px 14px", fontSize:13, color:"var(--text3)" }}>No results for "{query}"</div>
+          {onCreateNew && (
+            <div onMouseDown={() => { onCreateNew(query); setQuery(query); setOpen(false); }}
+              style={{ padding:"10px 14px", cursor:"pointer", fontSize:13, fontWeight:600, color:"var(--blue)", background:"var(--blue-lt)", display:"flex", alignItems:"center", gap:7, borderTop:"0.5px solid var(--border)" }}
+              onMouseEnter={e => e.currentTarget.style.background="#dbeafe"}
+              onMouseLeave={e => e.currentTarget.style.background="var(--blue-lt)"}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create "{query}" as new customer
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2432,10 +2445,21 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
   const [dnDriver, setDnDriver] = useState("");
   const [dnAddress, setDnAddress] = useState("");
   const [dnNotes, setDnNotes] = useState("");
+  const [localContacts, setLocalContacts] = useState(contacts);
+
+  const quickAddCustomer = async (name) => {
+    const data = await sb.post(token, "contacts", { name, type: "customer", created_by: userId });
+    if (data[0]) {
+      setLocalContacts(prev => [...prev, data[0]]);
+      setF(prev => ({ ...prev, customer: name }));
+      logAudit(token, userId, "contact_created", "contact", data[0].id, `${name} quick-added from invoice form`);
+      toast.success(`${name} added as customer`);
+    } else { toast.error("Failed to create customer"); }
+  };
   const [mobPickerOpen, setMobPickerOpen] = useState(false);
   const [mobPickerSearch, setMobPickerSearch] = useState("");
 
-  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+  const customers = localContacts.filter(c => c.type === "customer" || c.type === "both");
 
   const updateLine = (i, field, val) => {
     const next = [...lines];
@@ -3167,7 +3191,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
-        <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
+        <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp">
