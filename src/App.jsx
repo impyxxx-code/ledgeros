@@ -383,7 +383,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ────────────────────────────────────
    MAIN AREA
    ──────────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
+.main{flex:1;display:flex;flex-direction:column;overflow-x:hidden;min-height:100vh}
 
 /* ── Topbar ── */
 .topbar{
@@ -458,7 +458,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 /* ── Content ── */
 .content{
   flex:1;padding:26px 28px;
-  overflow-y:auto;
   width:100%;
   animation:fadeIn .22s var(--ease) both;
 }
@@ -793,7 +792,7 @@ tr:hover td{background:#f8fafd}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
-.inv-thead th{position:sticky;top:0;z-index:10;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
+.inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
 .inv-tot-row.divider{border-top:2px solid #e2e8f0;margin-top:8px;padding-top:10px;font-size:13px;font-weight:600}
