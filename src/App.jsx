@@ -460,6 +460,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   flex:1;padding:26px 28px;
   overflow-y:auto;
   width:100%;
+  height:calc(100vh - 54px);
   animation:fadeIn .22s var(--ease) both;
 }
 
@@ -793,8 +794,7 @@ tr:hover td{background:#f8fafd}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
-.inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
-@media(max-width:768px){.inv-thead th{top:50px}}
+.inv-thead th{position:sticky;top:0;z-index:10;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
 .inv-tot-row.divider{border-top:2px solid #e2e8f0;margin-top:8px;padding-top:10px;font-size:13px;font-weight:600}
@@ -925,7 +925,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(max-width:768px){
   .sidebar{display:none}
   .mob-nav{display:block}
-  .content{padding:12px 12px 76px}
+  .content{padding:12px 12px 76px;height:calc(100vh - 50px)}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
