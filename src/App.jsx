@@ -460,7 +460,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   flex:1;padding:26px 28px;
   overflow-y:auto;
   width:100%;
-  height:calc(100vh - 54px);
   animation:fadeIn .22s var(--ease) both;
 }
 
@@ -925,7 +924,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(max-width:768px){
   .sidebar{display:none}
   .mob-nav{display:block}
-  .content{padding:12px 12px 76px;height:calc(100vh - 50px)}
+  .content{padding:12px 12px 76px}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
