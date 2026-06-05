@@ -2371,7 +2371,8 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
   const [query, setQuery] = useState(shortName(value));
   const [open, setOpen] = useState(false);
   const ref = useRef();
-  const filtered = items.filter(i => (i[displayKey] || "").toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+  const allMatches = items.filter(i => (i[displayKey] || "").toLowerCase().includes(query.toLowerCase()));
+  const filtered = allMatches.slice(0, 12);
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
@@ -2394,6 +2395,11 @@ function SearchDropdown({ placeholder, items, onSelect, displayKey = "name", val
               {!item.code && item.category && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.category}</div>}
             </div>
           ))}
+        </div>
+      )}
+      {open && filtered.length > 0 && allMatches.length > 12 && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderTop: "none", borderRadius: "0 0 var(--r) var(--r)", boxShadow: "var(--sh2)", zIndex: 100, padding: "7px 14px", fontSize: 11, color: "var(--text3)" }}>
+          Showing 12 of {allMatches.length} — type more to narrow results
         </div>
       )}
       {open && query && filtered.length === 0 && <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", zIndex: 100, padding: "12px 14px", fontSize: 13, color: "var(--text3)", marginTop: 4 }}>No results found for "{query}"</div>}
