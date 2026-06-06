@@ -7850,7 +7850,7 @@ export default function App() {
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
-                {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} />}
+                {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} />}
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
               </>
             )}
@@ -9036,7 +9036,7 @@ function BankingPage({ token, userId, profile }) {
   );
 }
 
-function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
+function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut }) {
   const darkMode = darkModeProp;
   const [activeTab, setActiveTab] = useState("company");
   if (profile?.role !== "admin" && profile?.role !== "manager") return (
@@ -9056,7 +9056,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
             { label: "Company", val: COMPANY.name, sub: "Arkham Retail Ltd", accent: "#2563eb" },
             { label: "VAT Number", val: COMPANY.vatNumber, sub: "registered", accent: "#7c3aed" },
             { label: "Role", val: profile?.role || "—", sub: "your access level", accent: "#16a34a" },
-            { label: "Version", val: "v1.1", sub: "LedgerOS", accent: "#d97706" },
+            { label: "Version", val: "v2.9", sub: "LedgerOS", accent: "#d97706" },
           ].map((k,i) => (
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
@@ -9104,7 +9104,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark }) {
             <ChangePasswordForm token={auth?.token} />
           </div>
           <div style={{ marginTop:16,display:"flex",gap:10 }}>
-            <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={async()=>{ await sb.signOut(auth?.token); setAuth(null); }}>Sign Out</button>
+            <button className="btn bo bsm" style={{ background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca" }} onClick={onSignOut}>Sign Out</button>
           </div>
         </div>
       )}
