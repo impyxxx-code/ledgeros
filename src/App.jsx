@@ -32,6 +32,8 @@
 import Analytics from "./Analytics.jsx";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, CheckCircle2, FileText, AlertTriangle, Users, ShoppingBag, Landmark, Sun } from "lucide-react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
@@ -3524,10 +3526,10 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 
   // ── AI Insights ──
   const insights = [
-    overdueCount > 0 && { icon: "ti-alert-circle", color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
-    lowStock.length > 0 && { icon: "ti-package-off", color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon` },
-    pendingCount > 0 && { icon: "ti-clock", color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
-    paidCount > 0 && { icon: "ti-trending-up", color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
+    overdueCount > 0 && { Icon: AlertCircle, color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
+    lowStock.length > 0 && { Icon: Package, color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon` },
+    pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
+    paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
   ].filter(Boolean).slice(0, 3);
 
   return (
@@ -3619,13 +3621,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           {insights.map((ins, i) => (
             <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {ins.icon === "ti-alert-triangle" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
-              {ins.icon === "ti-trending-up" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>}
-              {ins.icon === "ti-package" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
-              {ins.icon === "ti-clock" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              {ins.icon === "ti-currency-pound" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="17" y2="18"/><line x1="9" y1="14" x2="15" y2="14"/><path d="M11 14c0-2.5 1-4 3-4a3 3 0 0 1 2.1.9"/><path d="M7 18c-.5-1.5-.5-3 .5-5"/></svg>}
-              {ins.icon === "ti-alert-circle" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              {ins.icon === "ti-package-off" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ins.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
+                <ins.Icon size={16} color={ins.color} strokeWidth={2}/>
               </div>
               <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{ins.text}</div>
             </div>
@@ -3637,15 +3633,15 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       {/* ── Stat pills row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }} className="stat-pills-grid">
         {[
-          { label: "Customers", val: customers.length, icon: "ti-users", color: "var(--blue)", onClick: drillCustomers },
-          { label: "Products", val: products.length, icon: "ti-package", color: "var(--purple)", onClick: drillProducts },
-          { label: "Low Stock", val: lowStock.length, icon: "ti-alert-triangle", color: lowStock.length > 0 ? "var(--red)" : "var(--green)", onClick: drillLowStock },
-          { label: "Cash Collected", val: fmt(cashCollected), icon: "ti-building-bank", color: "var(--green)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments · Total: ${fmt(cashCollected)}`) },
-          { label: "Today's Invoices", val: fmt(todayRevenue), icon: "ti-sun", color: "var(--amber)", onClick: () => openDrill("Today's Invoices", invoices.filter(i=>(i.invoice_date===todayStr||(i.created_at||"").startsWith(todayStr))).map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:i.status })), ["Customer","Invoice","Amount","Status"], `${todayCount} invoices today · Total: ${fmt(todayRevenue)}`) },
+          { label: "Customers", val: customers.length, Icon: Users, color: "var(--blue)", onClick: drillCustomers },
+          { label: "Products", val: products.length, Icon: ShoppingBag, color: "var(--purple)", onClick: drillProducts },
+          { label: "Low Stock", val: lowStock.length, Icon: AlertTriangle, color: lowStock.length > 0 ? "var(--red)" : "var(--green)", onClick: drillLowStock },
+          { label: "Cash Collected", val: fmt(cashCollected), Icon: Landmark, color: "var(--green)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments · Total: ${fmt(cashCollected)}`) },
+          { label: "Today's Invoices", val: fmt(todayRevenue), Icon: Sun, color: "var(--amber)", onClick: () => openDrill("Today's Invoices", invoices.filter(i=>(i.invoice_date===todayStr||(i.created_at||"").startsWith(todayStr))).map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:i.status })), ["Customer","Invoice","Amount","Status"], `${todayCount} invoices today · Total: ${fmt(todayRevenue)}`) },
         ].map(s => (
           <div key={s.label} onClick={s.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <i className={`ti ${s.icon}`} style={{ color: s.color, fontSize: 16 }} />
+              <s.Icon size={16} color={s.color} strokeWidth={2}/>
             </div>
             <div>
               <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{s.label}</div>
@@ -3660,26 +3656,34 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         const months = Array.from({length:6},(_,i)=>{
           const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
           const lbl = d.toLocaleDateString("en-GB",{month:"short"});
-          // Collected = all cash received (amount_paid) for invoices in that month
           const mPaid = invoices.filter(inv=>{
             const id = new Date(inv.invoice_date||inv.created_at);
             return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear();
           }).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-          // Pending = outstanding balance owed for unpaid invoices in that month
           const mPending = invoices.filter(inv=>{
             const id = new Date(inv.invoice_date||inv.created_at);
             return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid"&&inv.status!=="draft";
           }).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
-          return {lbl, paid: mPaid, pending: mPending};
+          return {lbl, Collected: Math.round(mPaid*100)/100, Pending: Math.round(mPending*100)/100};
         });
-        const maxVal = Math.max(...months.map(m=>Math.max(m.paid,m.pending)),1);
-        const H = 100;
-        const W = 100/months.length;
-        const paidPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.paid/maxVal*H)}`).join(" ");
-        const pendPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.pending/maxVal*H)}`).join(" ");
-        const totalPaid6 = months.reduce((s,m)=>s+m.paid,0);
-        const totalPend6 = months.reduce((s,m)=>s+m.pending,0);
-        const bestMonth = months.reduce((a,b)=>b.paid>a.paid?b:a,months[0]);
+        const totalPaid6 = months.reduce((s,m)=>s+m.Collected,0);
+        const totalPend6 = months.reduce((s,m)=>s+m.Pending,0);
+        const bestMonth = months.reduce((a,b)=>b.Collected>a.Collected?b:a,months[0]);
+        const chartTooltip = ({ active, payload, label }) => {
+          if (!active || !payload || !payload.length) return null;
+          return (
+            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+              <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
+              {payload.map(p=>(
+                <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:p.color}}/>
+                  <span style={{color:"rgba(255,255,255,.7)"}}>{p.name}:</span>
+                  <span style={{color:"#fff",fontWeight:700}}>£{p.value.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                </div>
+              ))}
+            </div>
+          );
+        };
         return (
           <div className="card" style={{marginBottom:18}}>
             <div className="ch">
@@ -3689,59 +3693,38 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               </div>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}} />Collected
+                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}}/>Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity: 0.6}} />Pending
+                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
                 </div>
-                <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Reports</button>
+                <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Reports
+                </button>
               </div>
             </div>
-            <div style={{padding:"20px 24px"}}>
-              {/* SVG Chart */}
-              <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:8,alignItems:"stretch"}}>
-                {/* Y-axis labels */}
-                <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingBottom:24,height:140}}>
-                  {[maxVal, Math.round(maxVal*75/100), Math.round(maxVal*50/100), Math.round(maxVal*25/100), 0].map((v,i)=>(
-                    <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v).replace("£","£"):"£0"}</div>
-                  ))}
-                </div>
-                {/* Chart area */}
-                <div style={{position:"relative"}}>
-                  <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{width:"100%",height:120,display:"block"}}>
-                    <defs>
-                      <linearGradient id="paidGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563eb" stopOpacity=".25"/>
-                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0"/>
-                      </linearGradient>
-                      <linearGradient id="pendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity=".15"/>
-                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0"/>
-                      </linearGradient>
-                    </defs>
-                    {/* Grid lines */}
-                    {[0,25,50,75,100].map(y=>(
-                      <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="var(--border)" strokeWidth="0.3" vectorEffect="non-scaling-stroke"/>
-                    ))}
-                    {/* Pending area */}
-                    <polygon points={`0,${H} ${pendPts} 100,${H}`} fill="url(#pendGrad)"/>
-                    <polyline points={pendPts} fill="none" stroke="#f59e0b" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" vectorEffect="non-scaling-stroke"/>
-                    {/* Paid area */}
-                    <polygon points={`0,${H} ${paidPts} 100,${H}`} fill="url(#paidGrad)"/>
-                    <polyline points={paidPts} fill="none" stroke="#2563eb" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>
-                    {/* Data dots */}
-                    {months.map((m,i)=>(
-                      <circle key={i} cx={i*W+W/2} cy={H-(m.paid/maxVal*H)} r="1.2" fill="#2563eb" vectorEffect="non-scaling-stroke"/>
-                    ))}
-                  </svg>
-                  {/* X-axis labels */}
-                  <div style={{display:"flex",justifyContent:"space-around",marginTop:4}}>
-                    {months.map(m=><div key={m.lbl} style={{fontSize:10,color:"var(--text3)",textAlign:"center"}}>{m.lbl}</div>)}
-                  </div>
-                </div>
-              </div>
-              {/* Summary stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
+            <div style={{padding:"4px 24px 20px"}}>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
+                  <defs>
+                    <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+                  <XAxis dataKey="lbl" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
+                  <YAxis tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={40}/>
+                  <Tooltip content={chartTooltip}/>
+                  <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:4,fill:"#f59e0b"}}/>
+                  <Area type="monotone" dataKey="Collected" stroke="#2563eb" strokeWidth={2} fill="url(#gradCollected)" dot={{r:3,fill:"#2563eb",strokeWidth:0}} activeDot={{r:5,fill:"#2563eb"}}/>
+                </AreaChart>
+              </ResponsiveContainer>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:8,paddingTop:16,borderTop:"1px solid var(--border)"}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
                   <div style={{fontSize:18,fontWeight:700,color:"var(--green)"}}>{fmt(totalPaid6)}</div>
@@ -3752,7 +3735,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>Best Month</div>
-                  <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.paid||0)}</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.Collected||0)}</div>
                 </div>
               </div>
             </div>
@@ -3823,8 +3806,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             <div className="ch"><div className="ct">Activity Feed</div><div className="cs">Latest events</div></div>
             {[
               ...invoices.slice(0, 4).map(inv => ({
-                key: inv.id, type: inv.status === "paid" ? "paid" : "invoice",
-                icon: inv.status === "paid" ? "ti-circle-check" : "ti-file-invoice",
+                key: inv.id,
+                Icon: inv.status === "paid" ? CheckCircle2 : FileText,
                 color: inv.status === "paid" ? "var(--green)" : "var(--blue)",
                 bg: inv.status === "paid" ? "var(--green-lt)" : "var(--blue-lt)",
                 title: inv.status === "paid" ? "Payment received" : "Invoice created",
@@ -3832,8 +3815,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 amt: fmt(inv.amount), amtColor: inv.status === "paid" ? "var(--green)" : "var(--text2)"
               })),
               ...lowStock.slice(0, 2).map(p => ({
-                key: p.id, type: "stock",
-                icon: "ti-alert-triangle", color: "var(--amber)", bg: "var(--amber-lt)",
+                key: p.id,
+                Icon: AlertTriangle, color: "var(--amber)", bg: "var(--amber-lt)",
                 title: "Low stock alert",
                 sub: `${p.name} · ${p.stock_qty} ${p.unit || "units"} remaining`,
                 amt: null
@@ -3841,9 +3824,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             ].slice(0, 5).map(item => (
               <div key={item.key} className="act-item">
                 <div className="act-icon" style={{ background: item.bg }}>
-                  {item.icon === "ti-circle-check" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-                  {item.icon === "ti-file-invoice" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
-                  {item.icon === "ti-alert-triangle" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                  <item.Icon size={16} color={item.color} strokeWidth={2}/>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="act-title">{item.title}</div>
