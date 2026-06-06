@@ -3993,10 +3993,10 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   }, [pendingInvoiceView, pendingFilter]);
 
   const markPaid = async (id, method) => {
-    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash" });
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash" } : i));
-    toast.success("Invoice marked as paid");
     const inv = invoices.find(i => i.id === id);
+    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
+    toast.success("Invoice marked as paid");
     if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
