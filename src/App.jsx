@@ -4753,7 +4753,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           ))}
         </div>
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ fontSize:11, color:"#94a3b8" }}>Sort</span>
+          <span style={{ fontSize:11, color:"#94a3b8" }}>View</span>
           <select value={contactView} onChange={e => setContactView(e.target.value === "list" ? "list" : "grid")}
             style={{ padding:"6px 10px", borderRadius:7, border:"1.5px solid var(--border)", fontSize:11, color:"var(--text2)", background:"var(--white)", outline:"none", cursor:"pointer", fontFamily:"var(--sans)" }}>
             <option value="grid">Grid view</option>
