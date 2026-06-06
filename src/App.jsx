@@ -2465,7 +2465,7 @@ function SearchDropdown({ placeholder, items, onSelect, onCreateNew, displayKey 
 // │ InvoiceForm                                                │
 // │ Create new invoice form with line items and VAT            │
 // └────────────────────────────────────────────────────────────┘
-function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
+function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoices = [] }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
@@ -3064,7 +3064,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose }) {
               <div style={{ marginTop:10 }}>
                 <div style={{ fontSize:9, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", marginBottom:6 }}>Recent</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  {mobCusts.slice(0, 4).map(c => (
+                  {[...mobCusts].sort((a,b) => { const la = invoices.filter(i=>i.customer===a.name).reduce((m,i)=>i.created_at>m?i.created_at:m,""); const lb = invoices.filter(i=>i.customer===b.name).reduce((m,i)=>i.created_at>m?i.created_at:m,""); return lb.localeCompare(la); }).slice(0, 4).map(c => (
                     <button key={c.id} onClick={() => setF({...f, customer: c.name})} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", background:"var(--bg)", cursor:"pointer", textAlign:"left", fontFamily:"var(--sans)" }}>
                       <div style={{ width:28, height:28, borderRadius:7, background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>{c.name?.[0]?.toUpperCase()}</div>
                       <span style={{ fontSize:12, fontWeight:500, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
@@ -4310,8 +4310,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
           </button>
         ))}
       </div>
-      {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} />}
-      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
+      {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} />}
+      {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
