@@ -7645,7 +7645,7 @@ export default function App() {
 
             {/* Finance — Banking, Reports, Analytics, Admin Reports */}
             {(profile?.role === "admin" || profile?.role === "manager") && (() => {
-              const financePages = ["banking","reports","analytics","admin-reports","credits"];
+              const financePages = ["banking","reports","analytics","admin-reports"];
               const isActive = financePages.includes(page);
               return (
                 <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("banking")}>
