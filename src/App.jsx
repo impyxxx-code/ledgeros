@@ -1662,101 +1662,106 @@ function Auth({ onAuth, sessionExpired }) {
 
       {/* ── LEFT PANEL ── */}
       {!mob && (
-        <div style={{ width: 440, minWidth: 440, background: "#060d1f", display: "flex", flexDirection: "column", padding: "44px 48px", position: "relative", overflow: "hidden" }}>
-          {/* Glow effects */}
-          <div style={{ position: "absolute", top: -100, left: -100, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle,rgba(37,99,235,.15) 0%,transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.1) 0%,transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ width: 500, minWidth: 500, background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 45%,#2d1f6e 100%)", display: "flex", flexDirection: "column", padding: "52px 56px", position: "relative", overflow: "hidden", justifyContent: "space-between" }}>
+          {/* Grid overlay */}
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px)", backgroundSize: "52px 52px", pointerEvents: "none" }} />
+          {/* Orb top-left */}
+          <div style={{ position: "absolute", top: -120, left: -120, width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.28) 0%,transparent 65%)", pointerEvents: "none" }} />
+          {/* Orb bottom-right */}
+          <div style={{ position: "absolute", bottom: -80, right: -60, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.2) 0%,transparent 65%)", pointerEvents: "none" }} />
 
           {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 52, position: "relative" }}>
-            <LogoMark />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(145deg,#1e1b4b,#2d2a6e)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 20px rgba(99,102,241,.35),inset 0 1px 0 rgba(255,255,255,.08)" }}>
+              <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#818cf8"/>
+                <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".58"/>
+                <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".32"/>
+                <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".16"/>
+                <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#lgGrad)"/>
+                <polygon points="38,28 31,20 31,36" fill="#60a5fa" fillOpacity=".45"/>
+                <defs><linearGradient id="lgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#60a5fa"/><stop offset="100%" stopColor="#818cf8"/></linearGradient></defs>
+              </svg>
+            </div>
             <div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", lineHeight: 1.1 }}>LedgerOS</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 2, letterSpacing: ".2px" }}>Arkham Retail Ltd</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.6px", lineHeight: 1 }}>Ledger</span>
+                <span style={{ fontSize: 20, fontWeight: 300, color: "rgba(255,255,255,.38)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,.22)", letterSpacing: ".4px", marginTop: 2 }}>Arkham Retail Ltd</div>
             </div>
           </div>
 
-          {/* Live tag */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(37,99,235,.15)", border: "1px solid rgba(37,99,235,.3)", borderRadius: 20, padding: "4px 13px", fontSize: 11, fontWeight: 600, color: "#93c5fd", letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 22, alignSelf: "flex-start" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#2563eb", animation: "pulse 2s ease-in-out infinite" }} />
-            Business Finance Platform
-          </div>
-
-          {/* Headline */}
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1.18, letterSpacing: "-.8px", marginBottom: 14 }}>
-            Run your business<br />with <span style={{ color: "#60a5fa" }}>total clarity</span>
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.42)", lineHeight: 1.75, marginBottom: 44 }}>
-            VAT invoices, inventory, delivery notes and analytics — purpose-built for Arkham Retail.
-          </div>
-
-          {/* Feature list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: "auto" }}>
-            {[
-              { title: "VAT invoices in seconds", desc: "PDF generation, WhatsApp sharing, email delivery",
-                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
-              { title: "Live inventory tracking", desc: "Low stock alerts, reorder levels, stock adjustments",
-                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> },
-              { title: "Real-time analytics", desc: "Revenue, aged debtors, agent leaderboard",
-                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
-              { title: "Delivery management", desc: "Branded delivery notes, driver tracking, signatures",
-                svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
-            ].map(feat => (
-              <div key={feat.title} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {feat.svg}
+          {/* Hero */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 0 32px", position: "relative", zIndex: 1 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(167,139,250,.85)", marginBottom: 20 }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />
+              Business Finance Platform
+            </div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#fff", letterSpacing: "-2px", lineHeight: 1.04, marginBottom: 20 }}>
+              Run every<br />invoice.<br />Know every<br /><span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>number.</span>
+            </div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,.38)", lineHeight: 1.75, maxWidth: 320 }}>
+              Purpose-built for Arkham Retail. VAT invoices, inventory, delivery notes and real-time analytics — all in one platform.
+            </div>
+            {/* Feature pills */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 32 }}>
+              {[
+                { label: "VAT Invoices", svg: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
+                { label: "Inventory", svg: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> },
+                { label: "Analytics", svg: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+                { label: "Delivery Notes", svg: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+              ].map(p => (
+                <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "7px 14px", fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,.55)" }}>
+                  {p.svg}{p.label}
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.82)", marginBottom: 2 }}>{feat.title}</div>
-                  <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.32)", lineHeight: 1.5 }}>{feat.desc}</div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 44, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,.07)" }}>
-            {[["5s", "Per invoice"], ["Live", "Data sync"], ["100%", "VAT compliant"]].map(([val, lbl]) => (
-              <div key={lbl} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 21, fontWeight: 800, color: "#fff", letterSpacing: "-.5px" }}>{val}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,.28)", marginTop: 3, textTransform: "uppercase", letterSpacing: ".7px" }}>{lbl}</div>
-              </div>
-            ))}
+          {/* Footer */}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.18)", lineHeight: 1.7, position: "relative", zIndex: 1 }}>
+            © 2026 Arkham Retail Ltd &nbsp;·&nbsp; VAT: GB462229106
           </div>
         </div>
       )}
 
-      {/* ── MOBILE TOP PANEL (Option C) ── */}
+      {/* ── MOBILE TOP PANEL ── */}
       {mob && (
-        <div style={{ background: "#060d1f", padding: "22px 22px 26px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
-          <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.15) 0%,transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ background: "linear-gradient(160deg,#0f172a 0%,#1e1b4b 50%,#2d1f6e 100%)", padding: "28px 24px 36px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ position: "absolute", top: -80, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
           {/* Logo row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, position: "relative" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <LogoMark />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(145deg,#1e1b4b,#2d2a6e)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(99,102,241,.3)" }}>
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+                  <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#818cf8"/>
+                  <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".58"/>
+                  <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".32"/>
+                  <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#mgGrad)"/>
+                  <polygon points="38,28 31,20 31,36" fill="#60a5fa" fillOpacity=".45"/>
+                  <defs><linearGradient id="mgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#60a5fa"/><stop offset="100%" stopColor="#818cf8"/></linearGradient></defs>
+                </svg>
+              </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-.3px", lineHeight: 1.1 }}>LedgerOS</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", marginTop: 1 }}>Arkham Retail Ltd</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.5px", lineHeight: 1 }}>Ledger</span>
+                  <span style={{ fontSize: 17, fontWeight: 300, color: "rgba(255,255,255,.35)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
+                </div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,.2)", letterSpacing: ".3px", marginTop: 2 }}>Arkham Retail Ltd</div>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "3px 10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "4px 10px" }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e" }} />
-              <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: ".5px" }}>Live</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.45)", textTransform: "uppercase", letterSpacing: ".5px" }}>Live</span>
             </div>
           </div>
-          {/* Feature grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              { icon: "ti-file-invoice", text: "VAT invoices & PDFs" },
-              { icon: "ti-package",      text: "Live inventory" },
-              { icon: "ti-chart-bar",    text: "Analytics & reports" },
-              { icon: "ti-truck-delivery", text: "Delivery notes" },
-            ].map(f => (
-              <div key={f.text} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-                <i className={"ti " + f.icon} style={{ fontSize: 13, color: "rgba(255,255,255,.5)", flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontWeight: 500, lineHeight: 1.3 }}>{f.text}</span>
-              </div>
-            ))}
+          {/* Headline */}
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-1px", lineHeight: 1.1, marginBottom: 8 }}>
+              Run every invoice.<br /><span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Know every number.</span>
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,.35)", lineHeight: 1.6 }}>Purpose-built for Arkham Retail.</div>
           </div>
         </div>
       )}
@@ -1768,12 +1773,12 @@ function Auth({ onAuth, sessionExpired }) {
           {/* Mobile logo — hidden, rendered in mobile top panel instead */}
 
           {/* Form header */}
-          <div style={{ marginBottom: 30 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Secure access</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#0d1117", letterSpacing: "-.6px", marginBottom: 6 }}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 10 }}>Secure access</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "#0d1117", letterSpacing: "-.7px", marginBottom: 7, lineHeight: 1.15 }}>
               {mode === "signin" ? "Welcome back" : "Request access"}
             </div>
-            <div style={{ fontSize: 13, color: "#5c677d" }}>
+            <div style={{ fontSize: 13, color: "#5c677d", lineHeight: 1.55 }}>
               {mode === "signin" ? "Sign in to your Arkham Retail dashboard" : "Join your team on LedgerOS"}
             </div>
           </div>
@@ -1808,9 +1813,10 @@ function Auth({ onAuth, sessionExpired }) {
 
           {/* Password */}
           <div style={{ marginBottom: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>
-              Password
-            </label>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Password</label>
+              {mode === "signin" && <button onClick={sendReset} style={{ fontSize: 12, color: "#2563eb", fontWeight: 500, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--sans)" }}>Forgot password?</button>}
+            </div>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
               <input type={showPw ? "text" : "password"} style={{ width: "100%", padding: "11px 40px 11px 38px", background: "#f8fafd", border: "1.5px solid #e5e9f0", borderRadius: 10, fontSize: 14, color: "#0d1117", fontFamily: "var(--sans)", outline: "none", boxSizing: "border-box", transition: "border .15s,box-shadow .15s" }} value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="Enter your password" onKeyDown={e => e.key === "Enter" && go()} onFocus={e => { e.target.style.borderColor="#2563eb"; e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,.1)"; e.target.style.background="#fff"; }} onBlur={e => { e.target.style.borderColor="#e5e9f0"; e.target.style.boxShadow="none"; e.target.style.background="#f8fafd"; }} />
