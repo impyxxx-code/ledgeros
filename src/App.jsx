@@ -3618,14 +3618,17 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       {/* ── AI Insights strip ── */}
       {insights.length > 0 && (
         <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          {insights.map((ins, i) => (
-            <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: ins.bg, border: `1px solid ${ins.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: ins.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <ins.Icon size={16} color={ins.color} strokeWidth={2}/>
+          {insights.map((insight, i) => {
+            const InsightIcon = insight.Icon;
+            return (
+              <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: insight.bg, border: `1px solid ${insight.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: insight.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <InsightIcon size={16} color={insight.color} strokeWidth={2}/>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{insight.text}</div>
               </div>
-              <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{ins.text}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -3638,17 +3641,20 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           { label: "Low Stock", val: lowStock.length, Icon: AlertTriangle, color: lowStock.length > 0 ? "var(--red)" : "var(--green)", onClick: drillLowStock },
           { label: "Cash Collected", val: fmt(cashCollected), Icon: Landmark, color: "var(--green)", onClick: () => openDrill("Cash Collections", invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:fmtDate(i.invoice_date) })), ["Customer","Invoice","Amount","Date"], `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments · Total: ${fmt(cashCollected)}`) },
           { label: "Today's Invoices", val: fmt(todayRevenue), Icon: Sun, color: "var(--amber)", onClick: () => openDrill("Today's Invoices", invoices.filter(i=>(i.invoice_date===todayStr||(i.created_at||"").startsWith(todayStr))).map(i=>({ name:i.customer, code:i.invoice_number, value:fmt(i.amount), extra:i.status })), ["Customer","Invoice","Amount","Status"], `${todayCount} invoices today · Total: ${fmt(todayRevenue)}`) },
-        ].map(s => (
-          <div key={s.label} onClick={s.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <s.Icon size={16} color={s.color} strokeWidth={2}/>
+        ].map(pill => {
+          const PillIcon = pill.Icon;
+          return (
+            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: pill.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <PillIcon size={16} color={pill.color} strokeWidth={2}/>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{pill.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-.3px" }}>{pill.val}</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{s.label}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-.3px" }}>{s.val}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Revenue Chart Widget ── */}
@@ -3821,10 +3827,12 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 sub: `${p.name} · ${p.stock_qty} ${p.unit || "units"} remaining`,
                 amt: null
               }))
-            ].slice(0, 5).map(item => (
+            ].slice(0, 5).map(item => {
+              const ActIcon = item.Icon;
+              return (
               <div key={item.key} className="act-item">
                 <div className="act-icon" style={{ background: item.bg }}>
-                  <item.Icon size={16} color={item.color} strokeWidth={2}/>
+                  <ActIcon size={16} color={item.color} strokeWidth={2}/>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="act-title">{item.title}</div>
@@ -3832,7 +3840,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 </div>
                 {item.amt && <span className="act-amt" style={{ color: item.amtColor }}>{item.amt}</span>}
               </div>
-            ))}
+              );
+            })}
             {invoices.length === 0 && lowStock.length === 0 && <div className="empty">No recent activity</div>}
           </div>
         </div>
