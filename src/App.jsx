@@ -7757,6 +7757,59 @@ export default function App() {
               </button>
             </div>
           </div>
+          {/* ── SECTION SUB-NAV TABS ── */}
+          {(() => {
+            const isAdmin = profile?.role === "admin" || profile?.role === "manager";
+            const overdueCount = invoices.filter(i=>i.status==="overdue").length;
+            const sections = {
+              commerce: {
+                pages: ["invoices","contacts","statement","agent-report","delivery-notes","credits"],
+                tabs: [
+                  { id:"invoices",       label:"Invoices",       badge: overdueCount > 0 ? overdueCount : null },
+                  { id:"contacts",       label:"Customers" },
+                  { id:"statement",      label:"Statements",     adminOnly:true },
+                  { id:"agent-report",   label:"Agent Sales",    adminOnly:true },
+                  { id:"delivery-notes", label:"Delivery Notes" },
+                  { id:"credits",        label:"Credits",        adminOnly:true },
+                ]
+              },
+              operations: {
+                pages: ["inventory","purchases","stock-adj","import"],
+                tabs: [
+                  { id:"inventory", label:"Inventory" },
+                  { id:"purchases", label:"Purchases",  adminOnly:true },
+                  { id:"stock-adj", label:"Stock In/Out",adminOnly:true },
+                  { id:"import",    label:"Import",     adminOnly:true },
+                ]
+              },
+              finance: {
+                pages: ["banking","admin-reports","analytics","reports"],
+                tabs: [
+                  { id:"banking",       label:"Banking",    adminOnly:true },
+                  { id:"admin-reports", label:"Reports",    adminOnly:true },
+                  { id:"analytics",     label:"Analytics",  adminOnly:true },
+                  { id:"reports",       label:"P&L",        adminOnly:true },
+                ]
+              },
+            };
+            const activeEntry = Object.entries(sections).find(([,s]) => s.pages.includes(page));
+            if (!activeEntry) return null;
+            const [, section] = activeEntry;
+            const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
+            if (visibleTabs.length < 2) return null;
+            return (
+              <div style={{ background:"#fff", borderBottom:"1px solid #e5e9f0", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+                {visibleTabs.map(tab => (
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#2563eb":"#64748b", borderBottom:page===tab.id?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="#0d1117";e.currentTarget.style.borderBottom="2px solid #e2e8f0";}}}
+                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="#64748b";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
+                    {tab.label}
+                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"#fef2f2", color:"#ef4444", padding:"1px 5px", borderRadius:20 }}>{tab.badge}</span>}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           <div className="content">
             {loading ? (
               <div style={{ padding: "24px 28px" }}>
