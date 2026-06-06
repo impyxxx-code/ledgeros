@@ -8054,6 +8054,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
       amount: total,
       subtotal,
       vat_total: vatTotal,
+      balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)),
     });
     onSaved();
     onClose();
@@ -8100,13 +8101,19 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
             </div>
             <div className="fgrp">
               <label>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)}>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              {(invoice.status === "paid" || invoice.status === "partial") ? (
+                <div style={{ padding:"9px 14px", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:"var(--r)", fontSize:13, color:"var(--text2)" }}>
+                  <span className={"badge " + (invoice.status==="paid"?"b-green":"b-orange")} style={{marginRight:6}}>{invoice.status}</span>
+                  <span style={{fontSize:11,color:"var(--text3)"}}>Set by payment system</span>
+                </div>
+              ) : (
+                <select value={status} onChange={e => setStatus(e.target.value)}>
+                  <option value="draft">Draft</option>
+                  <option value="pending">Pending</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              )}
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -8115,7 +8122,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
             </div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 0.6fr 1fr 1fr 0.8fr 30px", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i, "description", p.name); updateLine(i, "unit_price", p.sale_price || p.cost_price || ""); }} displayKey="name" />
+                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i, "description", p.name); updateLine(i, "unit_price", p.sale_price || p.cost_price || ""); }} displayKey="name" value={l.description || ""} />
                 <input className="il-input mono" type="number" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
                 <input className="il-input mono" type="number" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
                 <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}>
@@ -8123,7 +8130,7 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
                   <option value={5}>5%</option>
                   <option value={20}>20%</option>
                 </select>
-                <div className="mono" style={{ fontWeight: 700, fontSize: 13 }}>{fmt((parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0) * (1 + (parseFloat(l.vat_rate)||0) / 100))}</div>
+                <div className="mono" style={{ fontWeight: 700, fontSize: 13 }}>{fmt((parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0))}</div>
                 <button onClick={() => removeLine(i)} style={{ background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 16 }}>x</button>
               </div>
             ))}
@@ -8133,6 +8140,20 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 4 }}>Subtotal: {fmt(subtotal)} · VAT: {fmt(vatTotal)}</div>
             <div style={{ fontSize: 18, fontWeight: 800 }}>Total: {fmt(total)}</div>
           </div>
+          {parseFloat(invoice.amount_paid || 0) > 0 && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--rl)", padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#15803d", marginBottom: 2 }}>💳 Partial payment on record</div>
+                <div style={{ fontSize: 11, color: "#16a34a" }}>Amount paid: <strong>{fmt(parseFloat(invoice.amount_paid))}</strong></div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 2 }}>New balance after save</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: Math.max(0, total - parseFloat(invoice.amount_paid)) > 0 ? "#dc2626" : "#16a34a" }}>
+                  {fmt(Math.max(0, total - parseFloat(invoice.amount_paid)))}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="fgrp" style={{ marginTop: 12 }}>
             <label>Notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes..." style={{ width: "100%", padding: "10px 14px", borderRadius: "var(--r)", border: "1px solid var(--border2)", fontSize: 13, fontFamily: "var(--sans)", resize: "vertical", minHeight: 60 }} />
