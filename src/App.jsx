@@ -3357,14 +3357,10 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
-    if (overpayment > 0) {
-      const outstanding = invoices.filter(i => i.customer === inv.customer && i.id !== inv.id && (i.status === "pending" || i.status === "overdue" || i.status === "partial"));
-      setOverpaymentData({ inv: { ...inv, amount_paid: actualPaid }, overpayment, outstandingInvoices: outstanding });
-    }
   };
   return (
     <div>
-      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} onPartPay={recordPartPayment} token={token} profile={profile} />}
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile} />}
       <div className="welcome-row">
         <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
         <div className="quick-actions">
