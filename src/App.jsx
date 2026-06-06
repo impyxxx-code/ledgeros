@@ -5285,27 +5285,20 @@ function CustomerStatement({ contacts, invoices, token }) {
     else window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
-  const handleEmail = () => {
+  const handleEmail = async () => {
     if (!selectedContact) return;
-    const subject = encodeURIComponent(`Account Statement — ${COMPANY.name}`);
-    const lines = custInvoices.map(inv => {
-      const paid = parseFloat(inv.amount_paid||0);
-      const bal = parseFloat(inv.balance!=null?inv.balance:inv.amount);
-      const method = inv.payment_method ? " via "+inv.payment_method : "";
-      const balStr = inv.status==="paid" ? "Cleared" : "Bal: "+fmt(bal);
-      return `${inv.invoice_number}  |  ${fmtDate(inv.invoice_date)}  |  ${fmt(inv.amount)}  |  Paid: ${paid>0?fmt(paid):"—"}  |  ${balStr}${method}  |  ${inv.status.toUpperCase()}`;
-    }).join("\n");
-    const body = encodeURIComponent(
-      `Dear ${selectedContact.name},\n\nPlease find below your account statement as of ${fmtDate(new Date().toISOString())}.\n\n` +
-      `INVOICE #  |  DATE  |  TOTAL  |  PAID  |  BALANCE  |  STATUS\n` +
-      `${"─".repeat(65)}\n${lines}\n${"─".repeat(65)}\n\n` +
-      `Total Invoiced:  ${fmt(totalPaid + totalOwed)}\n` +
-      `Total Paid:      ${fmt(totalPaid)}\n` +
-      `Balance Due:     ${fmt(totalOwed)}\n\n` +
-      `If you have any queries please contact us at ${COMPANY.phone}.\n\nKind regards,\n${COMPANY.name}`
-    );
-    const email = selectedContact.email || "";
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+    const toEmail = selectedContact.email;
+    if (!toEmail) { toast.warn(`No email address for ${selectedContact.name}. Please add one in Customers first.`); return; }
+    const rows = custInvoices.map(inv => {
+      const amtPaid = parseFloat(inv.amount_paid||0);
+      const bal = inv.status==="paid" ? 0 : parseFloat(inv.balance!=null?inv.balance:inv.amount);
+      const statusColor = inv.status==="paid"?"#16a34a":inv.status==="overdue"?"#dc2626":inv.status==="partial"?"#d97706":"#92400e";
+      return `<tr><td style="font-family:monospace;color:#2563eb;font-weight:600;padding:9px 12px;border-bottom:1px solid #f1f5f9">${escHtml(inv.invoice_number)}</td><td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:12px">${fmtDate(inv.invoice_date)}</td><td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-weight:600;text-align:right">${fmt(inv.amount)}</td><td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-family:monospace;text-align:right;color:${amtPaid>0?"#16a34a":"#94a3b8"}">${amtPaid>0?fmt(amtPaid):"—"}</td><td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-weight:700;text-align:right;color:${inv.status==="paid"?"#16a34a":bal>0?"#dc2626":"#16a34a"}">${inv.status==="paid"?"✓ Cleared":fmt(bal)}</td><td style="padding:9px 12px;border-bottom:1px solid #f1f5f9"><span style="background:${statusColor}22;color:${statusColor};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${inv.status.toUpperCase()}</span></td></tr>`;
+    }).join("");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;background:#f0f2f5;margin:0;padding:24px 16px"><div style="max-width:640px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.09)"><div style="background:#0f172a;padding:24px 32px"><div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">${escHtml(COMPANY.name)}</div><div style="font-size:12px;color:rgba(255,255,255,.5)">Account Statement · ${fmtDate(new Date().toISOString())}</div></div><div style="padding:28px 32px"><p style="font-size:14px;color:#0f172a;margin:0 0 20px">Dear <strong>${escHtml(selectedContact.name)}</strong>,<br><br>Please find below your account statement as of <strong>${fmtDate(new Date().toISOString())}</strong>.</p><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 16px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Total Invoiced</div><div style="font-size:18px;font-weight:700;color:#0f172a">${fmt(totalPaid+totalOwed)}</div></div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 16px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Total Paid</div><div style="font-size:18px;font-weight:700;color:#16a34a">${fmt(totalPaid)}</div></div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 16px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Balance Due</div><div style="font-size:18px;font-weight:700;color:${totalOwed>0?"#dc2626":"#16a34a"}">${fmt(totalOwed)}</div></div></div><table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:9px;overflow:hidden"><thead><tr style="background:#0f172a"><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:left">Invoice</th><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:left">Date</th><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:right">Total</th><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:right">Paid</th><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:right">Balance</th><th style="padding:9px 12px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;text-align:left">Status</th></tr></thead><tbody>${rows}</tbody></table><p style="font-size:12px;color:#64748b;margin:20px 0 0">If you have any queries please contact us at ${escHtml(COMPANY.phone)}.<br><br>Kind regards,<br><strong>${escHtml(COMPANY.name)}</strong></p></div><div style="background:#f8fafc;padding:14px 32px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">${escHtml(COMPANY.name)} · ${escHtml(COMPANY.address)} · VAT: ${escHtml(COMPANY.vatNumber)}</div></div></body></html>`;
+    const result = await sendEmail({ to: toEmail, subject: `Account Statement — ${COMPANY.name}`, html });
+    if (result.success) toast.success(`Statement emailed to ${toEmail}`);
+    else toast.error("Failed to send email. Please try again.");
   };
 
   const handlePrint = () => {
