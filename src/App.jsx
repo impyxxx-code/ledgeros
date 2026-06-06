@@ -436,14 +436,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
 .tb-btn{
   width:30px;height:30px;border-radius:var(--r);
-  border:1px solid var(--border);
-  background:#f8fafd;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.07);
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:#64748b;
+  cursor:pointer;color:rgba(255,255,255,.5);
   transition:all .12s;position:relative;
   flex-shrink:0;
 }
-.tb-btn:hover{background:#f1f5f9;border-color:var(--border2);color:#0d1117}
+.tb-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.85)}
 .tb-btn i{font-size:15px}
 
 /* ── Content ── */
@@ -7674,7 +7674,7 @@ export default function App() {
             ].filter(n=>!dismissedNotifs.includes(n.id));
             const unreadU = notifsU.length;
             window.__utilityBtns = (
-              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid var(--border)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid rgba(255,255,255,.08)"}}>
                 <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </div>
@@ -7720,7 +7720,7 @@ export default function App() {
           })()}
           {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
           {page === "dashboard" && (
-            <div style={{background:"#fff",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+            <div style={{background:"#0d1829",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
               {window.__utilityBtns}
             </div>
           )}
@@ -7834,13 +7834,13 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div style={{ background:"#fff", borderBottom:"1px solid #e5e9f0", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
-                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#2563eb":"#64748b", borderBottom:page===tab.id?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
-                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="#0d1117";e.currentTarget.style.borderBottom="2px solid #e2e8f0";}}}
-                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="#64748b";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#fff":"rgba(255,255,255,.45)", borderBottom:page===tab.id?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.75)";e.currentTarget.style.borderBottom="2px solid rgba(255,255,255,.15)";}}}
+                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.45)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
                     {tab.label}
-                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"#fef2f2", color:"#ef4444", padding:"1px 5px", borderRadius:20 }}>{tab.badge}</span>}
+                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(239,68,68,.2)", color:"#fca5a5", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(239,68,68,.3)" }}>{tab.badge}</span>}
                   </div>
                 ))}
                 {window.__utilityBtns}
