@@ -284,13 +284,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
    SIDEBAR — Premium dark navigation
    ──────────────────────────────────── */
 .sidebar{
-  width:234px;min-width:234px;
+  width:240px;min-width:240px;
   background:var(--sidebar);
   display:flex;flex-direction:column;
-  padding:16px 10px;
+  padding:0;
   position:sticky;top:0;height:100vh;overflow-y:auto;
   border-right:1px solid var(--sidebar-border);
-  overflow:hidden;
 }
 .sidebar::before{
   content:'';position:absolute;top:-80px;left:-80px;
