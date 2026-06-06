@@ -4508,6 +4508,8 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
     if (c.type !== tab && c.type !== "both") return false;
     if (contactFilter === "no-email" && c.email) return false;
     if (contactFilter === "has-email" && !c.email) return false;
+    if (contactFilter === "no-phone" && c.phone) return false;
+    if (contactFilter === "has-phone" && !c.phone) return false;
     if (contactSearch) {
       const q = contactSearch.toLowerCase();
       return c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.includes(q) || c.city?.toLowerCase().includes(q);
@@ -4753,7 +4755,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:8 }}>
           {contactFilter !== "all" && (
             <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
-              {contactFilter === "has-email" ? "Has email" : "No email"}
+              {contactFilter === "has-email" ? "Has email" : contactFilter === "no-email" ? "No email" : contactFilter === "has-phone" ? "Has phone" : "No phone"}
               <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#2563eb", fontSize:14, lineHeight:1, padding:0 }}>×</button>
             </span>
           )}
@@ -4769,7 +4771,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             style={{ width:"100%", padding:"8px 12px 8px 32px", borderRadius:8, border:"1.5px solid var(--border)", fontSize:12, color:"var(--text)", outline:"none", background:"var(--bg)", fontFamily:"var(--sans)", transition:"border-color .15s" }} />
         </div>
         <div style={{ display:"flex", gap:5 }}>
-          {[["all","All"],["has-email","Has Email"],["no-email","No Email"]].map(([v,l]) => (
+          {[["all","All"],["has-email","Has Email"],["no-email","No Email"],["has-phone","Has Phone"],["no-phone","No Phone"]].map(([v,l]) => (
             <div key={v} onClick={() => setContactFilter(v)}
               style={{ padding:"6px 12px", borderRadius:20, fontSize:11, fontWeight:500, cursor:"pointer", background:contactFilter===v?"#2563eb":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#2563eb":"var(--border)"), transition:"all .12s" }}>
               {l}
