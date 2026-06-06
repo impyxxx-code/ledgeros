@@ -4399,7 +4399,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                   <button onClick={()=>printDNFromInvoice(inv)} title="Delivery note" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                   </button>
-                  {inv.status!=="paid"&&(
+                  {profile?.role==="admin"&&inv.status!=="paid"&&(
                     payingId===inv.id?(
                       <div style={{display:"flex",gap:3,alignItems:"center"}}>
                         <select style={{padding:"3px 5px",fontSize:11,border:"1px solid var(--border)",borderRadius:6,outline:"none",background:"var(--white)",color:"var(--text)"}} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(prev=>({...prev,[inv.id]:e.target.value}))}>
