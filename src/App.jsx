@@ -302,83 +302,105 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .sidebar::-webkit-scrollbar{width:0}
 
 .sidebar-logo{
-  display:flex;align-items:center;gap:10px;
-  padding:6px 10px 20px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  margin-bottom:8px;
+  padding:20px 16px 14px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  margin-bottom:6px;
 }
 .logo-mark{
-  width:34px;height:34px;background:#1e1b4b;border-radius:9px;
+  width:38px;height:38px;
+  background:linear-gradient(145deg,#1e1b4b,#2d2a6e);
+  border-radius:11px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 3px 12px rgba(99,102,241,.3),inset 0 1px 0 rgba(255,255,255,.07);
 }
-.logo-text{
-  font-size:14px;font-weight:800;color:#fff;
-  letter-spacing:-.3px;line-height:1.1;
+.logo-inner{display:flex;align-items:center;gap:12px}
+.logo-wm{display:flex;flex-direction:column;gap:1px}
+.logo-wm-row{display:flex;align-items:baseline;gap:1px}
+.logo-wm-l{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1}
+.logo-wm-os{font-size:15px;font-weight:300;color:rgba(255,255,255,.35);letter-spacing:-.3px;line-height:1}
+.logo-sub{font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.3px;margin-top:2px}
+.logo-live{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.15);
+  border-radius:20px;padding:3px 8px;margin-top:10px;
 }
-.logo-sub{font-size:10px;color:rgba(255,255,255,.28);margin-top:2px}
+.logo-live-dot{width:5px;height:5px;border-radius:50%;background:#22c55e}
+.logo-live-txt{font-size:9px;font-weight:600;color:rgba(34,197,94,.8);letter-spacing:.8px;text-transform:uppercase}
 
 .nav-section{margin-bottom:4px}
 .nav-label{
   font-size:9px;font-weight:700;
-  color:rgba(255,255,255,.22);
-  text-transform:uppercase;letter-spacing:1.2px;
-  padding:14px 12px 5px;
-  display:flex;align-items:center;gap:8px;
+  color:rgba(255,255,255,.18);
+  text-transform:uppercase;letter-spacing:1.5px;
+  padding:12px 18px 4px;
 }
-.nav-label::after{content:'';flex:1;height:0.5px;background:rgba(255,255,255,.07);}
 
 .nav-item{
   display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:var(--r);
-  color:rgba(255,255,255,.42);font-size:13px;font-weight:500;
+  padding:9px 16px;border-radius:8px;
+  color:rgba(255,255,255,.4);font-size:13px;font-weight:500;
   cursor:pointer;
   transition:color .12s var(--ease),background .12s var(--ease);
-  margin-bottom:2px;user-select:none;letter-spacing:-.1px;
-  border-left:2px solid transparent;
-  line-height:1.4;
+  margin-bottom:1px;user-select:none;letter-spacing:-.1px;
+  position:relative;overflow:hidden;
+}
+.nav-item::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:0;height:16px;border-radius:0 3px 3px 0;
+  background:#2563eb;transition:width .12s;
 }
 .nav-item:hover{
-  background:var(--sidebar-hover);
-  color:rgba(255,255,255,.78);
+  background:rgba(255,255,255,.05);
+  color:rgba(255,255,255,.7);
 }
 .nav-item.active{
-  background:var(--sidebar-active);
-  color:#93c5fd;font-weight:700;
-  border:1px solid rgba(37,99,235,.25);
-  border-radius:var(--r);
+  background:linear-gradient(90deg,rgba(37,99,235,.18),rgba(37,99,235,.06));
+  color:#93c5fd;font-weight:600;
 }
-.nav-item i,.nav-item svg{font-size:16px;flex-shrink:0;opacity:0.9;width:16px;height:16px}
+.nav-item.active::before{width:3px}
+.nav-item svg{flex-shrink:0;opacity:.85;width:15px;height:15px}
+.nav-item.active svg{opacity:1}
 .nav-badge{
   margin-left:auto;background:var(--red);color:#fff;
-  font-size:10px;font-weight:700;
+  font-size:9px;font-weight:700;
   padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;
 }
 
 .nav-bottom{
-  margin-top:auto;padding-top:12px;
-  border-top:1px solid var(--sidebar-border);
+  margin-top:auto;padding:0 8px 12px;
 }
+.nav-bottom-divider{height:1px;background:rgba(255,255,255,.05);margin:8px 0}
 .user-row{
   display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:var(--r);
+  padding:10px 8px;border-radius:10px;
   cursor:pointer;transition:background .12s;
 }
-.user-row:hover{background:var(--sidebar-hover)}
+.user-row:hover{background:rgba(255,255,255,.05)}
+.user-av-wrap{position:relative;flex-shrink:0}
 .user-av{
-  width:30px;height:30px;border-radius:50%;
+  width:32px;height:32px;border-radius:50%;
   background:linear-gradient(135deg,#6366f1,#8b5cf6);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+  font-size:12px;font-weight:700;color:#fff;
 }
-.user-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.82)}
-.user-role{font-size:10px;color:rgba(255,255,255,.3);margin-top:1px}
+.user-av-online{
+  position:absolute;bottom:0;right:0;
+  width:9px;height:9px;border-radius:50%;
+  background:#22c55e;border:1.5px solid #060d1f;
+}
+.user-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.82);line-height:1.2}
+.user-role-badge{
+  display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.4px;
+  text-transform:uppercase;padding:1px 6px;border-radius:3px;
+  background:rgba(37,99,235,.15);color:#93c5fd;margin-top:2px;
+}
 .signout-btn{
   margin-left:auto;background:none;border:none;
-  color:rgba(255,255,255,.22);cursor:pointer;
-  padding:4px;border-radius:6px;transition:color .12s;
+  color:rgba(255,255,255,.2);cursor:pointer;
+  padding:6px;border-radius:6px;
+  transition:color .12s,background .12s;display:flex;
 }
-.signout-btn:hover{color:var(--red)}
-.signout-btn i{font-size:15px}
+.signout-btn:hover{color:var(--red);background:rgba(239,68,68,.08)}
 
 /* ────────────────────────────────────
    MAIN AREA
@@ -7572,22 +7594,32 @@ export default function App() {
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
         <aside className="sidebar">
           <div className="sidebar-logo">
-            <div className="logo-mark">
-              <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
-                <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
-                <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
-                <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
-                <rect x="30" y="21" width="2.5" height="14" rx="1.25" fill="#60a5fa"/>
-                <polygon points="36,27 30,21 30,35" fill="#60a5fa" fillOpacity=".4"/>
-              </svg>
+            <div className="logo-inner">
+              <div className="logo-mark">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+                  <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#818cf8"/>
+                  <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".58"/>
+                  <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".32"/>
+                  <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".16"/>
+                  <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#sbGrad)"/>
+                  <polygon points="38,28 31,20 31,36" fill="#60a5fa" fillOpacity=".45"/>
+                  <defs><linearGradient id="sbGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#60a5fa"/><stop offset="100%" stopColor="#818cf8"/></linearGradient></defs>
+                </svg>
+              </div>
+              <div className="logo-wm">
+                <div className="logo-wm-row">
+                  <span className="logo-wm-l">Ledger</span><span className="logo-wm-os">OS</span>
+                </div>
+                <div className="logo-sub">Arkham Retail Ltd</div>
+              </div>
             </div>
-            <div>
-              <div className="logo-text">LedgerOS</div>
-              <div className="logo-sub">Arkham Retail Ltd</div>
+            <div className="logo-live">
+              <div className="logo-live-dot" />
+              <span className="logo-live-txt">Live</span>
             </div>
           </div>
           {/* Dashboard — standalone */}
-          <div style={{margin:"8px 8px 4px"}}>
+          <div style={{padding:"6px 8px 2px"}}>
             <div className={"nav-item "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>
               {NAV_ICONS["dashboard"]}Dashboard
             </div>
@@ -7599,37 +7631,40 @@ export default function App() {
             return (
               <div key={group.label} className="nav-section">
                 <div className="nav-label">{group.label}</div>
-                {visibleItems.map(n => (
-                  <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>
-                    {NAV_ICONS[n.id]}{n.label}
-                    {n.id==="invoices" && invoices.filter(i=>i.status==="overdue").length>0 &&
-                      <span className="nav-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
-                  </div>
-                ))}
+                <div style={{padding:"0 8px"}}>
+                  {visibleItems.map(n => (
+                    <div key={n.id} className={"nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>
+                      {NAV_ICONS[n.id]}{n.label}
+                      {n.id==="invoices" && invoices.filter(i=>i.status==="overdue").length>0 &&
+                        <span className="nav-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })}
           {/* Settings — standalone at bottom */}
           {(profile?.role === "admin" || profile?.role === "manager") && (
-            <div style={{margin:"4px 8px"}}>
+            <div style={{padding:"4px 8px 0"}}>
               <div className={"nav-item "+(page==="settings"?"active":"")} onClick={() => setPage("settings")}>
                 {NAV_ICONS["settings"]}Settings
               </div>
             </div>
           )}
           <div className="nav-bottom">
-            {/* Dark mode + version */}
-            <div style={{ padding: "6px 12px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", padding: "4px 0" }} onClick={() => { const next = !darkMode; setDarkMode(next); localStorage.setItem("ledgeros_dark", next?"1":"0"); }}>
-                {darkMode ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)", fontWeight: 500 }}>{darkMode ? "Light mode" : "Dark mode"}</span>
-              </div>
-              <span className="version-badge">v2.1</span>
-            </div>
+            <div className="nav-bottom-divider" />
             <div className="user-row">
-              <div className="user-av">{initials}</div>
-              <div><div className="user-name">{profile?.full_name||auth.user.email}</div><div className="user-role">{profile?.role||"agent"}</div></div>
-              <button className="signout-btn" onClick={signOut} title="Sign out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+              <div className="user-av-wrap">
+                <div className="user-av">{initials}</div>
+                <div className="user-av-online" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="user-name">{profile?.full_name||auth.user.email}</div>
+                <div className="user-role-badge">{profile?.role||"agent"}</div>
+              </div>
+              <button className="signout-btn" onClick={signOut} title="Sign out">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </button>
             </div>
           </div>
         </aside>
