@@ -4589,7 +4589,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                                 <td style={{ padding:"10px 14px",fontSize:12,color:"var(--blue)",fontWeight:600 }}>{inv.invoice_number}</td>
                                 <td style={{ padding:"10px 14px",fontSize:12,color:"var(--text2)" }}>{fmtDate(inv.invoice_date)}</td>
                                 <td style={{ padding:"10px 14px",fontSize:13,fontWeight:700,textAlign:"right" }}>{fmt(inv.amount)}</td>
-                                <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span></td>
+                                <td style={{ padding:"10px 14px" }}><span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"||inv.status==="partial"?"b-amber":"b-gray")}>{inv.status}</span></td>
                               </tr>
                             ))}
                           </tbody>
