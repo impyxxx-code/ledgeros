@@ -2170,7 +2170,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>Subtotal</span><span className="mono">{fmt(subtotal)}</span></div>
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>VAT Total</span><span className="mono">{fmt(vatTotal)}</span></div>
               <div className="inv-tot-row divider"><span>Total</span><span className="mono">{fmt(total)}</span></div>
-              <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(total)}</span></div>
+              <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span></div>
             </div>
             {invoice.notes && (
               <div style={{ background:"#fef9ec",border:"1px solid #fcd34d",borderRadius:9,padding:"12px 14px",marginBottom:16 }}>
@@ -2354,7 +2354,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div style={{ display: "flex", gap: 8, flex: 1, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span className={"badge " + sc.cls}>{sc.label}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt(total)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span>
               <span style={{ fontSize: 12, color: "var(--text3)" }}>· {invoice.invoice_number}</span>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
