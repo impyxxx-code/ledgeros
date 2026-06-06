@@ -406,16 +406,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
    ──────────────────────────────────── */
 .main{flex:1;display:flex;flex-direction:column;overflow-x:clip;min-height:100vh}
 
-/* ── Utility strip (replaces topbar) ── */
-.utility-strip{
-  position:sticky;top:0;height:0;overflow:visible;
-  z-index:100;pointer-events:none;
-}
-.utility-strip-inner{
-  position:absolute;right:16px;top:10px;
-  display:flex;align-items:center;gap:6px;
-  pointer-events:all;
-}
+/* ── Page utility bar (within sub-nav or standalone) ── */
 
 .search-wrap{position:relative;flex:1;max-width:340px;display:flex;align-items:center}
 .search-wrap i,.search-wrap>svg{
@@ -444,30 +435,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .search-input::placeholder{color:rgba(255,255,255,.25)}
 
 .tb-btn{
-  width:32px;height:32px;border-radius:var(--r);
-  border:1px solid rgba(255,255,255,.08);
-  background:rgba(13,24,41,.85);
-  backdrop-filter:blur(8px);
+  width:30px;height:30px;border-radius:var(--r);
+  border:1px solid var(--border);
+  background:#f8fafd;
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:rgba(255,255,255,.5);
+  cursor:pointer;color:#64748b;
   transition:all .12s;position:relative;
+  flex-shrink:0;
 }
-.tb-btn:hover{background:rgba(13,24,41,.95);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.85)}
-.tb-btn i{font-size:16px}
-.tb-notif::after{
-  content:'';position:absolute;top:6px;right:6px;
-  width:6px;height:6px;
-  background:var(--red);border-radius:50%;
-  border:1.5px solid #060d1f;
-}
-.tb-av{
-  width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,#2563eb,#7c3aed);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;color:#fff;
-  cursor:pointer;
-  box-shadow:0 0 0 2px #060d1f,0 0 0 3.5px rgba(37,99,235,.4);
-}
+.tb-btn:hover{background:#f1f5f9;border-color:var(--border2);color:#0d1117}
+.tb-btn i{font-size:15px}
 
 /* ── Content ── */
 .content{
@@ -7685,13 +7662,72 @@ export default function App() {
           </div>
         </aside>
         <div className="main">
-          {/* ── UTILITY STRIP — replaces topbar, zero-height sticky overlay ── */}
-          <div className="utility-strip">
-            <div className="utility-strip-inner">
-              {/* Search — opens CommandPalette */}
-              <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          {/* ── UTILITY BUTTONS — injected into sub-nav or standalone bar ── */}
+          {(() => {
+            // Build utility buttons JSX (reused in sub-nav and dashboard bar)
+            const pendingUsersU = profile?.role==="admin" ? allProfiles.filter(p=>p.approved===null&&p.role!=="admin") : [];
+            const notifsU = [
+              ...pendingUsersU.map(p=>({ id:"pu-"+p.id, type:"approval", icon:"ti-user-check", color:"var(--blue)", bg:"var(--blue-lt)", title:"Approval Required", body:`${p.full_name||"New agent"} is awaiting account approval`, action:()=>setPage("settings") })),
+              ...invoices.filter(i=>i.status==="overdue").map(i=>({ id:"ov-"+i.id, type:"overdue", icon:"ti-alert-circle", color:"var(--red)", bg:"var(--red-lt)", title:"Overdue Invoice", body:`${i.customer} — ${fmt(i.amount)} overdue`, action:()=>setPage("invoices") })),
+              ...products.filter(p=>p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)).map(p=>({ id:"ls-"+p.id, type:"lowstock", icon:"ti-package-off", color:"var(--amber)", bg:"var(--amber-lt)", title:"Low Stock Alert", body:`${p.name} — only ${p.stock_qty} ${p.unit||"units"} left`, action:()=>setPage("inventory") })),
+              ...invoices.filter(i=>i.status==="paid").slice(0,3).map(i=>({ id:"pd-"+i.id, type:"paid", icon:"ti-circle-check", color:"var(--green)", bg:"var(--green-lt)", title:"Payment Received", body:`${i.customer} paid ${fmt(i.amount)}`, action:()=>setPage("invoices") })),
+            ].filter(n=>!dismissedNotifs.includes(n.id));
+            const unreadU = notifsU.length;
+            window.__utilityBtns = (
+              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid var(--border)"}}>
+                <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div style={{position:"relative"}}>
+                  <div className="tb-btn" onClick={()=>setShowNotifications(v=>!v)} title="Notifications" style={{position:"relative"}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    {unreadU>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:8,fontWeight:700,width:14,height:14,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid #fff"}}>{unreadU>9?"9+":unreadU}</span>}
+                  </div>
+                  {showNotifications && (
+                    <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:340,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
+                      <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div style={{fontWeight:700,fontSize:14}}>Notifications</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          {notifsU.length>0&&<button onClick={()=>{const ids=notifsU.map(n=>n.id);setDismissedNotifs(prev=>{const next=[...prev,...ids];localStorage.setItem("dismissed_notifs",JSON.stringify(next));return next;});}} style={{fontSize:11,color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--sans)"}}>Clear all</button>}
+                          <button onClick={()=>setShowNotifications(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",display:"flex",alignItems:"center"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </div>
+                      </div>
+                      <div style={{maxHeight:400,overflowY:"auto"}}>
+                        {notifsU.length===0?(<div style={{padding:"32px 16px",textAlign:"center",color:"var(--text3)"}}><div style={{fontSize:13}}>All caught up!</div></div>):notifsU.map(n=>(
+                          <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 16px",borderBottom:"1px solid #f0f3f8",cursor:"pointer",transition:"background .1s"}} onClick={()=>{n.action();setShowNotifications(false);}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafd"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                            <div style={{width:34,height:34,borderRadius:9,background:n.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><i className={"ti "+n.icon} style={{color:n.color,fontSize:16}} /></div>
+                            <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>{n.title}</div><div style={{fontSize:12,color:"var(--text2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.body}</div></div>
+                            <button onClick={e=>{e.stopPropagation();setDismissedNotifs(prev=>{const next=[...prev,n.id];localStorage.setItem("dismissed_notifs",JSON.stringify(next));return next;});}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",padding:4,display:"flex",alignItems:"center"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                          </div>
+                        ))}
+                      </div>
+                      {notifsU.length>0&&<div style={{padding:"10px 16px",background:"#f8fafd",borderTop:"1px solid var(--border)",fontSize:11,color:"var(--text3)",textAlign:"center"}}>{unreadU} alert{unreadU!==1?"s":""} · Click to dismiss</div>}
+                    </div>
+                  )}
+                </div>
+                <div className="tb-btn" onClick={()=>setShowOnboarding(true)} title="Getting started">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+                </div>
+                <button className="tb-btn" onClick={async()=>{ if(!showActivity&&profile?.role!=="admin"&&profile?.role!=="manager")return; setShowActivity(v=>{if(!v){setLoadingAudit(true);fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log?order=created_at.desc&limit=100`,{headers:{"apikey":import.meta.env.VITE_SUPABASE_ANON_KEY,"Authorization":`Bearer ${auth.token}`}}).then(r=>r.json()).then(d=>{setAuditLog(Array.isArray(d)?d:[]);setLoadingAudit(false);}).catch(()=>setLoadingAudit(false));}return!v;}); }} title="Activity" style={{background:showActivity?"var(--green-lt)":undefined,color:showActivity?"var(--green-dk)":undefined,borderColor:showActivity?"var(--green)":undefined}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+                </button>
+                <button className="tb-btn" onMouseEnter={()=>setShowAI(true)} onClick={()=>setShowAI(v=>!v)} title="AI Assistant" style={{background:showAI?"var(--blue-lt)":undefined,color:showAI?"var(--blue)":undefined,borderColor:showAI?"var(--blue)":undefined}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                </button>
               </div>
+            );
+            return null; // buttons injected via window.__utilityBtns
+          })()}
+          {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
+          {page === "dashboard" && (
+            <div style={{background:"#fff",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+              {window.__utilityBtns}
+            </div>
+          )}
+          {/* KEEP: hidden search state for Ctrl+K compatibility */}
+          <div style={{display:"none"}}>
+              <div className="search-wrap topbar-search" style={{ position: "relative" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               {/* Notifications */}
               {(() => {
                 const pendingUsers = profile?.role==="admin" ? allProfiles.filter(p=>p.approved===null&&p.role!=="admin") : [];
@@ -7807,6 +7843,7 @@ export default function App() {
                     {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"#fef2f2", color:"#ef4444", padding:"1px 5px", borderRadius:20 }}>{tab.badge}</span>}
                   </div>
                 ))}
+                {window.__utilityBtns}
               </div>
             );
           })()}
