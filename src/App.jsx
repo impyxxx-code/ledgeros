@@ -4152,7 +4152,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         contacts={contacts}
         products={products}
         token={token}
-        onSaved={() => {
+        onSaved={(updatedFields) => {
+          if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
           sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
           setEditInvoice(null);
         }}
@@ -8056,7 +8057,8 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
       vat_total: vatTotal,
       balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)),
     });
-    onSaved();
+    const updatedFields = { customer, invoice_date: invoiceDate, due_date: dueDate || null, status, notes, lines: JSON.stringify(validLines), amount: total, subtotal, vat_total: vatTotal, balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)) };
+    onSaved(updatedFields);
     onClose();
     setSaving(false);
   };
