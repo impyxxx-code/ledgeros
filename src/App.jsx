@@ -406,15 +406,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
    ──────────────────────────────────── */
 .main{flex:1;display:flex;flex-direction:column;overflow-x:clip;min-height:100vh}
 
-/* ── Topbar ── */
-.topbar{
-  height:54px;
-  background:#0d1829;
-  border-bottom:1px solid rgba(255,255,255,.07);
-  display:flex;align-items:center;
-  padding:0 24px;gap:12px;
-  position:sticky;top:0;z-index:50;
-  box-sizing:border-box;
+/* ── Utility strip (replaces topbar) ── */
+.utility-strip{
+  position:sticky;top:0;height:0;overflow:visible;
+  z-index:100;pointer-events:none;
+}
+.utility-strip-inner{
+  position:absolute;right:16px;top:10px;
+  display:flex;align-items:center;gap:6px;
+  pointer-events:all;
 }
 
 .search-wrap{position:relative;flex:1;max-width:340px;display:flex;align-items:center}
@@ -443,22 +443,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .search-input::placeholder{color:rgba(255,255,255,.25)}
 
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px;height:100%}
 .tb-btn{
   width:32px;height:32px;border-radius:var(--r);
   border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.06);
+  background:rgba(13,24,41,.85);
+  backdrop-filter:blur(8px);
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;color:rgba(255,255,255,.5);
   transition:all .12s;position:relative;
 }
-.tb-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.8)}
+.tb-btn:hover{background:rgba(13,24,41,.95);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.85)}
 .tb-btn i{font-size:16px}
 .tb-notif::after{
   content:'';position:absolute;top:6px;right:6px;
   width:6px;height:6px;
   background:var(--red);border-radius:50%;
-  border:1.5px solid #0d1829;
+  border:1.5px solid #060d1f;
 }
 .tb-av{
   width:32px;height:32px;border-radius:50%;
@@ -466,14 +466,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:800;color:#fff;
   cursor:pointer;
-  box-shadow:0 0 0 2px #0d1829,0 0 0 3.5px rgba(37,99,235,.4);
-}
-.tb-role{
-  font-size:11px;font-weight:700;
-  background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);
-  padding:3px 10px;border-radius:20px;
-  text-transform:uppercase;letter-spacing:.4px;
-  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 0 0 2px #060d1f,0 0 0 3.5px rgba(37,99,235,.4);
 }
 
 /* ── Content ── */
@@ -7692,116 +7685,14 @@ export default function App() {
           </div>
         </aside>
         <div className="main">
-          <div className="topbar">
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 16 }} className="hm">
-<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 28, height: 28, background: "#1e1b4b", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-                    <rect x="10" y="13" width="28" height="3" rx="1.5" fill="#818cf8"/>
-                    <rect x="10" y="20" width="20" height="3" rx="1.5" fill="#818cf8" fillOpacity=".6"/>
-                    <rect x="10" y="27" width="24" height="3" rx="1.5" fill="#818cf8" fillOpacity=".35"/>
-                    <rect x="30" y="21" width="2.5" height="12" rx="1.25" fill="#60a5fa"/>
-                    <polygon points="36,26 30,21 30,33" fill="#60a5fa" fillOpacity=".4"/>
-                  </svg>
-                </div>
+          {/* ── UTILITY STRIP — replaces topbar, zero-height sticky overlay ── */}
+          <div className="utility-strip">
+            <div className="utility-strip-inner">
+              {/* Search — opens CommandPalette */}
+              <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </div>
-            </div>
-            <div className="search-wrap topbar-search" style={{ position: "relative" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                className="search-input"
-                placeholder="Search invoices, customers, products..."
-                value={globalSearch}
-                onChange={e => { setGlobalSearch(e.target.value); setShowSearchResults(e.target.value.length > 0); }}
-                onFocus={e => { if (globalSearch.length > 0) setShowSearchResults(true); else e.currentTarget.closest('.search-wrap').querySelector('.search-hints')?.style && (e.currentTarget.closest('.search-wrap').querySelector('.search-hints').style.display = 'flex'); }}
-                onBlur={e => { setTimeout(() => { setShowSearchResults(false); const h = e.currentTarget.closest('.search-wrap')?.querySelector('.search-hints'); if (h) h.style.display = 'none'; }, 200); }}
-              />
-              <div className="search-hints" style={{ display: "none", position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", boxShadow: "var(--sh2)", padding: "10px 12px", zIndex: 200, gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 4 }}>Try:</span>
-                {["overdue", "pending", "low stock", "paid"].map(hint => (
-                  <button key={hint} onMouseDown={() => { setGlobalSearch(hint); setShowSearchResults(true); }} style={{ padding: "4px 10px", borderRadius: 20, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text2)", fontSize: 12, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .12s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--blue)"; e.currentTarget.style.color = "var(--blue)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text2)"; }}>{hint}</button>
-                ))}
-              </div>
-              {showSearchResults && globalSearch.length > 0 && (() => {
-                const q = globalSearch.toLowerCase();
-                // Natural language patterns
-                const isOverdue = q.includes("overdue") || q.includes("late") || q.includes("unpaid");
-                const isPaid = q.includes("paid") || q.includes("collected");
-                const isLowStock = q.includes("low stock") || q.includes("running low") || q.includes("out of");
-                const isCustomer = q.includes("customer") || q.includes("client");
-                const isProduct = q.includes("product") || q.includes("stock") || q.includes("inventory");
-                const isPending = q.includes("pending") || q.includes("outstanding") || q.includes("owe");
-                
-                let invResults = [];
-                if (isOverdue) invResults = invoices.filter(i => i.status === "overdue").slice(0, 5);
-                else if (isPaid) invResults = invoices.filter(i => i.status === "paid").slice(0, 4);
-                else if (isPending) invResults = invoices.filter(i => i.status === "pending" || i.status === "overdue").slice(0, 4);
-                else invResults = invoices.filter(i => i.customer?.toLowerCase().includes(q) || i.invoice_number?.toLowerCase().includes(q)).slice(0, 4);
-
-                let custResults = [];
-                if (!isProduct && !isOverdue) custResults = contacts.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || (isCustomer && (c.type === "customer" || c.type === "both"))).slice(0, 3);
-
-                let prodResults = [];
-                if (isLowStock) prodResults = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER)).slice(0, 4);
-                else if (isProduct || !isOverdue) prodResults = products.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 3);
-                const total = invResults.length + custResults.length + prodResults.length;
-                return (
-                  <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", boxShadow: "var(--sh3)", zIndex: 200, overflow: "hidden", minWidth: 360 }}>
-                    {total === 0 && <div style={{ padding: "14px 16px", fontSize: 13, color: "var(--text3)" }}>No results for "{globalSearch}"</div>}
-                    {invResults.length > 0 && <>
-                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Invoices</div>
-                      {invResults.map(inv => (
-                        <div key={inv.id} onMouseDown={() => { setPage("invoices"); setPendingInvoiceView(inv); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--blue-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ color: "var(--blue)", fontSize: 13 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span></div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{inv.customer}</div>
-                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount||0)}</div>
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: inv.status==="paid"?"var(--green-lt)":inv.status==="overdue"?"var(--red-lt)":"var(--amber-lt)", color: inv.status==="paid"?"var(--green-dk)":inv.status==="overdue"?"var(--red-dk)":"var(--amber-dk)" }}>{inv.status}</span>
-                        </div>
-                      ))}
-                    </>}
-                    {custResults.length > 0 && <>
-                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Customers</div>
-                      {custResults.map(c => (
-                        <div key={c.id} onMouseDown={() => { setPage("contacts"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][c.name?.charCodeAt(0)%5]||"#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.name?.[0]?.toUpperCase()}</div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{c.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{c.email || c.phone || c.type}</div>
-                          </div>
-                          <span style={{ fontSize: 10, color: "var(--text3)" }}>→ Contacts</span>
-                        </div>
-                      ))}
-                    </>}
-                    {prodResults.length > 0 && <>
-                      <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", borderBottom: "1px solid var(--border)", background: "#f8fafd" }}>Products</div>
-                      {prodResults.map(p => (
-                        <div key={p.id} onMouseDown={() => { setPage("inventory"); setGlobalSearch(""); setShowSearchResults(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f0f3f8", transition: "background .1s" }} onMouseEnter={e => e.currentTarget.style.background="#f8fafd"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--purple-lt)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ color: "var(--purple)", fontSize: 13 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span></div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{p.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--text3)" }}>{p.stock_qty} {p.unit||"units"} · {new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(p.sale_price||0)}</div>
-                          </div>
-                          <span style={{ fontSize: 10, color: "var(--text3)" }}>→ Inventory</span>
-                        </div>
-                      ))}
-                    </>}
-                    <div style={{ padding: "8px 16px", fontSize: 11, color: "var(--text3)", background: "#f8fafd", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>{total} result{total !== 1 ? "s" : ""} for "{globalSearch}"</span>
-                      <span style={{ color: "var(--blue)", fontWeight: 500 }}>Try: "overdue", "low stock", "pending"</span>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-            <div className="topbar-right">
-              <span className="tb-role hm">{profile?.role||"agent"}</span>
-              {/* Live status dot */}
-              <div title={realtimeStatus==="live"?"Real-time connected":"Reconnecting..."} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: realtimeStatus==="live" ? "var(--green-lt)" : "var(--amber-lt)", border: `1px solid ${realtimeStatus==="live" ? "#86efac" : "#fcd34d"}`, cursor: "default" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: realtimeStatus==="live" ? "var(--green)" : "var(--amber)", animation: realtimeStatus==="live" ? "pulse 2s ease-in-out infinite" : "none" }} />
-                <span className="hm" style={{ fontSize: 10, fontWeight: 600, color: realtimeStatus==="live" ? "var(--green-dk)" : "var(--amber-dk)" }}>{realtimeStatus==="live" ? "Live" : "Syncing..."}</span>
-              </div>
+              {/* Notifications */}
               {(() => {
                 const pendingUsers = profile?.role==="admin" ? allProfiles.filter(p=>p.approved===null&&p.role!=="admin") : [];
                 const notifs = [
@@ -7815,7 +7706,7 @@ export default function App() {
                   <div style={{position:"relative"}}>
                     <div className={"tb-btn"+(unread>0?" tb-notif":"")} onClick={()=>setShowNotifications(v=>!v)} style={{cursor:"pointer"}}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                      {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid var(--white)"}}>{unread>9?"9+":unread}</span>}
+                      {unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"var(--red)",color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #060d1f"}}>{unread>9?"9+":unread}</span>}
                     </div>
                     {showNotifications && (
                       <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,width:340,background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rxl)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
@@ -7829,14 +7720,12 @@ export default function App() {
                         <div style={{maxHeight:400,overflowY:"auto"}}>
                           {notifs.length===0?(
                             <div style={{padding:"32px 16px",textAlign:"center",color:"var(--text3)"}}>
-                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style="display:block;margin:0 auto 8px;opacity:0.4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"block",margin:"0 auto 8px",opacity:.4}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                               <div style={{fontSize:13}}>All caught up!</div>
                             </div>
                           ):notifs.map(n=>(
                             <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 16px",borderBottom:"1px solid #f0f3f8",cursor:"pointer",transition:"background .1s"}} onClick={()=>{n.action();setShowNotifications(false);}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafd"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                              <div style={{width:34,height:34,borderRadius:9,background:n.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                <i className={"ti "+n.icon} style={{color:n.color,fontSize:16}} />
-                              </div>
+                              <div style={{width:34,height:34,borderRadius:9,background:n.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><i className={"ti "+n.icon} style={{color:n.color,fontSize:16}} /></div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>{n.title}</div>
                                 <div style={{fontSize:12,color:"var(--text2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.body}</div>
@@ -7845,38 +7734,27 @@ export default function App() {
                             </div>
                           ))}
                         </div>
-                        {notifs.length>0&&(
-                          <div style={{padding:"10px 16px",background:"#f8fafd",borderTop:"1px solid var(--border)",fontSize:11,color:"var(--text3)",textAlign:"center"}}>
-                            {unread} alert{unread!==1?"s":""} · Click to navigate · Dismiss to clear
-                          </div>
-                        )}
+                        {notifs.length>0&&<div style={{padding:"10px 16px",background:"#f8fafd",borderTop:"1px solid var(--border)",fontSize:11,color:"var(--text3)",textAlign:"center"}}>{unread} alert{unread!==1?"s":""} · Click to navigate · Dismiss to clear</div>}
                       </div>
                     )}
                   </div>
                 );
               })()}
-              <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started guide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></div>
-              <div className="tb-btn" onClick={() => setPage("settings")} title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-              <button onClick={async () => {
+              {/* Onboarding guide */}
+              <div className="tb-btn" onClick={() => setShowOnboarding(true)} title="Getting started">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+              </div>
+              {/* Activity log */}
+              <button className="tb-btn" onClick={async () => {
                 if (!showActivity && profile?.role !== "admin" && profile?.role !== "manager") return;
-                setShowActivity(v => {
-                  if (!v) {
-                    setLoadingAudit(true);
-                    fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log?order=created_at.desc&limit=100`, {
-                      headers: { "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY, "Authorization": `Bearer ${auth.token}` }
-                    }).then(r=>r.json()).then(d=>{ setAuditLog(Array.isArray(d)?d:[]); setLoadingAudit(false); }).catch(()=>setLoadingAudit(false));
-                  }
-                  return !v;
-                });
-              }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showActivity ? "linear-gradient(135deg,#059669,#10b981)" : "linear-gradient(135deg,#ecfdf5,#d1fae5)", color: showActivity ? "#fff" : "var(--green)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
+                setShowActivity(v => { if (!v) { setLoadingAudit(true); fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/audit_log?order=created_at.desc&limit=100`, { headers: { "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY, "Authorization": `Bearer ${auth.token}` } }).then(r=>r.json()).then(d=>{ setAuditLog(Array.isArray(d)?d:[]); setLoadingAudit(false); }).catch(()=>setLoadingAudit(false)); } return !v; });
+              }} title="Activity log" style={{ background: showActivity ? "linear-gradient(135deg,#059669,#10b981)" : undefined, color: showActivity ? "#fff" : undefined, borderColor: showActivity ? "transparent" : undefined }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
-                <span className="hm">Activity</span>
               </button>
-              <button onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--r)", border: "none", cursor: "pointer", background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : "linear-gradient(135deg,#eff4ff,#f5f3ff)", color: showAI ? "#fff" : "var(--blue)", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, transition: "all .15s", boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : "none" }}>
+              {/* AI Assistant */}
+              <button className="tb-btn" onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} title="AI Assistant" style={{ background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : undefined, color: showAI ? "#fff" : undefined, borderColor: showAI ? "transparent" : undefined, boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : undefined }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                <span className="hm">AI</span>
               </button>
-              <div className="tb-av">{initials}</div>
             </div>
           </div>
           <div className="content">
