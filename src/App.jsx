@@ -785,6 +785,13 @@ tr:hover td{background:#f8fafd}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
+.inv-table tbody tr{transition:background .12s;cursor:pointer}
+.inv-table tbody tr:hover td{background:rgba(37,99,235,.04)!important}
+.inventory-table{width:100%;border-collapse:collapse}
+.inventory-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.inventory-table td{padding:10px 14px;font-size:13px;border-bottom:0.5px solid var(--border)}
+.inventory-table tbody tr{transition:background .12s;cursor:default}
+.inventory-table tbody tr:hover td{background:rgba(37,99,235,.03)!important}
 .inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
@@ -4360,7 +4367,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                     <div style={{fontWeight:600,fontSize:13}}>{inv.customer}</div>
                     {contacts.find(x=>x.name===inv.customer)?.email
                       ? <div style={{fontSize:11,color:"var(--text3)"}}>{contacts.find(x=>x.name===inv.customer).email}</div>
-                      : <div style={{fontSize:11,color:"#fca5a5"}}>No email</div>}
+                      : <div style={{fontSize:11,color:"#94a3b8"}}>No email</div>}
                   </div>
                 </div>
               </td>
@@ -4832,9 +4839,9 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                 const vip = isVIP(c.name);
                 const health = ci.revenue > 0 ? Math.min(100, Math.round(((ci.revenue - ci.outstanding) / ci.revenue) * 100)) : 50;
                 const healthCol = health >= 75 ? "#16a34a" : health >= 45 ? "#d97706" : "#dc2626";
-                const statusBg = !c.email ? "#fef3c7" : overdue ? "#fee2e2" : "#dcfce7";
-                const statusText = !c.email ? "#92400e" : overdue ? "#991b1b" : "#15803d";
-                const statusDot = !c.email ? "#d97706" : overdue ? "#dc2626" : "#16a34a";
+                const statusBg = !c.email ? "rgba(148,163,184,.12)" : overdue ? "#fee2e2" : "#dcfce7";
+                const statusText = !c.email ? "#64748b" : overdue ? "#991b1b" : "#15803d";
+                const statusDot = !c.email ? "#94a3b8" : overdue ? "#dc2626" : "#16a34a";
                 const statusLabel = !c.email ? "No Email" : overdue ? "Overdue" : "Active";
                 return (
                   <div key={c.id} className="ct-list-row" onClick={() => setViewContact(c)}
@@ -4865,7 +4872,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.email}</span>
                         </div>
                       ) : (
-                        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#d97706" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#94a3b8" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                           No email
                         </div>
