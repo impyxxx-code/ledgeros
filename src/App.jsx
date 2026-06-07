@@ -249,8 +249,8 @@ const CSS = `
   --orange:#f97316;--orange-lt:#fff7ed;--orange-dk:#c2410c;
 
   /* ── Elevation ── */
-  --sh:0 1px 2px rgba(13,17,23,.04),0 2px 8px rgba(13,17,23,.04);
-  --sh2:0 4px 12px rgba(13,17,23,.08),0 1px 3px rgba(13,17,23,.04);
+  --sh:0 1px 3px rgba(13,17,23,.06),0 2px 12px rgba(13,17,23,.07);
+  --sh2:0 4px 16px rgba(13,17,23,.12),0 1px 4px rgba(13,17,23,.06);
   --sh3:0 24px 64px rgba(13,17,23,.14),0 8px 24px rgba(13,17,23,.08);
   --sh-blue:0 4px 14px rgba(37,99,235,.25);
 
@@ -545,6 +545,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   margin-bottom:18px;
   animation:fadeIn .2s var(--ease) both;
 }
+
+/* Page hero banners — drop shadow bridges dark→light transition */
+.page-hero{filter:drop-shadow(0 6px 18px rgba(0,0,0,.22))}
 .ch{
   padding:16px 22px;
   border-bottom:1px solid var(--border);
@@ -3574,7 +3577,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       )}
 
       {/* ── Header Option C — dark banner with embedded KPIs ── */}
-      <div style={{ margin: "-26px -28px 24px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         {/* subtle radial highlight */}
         <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(37,99,235,.07)", pointerEvents: "none" }} />
         {/* top row: greeting + quick actions */}
@@ -3651,7 +3654,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         ].map(pill => {
           const PillIcon = pill.Icon;
           return (
-            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor="var(--blue)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
+            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderLeft: "3px solid " + pill.color, borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor=pill.color; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.borderLeftColor=pill.color; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: pill.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <PillIcon size={16} color={pill.color} strokeWidth={2}/>
               </div>
@@ -4236,7 +4239,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
       {/* ── Invoices Page Header ── */}
-      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
@@ -4410,7 +4413,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                 return <div style={{fontSize:11,color:"var(--text3)",lineHeight:1.5}}><div>{r.line1}</div><div>{r.line2}</div></div>;
               })()}</td>
               <td style={{textAlign:"right",whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
-                <div style={{display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
                   <button onClick={()=>setViewInvoice(inv)} title="View" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
@@ -4683,7 +4686,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div></ModalPortal>
       )}
       {/* ── Customers Page Header ── */}
-      <div style={{ margin: "-26px -28px 0 -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
@@ -5005,7 +5008,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
   return (
     <div>
       {/* ── Inventory Page Header ── */}
-      <div style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
@@ -8878,7 +8881,7 @@ function BankingPage({ token, userId, profile }) {
   return (
     <div>
       {/* Dark Header */}
-      <div style={{margin:"-26px -28px 20px -28px",background:"#0d1829",padding:"20px 24px 0",position:"relative",overflow:"hidden"}}>
+      <div className="page-hero" style={{margin:"-26px -28px 20px -28px",background:"#0d1829",padding:"20px 24px 0",position:"relative",overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
           <div>
             <div style={{fontSize:18,fontWeight:600,color:"#fff"}}>Banking</div>
