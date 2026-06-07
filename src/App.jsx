@@ -215,7 +215,7 @@ const CSS = `
 
 :root{
   /* ── Backgrounds ── */
-  --bg:#f4f6f9;
+  --bg:#fafbff;
   --bg2:#eef0f5;
   --white:#ffffff;
 
@@ -246,6 +246,7 @@ const CSS = `
   --red:#ef4444;--red-lt:#fff1f1;--red-dk:#991b1b;
   --amber:#f59e0b;--amber-lt:#fffbeb;--amber-dk:#92400e;
   --purple:#7c3aed;--purple-lt:#f5f3ff;--purple-dk:#4c1d95;
+  --indigo:#818cf8;--indigo-dim:rgba(129,140,248,.15);
   --orange:#f97316;--orange-lt:#fff7ed;--orange-dk:#c2410c;
 
   /* ── Elevation ── */
@@ -294,9 +295,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   border-right:1px solid var(--sidebar-border);
 }
 .sidebar::before{
-  content:'';position:absolute;top:-80px;left:-80px;
-  width:240px;height:240px;border-radius:50%;
-  background:radial-gradient(circle,rgba(37,99,235,.1) 0%,transparent 70%);
+  content:'';position:absolute;top:-100px;left:-100px;
+  width:360px;height:360px;border-radius:50%;
+  background:radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+.sidebar::after{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:52px 52px;
   pointer-events:none;z-index:0;
 }
 .sidebar>*{position:relative;z-index:1}
@@ -348,15 +355,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .nav-item::before{
   content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
   width:0;height:16px;border-radius:0 3px 3px 0;
-  background:#2563eb;transition:width .12s;
+  background:#818cf8;transition:width .12s;
 }
 .nav-item:hover{
   background:rgba(255,255,255,.05);
   color:rgba(255,255,255,.7);
 }
 .nav-item.active{
-  background:linear-gradient(90deg,rgba(37,99,235,.18),rgba(37,99,235,.06));
-  color:#93c5fd;font-weight:600;
+  background:linear-gradient(90deg,rgba(99,102,241,.22),rgba(99,102,241,.06));
+  color:#a5b4fc;font-weight:600;
 }
 .nav-item.active::before{width:3px}
 .nav-item svg{flex-shrink:0;opacity:.85;width:15px;height:15px}
@@ -548,6 +555,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
 /* Page hero banners — drop shadow bridges dark→light transition */
 .page-hero{filter:drop-shadow(0 6px 18px rgba(0,0,0,.22))}
+.page-hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:52px 52px;pointer-events:none;z-index:0}
 .ch{
   padding:16px 22px;
   border-bottom:1px solid var(--border);
@@ -3577,13 +3585,16 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
       )}
 
       {/* ── Header Option C — dark banner with embedded KPIs ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        {/* subtle radial highlight */}
-        <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(37,99,235,.07)", pointerEvents: "none" }} />
+      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        {/* orb top-right */}
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
+        {/* orb bottom-left */}
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
         {/* top row: greeting + quick actions */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-.4px", marginBottom: 4 }}>{greeting}, {name}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Dashboard</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1px", marginBottom: 4 }}>{greeting}, <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{name}</span></div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 8 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -4239,12 +4250,14 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
       {/* ── Invoices Page Header ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Invoices</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Invoice Management</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Invoices & <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Payments</span></div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {invoices.length} total
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -4686,11 +4699,13 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div></ModalPortal>
       )}
       {/* ── Customers Page Header ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Customers & Suppliers</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Contacts</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers & <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Suppliers</span></div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {contacts.filter(c => c.type === "customer" || c.type === "both").length} customers
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -5008,11 +5023,13 @@ function Inventory({ products, setProducts, token, userId, profile }) {
   return (
     <div>
       {/* ── Inventory Page Header ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#0d1829", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(37,99,235,.06)", pointerEvents: "none" }} />
+      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.4px", marginBottom: 3 }}>Stock & Inventory</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Inventory</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Stock & <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Inventory</span></div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {products.length} products
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -8881,11 +8898,14 @@ function BankingPage({ token, userId, profile }) {
   return (
     <div>
       {/* Dark Header */}
-      <div className="page-hero" style={{margin:"-26px -28px 20px -28px",background:"#0d1829",padding:"20px 24px 0",position:"relative",overflow:"hidden"}}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+      <div className="page-hero" style={{margin:"-26px -28px 20px -28px",background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)",padding:"20px 24px 0",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-80,right:-80,width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)",pointerEvents:"none"}} />
+        <div style={{position:"absolute",bottom:-60,left:-40,width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)",pointerEvents:"none"}} />
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
           <div>
-            <div style={{fontSize:18,fontWeight:600,color:"#fff"}}>Banking</div>
-            <div style={{fontSize:12,color:"#8aa0b8",marginTop:2}}>Detailed cash reconciliation for banking</div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:700,letterSpacing:"1.4px",textTransform:"uppercase",color:"rgba(165,180,252,.8)",marginBottom:6}}><div style={{width:5,height:5,borderRadius:"50%",background:"#818cf8",animation:"pulse 2.4s ease-in-out infinite"}} />Banking & Cash</div>
+            <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-1.2px"}}>Cash & <span style={{background:"linear-gradient(135deg,#a78bfa,#60a5fa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Reconciliation</span></div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Detailed cash reconciliation for banking</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {["today","week","month","all"].map(p => (
