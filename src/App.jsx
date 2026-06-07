@@ -3641,7 +3641,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 
 
       {/* ── Stat pills row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 20 }} className="stat-pills-grid">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 20 }} className="stat-pills-grid">
         {[
           { label: "Customers", val: customers.length, Icon: Users, color: "var(--blue)", onClick: drillCustomers },
           { label: "Products", val: products.length, Icon: ShoppingBag, color: "var(--purple)", onClick: drillProducts },
@@ -3793,7 +3793,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         {/* Activity + Quick stats */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* Revenue breakdown mini card */}
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", boxShadow: "var(--sh)" }}>
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", boxShadow: "var(--sh)", overflow: "hidden", minWidth: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Revenue Breakdown</div>
             {[
               { label: "Collected", val: paid, total: revenue, color: "var(--green)", onClick: drillPaid },
@@ -3801,9 +3801,9 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               { label: "Overdue", val: overdue, total: revenue, color: "var(--red)", onClick: drillOutstanding },
             ].map(r => (
               <div key={r.label} onClick={r.onClick} style={{ marginBottom: 10, cursor: "pointer" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: "var(--text2)" }}>{r.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: r.color }}>{fmt(r.val)}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: r.color, whiteSpace: "nowrap", flexShrink: 0 }}>{fmt(r.val)}</span>
                 </div>
                 <div style={{ height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.min(r.val / (revenue || 1) * 100, 100)}%`, background: r.color, borderRadius: 3, transition: "width .6s var(--ease)" }} />
@@ -8908,7 +8908,7 @@ function BankingPage({ token, userId, profile }) {
             {label:"Bank transfer",val:"£"+(byMethod.bank||0).toFixed(2),sub:payments.filter(p=>p.method==="bank").length+" payments"},
             {label:"Unbanked cash",val:"£"+unbanked.toFixed(2),sub:"Awaiting deposit",col:"#f59e0b"},
           ].map((k,i) => (
-            <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none"}}>
+            <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none",borderTop:"3px solid "+(k.col||"#2563eb")}}>
               <div style={{fontSize:10,fontWeight:700,color:"#8aa0b8",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
               <div style={{fontSize:20,fontWeight:600,color:k.col||"#fff",fontFamily:"var(--mono)"}}>{k.val}</div>
               <div style={{fontSize:11,color:"#8aa0b8",marginTop:3}}>{k.sub}</div>
