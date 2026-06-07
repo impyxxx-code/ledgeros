@@ -8947,11 +8947,13 @@ function BankingPage({ token, userId, profile }) {
             <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Detailed cash reconciliation for banking</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            {["today","week","month","all"].map(p => (
-              <button key={p} onClick={()=>setPeriod(p)} style={{padding:"5px 14px",borderRadius:6,border:"1px solid "+(period===p?"var(--blue)":"rgba(255,255,255,0.15)"),background:period===p?"var(--blue)":"transparent",color:period===p?"#fff":"#8aa0b8",fontSize:12,cursor:"pointer",fontFamily:"var(--sans)",fontWeight:period===p?600:400}}>
-                {p==="today"?"Today":p==="week"?"This week":p==="month"?"This month":"All time"}
-              </button>
-            ))}
+            <div style={{display:"flex",alignItems:"center",gap:3,background:"rgba(255,255,255,.07)",borderRadius:9,padding:"3px 4px",border:"1px solid rgba(99,102,241,.2)"}}>
+              {["today","week","month","all"].map(p => (
+                <button key={p} onClick={()=>setPeriod(p)} style={{padding:"5px 13px",borderRadius:7,border:"none",background:period===p?"#818cf8":"transparent",color:period===p?"#fff":"rgba(255,255,255,.45)",fontSize:12,cursor:"pointer",fontFamily:"var(--sans)",fontWeight:period===p?700:500,transition:"all .15s",boxShadow:period===p?"0 2px 8px rgba(129,140,248,.35)":"none"}}>
+                  {p==="today"?"Today":p==="week"?"This week":p==="month"?"This month":"All time"}
+                </button>
+              ))}
+            </div>
             <button onClick={exportCSV} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:12,cursor:"pointer",fontWeight:500,fontFamily:"var(--sans)"}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export CSV
@@ -8965,18 +8967,31 @@ function BankingPage({ token, userId, profile }) {
         {/* KPI row */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,borderTop:"1px solid rgba(255,255,255,0.08)",margin:"0 -24px"}}>
           {[
-            {label:"Total collected",val:"£"+total.toFixed(2),sub:payments.length+" payments"},
+            {label:"Total collected",val:"£"+total.toFixed(2),sub:payments.length+" payments",col:"#818cf8"},
             {label:"Cash",val:"£"+(byMethod.cash||0).toFixed(2),sub:payments.filter(p=>p.method==="cash").length+" payments",col:"#22c55e"},
-            {label:"Bank transfer",val:"£"+(byMethod.bank||0).toFixed(2),sub:payments.filter(p=>p.method==="bank").length+" payments"},
+            {label:"Bank transfer",val:"£"+(byMethod.bank||0).toFixed(2),sub:payments.filter(p=>p.method==="bank").length+" payments",col:"#60a5fa"},
             {label:"Unbanked cash",val:"£"+unbanked.toFixed(2),sub:"Awaiting deposit",col:"#f59e0b"},
           ].map((k,i) => (
-            <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none",borderTop:"3px solid "+(k.col||"#2563eb")}}>
+            <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none",borderTop:"3px solid "+k.col}}>
               <div style={{fontSize:10,fontWeight:700,color:"#8aa0b8",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
-              <div style={{fontSize:20,fontWeight:600,color:k.col||"#fff",fontFamily:"var(--mono)"}}>{loading?"—":k.val}</div>
+              <div style={{fontSize:20,fontWeight:600,color:k.col,fontFamily:"var(--mono)"}}>{loading?"—":k.val}</div>
               <div style={{fontSize:11,color:"#8aa0b8",marginTop:3}}>{loading?"Loading…":k.sub}</div>
             </div>
           ))}
         </div>
+        {/* Method breakdown mini strip */}
+        {!loading && payments.length > 0 && (
+          <div style={{display:"flex",alignItems:"center",gap:16,padding:"10px 20px",borderTop:"1px solid rgba(255,255,255,.06)",margin:"0 -24px",background:"rgba(0,0,0,.15)",flexWrap:"wrap"}}>
+            <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",textTransform:"uppercase",letterSpacing:"1px",flexShrink:0}}>By method:</span>
+            {[["cash","💵","#22c55e"],["bank","🏦","#60a5fa"],["card","💳","#a78bfa"],["cheque","📝","#fcd34d"]].map(([m,icon,col]) => {
+              const amt = byMethod[m]||0; const cnt = payments.filter(p=>p.method===m).length;
+              if (!cnt) return null;
+              return <span key={m} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 10px",borderRadius:20,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:11,color:"rgba(255,255,255,.7)"}}>
+                {icon} <span style={{fontWeight:600,color:col,fontFamily:"var(--mono)"}}>£{amt.toFixed(2)}</span> <span style={{color:"rgba(255,255,255,.35)"}}>{cnt}×</span>
+              </span>;
+            })}
+          </div>
+        )}
       </div>
 
       {loading ? (
