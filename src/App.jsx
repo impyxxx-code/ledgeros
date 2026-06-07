@@ -3830,39 +3830,49 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           {/* Activity feed */}
           <div className="card" style={{ marginBottom: 0, flex: 1 }}>
             <div className="ch"><div className="ct">Activity Feed</div><div className="cs">Latest events</div></div>
-            {[
-              ...invoices.slice(0, 4).map(inv => ({
-                key: inv.id,
-                Icon: inv.status === "paid" ? CheckCircle2 : FileText,
-                color: inv.status === "paid" ? "var(--green)" : "var(--blue)",
-                bg: inv.status === "paid" ? "var(--green-lt)" : "var(--blue-lt)",
-                title: inv.status === "paid" ? "Payment received" : "Invoice created",
-                sub: `${inv.customer} · ${inv.invoice_number}`,
-                amt: fmt(inv.amount), amtColor: inv.status === "paid" ? "var(--green)" : "var(--text2)"
-              })),
-              ...lowStock.slice(0, 2).map(p => ({
-                key: p.id,
+            {(() => {
+              const sorted = [...invoices].sort((a, b) => (b.created_at || "") > (a.created_at || "") ? 1 : -1);
+              const methodIcon = m => ({ cash: "💵", bank: "🏦", card: "💳", cheque: "📝" }[m] || "");
+              const invItems = sorted.slice(0, 6).map(inv => {
+                const isPaid = inv.status === "paid";
+                const isOverdue = inv.status === "overdue";
+                const isPartial = inv.status === "partial";
+                return {
+                  key: inv.id,
+                  Icon: isPaid ? CheckCircle2 : FileText,
+                  color: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : isPartial ? "var(--amber)" : "#818cf8",
+                  bg: isPaid ? "var(--green-lt)" : isOverdue ? "var(--red-lt)" : isPartial ? "var(--amber-lt)" : "rgba(129,140,248,.12)",
+                  title: isPaid ? `Payment received ${methodIcon(inv.payment_method)}` : isOverdue ? "Invoice overdue" : isPartial ? "Partial payment" : "Invoice created",
+                  sub: `${inv.customer} · ${inv.invoice_number}`,
+                  amt: fmt(inv.amount),
+                  amtColor: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : "var(--text2)"
+                };
+              });
+              const stockItems = lowStock.slice(0, 2).map(p => ({
+                key: "s-" + p.id,
                 Icon: AlertTriangle, color: "var(--amber)", bg: "var(--amber-lt)",
                 title: "Low stock alert",
                 sub: `${p.name} · ${p.stock_qty} ${p.unit || "units"} remaining`,
                 amt: null
-              }))
-            ].slice(0, 5).map(item => {
-              const ActIcon = item.Icon;
-              return (
-              <div key={item.key} className="act-item">
-                <div className="act-icon" style={{ background: item.bg }}>
-                  <ActIcon size={16} color={item.color} strokeWidth={2}/>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="act-title">{item.title}</div>
-                  <div className="act-sub" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</div>
-                </div>
-                {item.amt && <span className="act-amt" style={{ color: item.amtColor }}>{item.amt}</span>}
-              </div>
-              );
-            })}
-            {invoices.length === 0 && lowStock.length === 0 && <div className="empty">No recent activity</div>}
+              }));
+              const all = [...invItems, ...stockItems].slice(0, 6);
+              if (!all.length) return <div className="empty">No recent activity</div>;
+              return all.map(item => {
+                const ActIcon = item.Icon;
+                return (
+                  <div key={item.key} className="act-item">
+                    <div className="act-icon" style={{ background: item.bg }}>
+                      <ActIcon size={16} color={item.color} strokeWidth={2}/>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="act-title">{item.title}</div>
+                      <div className="act-sub" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</div>
+                    </div>
+                    {item.amt && <span className="act-amt" style={{ color: item.amtColor }}>{item.amt}</span>}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
