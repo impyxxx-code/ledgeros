@@ -7743,7 +7743,7 @@ export default function App() {
           })()}
           {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
           {page === "dashboard" && (
-            <div style={{background:"#0d1829",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+            <div style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
               {window.__utilityBtns}
             </div>
           )}
