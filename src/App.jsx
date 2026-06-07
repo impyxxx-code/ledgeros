@@ -3629,7 +3629,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
               onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 5 }}>{k.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: k.deltaColor }}>{k.delta}</div>
             </div>
           ))}
@@ -3642,11 +3642,11 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
           {insights.map((insight, i) => {
             const InsightIcon = insight.Icon;
             return (
-              <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 10, background: insight.bg, border: `1px solid ${insight.color}22`, borderRadius: "var(--rl)", padding: "11px 14px", cursor: "pointer", transition: "opacity .15s" }} onMouseEnter={e => e.currentTarget.style.opacity=".85"} onMouseLeave={e => e.currentTarget.style.opacity="1"}>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: insight.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <InsightIcon size={16} color={insight.color} strokeWidth={2}/>
+              <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 12, background: "#0d1829", border: `1px solid ${insight.color}33`, borderLeft: `3px solid ${insight.color}`, borderRadius: "var(--rl)", padding: "12px 16px", cursor: "pointer", transition: "all .18s", boxShadow: `0 2px 12px ${insight.color}11` }} onMouseEnter={e => { e.currentTarget.style.background="#111c35"; e.currentTarget.style.boxShadow=`0 4px 20px ${insight.color}22`; }} onMouseLeave={e => { e.currentTarget.style.background="#0d1829"; e.currentTarget.style.boxShadow=`0 2px 12px ${insight.color}11`; }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: insight.color + "20", border: `1px solid ${insight.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <InsightIcon size={17} color={insight.color} strokeWidth={2}/>
                 </div>
-                <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>{insight.text}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)", lineHeight: 1.5, fontWeight: 500 }}>{insight.text}</div>
               </div>
             );
           })}
@@ -3665,9 +3665,9 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         ].map(pill => {
           const PillIcon = pill.Icon;
           return (
-            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderLeft: "3px solid " + pill.color, borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "all .15s" }} onMouseEnter={e => { e.currentTarget.style.borderColor=pill.color; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="var(--sh2)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.borderLeftColor=pill.color; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: pill.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <PillIcon size={16} color={pill.color} strokeWidth={2}/>
+            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderTop: "2px solid " + pill.color, borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "all .18s" }} onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.1)"; }} onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: pill.color + "15", border: "1px solid " + pill.color + "30", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <PillIcon size={17} color={pill.color} strokeWidth={2}/>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{pill.label}</div>
@@ -3720,7 +3720,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               </div>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}}/>Collected
+                  <div style={{width:10,height:10,borderRadius:2,background:"#818cf8"}}/>Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
                   <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
@@ -3733,8 +3733,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
                   <defs>
                     <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25}/>
+                      <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
@@ -3746,13 +3746,13 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                   <YAxis tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={40}/>
                   <Tooltip content={ChartTooltip}/>
                   <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:4,fill:"#f59e0b"}}/>
-                  <Area type="monotone" dataKey="Collected" stroke="#2563eb" strokeWidth={2} fill="url(#gradCollected)" dot={{r:3,fill:"#2563eb",strokeWidth:0}} activeDot={{r:5,fill:"#2563eb"}}/>
+                  <Area type="monotone" dataKey="Collected" stroke="#818cf8" strokeWidth={2} fill="url(#gradCollected)" dot={{r:3,fill:"#818cf8",strokeWidth:0}} activeDot={{r:5,fill:"#818cf8"}}/>
                 </AreaChart>
               </ResponsiveContainer>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
-                  <div style={{fontSize:18,fontWeight:700,color:"var(--green)"}}>{fmt(totalPaid6)}</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"#818cf8"}}>{fmt(totalPaid6)}</div>
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Pending</div>
