@@ -7857,11 +7857,11 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
-                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#fff":"rgba(255,255,255,.45)", borderBottom:page===tab.id?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
-                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.75)";e.currentTarget.style.borderBottom="2px solid rgba(255,255,255,.15)";}}}
-                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.45)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#a5b4fc":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #818cf8":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(129,140,248,.3)";}}}
+                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.4)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
                     {tab.label}
                     {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(239,68,68,.2)", color:"#fca5a5", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(239,68,68,.3)" }}>{tab.badge}</span>}
                   </div>
