@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         personalizations: [{ to: [{ email: to }] }],
-        from: { email: "ARKHAMRETAIL@GMAIL.COM", name: from_name || "Arkham Retail Ltd" },
+        from: { email: "noreply@arkos.uk", name: from_name || "Arkham Retail Ltd" },
         subject,
         content: [{ type: "text/html", value: html }],
       }),
