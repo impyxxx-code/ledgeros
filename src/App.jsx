@@ -121,6 +121,10 @@ const sb = {
   async updatePassword(t, password) {
     return (await fetch(`${SUPABASE_URL}/auth/v1/user`, { method: "PUT", headers: { ...sb.h(t), "Content-Type": "application/json" }, body: JSON.stringify({ password }) })).json();
   },
+  async mfaListFactors(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors`, { headers: sb.h(t) })).json(); },
+  async mfaEnroll(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors`, { method: "POST", headers: sb.h(t), body: JSON.stringify({ friendly_name: "Authenticator", factor_type: "totp" }) })).json(); },
+  async mfaChallenge(t, factorId) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors/${factorId}/challenge`, { method: "POST", headers: sb.h(t) })).json(); },
+  async mfaVerify(t, factorId, challengeId, code) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors/${factorId}/verify`, { method: "POST", headers: sb.h(t), body: JSON.stringify({ challenge_id: challengeId, code }) })).json(); },
   async get(t, table, q = "") {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: sb.h(t) });
     if (res.status === 401) { window._jwtExpired = true; return []; }
@@ -1562,6 +1566,15 @@ function Auth({ onAuth, sessionExpired }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(sessionExpired ? "Your session has expired — please sign in again." : "");
   const [showPw, setShowPw] = useState(false);
+  const [mfaStep, setMfaStep] = useState("none"); // "none" | "enroll" | "verify"
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaErr, setMfaErr] = useState("");
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState("");
+  const [mfaChallengeId, setMfaChallengeId] = useState("");
+  const [mfaQr, setMfaQr] = useState("");
+  const [mfaSecret, setMfaSecret] = useState("");
+  const [mfaSession, setMfaSession] = useState(null);
   const [recoveryMode, setRecoveryMode] = useState(() => {
     const hash = window.location.hash;
     return hash.includes("type=recovery");
@@ -1617,6 +1630,33 @@ function Auth({ onAuth, sessionExpired }) {
             setLoading(false); return;
           }
         } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
+        // ── MFA check ──
+        let factors = [];
+        try { const fr = await sb.mfaListFactors(d.access_token); factors = Array.isArray(fr) ? fr : []; } catch {}
+        const verifiedTotp = factors.find(f => f.factor_type === "totp" && f.status === "verified");
+        if (verifiedTotp) {
+          // User has MFA enrolled → challenge them
+          const ch = await sb.mfaChallenge(d.access_token, verifiedTotp.id);
+          if (!ch.id) { setErr("MFA challenge failed. Please try again."); setLoading(false); return; }
+          setMfaSession(d);
+          setMfaFactorId(verifiedTotp.id);
+          setMfaChallengeId(ch.id);
+          setMfaStep("verify");
+          setLoading(false);
+          return;
+        } else {
+          // No MFA enrolled → force enrollment
+          const enroll = await sb.mfaEnroll(d.access_token);
+          if (!enroll.id) { setErr("MFA setup failed. Please try again."); setLoading(false); return; }
+          setMfaSession(d);
+          setMfaFactorId(enroll.id);
+          setMfaQr(enroll.totp?.qr_code || "");
+          setMfaSecret(enroll.totp?.secret || "");
+          setMfaStep("enroll");
+          setLoading(false);
+          return;
+        }
+        // (unreachable — kept for structure)
         logAudit(d.access_token, d.user.id, "user_login", "user", d.user.id, `${d.user.email} signed in`);
         if (d.refresh_token) localStorage.setItem('ledgeros_rt', d.refresh_token);
         onAuth({ token: d.access_token, user: d.user });
@@ -1633,6 +1673,48 @@ function Auth({ onAuth, sessionExpired }) {
     await sb.resetPassword(f.email);
     setErr("✓ Reset email sent — check your inbox.");
     setLoading(false);
+  };
+
+  const verifyMfa = async () => {
+    const code = mfaCode.replace(/\s/g, "");
+    if (code.length !== 6 || !/^\d+$/.test(code)) { setMfaErr("Enter the 6-digit code from your authenticator app."); return; }
+    setMfaLoading(true); setMfaErr("");
+    const res = await sb.mfaVerify(mfaSession.access_token, mfaFactorId, mfaChallengeId, code);
+    if (res.access_token) {
+      const d = res;
+      logAudit(d.access_token, mfaSession.user.id, "user_login", "user", mfaSession.user.id, `${mfaSession.user.email} signed in (MFA)`);
+      if (d.refresh_token) localStorage.setItem('ledgeros_rt', d.refresh_token);
+      onAuth({ token: d.access_token, user: mfaSession.user });
+    } else {
+      setMfaErr("Incorrect code — please try again.");
+      // Create a new challenge for the next attempt
+      try {
+        const ch = await sb.mfaChallenge(mfaSession.access_token, mfaFactorId);
+        if (ch.id) setMfaChallengeId(ch.id);
+      } catch {}
+    }
+    setMfaCode("");
+    setMfaLoading(false);
+  };
+
+  const confirmEnrollment = async () => {
+    const code = mfaCode.replace(/\s/g, "");
+    if (code.length !== 6 || !/^\d+$/.test(code)) { setMfaErr("Enter the 6-digit code shown in your authenticator app."); return; }
+    setMfaLoading(true); setMfaErr("");
+    // Create challenge for the unverified factor
+    const ch = await sb.mfaChallenge(mfaSession.access_token, mfaFactorId);
+    if (!ch.id) { setMfaErr("Challenge failed. Please reload and try again."); setMfaLoading(false); return; }
+    const res = await sb.mfaVerify(mfaSession.access_token, mfaFactorId, ch.id, code);
+    if (res.access_token) {
+      const d = res;
+      logAudit(d.access_token, mfaSession.user.id, "user_login", "user", mfaSession.user.id, `${mfaSession.user.email} signed in (MFA enrolled)`);
+      if (d.refresh_token) localStorage.setItem('ledgeros_rt', d.refresh_token);
+      onAuth({ token: d.access_token, user: mfaSession.user });
+    } else {
+      setMfaErr("Incorrect code — scan the QR code again and enter the 6-digit number.");
+    }
+    setMfaCode("");
+    setMfaLoading(false);
   };
 
   const mob = isMobile();
@@ -1654,6 +1736,90 @@ function Auth({ onAuth, sessionExpired }) {
         </div>
       </div>
     </div>
+  );
+
+  // ── MFA screens ──
+  const MfaCard = ({ title, subtitle, children }) => (
+    <div style={{ minHeight:"100vh",background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:24 }}>
+      <div style={{ background:"#fff",borderRadius:20,padding:"40px 36px",maxWidth:420,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:28 }}>
+          <div style={{ width:44,height:44,background:"linear-gradient(135deg,#1e1b4b,#2d1f6e)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1" fill="#818cf8"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize:18,fontWeight:800,color:"#0f172a",lineHeight:1.2 }}>{title}</div>
+            <div style={{ fontSize:13,color:"#64748b",marginTop:2 }}>{subtitle}</div>
+          </div>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+
+  if (mfaStep === "verify") return (
+    <MfaCard title="Two-Factor Authentication" subtitle="Enter the 6-digit code from your authenticator app.">
+      <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+        <input
+          autoFocus
+          type="text"
+          inputMode="numeric"
+          maxLength={7}
+          placeholder="000 000"
+          value={mfaCode}
+          onChange={e=>setMfaCode(e.target.value.replace(/[^\d\s]/g,""))}
+          onKeyDown={e=>e.key==="Enter"&&verifyMfa()}
+          style={{ padding:"14px",border:"2px solid #e2e8f0",borderRadius:10,fontSize:28,fontWeight:700,letterSpacing:8,textAlign:"center",outline:"none",color:"#0f172a",fontVariantNumeric:"tabular-nums" }}
+        />
+        {mfaErr && <div style={{ fontSize:13,color:"#dc2626",padding:"8px 12px",background:"#fef2f2",borderRadius:6,textAlign:"center" }}>{mfaErr}</div>}
+        <button onClick={verifyMfa} disabled={mfaLoading} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",transition:"opacity .15s",opacity:mfaLoading?.7:1 }}>
+          {mfaLoading ? "Verifying…" : "Verify & Sign In"}
+        </button>
+        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} style={{ background:"none",border:"none",color:"#64748b",fontSize:13,cursor:"pointer",textDecoration:"underline",padding:0 }}>
+          ← Back to sign in
+        </button>
+      </div>
+    </MfaCard>
+  );
+
+  if (mfaStep === "enroll") return (
+    <MfaCard title="Set Up Two-Factor Auth" subtitle="Scan the QR code with Google Authenticator, Authy, or any TOTP app.">
+      <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+        {mfaQr ? (
+          <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:12,padding:"16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0" }}>
+            <img src={mfaQr} alt="MFA QR Code" style={{ width:180,height:180,borderRadius:8 }} />
+            {mfaSecret && (
+              <div style={{ textAlign:"center" }}>
+                <div style={{ fontSize:11,color:"#94a3b8",marginBottom:4 }}>Or enter manually:</div>
+                <div style={{ fontSize:13,fontWeight:700,color:"#0f172a",letterSpacing:2,fontFamily:"monospace",background:"#e2e8f0",padding:"4px 10px",borderRadius:6 }}>{mfaSecret}</div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ textAlign:"center",padding:20,color:"#64748b" }}>Loading QR code…</div>
+        )}
+        <div style={{ fontSize:13,color:"#475569",padding:"10px 14px",background:"#f1f5f9",borderRadius:8 }}>
+          Once scanned, enter the 6-digit code below to confirm setup.
+        </div>
+        <input
+          autoFocus
+          type="text"
+          inputMode="numeric"
+          maxLength={7}
+          placeholder="000 000"
+          value={mfaCode}
+          onChange={e=>setMfaCode(e.target.value.replace(/[^\d\s]/g,""))}
+          onKeyDown={e=>e.key==="Enter"&&confirmEnrollment()}
+          style={{ padding:"14px",border:"2px solid #e2e8f0",borderRadius:10,fontSize:28,fontWeight:700,letterSpacing:8,textAlign:"center",outline:"none",color:"#0f172a",fontVariantNumeric:"tabular-nums" }}
+        />
+        {mfaErr && <div style={{ fontSize:13,color:"#dc2626",padding:"8px 12px",background:"#fef2f2",borderRadius:6,textAlign:"center" }}>{mfaErr}</div>}
+        <button onClick={confirmEnrollment} disabled={mfaLoading} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",opacity:mfaLoading?.7:1 }}>
+          {mfaLoading ? "Confirming…" : "Confirm & Activate MFA"}
+        </button>
+        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} style={{ background:"none",border:"none",color:"#64748b",fontSize:13,cursor:"pointer",textDecoration:"underline",padding:0 }}>
+          ← Back to sign in
+        </button>
+      </div>
+    </MfaCard>
   );
 
   // ── Concept B SVG logo mark ──
