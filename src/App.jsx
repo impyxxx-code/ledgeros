@@ -4276,7 +4276,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Bulk Payment
             </button>}
-            <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #818cf8", background: "#818cf8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Invoice
             </button>
@@ -4315,13 +4315,29 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
       </div>
 
       {/* Status filter tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16, background: "#0d1829", borderRadius: 10, padding: "4px 5px", border: "1px solid rgba(99,102,241,.18)", alignSelf: "flex-start", flexWrap: "wrap" }}>
         {[["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]].map(([s, lbl, cnt]) => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid " + (filterStatus === s ? "var(--blue)" : "var(--border)"), background: filterStatus === s ? "var(--blue)" : "var(--white)", color: filterStatus === s ? "#fff" : "var(--text2)", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .12s" }}>
-            {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "var(--border)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700 }}>{cnt}</span>
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none" }}>
+            {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
           </button>
         ))}
       </div>
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "10px 16px", background: "#0d1829", border: "1px solid rgba(129,140,248,.3)", borderRadius: 10, boxShadow: "0 4px 20px rgba(99,102,241,.15)" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#a5b4fc" }}>{selectedIds.size} selected</span>
+          <span style={{ width: 1, height: 16, background: "rgba(255,255,255,.12)" }} />
+          <button onClick={bulkMarkPaid} disabled={bulkLoading} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Mark Paid
+          </button>
+          <button onClick={bulkSendReminder} disabled={bulkLoading} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.75)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Send Reminder
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: "auto", padding: "5px 10px", borderRadius: 7, border: "1px solid rgba(255,255,255,.12)", background: "transparent", color: "rgba(255,255,255,.4)", fontSize: 12, cursor: "pointer", fontFamily: "var(--sans)" }}>Clear</button>
+        </div>
+      )}
       {showForm && !isMobile() && <InvoiceForm contacts={contacts} products={products} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} />}
       {showForm && isMobile() && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:500,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
