@@ -1732,7 +1732,7 @@ function Auth({ onAuth, sessionExpired }) {
 
           {/* Footer */}
           <div style={{ fontSize: 11, color: "rgba(255,255,255,.18)", lineHeight: 1.7, position: "relative", zIndex: 1 }}>
-            © 2026 Arkham Retail Ltd &nbsp;·&nbsp; VAT: GB462229106
+            © 2026 Arkham Retail Ltd
           </div>
         </div>
       )}
