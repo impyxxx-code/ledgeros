@@ -4735,10 +4735,10 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
               {contactSearch && <button onClick={() => setContactSearch("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", padding: 0 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
             </div>
             <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => setContactView("grid")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "grid" ? "#2563eb" : "rgba(255,255,255,.15)"), background: contactView === "grid" ? "#2563eb" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-              <button onClick={() => setContactView("list")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "list" ? "#2563eb" : "rgba(255,255,255,.15)"), background: contactView === "list" ? "#2563eb" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button onClick={() => setContactView("grid")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "grid" ? "#818cf8" : "rgba(255,255,255,.15)"), background: contactView === "grid" ? "#818cf8" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+              <button onClick={() => setContactView("list")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "list" ? "#818cf8" : "rgba(255,255,255,.15)"), background: contactView === "list" ? "#818cf8" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
             </div>
-            <button onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #818cf8", background: "#818cf8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
               Add {tab === "customer" ? "Customer" : "Supplier"}
             </button>
@@ -4773,23 +4773,23 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div>
       </div>
       {/* ── TABS + UTILITY BAR ── */}
-      <div style={{ background:"#fff", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 4px", marginTop:0 }}>
-        <div style={{ display:"flex" }}>
+      <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 8px", marginTop:0 }}>
+        <div style={{ display:"flex", gap:3 }}>
           {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
             <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
-              style={{ padding:"11px 16px", fontSize:12, fontWeight:tab===k?600:400, color:tab===k?"#2563eb":"#64748b", borderBottom:tab===k?"2px solid #2563eb":"2px solid transparent", cursor:"pointer", display:"flex", alignItems:"center", gap:5, transition:"all .15s" }}>
-              {l} <span style={{ fontSize:11, color:tab===k?"#2563eb":"#94a3b8" }}>({contacts.filter(c=>c.type===k||c.type==="both").length})</span>
+              style={{ padding:"6px 14px", fontSize:12, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#818cf8":"transparent", borderRadius:7, cursor:"pointer", display:"flex", alignItems:"center", gap:5, transition:"all .15s", boxShadow:tab===k?"0 2px 8px rgba(129,140,248,.35)":"none" }}>
+              {l} <span style={{ fontSize:10, fontWeight:700, background:tab===k?"rgba(255,255,255,.2)":"rgba(255,255,255,.08)", padding:"1px 6px", borderRadius:10, color:tab===k?"#fff":"rgba(255,255,255,.4)" }}>{contacts.filter(c=>c.type===k||c.type==="both").length}</span>
             </div>
           ))}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:4 }}>
           {contactFilter !== "all" && (
-            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"rgba(129,140,248,.15)", color:"#a5b4fc", border:"1px solid rgba(129,140,248,.3)", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
               {contactFilter === "has-email" ? "Has email" : contactFilter === "no-email" ? "No email" : contactFilter === "has-phone" ? "Has phone" : "No phone"}
-              <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#2563eb", fontSize:14, lineHeight:1, padding:0 }}>×</button>
+              <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#a5b4fc", fontSize:14, lineHeight:1, padding:0 }}>×</button>
             </span>
           )}
-          <span style={{ fontSize:11, color:"var(--text3)" }}>{filtered.length}{contactSearch ? ` of ${contacts.filter(c=>c.type===tab||c.type==="both").length}` : ""} result{filtered.length!==1?"s":""}</span>
+          <span style={{ fontSize:11, color:"rgba(255,255,255,.35)" }}>{filtered.length}{contactSearch ? ` of ${contacts.filter(c=>c.type===tab||c.type==="both").length}` : ""} result{filtered.length!==1?"s":""}</span>
         </div>
       </div>
 
@@ -4803,7 +4803,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         <div style={{ display:"flex", gap:5 }}>
           {[["all","All"],["has-email","Has Email"],["no-email","No Email"],["has-phone","Has Phone"],["no-phone","No Phone"]].map(([v,l]) => (
             <div key={v} onClick={() => setContactFilter(v)}
-              style={{ padding:"6px 12px", borderRadius:20, fontSize:11, fontWeight:500, cursor:"pointer", background:contactFilter===v?"#2563eb":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#2563eb":"var(--border)"), transition:"all .12s" }}>
+              style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#818cf8":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#818cf8":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(129,140,248,.3)":"none" }}>
               {l}
             </div>
           ))}
@@ -4880,7 +4880,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                 return (
                   <div key={c.id} className="ct-list-row" onClick={() => setViewContact(c)}
                     style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, background:"var(--white)", borderRadius:11, border:"1.5px solid var(--border)", padding:"12px", alignItems:"center", cursor:"pointer", transition:"box-shadow .15s, border-color .15s" }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #2563eb"; e.currentTarget.style.borderColor="#2563eb"; }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #818cf8"; e.currentTarget.style.borderColor="#818cf8"; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow=""; e.currentTarget.style.borderColor="var(--border)"; }}>
 
                     {/* Customer */}
@@ -4958,7 +4958,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                       ].map(({icon,label,action},idx) => (
                         <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}
                           style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color:"#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}
-                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#2563eb"; e.currentTarget.style.color="#2563eb"; e.currentTarget.style.background="#eff6ff"; }}
+                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#818cf8"; e.currentTarget.style.color="#818cf8"; e.currentTarget.style.background="rgba(129,140,248,.08)"; }}
                           onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="#64748b"; e.currentTarget.style.background="var(--white)"; }}>
                           {icon}
                         </button>
