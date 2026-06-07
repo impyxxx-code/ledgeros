@@ -32,6 +32,7 @@
 import Analytics from "./Analytics.jsx";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, CheckCircle2, FileText, AlertTriangle, Users, ShoppingBag, Landmark, Sun } from "lucide-react";
 
 const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
@@ -3669,16 +3670,26 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             const id = new Date(inv.invoice_date||inv.created_at);
             return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid"&&inv.status!=="draft";
           }).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
-          return {lbl, paid: mPaid, pending: mPending};
+          return {lbl, Collected: Math.round(mPaid*100)/100, Pending: Math.round(mPending*100)/100};
         });
-        const maxVal = Math.max(...months.map(m=>Math.max(m.paid,m.pending)),1);
-        const H = 100;
-        const W = 100/months.length;
-        const paidPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.paid/maxVal*H)}`).join(" ");
-        const pendPts = months.map((m,i)=>`${i*(W)+W/2},${H-(m.pending/maxVal*H)}`).join(" ");
-        const totalPaid6 = months.reduce((s,m)=>s+m.paid,0);
-        const totalPend6 = months.reduce((s,m)=>s+m.pending,0);
-        const bestMonth = months.reduce((a,b)=>b.paid>a.paid?b:a,months[0]);
+        const totalPaid6 = months.reduce((s,m)=>s+m.Collected,0);
+        const totalPend6 = months.reduce((s,m)=>s+m.Pending,0);
+        const bestMonth = months.reduce((a,b)=>b.Collected>a.Collected?b:a,months[0]);
+        const ChartTooltip = ({ active, payload, label }) => {
+          if (!active || !payload || !payload.length) return null;
+          return (
+            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+              <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
+              {payload.map(p=>(
+                <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:p.color}}/>
+                  <span style={{color:"rgba(255,255,255,.7)"}}>{p.name}:</span>
+                  <span style={{color:"#fff",fontWeight:700}}>£{(p.value||0).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                </div>
+              ))}
+            </div>
+          );
+        };
         return (
           <div className="card" style={{marginBottom:18}}>
             <div className="ch">
@@ -3688,49 +3699,35 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
               </div>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}} />Collected
+                  <div style={{width:10,height:10,borderRadius:2,background:"#2563eb"}}/>Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b",opacity: 0.6}} />Pending
+                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
                 </div>
                 <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Reports</button>
               </div>
             </div>
-            <div style={{padding:"20px 24px"}}>
-              <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:8,alignItems:"stretch"}}>
-                <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingBottom:24,height:140}}>
-                  {[maxVal, Math.round(maxVal*75/100), Math.round(maxVal*50/100), Math.round(maxVal*25/100), 0].map((v,i)=>(
-                    <div key={i} style={{fontSize:9,color:"var(--text3)",textAlign:"right",lineHeight:1}}>{v>0?fmt(v):"£0"}</div>
-                  ))}
-                </div>
-                <div style={{position:"relative"}}>
-                  <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{width:"100%",height:120,display:"block"}}>
-                    <defs>
-                      <linearGradient id="paidGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563eb" stopOpacity=".25"/>
-                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0"/>
-                      </linearGradient>
-                      <linearGradient id="pendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity=".15"/>
-                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0"/>
-                      </linearGradient>
-                    </defs>
-                    {[0,25,50,75,100].map(y=>(
-                      <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="var(--border)" strokeWidth="0.3" vectorEffect="non-scaling-stroke"/>
-                    ))}
-                    <polygon points={`0,${H} ${pendPts} 100,${H}`} fill="url(#pendGrad)"/>
-                    <polyline points={pendPts} fill="none" stroke="#f59e0b" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" vectorEffect="non-scaling-stroke"/>
-                    <polygon points={`0,${H} ${paidPts} 100,${H}`} fill="url(#paidGrad)"/>
-                    <polyline points={paidPts} fill="none" stroke="#2563eb" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>
-                    {months.map((m,i)=>(
-                      <circle key={i} cx={i*W+W/2} cy={H-(m.paid/maxVal*H)} r="1.2" fill="#2563eb" vectorEffect="non-scaling-stroke"/>
-                    ))}
-                  </svg>
-                  <div style={{display:"flex",justifyContent:"space-around",marginTop:4}}>
-                    {months.map(m=><div key={m.lbl} style={{fontSize:10,color:"var(--text3)",textAlign:"center"}}>{m.lbl}</div>)}
-                  </div>
-                </div>
-              </div>
+            <div style={{padding:"4px 24px 20px"}}>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
+                  <defs>
+                    <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+                  <XAxis dataKey="lbl" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
+                  <YAxis tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={40}/>
+                  <Tooltip content={ChartTooltip}/>
+                  <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:4,fill:"#f59e0b"}}/>
+                  <Area type="monotone" dataKey="Collected" stroke="#2563eb" strokeWidth={2} fill="url(#gradCollected)" dot={{r:3,fill:"#2563eb",strokeWidth:0}} activeDot={{r:5,fill:"#2563eb"}}/>
+                </AreaChart>
+              </ResponsiveContainer>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
@@ -3742,7 +3739,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>Best Month</div>
-                  <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.paid||0)}</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.Collected||0)}</div>
                 </div>
               </div>
             </div>
