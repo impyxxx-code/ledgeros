@@ -5012,6 +5012,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
   const [editingQty, setEditingQty] = useState({});
   const [updatingId, setUpdatingId] = useState(null);
   const [f, setF] = useState({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
+  const [stockFilter, setStockFilter] = useState("all");
 
   const save = async () => {
     if (!f.name) return; setSaving(true);
@@ -5032,9 +5033,12 @@ function Inventory({ products, setProducts, token, userId, profile }) {
   };
 
   const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
-  const filtered = invSearch
-    ? products.filter(p => p.name?.toLowerCase().includes(invSearch.toLowerCase()) || p.code?.toLowerCase().includes(invSearch.toLowerCase()) || p.category?.toLowerCase().includes(invSearch.toLowerCase()))
-    : products;
+  const outOfStock = products.filter(p => (p.stock_qty || 0) === 0);
+  const filtered = products.filter(p => {
+    if (stockFilter === "low") return p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
+    if (stockFilter === "out") return (p.stock_qty || 0) === 0;
+    return true;
+  }).filter(p => !invSearch || p.name?.toLowerCase().includes(invSearch.toLowerCase()) || p.code?.toLowerCase().includes(invSearch.toLowerCase()) || p.category?.toLowerCase().includes(invSearch.toLowerCase()));
 
   return (
     <div>
@@ -5059,7 +5063,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
               {invSearch && <button onClick={() => setInvSearch("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", padding: 0 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
             </div>
             {(profile?.role === "admin" || profile?.role === "manager") && (
-              <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #818cf8", background: "#818cf8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)" }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add Product
               </button>
@@ -5068,7 +5072,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#2563eb" },
+            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#818cf8" },
             { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a" },
             { label: "Stock Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price, 0)), sub: "at cost price", color: "rgba(255,255,255,.35)", accent: "#7c3aed" },
             { label: "Retail Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price, 0)), sub: "at sale price", color: "#86efac", accent: "#16a34a" },
@@ -5082,6 +5086,15 @@ function Inventory({ products, setProducts, token, userId, profile }) {
         </div>
       </div>
 
+      {/* Stock filter tabs */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16, background: "#0d1829", borderRadius: 10, padding: "4px 5px", border: "1px solid rgba(99,102,241,.18)", alignSelf: "flex-start", flexWrap: "wrap" }}>
+        {[["all", "All Products", products.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length]].map(([v, l, cnt]) => (
+          <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : "#818cf8") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
+            {l} <span style={{ background: stockFilter === v ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: stockFilter === v ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
+          </button>
+        ))}
+      </div>
+
       {showForm && (profile?.role === "admin" || profile?.role === "manager") && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
 
       <div className="card">
@@ -5093,8 +5106,10 @@ function Inventory({ products, setProducts, token, userId, profile }) {
               {filtered.map(p => {
                 const isEditing = editingQty[p.id] !== undefined;
                 const isUpdating = updatingId === p.id;
+                const isLow = p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
+                const isOut = (p.stock_qty || 0) === 0;
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id} style={isOut ? { background: "rgba(239,68,68,.04)", borderLeft: "3px solid #ef4444" } : isLow ? { background: "rgba(245,158,11,.04)", borderLeft: "3px solid #f59e0b" } : {}}>
                     <td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td>
                     <td style={{fontWeight:500}}>{p.name}</td>
                     <td className="tm">{p.category||"—"}</td>
