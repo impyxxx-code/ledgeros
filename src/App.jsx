@@ -8941,8 +8941,8 @@ function BankingPage({ token, userId, profile }) {
           ].map((k,i) => (
             <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none",borderTop:"3px solid "+(k.col||"#2563eb")}}>
               <div style={{fontSize:10,fontWeight:700,color:"#8aa0b8",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
-              <div style={{fontSize:20,fontWeight:600,color:k.col||"#fff",fontFamily:"var(--mono)"}}>{k.val}</div>
-              <div style={{fontSize:11,color:"#8aa0b8",marginTop:3}}>{k.sub}</div>
+              <div style={{fontSize:20,fontWeight:600,color:k.col||"#fff",fontFamily:"var(--mono)"}}>{loading?"—":k.val}</div>
+              <div style={{fontSize:11,color:"#8aa0b8",marginTop:3}}>{loading?"Loading…":k.sub}</div>
             </div>
           ))}
         </div>
