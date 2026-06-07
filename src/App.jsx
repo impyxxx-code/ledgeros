@@ -121,8 +121,9 @@ const sb = {
   async updatePassword(t, password) {
     return (await fetch(`${SUPABASE_URL}/auth/v1/user`, { method: "PUT", headers: { ...sb.h(t), "Content-Type": "application/json" }, body: JSON.stringify({ password }) })).json();
   },
-  async mfaListFactors(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors`, { headers: sb.h(t) })).json(); },
-  async mfaEnroll(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors`, { method: "POST", headers: sb.h(t), body: JSON.stringify({ friendly_name: "Authenticator", factor_type: "totp" }) })).json(); },
+  async mfaGetUser(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: sb.h(t) })).json(); },
+  async mfaEnroll(t) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors`, { method: "POST", headers: sb.h(t), body: JSON.stringify({ friendly_name: `TOTP-${Date.now()}`, factor_type: "totp" }) })).json(); },
+  async mfaUnenroll(t, factorId) { try { await fetch(`${SUPABASE_URL}/auth/v1/factors/${factorId}`, { method: "DELETE", headers: sb.h(t) }); } catch {} },
   async mfaChallenge(t, factorId) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors/${factorId}/challenge`, { method: "POST", headers: sb.h(t) })).json(); },
   async mfaVerify(t, factorId, challengeId, code) { return (await fetch(`${SUPABASE_URL}/auth/v1/factors/${factorId}/verify`, { method: "POST", headers: sb.h(t), body: JSON.stringify({ challenge_id: challengeId, code }) })).json(); },
   async get(t, table, q = "") {
@@ -1632,10 +1633,10 @@ function Auth({ onAuth, sessionExpired }) {
         } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
         // ── MFA check ──
         let factors = [];
-        try { const fr = await sb.mfaListFactors(d.access_token); factors = Array.isArray(fr) ? fr : []; } catch {}
+        try { const ur = await sb.mfaGetUser(d.access_token); factors = Array.isArray(ur.factors) ? ur.factors : []; } catch {}
         const verifiedTotp = factors.find(f => f.factor_type === "totp" && f.status === "verified");
         if (verifiedTotp) {
-          // User has MFA enrolled → challenge them
+          // User has verified MFA → challenge them
           const ch = await sb.mfaChallenge(d.access_token, verifiedTotp.id);
           if (!ch.id) { setErr("MFA challenge failed. Please try again."); setLoading(false); return; }
           setMfaSession(d);
@@ -1645,7 +1646,9 @@ function Auth({ onAuth, sessionExpired }) {
           setLoading(false);
           return;
         } else {
-          // No MFA enrolled → force enrollment
+          // No verified MFA → delete any pending unverified factors then force fresh enrollment
+          const unverified = factors.filter(f => f.factor_type === "totp" && f.status === "unverified");
+          await Promise.all(unverified.map(f => sb.mfaUnenroll(d.access_token, f.id)));
           const enroll = await sb.mfaEnroll(d.access_token);
           if (!enroll.id) { setErr("MFA setup failed. Please try again."); setLoading(false); return; }
           setMfaSession(d);
@@ -1786,7 +1789,7 @@ function Auth({ onAuth, sessionExpired }) {
       <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
         {mfaQr ? (
           <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:12,padding:"16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0" }}>
-            <img src={mfaQr} alt="MFA QR Code" style={{ width:180,height:180,borderRadius:8 }} />
+            <div dangerouslySetInnerHTML={{ __html: mfaQr }} style={{ width:180,height:180,borderRadius:8,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center" }} />
             {mfaSecret && (
               <div style={{ textAlign:"center" }}>
                 <div style={{ fontSize:11,color:"#94a3b8",marginBottom:4 }}>Or enter manually:</div>
