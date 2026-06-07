@@ -3599,14 +3599,14 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
         {/* KPI strip embedded in banner */}
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); } },
-            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); } },
-            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); } },
-            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); } },
+            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); }, accent: "#2563eb" },
+            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); }, accent: "#ef4444" },
+            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e" },
+            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e" },
           ].map((k, i) => (
-            <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "background .15s" }}
-              onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.04)"}
-              onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+            <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", borderTop: "3px solid transparent" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 5 }}>{k.label}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: k.deltaColor }}>{k.delta}</div>
