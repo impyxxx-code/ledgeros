@@ -452,6 +452,33 @@ tr:hover td{background:#f8fafd}
 /* ────────────────────────────────────
    BUTTONS
    ──────────────────────────────────── */
+
+/* ── Shine glint keyframe (primary buttons) ── */
+@keyframes btn-glint{
+  0%{background-position:-200% center}
+  100%{background-position:200% center}
+}
+/* ── Shake warning keyframe (danger buttons) ── */
+@keyframes btn-shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-3px)}
+  40%{transform:translateX(3px)}
+  60%{transform:translateX(-2px)}
+  80%{transform:translateX(2px)}
+}
+/* ── Bounce keyframe (WhatsApp button) ── */
+@keyframes btn-bounce{
+  0%,100%{transform:translateY(0)}
+  40%{transform:translateY(-4px)}
+  70%{transform:translateY(-2px)}
+}
+/* ── Count flash keyframe (qty numbers) ── */
+@keyframes qty-flash{
+  0%{transform:scale(1);color:var(--text)}
+  50%{transform:scale(1.35);color:var(--blue)}
+  100%{transform:scale(1);color:var(--text)}
+}
+
 .btn{
   padding:7px 16px;border-radius:var(--r);
   font-size:13px;font-weight:500;cursor:pointer;border:none;
@@ -459,31 +486,83 @@ tr:hover td{background:#f8fafd}
   font-family:var(--sans);
   display:inline-flex;align-items:center;gap:6px;
   white-space:nowrap;
+  position:relative;overflow:hidden;
 }
 .btn:active{transform:scale(.98)}
 .btn i{font-size:14px}
 
+/* 1 · PRIMARY — Shine Glint */
 .bp{
   background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
   box-shadow:0 2px 8px rgba(37,99,235,.28);
 }
+.bp::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);
+  background-size:200% 100%;background-position:-200% center;
+  transition:none;pointer-events:none;border-radius:inherit;
+}
 .bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 4px 14px rgba(37,99,235,.35);transform:translateY(-1px)}
-.bp:disabled{opacity: 0.45;cursor:not-allowed;transform:none;box-shadow:none}
+.bp:hover::after{animation:btn-glint .55s ease forwards}
+.bp:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
+.bp:disabled::after{display:none}
 
+/* 2 · OUTLINE — Subtle Lift */
 .bo{
   background:var(--white);color:var(--text);
   border:1px solid var(--border2);
   box-shadow:0 1px 2px rgba(13,17,23,.04);
 }
-.bo:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+.bo:hover{
+  border-color:var(--blue);color:var(--blue);background:var(--blue-lt);
+  box-shadow:0 4px 12px rgba(37,99,235,.10);
+  transform:translateY(-1px);
+}
 
+/* 3 · DANGER — Shake Warning */
 .bd{background:var(--red-lt);color:var(--red-dk);border:1px solid #fca5a5}
-.bd:hover{background:#fee2e2}
+.bd:hover{background:#fee2e2;animation:btn-shake .22s ease}
 
+/* 4 · WHATSAPP — Bounce */
 .bwa{background:#25D366;color:#fff;box-shadow:0 2px 8px rgba(37,211,102,.25)}
-.bwa:hover{background:#20BA5A;transform:translateY(-1px)}
+.bwa:hover{background:#20BA5A;animation:btn-bounce .38s ease}
 
 .bsm{padding:5px 11px;font-size:12px}
+
+/* 5 · ICON ACTION BUTTONS — Scale Pop (apply .bicon to 28×28 action buttons) */
+.bicon{
+  transition:transform .12s var(--ease),box-shadow .12s var(--ease),background .12s var(--ease);
+}
+.bicon:hover{transform:scale(1.18);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.bicon:active{transform:scale(.94)}
+
+/* 6 · STATUS PILLS — Sliding indicator handled inline via JS state */
+/* The pill group uses .pill-group; active pill transitions handled by background/color */
+.pill-group{position:relative;display:flex;gap:4px}
+.pill-group button{transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
+
+/* 7 · QTY COUNTER — Count Flash on the display span */
+.qty-flash{animation:qty-flash .25s ease}
+
+/* 8 · DARK HEADER SEMI-TRANSPARENT BUTTONS — Frost Deepen */
+.bfrost{
+  transition:background .16s var(--ease),backdrop-filter .16s var(--ease),box-shadow .16s var(--ease);
+}
+.bfrost:hover{
+  background:rgba(255,255,255,.18) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18),0 4px 16px rgba(0,0,0,.18);
+}
+
+/* 9 · TEXT / LINK BUTTONS — Underline Wipe */
+.blink{
+  position:relative;background:none;border:none;cursor:pointer;
+  font-family:var(--sans);padding:0;
+}
+.blink::after{
+  content:"";position:absolute;bottom:-1px;left:0;width:0;height:1.5px;
+  background:currentColor;transition:width .2s var(--ease);
+}
+.blink:hover::after{width:100%}
 
 /* ────────────────────────────────────
    FORMS
@@ -1610,7 +1689,7 @@ function Auth({ onAuth, sessionExpired }) {
         <button onClick={verifyMfa} disabled={mfaLoading} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",transition:"opacity .15s",opacity:mfaLoading?.7:1 }}>
           {mfaLoading ? "Verifying…" : "Verify & Sign In"}
         </button>
-        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} style={{ background:"none",border:"none",color:"#64748b",fontSize:13,cursor:"pointer",textDecoration:"underline",padding:0 }}>
+        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} className="blink" style={{ color:"#64748b",fontSize:13 }}>
           ← Back to sign in
         </button>
       </div>
@@ -1651,7 +1730,7 @@ function Auth({ onAuth, sessionExpired }) {
         <button onClick={confirmEnrollment} disabled={mfaLoading} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",opacity:mfaLoading?.7:1 }}>
           {mfaLoading ? "Confirming…" : "Confirm & Activate MFA"}
         </button>
-        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} style={{ background:"none",border:"none",color:"#64748b",fontSize:13,cursor:"pointer",textDecoration:"underline",padding:0 }}>
+        <button onClick={()=>{setMfaStep("none");setMfaCode("");setMfaErr("");}} className="blink" style={{ color:"#64748b",fontSize:13 }}>
           ← Back to sign in
         </button>
       </div>
@@ -1829,7 +1908,7 @@ function Auth({ onAuth, sessionExpired }) {
           <div style={{ marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Password</label>
-              {mode === "signin" && <button onClick={sendReset} style={{ fontSize: 12, color: "#2563eb", fontWeight: 500, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--sans)" }}>Forgot password?</button>}
+              {mode === "signin" && <button onClick={sendReset} className="blink" style={{ fontSize: 12, color: "#2563eb", fontWeight: 500, fontFamily: "var(--sans)" }}>Forgot password?</button>}
             </div>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9aa5b4", pointerEvents: "none", display: "flex" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
@@ -3138,14 +3217,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                 <button onClick={() => mobDec(i)} style={{ width:44, height:44, border:"1.5px solid var(--border)", borderRadius:10, background:"var(--bg)", fontSize:22, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>−</button>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={l.qty}
-                  onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v > 0) { const nxt=[...lines]; nxt[i]={...nxt[i],qty:v}; setLines(nxt); } }}
-                  onFocus={e => e.target.select()}
-                  style={{ width:64, height:44, textAlign:"center", fontSize:16, fontWeight:700, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--white)", outline:"none", fontFamily:"var(--mono)", color:"var(--text)", padding:"0 4px", WebkitAppearance:"none", MozAppearance:"textfield" }}
-                />
+                <span key={`qty-${i}-${l.qty}`} className="qty-flash" style={{ width:64, height:44, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:700, fontFamily:"var(--mono)", color:"var(--text)" }}>{l.qty}</span>
                 <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--blue)", fontSize:22, cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>+</button>
               </div>
               <button onClick={() => mobRemoveLine(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
@@ -3606,13 +3678,13 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            <button onClick={() => setPage("invoices")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("invoices")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice
             </button>
-            <button onClick={() => setPage("contacts")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("contacts")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer
             </button>
-            <button onClick={() => setPage("delivery-notes")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("delivery-notes")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery
             </button>
             <button onClick={() => setPage("analytics")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
@@ -4456,10 +4528,10 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
               })()}</td>
               <td style={{textAlign:"right",whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
-                  <button onClick={()=>setViewInvoice(inv)} title="View" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                  <button onClick={()=>setViewInvoice(inv)} title="View" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <button onClick={()=>printDNFromInvoice(inv)} title="Delivery note" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                  <button onClick={()=>printDNFromInvoice(inv)} title="Delivery note" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                   </button>
                   {profile?.role==="admin"&&inv.status!=="paid"&&(
@@ -4472,13 +4544,13 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                         <button onClick={()=>setPayingId(null)} style={{padding:"4px 6px",borderRadius:6,background:"var(--bg)",color:"var(--text2)",border:"1px solid var(--border)",fontSize:11,cursor:"pointer"}}>✕</button>
                       </div>
                     ):(
-                      <button onClick={()=>setPayingId(inv.id)} title="Mark paid" style={{width:28,height:28,borderRadius:6,border:"1px solid #bbf7d0",background:"#f0fdf4",color:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                      <button onClick={()=>setPayingId(inv.id)} title="Mark paid" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid #bbf7d0",background:"#f0fdf4",color:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </button>
                     )
                   )}
                   {profile?.role==="admin"&&(
-                    <button onClick={()=>deleteInvoice(inv)} title="Delete" style={{width:28,height:28,borderRadius:6,border:"1px solid #fecaca",background:"#fef2f2",color:"var(--red)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    <button onClick={()=>deleteInvoice(inv)} title="Delete" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid #fecaca",background:"#fef2f2",color:"var(--red)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
                     </button>
                   )}
