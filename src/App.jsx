@@ -753,24 +753,25 @@ tr:hover td{background:#f8fafd}
   border-radius:var(--rxl);
   width:100%;max-width:740px;max-height:92vh;
   overflow-y:auto;
-  box-shadow:var(--sh3);
+  box-shadow:0 8px 40px rgba(99,102,241,.12),var(--sh3);
   animation:scaleIn .2s var(--ease) both;
-  border:1px solid var(--border);
+  border:1px solid rgba(99,102,241,.2);
+  border-top:3px solid #818cf8;
 }
 .modal-header{
   padding:16px 22px;
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;
-  background:rgba(255,255,255,.95);
+  background:rgba(255,255,255,.97);
   backdrop-filter:blur(8px);
-  z-index:10;border-radius:var(--rxl) var(--rxl) 0 0;
+  z-index:10;border-radius:0;
 }
 .modal-actions{
   padding:14px 22px;border-top:1px solid var(--border);
   display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
   position:sticky;bottom:0;
-  background:rgba(255,255,255,.95);
+  background:#f8fafc;
   backdrop-filter:blur(8px);
   border-radius:0 0 var(--rxl) var(--rxl);
 }
@@ -1396,7 +1397,7 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
   ].slice(0, 10);
 
   return (<ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ alignItems: "flex-start", paddingTop: "12vh" }}>
-      <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "var(--sh3)", overflow: "hidden", border: "1px solid var(--border)", animation: "scaleIn .15s var(--ease)" }}>
+      <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 8px 40px rgba(99,102,241,.12),var(--sh3)", overflow: "hidden", border: "1px solid rgba(99,102,241,.2)", borderTop: "3px solid #818cf8", animation: "scaleIn .15s var(--ease)" }}>
         {/* Search input */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -8493,7 +8494,7 @@ function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, 
   return (
     <ModalPortal>
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{alignItems:"center"}}>
-        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:560,boxShadow:"var(--shadow-xl)",overflow:"hidden"}}>
+        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(99,102,241,.12)",overflow:"hidden",borderTop:"3px solid #818cf8"}}>
 
           {/* Header */}
           <div style={{background:"#0d1829",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
@@ -8711,7 +8712,7 @@ function OverpaymentModal({ inv, overpayment, outstandingInvoices, token, userId
   return (
     <ModalPortal>
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{alignItems:"center"}}>
-        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"var(--shadow-xl)",overflow:"hidden"}}>
+        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(99,102,241,.12)",overflow:"hidden",borderTop:"3px solid #818cf8"}}>
           {/* Header */}
           <div style={{background:"#0d1829",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
             <div>
