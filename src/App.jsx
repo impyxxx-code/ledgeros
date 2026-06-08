@@ -3064,7 +3064,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
                   <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Print Invoice</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{savedInvoice.invoice_number}</div></div>
                 </div>
               </button>
-              <button onClick={() => downloadDN(dnSaved)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
+              <button onClick={() => downloadDNpdf(buildDNHtml(dnSaved), dnSaved.dn_number)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
