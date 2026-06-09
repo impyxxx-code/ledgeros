@@ -35,10 +35,11 @@ export default async function handler(req, res) {
 
     // ── 2. Fetch product catalogue ────────────────────────────────────────────
     const prodRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?select=id,name,price,unit,vat_rate&order=name.asc`,
+      `${SUPABASE_URL}/rest/v1/products?select=id,name,sale_price,unit,vat_rate&order=name.asc`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
     );
-    const products = Array.isArray(await prodRes.json()) ? await prodRes.clone().json() : [];
+    const prodData = await prodRes.json();
+    const products = Array.isArray(prodData) ? prodData : [];
 
     // ── 3. Parse the order message ────────────────────────────────────────────
     const parsedItems = parseOrderMessage(msgBody);
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
         lines.push({
           description : product.name,
           qty         : item.qty,
-          unit_price  : parseFloat(product.price || 0),
+          unit_price  : parseFloat(product.sale_price || 0),
           vat_rate    : parseFloat(product.vat_rate || 0),
           unit        : product.unit || 'unit',
         });
