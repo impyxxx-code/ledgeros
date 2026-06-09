@@ -117,7 +117,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
 /* ── Layout ── */
-.app{display:flex;min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
 
 /* ────────────────────────────────────
    SIDEBAR — Premium dark navigation
@@ -295,7 +295,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .content{
   flex:1;padding:26px 28px;
   width:100%;
-  overflow-x:hidden;
   animation:fadeIn .22s var(--ease) both;
 }
 
@@ -4859,7 +4858,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div>
       </div>
       {/* ── TABS + UTILITY BAR ── */}
-      <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 8px", marginTop:0 }}>
+      <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 36px", margin:"0 -28px", marginTop:0 }}>
         <div style={{ display:"flex", gap:3 }}>
           {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
             <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
