@@ -4400,7 +4400,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
       </div>
 
       {/* Status filter tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16, background: "#0d1829", borderRadius: 10, padding: "4px 5px", border: "1px solid rgba(99,102,241,.18)", alignSelf: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
         {[["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]].map(([s, lbl, cnt]) => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none" }}>
             {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
