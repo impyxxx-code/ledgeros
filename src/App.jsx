@@ -2698,7 +2698,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
     setDnSaved({ dn_number, customer_name: savedInvoice.customer, delivery_date: savedInvoice.invoice_date, delivery_address: dnAddress, driver: dnDriver, notes: dnNotes, invoice_ref: savedInvoice.invoice_number, lines: JSON.stringify(dnLines) });
   };
 
-  const buildDNHtml = (dn) => {
+  const buildDNHtml = (dn, overdueSection = '') => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     return `<!DOCTYPE html>
 <html lang="en">
@@ -2760,6 +2760,9 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
   /* Footer */
   .footer{margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8}
   .footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}
+
+  /* Outstanding balance section */
+  .os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}
 
   /* Driver strip */
   .driver-strip{background:#f0f4ff;border:1px solid #c7d7fc;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
@@ -2838,6 +2841,9 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
     </table>
   </div>
 
+  <!-- Outstanding balance -->
+  ${overdueSection}
+
   <!-- Notes -->
   ${inv.notes ? `<div style="background:#fef9ec;border:1px solid #fcd34d;border-radius:9px;padding:12px 16px;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Invoice Notes</div><div style="font-size:12px;color:#78350f;line-height:1.6">${inv.notes}</div></div>` : ""}
   <!-- Signatures -->
@@ -2869,6 +2875,63 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
     const a = document.createElement("a");
     a.href = url; a.download = `${dn.dn_number}.html`; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const printDNFromForm = async (dn) => {
+    const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+    const contactRecord = contacts.find(c => c.name === dn.customer_name);
+    const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><title>${dn.dn_number||'Delivery Note'}</title><style>body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#64748b;font-size:14px}</style></head><body><div style="text-align:center"><div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div><div>Preparing delivery note...</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></body></html>`);
+    let overdueInvs = [];
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/invoices?customer=eq.${encodeURIComponent(dn.customer_name)}&status=in.(overdue,pending,partial)&order=invoice_date.asc&select=invoice_number,invoice_date,amount,amount_paid,balance,status`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token || SUPABASE_ANON_KEY}` } }
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) overdueInvs = data;
+    } catch(e) { overdueInvs = []; }
+    const fmtV = v => '£' + parseFloat(v||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const daysSince = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+    const deliveryTotal = dnLines.reduce((s,l) => s + (parseFloat(l.unit_price||0) * parseFloat(l.qty||0)), 0);
+    const hasPrice = dnLines.some(l => l.unit_price);
+    const badgeMap = {
+      overdue: '<span class="overdue-badge">Overdue</span>',
+      partial: '<span class="partial-badge">Partial</span>',
+      pending: '<span class="pending-badge">Pending</span>',
+    };
+    const overdueSection = (overdueInvs.length > 0 || totalOutstanding > 0) ? `
+      <div class="os-section">
+        <div class="os-hdr">
+          <div class="os-lbl">Outstanding account balance</div>
+          <div class="os-total">${fmtV(totalOutstanding)} overdue</div>
+        </div>
+        <table class="os-table">
+          <thead><tr>
+            <th>Invoice</th><th>Date</th><th style="text-align:right">Amount</th><th style="text-align:right">Balance</th><th style="text-align:right">Days</th><th style="text-align:center">Status</th>
+          </tr></thead>
+          <tbody>
+            ${overdueInvs.map(i => `<tr>
+              <td style="font-weight:600">${i.invoice_number}</td>
+              <td style="color:#64748b">${fmtD(i.invoice_date)}</td>
+              <td style="text-align:right">${fmtV(i.amount)}</td>
+              <td style="text-align:right;font-weight:600;color:#991b1b">${fmtV(i.balance||i.amount)}</td>
+              <td style="text-align:right;color:#991b1b">${daysSince(i.invoice_date)}d</td>
+              <td style="text-align:center">${badgeMap[i.status]||''}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="os-notice">Goods are delivered subject to full payment of all outstanding balances. Please arrange settlement of overdue invoices immediately. Continued supply may be withheld until account is brought up to date.</div>
+      </div>` : '';
+    const html = buildDNHtml(dn, overdueSection);
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const emailDN = async (dn) => {
@@ -2984,7 +3047,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
               </button>
 
               {/* Print Delivery Note — immediate, no DB save required */}
-              <button onClick={() => downloadDNpdf(buildDNHtml(buildQuickDN()), buildQuickDN().dn_number)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
+              <button onClick={() => printDNFromForm(buildQuickDN())} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
                 <div style={{ width: 42, height: 42, borderRadius: 11, background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
@@ -3064,7 +3127,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
                   <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Print Invoice</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{savedInvoice.invoice_number}</div></div>
                 </div>
               </button>
-              <button onClick={() => downloadDNpdf(buildDNHtml(dnSaved), dnSaved.dn_number)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
+              <button onClick={() => printDNFromForm(dnSaved)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
