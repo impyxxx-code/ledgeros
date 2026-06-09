@@ -5128,7 +5128,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
   return (
     <div>
       {/* ── Inventory Page Header ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
@@ -5172,7 +5172,7 @@ function Inventory({ products, setProducts, token, userId, profile }) {
       </div>
 
       {/* Stock filter tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16, background: "#0d1829", borderRadius: 10, padding: "4px 5px", border: "1px solid rgba(99,102,241,.18)", alignSelf: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
         {[["all", "All Products", products.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length]].map(([v, l, cnt]) => (
           <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : "#818cf8") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
             {l} <span style={{ background: stockFilter === v ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: stockFilter === v ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
