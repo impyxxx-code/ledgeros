@@ -2134,7 +2134,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             <div style={{ display: "flex", background: "#f4f6f9", borderRadius: "var(--r)", padding: 3, gap: 2 }}>
               {[["invoice","ti-file-text","Invoice"],["payments","ti-credit-card","Payments"],["timeline","ti-timeline","Timeline"],["actions","ti-bolt","Actions"]].filter(([id])=>!(id==="actions"&&profile?.role==="agent")).map(([id, icon, lbl]) => (
                 <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, transition: "all .12s", background: activeTab === id ? "var(--white)" : "transparent", color: activeTab === id ? "var(--text)" : "var(--text3)", boxShadow: activeTab === id ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
-                  <i className={"ti " + icon} style={{ fontSize: 13 }} />{isMobile() ? null : lbl}
+                  {isMobile() ? null : <i className={"ti " + icon} style={{ fontSize: 13 }} />}{isMobile() ? lbl.slice(0,3) : lbl}
                 </button>
               ))}
             </div>
@@ -2289,10 +2289,10 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 {lines.map((l, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight: 500 }}>{l.description}</td>
-                    <td><span className="tag">{l.vat_rate === 0 ? "Exempt" : `${l.vat_rate}% S`}</span></td>
+                    <td style={{whiteSpace:'nowrap'}}><span className="tag">{l.vat_rate === 0 ? "Exempt" : `${l.vat_rate}% S`}</span></td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{l.qty}</td>
-                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(l.unit_price)}</td>
-                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmt(l.qty * l.unit_price)}</td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", whiteSpace:'nowrap' }}>{fmt(l.unit_price)}</td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, whiteSpace:'nowrap' }}>{fmt(l.qty * l.unit_price)}</td>
                   </tr>
                 ))}
               </tbody>
