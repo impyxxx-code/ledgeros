@@ -2010,11 +2010,6 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
   const handlePrint = async () => {
-    const win = window.open('', '_blank');
-    if (!win) return;
-    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
-    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
-    window.addEventListener('message', _closeMsg);
     const invLines = lines;
     const sub = subtotal, vat = vatTotal, tot = total;
     const bal = invoice.balance > 0 && invoice.balance < tot ? invoice.balance : tot;
@@ -2053,7 +2048,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
         <div class="os-notice">⚠ This account has outstanding balances. Payment is required before further credit can be extended. Goods remain the property of Arkham Retail Ltd until all invoices are paid in full.</div>
       </div>` : '';
     const html = `<!DOCTYPE html><html><head><title>${escHtml(invoice.invoice_number)}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${escHtml(COMPANY.name)}</div><div class="co-det">${escHtml(COMPANY.address)}<br>${escHtml(COMPANY.city)}, ${escHtml(COMPANY.postcode)}<br>Tel: ${escHtml(COMPANY.phone)} &middot; ${escHtml(COMPANY.email)}<br>VAT: ${escHtml(COMPANY.vatNumber)}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${escHtml(invoice.invoice_number)}</div><div class="inv-status">${escHtml((invoice.status||'pending').toUpperCase())}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(invoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${escHtml(invoice.invoice_number)}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(invoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(invoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div></div>${paymentsHtml}<div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(bal)}</span></div>${overdueSection}${invoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(invoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${escHtml(COMPANY.bankName)}</div></div><div><div class="lbl">Sort code</div><div class="val">${escHtml(COMPANY.sortCode)}</div></div><div><div class="lbl">Account</div><div class="val">${escHtml(COMPANY.accountNumber)}</div></div></div><div class="footer"><span>${escHtml(COMPANY.name)} &middot; VAT: ${escHtml(COMPANY.vatNumber)}</span><span>Ref: ${escHtml(invoice.invoice_number)} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
-    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   const buildWaMsg = () => encodeURIComponent(
@@ -2682,11 +2677,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
   // Print the saved invoice as HTML download
   const printInvoice = async () => {
     if (!savedInvoice) return;
-    const win = window.open('', '_blank');
-    if (!win) return;
-    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
-    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
-    window.addEventListener('message', _closeMsg);
     const invLines = savedInvoice.lines || [];
     const sub = invLines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
     const vat = invLines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
@@ -2719,16 +2709,12 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
         <div class="os-notice">⚠ This account has outstanding balances. Payment is required before further credit can be extended. Goods remain the property of Arkham Retail Ltd until all invoices are paid in full.</div>
       </div>` : '';
     const html = `<!DOCTYPE html><html><head><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${COMPANY.name}</div><div class="co-det">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} &middot; ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div><div class="inv-status">${(savedInvoice.status||'pending').toUpperCase()}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(savedInvoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${savedInvoice.invoice_number}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(savedInvoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(savedInvoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div><div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(tot)}</span></div></div>${overdueSection}${savedInvoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(savedInvoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${COMPANY.bankName}</div></div><div><div class="lbl">Sort code</div><div class="val">${COMPANY.sortCode}</div></div><div><div class="lbl">Account</div><div class="val">${COMPANY.accountNumber}</div></div></div><div class="footer"><span>${COMPANY.name} &middot; VAT: ${COMPANY.vatNumber}</span><span>Ref: ${savedInvoice.invoice_number} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
-    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   const downloadInvoicePDF = () => {
     const html = buildInvoiceHtml();
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 800);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   // Create delivery note from invoice
@@ -2940,11 +2926,6 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     const contactRecord = contacts.find(c => c.name === dn.customer_name);
     const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
-    const win = window.open('', '_blank');
-    if (!win) return;
-    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
-    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
-    window.addEventListener('message', _closeMsg);
     let overdueInvs = [];
     try {
       const res = await fetch(
@@ -2988,7 +2969,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
         <div class="os-notice">Goods are delivered subject to full payment of all outstanding balances. Please arrange settlement of overdue invoices immediately. Continued supply may be withheld until account is brought up to date.</div>
       </div>` : '';
     const html = buildDNHtml(dn, overdueSection);
-    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   const emailDN = async (dn) => {
@@ -4322,21 +4303,11 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
 </div>
 <div class="footer"><span><span class="footer-brand">${COMPANY.name}</span> · VAT: ${COMPANY.vatNumber}</span><span>${dn_number} · Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>Goods remain property of ${COMPANY.name} until signed</span></div>
 </div></body></html>`;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 800);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   const downloadDNpdf = (html, dn_number) => {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 800);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
   const totals = {
@@ -7006,13 +6977,6 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     const contactRecord = contacts.find(c => c.name === dn.customer_name);
     const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
 
-    // Open window IMMEDIATELY — before any await — so browser popup security allows it
-    const win = window.open('', '_blank');
-    if (!win) return;
-    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
-    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
-    window.addEventListener('message', _closeMsg);
-    win.document.write(`<!DOCTYPE html><html><head><title>${dn.dn_number||'Delivery Note'}</title><style>body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#64748b;font-size:14px}</style></head><body><div style="text-align:center"><div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div><div>Preparing delivery note...</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></body></html>`);
 
     let overdueInvs = [];
     try {
@@ -7126,7 +7090,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </div>
     </body></html>`;
 
-    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
     const sendWhatsApp = (dn) => {
@@ -7538,6 +7502,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [printOverlayHTML, setPrintOverlayHTML] = useState(null);
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
@@ -7563,6 +7528,19 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Expose print overlay setter globally so sub-components can trigger it without prop drilling
+  React.useEffect(() => {
+    window.__ledgerosPrint = (html) => {
+      // Strip the .bta toolbar (React overlay has its own close button) and fix body padding
+      const clean = html
+        .replace(/<div class="bta">[\s\S]*?&#x2715;<\/a><\/div>/, '')
+        .replace(/body\{padding-top:calc\(30mm \+ 54px\)\}/g, '')
+        .replace(/@media print\{\.bta\{display:none!important\}body\{padding-top:0!important\}\}/g, '@media print{body{padding-top:0!important}}');
+      setPrintOverlayHTML(clean || html);
+    };
+    return () => { delete window.__ledgerosPrint; };
+  }, []);
 
   // PWA install prompt
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -8308,6 +8286,28 @@ export default function App() {
           </div>
         )}
       </div>
+      {/* ── PRINT OVERLAY ── replaces popup windows; X button is pure React ── */}
+      {printOverlayHTML && (
+        <div style={{position:'fixed',inset:0,zIndex:99999,display:'flex',flexDirection:'column',background:'#0d1829'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',background:'#0d1829',borderBottom:'1px solid rgba(255,255,255,.12)',flexShrink:0}}>
+            <div>
+              <div style={{fontSize:15,fontWeight:700,color:'#fff',letterSpacing:'-0.3px'}}>LedgerOS</div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:1}}>Arkham Retail Ltd</div>
+            </div>
+            <button
+              onClick={() => setPrintOverlayHTML(null)}
+              style={{width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.3)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,cursor:'pointer',lineHeight:1,fontFamily:'sans-serif',flexShrink:0}}
+              title="Close"
+            >&#x2715;</button>
+          </div>
+          <iframe
+            srcDoc={printOverlayHTML}
+            onLoad={e => { try { e.target.contentWindow.print(); } catch(_) {} }}
+            style={{flex:1,border:'none',background:'#fff',width:'100%'}}
+            title="Print Preview"
+          />
+        </div>
+      )}
     </>
   );
 }
