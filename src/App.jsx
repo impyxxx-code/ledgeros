@@ -295,6 +295,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .content{
   flex:1;padding:26px 28px;
   width:100%;
+  overflow-x:hidden;
   animation:fadeIn .22s var(--ease) both;
 }
 
