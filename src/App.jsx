@@ -3520,7 +3520,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
 // │ AgentDashboard                                             │
 // │ Dashboard view for agent role users                        │
 // └────────────────────────────────────────────────────────────┘
-function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token, userId }) {
+function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile, setPage, token, userId }) {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [markingPaidId, setMarkingPaidId] = useState(null);
@@ -3758,9 +3758,9 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [overpaymentData, setOverpaymentData] = useState(null);
@@ -4335,7 +4335,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
+function Invoices({ invoices, setInvoices, contacts, setContacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [bulkPayCustomer, setBulkPayCustomer] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -5017,16 +5017,14 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             <div style={{ padding:"20px 24px" }}>
               {/* KPI row */}
               {(() => {
-                const custInvoices = invoices.filter(i => i.customer === viewContact.name);
-                // Use DB trigger columns for all 3 financial KPIs — accurate across ALL agents
-                // Falls back to local calculation for admins who see all invoices anyway
-                const hasDbValues = viewContact.total_revenue != null;
-                const totalSpend = hasDbValues ? parseFloat(viewContact.total_revenue||0)
-                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
-                const paid = hasDbValues ? parseFloat(viewContact.total_paid||0)
-                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-                const outstanding = hasDbValues ? parseFloat(viewContact.total_outstanding||0)
-                  : custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+                const liveContact = contacts.find(c => c.id === viewContact.id) || viewContact;
+                const custInvoices = invoices.filter(i => i.customer === liveContact.name);
+                // Always derive financial KPIs from the live invoices list so the modal
+                // reflects payments recorded during this session immediately, even if the
+                // DB-trigger columns on `contacts` haven't been refetched yet.
+                const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
+                const paid = custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div className="ct-modal-kpi" style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
@@ -8397,8 +8395,8 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
