@@ -4167,6 +4167,9 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
+  const [mobMarkPaidInv, setMobMarkPaidInv] = useState(null);
+  const [mobMarkPaidMethod, setMobMarkPaidMethod] = useState("cash");
+  const [mobMarkPaidSaving, setMobMarkPaidSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQ, setSearchQ] = useState("");
   const [sortCol, setSortCol] = useState("created_at");
@@ -4549,11 +4552,49 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
                 </div>
                 <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:10 }}>
                   <span style={{ fontSize:12,color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
-                  <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                  <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                    <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                    {inv.status!=="paid" && (
+                      <button aria-label="More actions" onClick={e=>{e.stopPropagation();setMobMarkPaidInv(inv);}}
+                        style={{ width:32,height:32,borderRadius:8,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+            {mobMarkPaidInv && (
+              <ModalPortal>
+                <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => !mobMarkPaidSaving && setMobMarkPaidInv(null)}>
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(20px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
+                    <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
+                    <div style={{ padding:"14px 20px 4px" }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>Mark as Paid</div>
+                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{mobMarkPaidInv.invoice_number} · {mobMarkPaidInv.customer} · {fmt(mobMarkPaidInv.status==="partial"?(mobMarkPaidInv.balance||0):mobMarkPaidInv.amount)}</div>
+                    </div>
+                    <div style={{ padding:"12px 20px" }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"var(--text2)", marginBottom:8 }}>Payment method</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8 }}>
+                        {[["cash","Cash"],["card","Card"],["bank_transfer","Bank Transfer"],["cheque","Cheque"]].map(([val,lbl]) => (
+                          <div key={val} role="button" tabIndex={0} onClick={() => setMobMarkPaidMethod(val)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setMobMarkPaidMethod(val);}}
+                            style={{ padding:"12px 10px", borderRadius:10, border:"2px solid "+(mobMarkPaidMethod===val?"var(--blue)":"var(--border)"), background:mobMarkPaidMethod===val?"var(--blue-lt)":"var(--white)", color:mobMarkPaidMethod===val?"var(--blue)":"var(--text2)", fontSize:13, fontWeight:600, textAlign:"center", cursor:"pointer", minHeight:44, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            {lbl}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:10, padding:"4px 20px 20px" }}>
+                      <button className="btn bo" style={{ flex:1, minHeight:48 }} disabled={mobMarkPaidSaving} onClick={() => setMobMarkPaidInv(null)}>Cancel</button>
+                      <button className="btn bp" style={{ flex:1, minHeight:48 }} disabled={mobMarkPaidSaving} onClick={async () => { setMobMarkPaidSaving(true); await markPaid(mobMarkPaidInv.id, mobMarkPaidMethod); setMobMarkPaidSaving(false); setMobMarkPaidInv(null); setMobMarkPaidMethod("cash"); }}>
+                        {mobMarkPaidSaving ? "Saving..." : "Confirm Payment"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ModalPortal>
+            )}
           </div>
           ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14, padding: 16 }}>
@@ -4695,7 +4736,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
 // │ Contacts                                                   │
 // │ Customer and supplier contact management                   │
 // └────────────────────────────────────────────────────────────┘
-function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile }) {
+function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile, triggerNewContact, onTriggerContactHandled }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
@@ -4719,6 +4760,10 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
       });
     }
   }, [viewContact, token]);
+
+  React.useEffect(() => {
+    if (triggerNewContact) { setShowForm(true); onTriggerContactHandled && onTriggerContactHandled(); }
+  }, [triggerNewContact]);
 
   const savePrice = async () => {
     if (!priceForm.product_id || !priceForm.custom_price) return;
@@ -7575,6 +7620,8 @@ export default function App() {
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
   const [pendingFilter, setPendingFilter] = useState(null);
   const [triggerNewInvoice, setTriggerNewInvoice] = useState(0);
+  const [triggerNewContact, setTriggerNewContact] = useState(0);
+  const [showFabMenu, setShowFabMenu] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -8177,7 +8224,7 @@ export default function App() {
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
-                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
+                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
@@ -8292,13 +8339,33 @@ export default function App() {
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
-            <div className="mob-nav-item mob-nav-fab-slot" onClick={() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }}>
-              <div className="mob-nav-fab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            <div className="mob-nav-item mob-nav-fab-slot" onClick={() => setShowFabMenu(v => !v)}>
+              <div className="mob-nav-fab" style={showFabMenu?{background:"linear-gradient(135deg,#ef4444,#f87171)",transform:"translateY(-14px) rotate(45deg)"}:undefined}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
             </div>
             {MOBILE_NAV_RIGHT.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
             <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span className="mob-nav-lbl">More</span></div>
           </div>
         </nav>
+        {showFabMenu && (
+          <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.5)" }} onClick={() => setShowFabMenu(false)}>
+            <div style={{ position:"absolute", bottom:"calc(64px + env(safe-area-inset-bottom))", left:0, right:0, padding:"0 16px 16px" }} onClick={e => e.stopPropagation()}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
+                {[
+                  { label:"New Invoice", color:"#6366f1", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
+                  { label:"Record Payment", color:"#16a34a", action:() => { setPage("invoices"); setPendingFilter("pending"); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+                  { label:"New Customer", color:"#f59e0b", action:() => { setPage("contacts"); setTriggerNewContact(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> },
+                  { label:"Delivery Note", color:"#7c3aed", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+                ].map(a => (
+                  <div key={a.label} role="button" tabIndex={0} onClick={() => { a.action(); setShowFabMenu(false); }} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){a.action();setShowFabMenu(false);}}}
+                    style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"16px 14px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, boxShadow:"0 4px 20px rgba(0,0,0,.15)", cursor:"pointer", minHeight:80 }}>
+                    <div style={{ width:38, height:38, borderRadius:10, background:a.color+"1a", color:a.color, display:"flex", alignItems:"center", justifyContent:"center" }}>{a.icon}</div>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#0f172a" }}>{a.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         {showMobMore && (
           <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.5)" }} onClick={() => setShowMobMore(false)}>
             <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(24px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
