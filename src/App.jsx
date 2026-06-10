@@ -5060,6 +5060,40 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         const fmt = (n) => "£" + parseFloat(n).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
         const hasOverdue = (name) => (invoices||[]).some(i => i.customer===name && i.status==="overdue");
         const isVIP = (name) => (custInvMap[name]?.revenue||0) > 10000;
+        if (isMobile()) {
+          return (
+            <div style={{ display:"flex", flexDirection:"column", gap:10, padding:"12px 0" }}>
+              {sortedContacts.map(c => {
+                const bg = avatarBg(c.name);
+                const ci = custInvMap[c.name] || { count:0, revenue:0, outstanding:0 };
+                const overdue = hasOverdue(c.name);
+                return (
+                  <div key={c.id} role="button" tabIndex={0}
+                    onClick={() => setViewContact(c)}
+                    onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewContact(c);}}
+                    style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px",boxShadow:"var(--sh)",cursor:"pointer",minHeight:64,display:"flex",alignItems:"center",gap:12 }}>
+                    <div style={{ width:38, height:38, borderRadius:10, background:bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff", flexShrink:0 }}>
+                      {c.name?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</div>
+                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {c.city || c.phone || c.email || "No details"}
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
+                      <span style={{ fontWeight:800, fontSize:14, fontFamily:"var(--mono)" }}>{ci.outstanding > 0 ? fmt(ci.outstanding) : ci.revenue > 0 ? fmt(ci.revenue) : "—"}</span>
+                      {ci.outstanding > 0
+                        ? <span className={"badge "+(overdue?"b-red":"b-amber")}>{overdue?"overdue":"owes"}</span>
+                        : <span className="badge b-green">settled</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length===0&&<EmptyState icon="customer" title={`No ${tab}s`} sub="No contacts match your current search or filter" />}
+            </div>
+          );
+        }
         return (
           <>
             {/* Column headers */}
