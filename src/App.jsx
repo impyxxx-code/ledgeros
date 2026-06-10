@@ -3583,6 +3583,106 @@ function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, tok
     setPartPayId(null);
     setPartPayAmount({});
   };
+
+  if (isMobile()) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayInv = myInv.filter(i => (i.invoice_date===todayStr || (i.created_at||"").startsWith(todayStr)));
+    const todayCollected = todayInv.filter(i=>i.status==="paid").reduce((s,i)=>s+parseFloat(i.amount||0),0);
+    const myOutstanding = myInv.filter(i => i.status!=="paid" && i.status!=="draft");
+    const myOverdueInv = myInv.filter(i => i.status==="overdue").sort((a,b)=>new Date(a.due_date||a.invoice_date)-new Date(b.due_date||b.invoice_date));
+    const recentInvoices = [...myInv].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
+    const phoneFor = (custName) => contacts.find(c=>c.name===custName)?.phone;
+    const waLink = (phone, msg) => `https://wa.me/${(phone||"").replace(/\s+/g,"").replace(/^0/,"44")}?text=${encodeURIComponent(msg)}`;
+    return (
+      <div>
+        {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
+          onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
+          onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
+        />}
+        <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
+          <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
+            <div style={{ display:"flex", gap:24 }}>
+              <div>
+                <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-1px" }}>{todayInv.length}</div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>Invoices today</div>
+              </div>
+              <div>
+                <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-1px" }}>{fmt(todayCollected)}</div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>Collected today</div>
+              </div>
+            </div>
+          </div>
+
+          {myOverdueInv.length > 0 && (() => { const top = myOverdueInv[0]; const phone = phoneFor(top.customer); const days = Math.max(0, Math.floor((new Date()-new Date(top.due_date||top.invoice_date))/(1000*60*60*24)));
+            return (
+              <div style={{ background:"var(--red-lt)", border:"1px solid #fecaca", borderRadius:"var(--rl)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12 }}>
+                <AlertCircle size={20} color="var(--red)" />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:"var(--red)" }}>{top.customer} — {fmt(top.balance||top.amount)}</div>
+                  <div style={{ fontSize:12, color:"var(--text2)" }}>{days} day{days!==1?"s":""} overdue{myOverdueInv.length>1?` · +${myOverdueInv.length-1} more`:""}</div>
+                </div>
+                {phone && <a href={waLink(phone, `Hi ${top.customer}, this is a reminder that ${fmt(top.balance||top.amount)} (${top.invoice_number}) is overdue with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                  style={{ flexShrink:0, padding:"8px 14px", borderRadius:8, background:"var(--red)", color:"#fff", fontSize:12, fontWeight:700, textDecoration:"none", minHeight:36, display:"flex", alignItems:"center" }}>Chase</a>}
+              </div>
+            );
+          })()}
+
+          {myOutstanding.length > 0 && (
+            <div>
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:10 }}>Outstanding</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {myOutstanding.slice(0,6).map(inv => {
+                  const phone = phoneFor(inv.customer);
+                  return (
+                    <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
+                      style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", display:"flex", flexDirection:"column", gap:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                        <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
+                        <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{fmt(inv.status==="partial"?(inv.balance||0):inv.amount)}</span>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                        <span className={"badge "+(inv.status==="overdue"?"b-red":"b-amber")}>{inv.status}</span>
+                        {phone && <div style={{ display:"flex", gap:8 }}>
+                          <a href={`tel:${phone}`} onClick={e=>e.stopPropagation()} style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text2)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                          <a href={waLink(phone, `Hi ${inv.customer}, this is a reminder that ${fmt(inv.status==="partial"?(inv.balance||0):inv.amount)} (${inv.invoice_number}) is ${inv.status} with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                            style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"#16a34a" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                        </div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+              <div style={{ fontSize:14, fontWeight:700 }}>Recent Invoices</div>
+              <span role="button" tabIndex={0} onClick={()=>setPage("invoices")} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setPage("invoices");}} style={{ fontSize:12, fontWeight:600, color:"var(--blue)", cursor:"pointer" }}>View all</span>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {recentInvoices.map(inv => (
+                <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
+                  style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", minHeight:64, display:"flex", flexDirection:"column", justifyContent:"center", gap:6 }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                    <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
+                    <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{inv.status==="partial"?fmt(inv.balance||0):fmt(inv.amount)}</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                    <span style={{ fontSize:12, color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
+                    <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                  </div>
+                </div>
+              ))}
+              {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
@@ -3733,6 +3833,77 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
     pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
     paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
   ].filter(Boolean).slice(0, 3);
+
+  if (isMobile()) {
+    const totalRevenue = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0);
+    const recentInvoices = [...invoices].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
+    const kpiTiles = [
+      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#2563eb", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Outstanding", val:fmt(unpaid), accent:"#ef4444", onClick:()=>{setPendingFilter("overdue");setPage("invoices");} },
+      { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
+      { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
+      { label:"Today", val:fmt(todayRevenue), accent:"#7c3aed", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+    ];
+    return (
+      <>
+      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
+        onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }} />}
+      <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
+        <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
+          <div style={{ fontSize:32, fontWeight:900, letterSpacing:"-1px", marginBottom:6 }}>{fmt(totalRevenue)}</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,.55)" }}>
+            {fmt(unpaid)} outstanding{overdueCount>0?` · ${overdueCount} overdue`:""}
+          </div>
+        </div>
+
+        {overdueCount > 0 && (
+          <div role="button" tabIndex={0} onClick={()=>{setPendingFilter("overdue");setPage("invoices");}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){setPendingFilter("overdue");setPage("invoices");}}}
+            style={{ display:"flex", alignItems:"center", gap:12, background:"var(--red-lt)", border:"1px solid #fecaca", borderRadius:"var(--rl)", padding:"12px 16px", cursor:"pointer" }}>
+            <AlertCircle size={20} color="var(--red)" />
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"var(--red)" }}>{overdueCount} overdue invoice{overdueCount>1?"s":""}</div>
+              <div style={{ fontSize:12, color:"var(--text2)" }}>Totalling {fmt(overdue)} — tap to review</div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4, marginRight:-16 }}>
+          {kpiTiles.map(k => (
+            <div key={k.label} role="button" tabIndex={0} onClick={k.onClick} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")k.onClick();}}
+              style={{ flex:"0 0 auto", minWidth:128, background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", borderTop:`3px solid ${k.accent}` }}>
+              <div style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:6 }}>{k.label}</div>
+              <div style={{ fontSize:18, fontWeight:800, fontFamily:"var(--mono)" }}>{k.val}</div>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+            <div style={{ fontSize:14, fontWeight:700 }}>Recent Invoices</div>
+            <span role="button" tabIndex={0} onClick={()=>setPage("invoices")} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setPage("invoices");}} style={{ fontSize:12, fontWeight:600, color:"var(--blue)", cursor:"pointer" }}>View all</span>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {recentInvoices.map(inv => (
+              <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
+                style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", minHeight:64, display:"flex", flexDirection:"column", justifyContent:"center", gap:6 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                  <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
+                  <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{inv.status==="partial"?fmt(inv.balance||0):fmt(inv.amount)}</span>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                  <span style={{ fontSize:12, color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
+                  <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                </div>
+              </div>
+            ))}
+            {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  }
 
   return (
     <>
