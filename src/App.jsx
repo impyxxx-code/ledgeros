@@ -858,6 +858,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(max-width:768px){
   .sidebar{display:none}
   .mob-nav{display:block}
+  .main,.content{min-width:0}
   .content{padding:12px 12px 76px}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
