@@ -4519,12 +4519,34 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
-          <div style={{ display: "flex", gap: 6 }}>
+          {!isMobile() && <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => setViewMode("table")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="table"?"var(--blue)":"var(--border)"),background:viewMode==="table"?"var(--blue-lt)":"var(--white)",color:viewMode==="table"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
             <button onClick={() => setViewMode("card")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="card"?"var(--blue)":"var(--border)"),background:viewMode==="card"?"var(--blue-lt)":"var(--white)",color:viewMode==="card"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-          </div>
+          </div>}
         </div>
-        {viewMode === "card" ? (
+        {(isMobile() || viewMode === "card") ? (
+          isMobile() ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:10, padding:12 }}>
+            {filtered.map(inv => (
+              <div key={inv.id} role="button" tabIndex={0}
+                onClick={() => setViewInvoice(inv)}
+                onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
+                style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px",boxShadow:"var(--sh)",cursor:"pointer",minHeight:64,display:"flex",flexDirection:"column",justifyContent:"center",gap:6 }}>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:10 }}>
+                  <span style={{ fontWeight:700,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{inv.customer}</span>
+                  <span style={{ fontWeight:800,fontSize:16,fontFamily:"var(--mono)",flexShrink:0,marginLeft:8 }}>
+                    {inv.status === "partial" ? fmt(inv.balance || 0) : fmt(inv.amount)}
+                  </span>
+                </div>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:10 }}>
+                  <span style={{ fontSize:12,color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
+                  <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
+                </div>
+              </div>
+            ))}
+            {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+          </div>
+          ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14, padding: 16 }}>
             {filtered.map(inv => (
               <div key={inv.id} style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:18,boxShadow:"var(--sh)",cursor:"pointer",transition:"all .15s" }}
@@ -4551,6 +4573,7 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
             ))}
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
+          )
         ) : (
         <div className="tw" style={{overflowX:"clip"}}><table style={{minWidth:1000}}><thead className="inv-thead"><tr>
           <th style={{width:36}}><input type="checkbox" checked={selectedIds.size===filtered.length&&filtered.length>0} onChange={()=>toggleSelectAll()} style={{accentColor:"var(--blue)"}} /></th>
