@@ -860,6 +860,9 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .mob-nav{display:block}
   .main,.content{min-width:0}
   .content{padding:12px 12px 76px}
+  .page-hero{margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important}
+  .util-btns-bar,.dash-util-bar{display:none!important}
+  .subnav-bar{overflow-x:auto;padding:0 12px!important;-webkit-overflow-scrolling:touch}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
@@ -8196,7 +8199,7 @@ export default function App() {
             ].filter(n=>!dismissedNotifs.includes(n.id));
             const unreadU = notifsU.length;
             window.__utilityBtns = (
-              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid rgba(255,255,255,.08)"}}>
+              <div className="util-btns-bar" style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid rgba(255,255,255,.08)"}}>
                 <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </div>
@@ -8242,7 +8245,7 @@ export default function App() {
           })()}
           {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
           {page === "dashboard" && (
-            <div style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+            <div className="dash-util-bar" style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
               {window.__utilityBtns}
             </div>
           )}
@@ -8356,7 +8359,7 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div className="subnav-bar" style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
                   <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#a5b4fc":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #818cf8":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
                     onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(129,140,248,.3)";}}}
