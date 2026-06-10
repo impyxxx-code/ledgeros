@@ -843,6 +843,14 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .mob-nav-item.active{color:var(--blue)}
 .mob-nav-item i,.mob-nav-item svg{font-size:20px;width:20px;height:20px}
 .mob-nav-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569}
+.mob-nav-fab-slot{justify-content:flex-start;padding-top:0}
+.mob-nav-fab{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,#6366f1,#818cf8);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  box-shadow:0 4px 14px rgba(99,102,241,.4);
+  transform:translateY(-14px);
+}
 
 /* ────────────────────────────────────
    RESPONSIVE
@@ -4152,7 +4160,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, products, profil
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [bulkPayCustomer, setBulkPayCustomer] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -4211,7 +4219,8 @@ function Invoices({ invoices, setInvoices, contacts, products, token, userId, pr
   useEffect(() => {
     if (pendingInvoiceView) { setViewInvoice(pendingInvoiceView); onClearPending && onClearPending(); }
     if (pendingFilter) { setFilterStatus(pendingFilter); onClearFilter && onClearFilter(); }
-  }, [pendingInvoiceView, pendingFilter]);
+    if (triggerNewInvoice) { setShowForm(true); onTriggerHandled && onTriggerHandled(); }
+  }, [pendingInvoiceView, pendingFilter, triggerNewInvoice]);
 
   const markPaid = async (id, method) => {
     const inv = invoices.find(i => i.id === id);
@@ -7498,9 +7507,9 @@ const NAV = [
 const MOBILE_NAV = [
   { id: "dashboard", label: "Home" },
   { id: "invoices", label: "Invoices" },
+];
+const MOBILE_NAV_RIGHT = [
   { id: "contacts", label: "Contacts" },
-  { id: "inventory", label: "Stock" },
-  { id: "analytics", label: "Analytics" },
 ];
 
 // ── APP ───────────────────────────────────────────────────────────────────────
@@ -7531,6 +7540,7 @@ export default function App() {
   const [globalSearch, setGlobalSearch] = useState("");
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
   const [pendingFilter, setPendingFilter] = useState(null);
+  const [triggerNewInvoice, setTriggerNewInvoice] = useState(0);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -8132,7 +8142,7 @@ export default function App() {
             ) : (
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
@@ -8248,6 +8258,10 @@ export default function App() {
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
+            <div className="mob-nav-item mob-nav-fab-slot" onClick={() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }}>
+              <div className="mob-nav-fab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </div>
+            {MOBILE_NAV_RIGHT.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
             <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span className="mob-nav-lbl">More</span></div>
           </div>
         </nav>
@@ -8263,8 +8277,8 @@ export default function App() {
               </div>
               {/* Grouped nav sections */}
               {[
-                { label:"Sales", color:"#2563eb", items:["statement","agent-report"] },
-                { label:"Operations", color:"#7c3aed", items:["purchases","stock-adj","delivery-notes","import"] },
+                { label:"Sales", color:"#2563eb", items:["statement","agent-report","analytics"] },
+                { label:"Operations", color:"#7c3aed", items:["inventory","purchases","stock-adj","delivery-notes","import"] },
                 { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
                 { label:"Settings", color:"#64748b", items:["settings"] },
               ].map(group => {
