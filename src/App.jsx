@@ -8547,13 +8547,26 @@ export default function App() {
                 <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>More</div>
                 <button onClick={() => setShowMobMore(false)} style={{ background:"#f1f5f9", border:"none", cursor:"pointer", color:"#475569", padding:"4px 8px", fontSize:14, lineHeight:1, borderRadius:6, fontWeight:600 }}>✕</button>
               </div>
+              {/* Agent: access level info box */}
+              {profile?.role!=="admin" && (
+                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#eff6ff", border:"1px solid #bfdbfe", display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#1e40af" }}>Your Access Level: Agent</div>
+                    <div style={{ fontSize:11, color:"#3b82f6", marginTop:2 }}>You can manage your own invoices, customers and delivery notes. Admin-only sections (inventory, banking, reports) aren't shown.</div>
+                  </div>
+                </div>
+              )}
               {/* Grouped nav sections */}
-              {[
+              {(profile?.role==="admin" ? [
                 { label:"Sales", color:"#2563eb", items:["statement","agent-report","analytics"] },
                 { label:"Operations", color:"#7c3aed", items:["inventory","purchases","stock-adj","delivery-notes","import"] },
                 { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
                 { label:"Settings", color:"#64748b", items:["settings"] },
-              ].map(group => {
+              ] : [
+                { label:"My Tools", color:"#16a34a", items:["delivery-notes","agent-report"] },
+                { label:"Account", color:"#64748b", items:["settings"] },
+              ]).map(group => {
                 const visItems = NAV.filter(n =>
                   group.items.includes(n.id) &&
                   (!n.adminOnly || profile?.role==="admin" || profile?.role==="manager")
@@ -8591,6 +8604,13 @@ export default function App() {
                   </div>
                 );
               })}
+              <div style={{ padding:"4px 12px 0" }}>
+                <button onClick={() => { setShowMobMore(false); signOut(); }}
+                  style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px", borderRadius:12, border:"1.5px solid #fecaca", background:"#fef2f2", color:"#dc2626", fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:"var(--sans)", minHeight:44 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         )}
