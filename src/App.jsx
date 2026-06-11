@@ -7866,7 +7866,7 @@ export default function App() {
       const clean = html
         .replace(/<div class="bta">[\s\S]*?&#x2715;<\/a><\/div>/, '')
         .replace(/body\{padding-top:calc\(30mm \+ 54px\)\}/g, '')
-        .replace(/@media print\{\.bta\{display:none!important\}body\{padding-top:0!important\}\}/g, '@media print{body{padding-top:0!important}}');
+        .replace(/@media print\{\.bta\{display:none!important\}body\{padding-top:0!important\}\}/g, '');
       setPrintOverlayHTML(clean || html);
     };
     return () => { delete window.__ledgerosPrint; };
