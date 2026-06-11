@@ -1812,7 +1812,7 @@ function Auth({ onAuth, sessionExpired }) {
               Run every<br />invoice.<br />Know every<br /><span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>number.</span>
             </div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,.38)", lineHeight: 1.75, maxWidth: 320 }}>
-              Purpose-built for Arkham Retail. VAT invoices, inventory, delivery notes and real-time analytics — all in one platform.
+              Everything your retail business needs. Invoicing, inventory, deliveries, and real-time insights — beautifully connected in one platform.
             </div>
             {/* Feature pills */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 32 }}>
@@ -5594,17 +5594,23 @@ function Inventory({ products, setProducts, token, userId, profile }) {
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#818cf8" },
-            { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a" },
+            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#818cf8", filter: "all" },
+            { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a", filter: "low" },
             { label: "Stock Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price, 0)), sub: "at cost price", color: "rgba(255,255,255,.35)", accent: "#7c3aed" },
             { label: "Retail Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price, 0)), sub: "at sale price", color: "#86efac", accent: "#16a34a" },
-          ].map((k, i) => (
-            <div key={i} style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", borderTop: `3px solid ${k.accent}` }}>
+          ].map((k, i) => {
+            const isActive = k.filter && stockFilter === k.filter;
+            return (
+            <div key={i} onClick={k.filter ? () => setStockFilter(k.filter) : undefined}
+              title={k.filter ? `Click to filter by ${k.label}` : undefined}
+              style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: k.filter ? "pointer" : "default", transition: "all .15s", background: isActive ? "rgba(255,255,255,.08)" : "transparent", borderTop: `3px solid ${isActive ? k.accent : (k.filter ? "transparent" : k.accent)}` }}
+              onMouseEnter={e => { if (k.filter) { e.currentTarget.style.background = "rgba(255,255,255,.06)"; e.currentTarget.style.borderTop = `3px solid ${k.accent}`; } }}
+              onMouseLeave={e => { if (k.filter) { e.currentTarget.style.background = isActive ? "rgba(255,255,255,.08)" : "transparent"; e.currentTarget.style.borderTop = isActive ? `3px solid ${k.accent}` : "3px solid transparent"; } }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4 }}>{k.label}</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", marginBottom: 2 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: k.color }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
 
