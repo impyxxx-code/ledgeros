@@ -1823,7 +1823,7 @@ function Auth({ onAuth, sessionExpired }) {
                   { label: "Analytics", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
                   { label: "Delivery Notes", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
                 ].map(p => (
-                  <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(99,102,241,.08)", border: "1px solid rgba(129,140,248,.25)", borderRadius: 10, padding: "12px 16px", fontSize: 14, fontWeight: 600, color: "#fff", boxShadow: "0 0 16px rgba(99,102,241,.12)" }}>
+                  <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(99,102,241,.08)", borderRadius: 10, padding: "12px 16px", fontSize: 14, fontWeight: 600, color: "#fff", boxShadow: "0 0 16px rgba(99,102,241,.12)" }}>
                     <span style={{ color: "#a5b4fc", display: "flex" }}>{p.svg}</span>
                     {p.label}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><polyline points="9 18 15 12 9 6"/></svg>
