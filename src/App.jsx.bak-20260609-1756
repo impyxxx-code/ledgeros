@@ -843,14 +843,6 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .mob-nav-item.active{color:var(--blue)}
 .mob-nav-item i,.mob-nav-item svg{font-size:20px;width:20px;height:20px}
 .mob-nav-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569}
-.mob-nav-fab-slot{justify-content:flex-start;padding-top:0}
-.mob-nav-fab{
-  width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#6366f1,#818cf8);
-  display:flex;align-items:center;justify-content:center;color:#fff;
-  box-shadow:0 4px 14px rgba(99,102,241,.4);
-  transform:translateY(-14px);
-}
 
 /* ────────────────────────────────────
    RESPONSIVE
@@ -858,11 +850,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(max-width:768px){
   .sidebar{display:none}
   .mob-nav{display:block}
-  .main,.content{min-width:0}
   .content{padding:12px 12px 76px}
-  .page-hero{margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important}
-  .util-btns-bar,.dash-util-bar{display:none!important}
-  .subnav-bar{overflow-x:auto;padding:0 12px!important;-webkit-overflow-scrolling:touch}
   .kgrid{grid-template-columns:1fr 1fr;gap:10px}
   .g2,.g3,.g23{grid-template-columns:1fr}
   .g4{grid-template-columns:1fr 1fr}
@@ -2022,6 +2010,11 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 
   // ── jsPDF invoice generation ──────────────────────────────────────────────
   const handlePrint = async () => {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
+    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
+    window.addEventListener('message', _closeMsg);
     const invLines = lines;
     const sub = subtotal, vat = vatTotal, tot = total;
     const bal = invoice.balance > 0 && invoice.balance < tot ? invoice.balance : tot;
@@ -2059,8 +2052,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
         </table>
         <div class="os-notice">⚠ This account has outstanding balances. Payment is required before further credit can be extended. Goods remain the property of Arkham Retail Ltd until all invoices are paid in full.</div>
       </div>` : '';
-    const html = `<!DOCTYPE html><html><head><title>${escHtml(invoice.invoice_number)}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-top:24px;margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${escHtml(COMPANY.name)}</div><div class="co-det">${escHtml(COMPANY.address)}<br>${escHtml(COMPANY.city)}, ${escHtml(COMPANY.postcode)}<br>Tel: ${escHtml(COMPANY.phone)} &middot; ${escHtml(COMPANY.email)}<br>VAT: ${escHtml(COMPANY.vatNumber)}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${escHtml(invoice.invoice_number)}</div><div class="inv-status">${escHtml((invoice.status||'pending').toUpperCase())}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(invoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${escHtml(invoice.invoice_number)}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(invoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(invoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div></div>${paymentsHtml}<div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(bal)}</span></div>${overdueSection}${invoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(invoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${escHtml(COMPANY.bankName)}</div></div><div><div class="lbl">Sort code</div><div class="val">${escHtml(COMPANY.sortCode)}</div></div><div><div class="lbl">Account</div><div class="val">${escHtml(COMPANY.accountNumber)}</div></div></div><div class="footer"><span>${escHtml(COMPANY.name)} &middot; VAT: ${escHtml(COMPANY.vatNumber)}</span><span>Ref: ${escHtml(invoice.invoice_number)} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const html = `<!DOCTYPE html><html><head><title>${escHtml(invoice.invoice_number)}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${escHtml(COMPANY.name)}</div><div class="co-det">${escHtml(COMPANY.address)}<br>${escHtml(COMPANY.city)}, ${escHtml(COMPANY.postcode)}<br>Tel: ${escHtml(COMPANY.phone)} &middot; ${escHtml(COMPANY.email)}<br>VAT: ${escHtml(COMPANY.vatNumber)}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${escHtml(invoice.invoice_number)}</div><div class="inv-status">${escHtml((invoice.status||'pending').toUpperCase())}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(invoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${escHtml(invoice.invoice_number)}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(invoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(invoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div></div>${paymentsHtml}<div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(bal)}</span></div>${overdueSection}${invoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(invoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${escHtml(COMPANY.bankName)}</div></div><div><div class="lbl">Sort code</div><div class="val">${escHtml(COMPANY.sortCode)}</div></div><div><div class="lbl">Account</div><div class="val">${escHtml(COMPANY.accountNumber)}</div></div></div><div class="footer"><span>${escHtml(COMPANY.name)} &middot; VAT: ${escHtml(COMPANY.vatNumber)}</span><span>Ref: ${escHtml(invoice.invoice_number)} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
+    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
   };
 
   const buildWaMsg = () => encodeURIComponent(
@@ -2473,6 +2466,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                     <option value="cash">💵 Cash</option>
                     <option value="bank">🏦 Bank</option>
                     <option value="card">💳 Card</option>
+                    <option value="cheque">📝 Cheque</option>
                   </select>
                   <input type="date" value={partPayDate} onChange={e => setPartPayDate(e.target.value)} title="Date payment was received" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, outline: "none", fontFamily: "var(--sans)", background: "var(--white)", color: "var(--text)", cursor: "pointer" }} />
                   <button className="btn bp" disabled={!partPayAmount || partPayLoading} onClick={async () => {
@@ -2688,6 +2682,11 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
   // Print the saved invoice as HTML download
   const printInvoice = async () => {
     if (!savedInvoice) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
+    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
+    window.addEventListener('message', _closeMsg);
     const invLines = savedInvoice.lines || [];
     const sub = invLines.reduce((s, l) => s + (l.qty * l.unit_price), 0);
     const vat = invLines.reduce((s, l) => s + (l.qty * l.unit_price * (l.vat_rate / 100)), 0);
@@ -2719,13 +2718,17 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
         </table>
         <div class="os-notice">⚠ This account has outstanding balances. Payment is required before further credit can be extended. Goods remain the property of Arkham Retail Ltd until all invoices are paid in full.</div>
       </div>` : '';
-    const html = `<!DOCTYPE html><html><head><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-top:24px;margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${COMPANY.name}</div><div class="co-det">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} &middot; ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div><div class="inv-status">${(savedInvoice.status||'pending').toUpperCase()}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(savedInvoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${savedInvoice.invoice_number}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(savedInvoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(savedInvoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div><div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(tot)}</span></div></div>${overdueSection}${savedInvoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(savedInvoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${COMPANY.bankName}</div></div><div><div class="lbl">Sort code</div><div class="val">${COMPANY.sortCode}</div></div><div><div class="lbl">Account</div><div class="val">${COMPANY.accountNumber}</div></div></div><div class="footer"><span>${COMPANY.name} &middot; VAT: ${COMPANY.vatNumber}</span><span>Ref: ${savedInvoice.invoice_number} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const html = `<!DOCTYPE html><html><head><title>${savedInvoice.invoice_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.inv-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right;line-height:1}.inv-num{font-size:16px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.inv-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#fef3c7;color:#92400e;border:.5px solid #fcd34d}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0;text-align:right}td{padding:11px 12px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}td:last-child{text-align:right;font-weight:600}.totals{width:260px;margin-left:auto;margin-bottom:20px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#64748b}.tr span:last-child{color:#0f172a}.tt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;border-top:.5px solid #e2e8f0;margin-top:4px}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:14px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.bank{background:#f8fafc;border:.5px solid #e2e8f0;padding:12px 16px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.bank .lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}.bank .val{font-size:12px;font-weight:700;color:#0f172a}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}.bta{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d1829;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.4)}.bta a{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;text-decoration:none;cursor:pointer;flex-shrink:0;line-height:1}.bta a:hover{background:rgba(255,255,255,.22)}.bta-l{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px}.bta-t{font-size:16px;font-weight:700;color:#fff}body{padding-top:calc(30mm + 54px)}.os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-radius:0}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}@media print{.bta{display:none!important}body{padding-top:0!important}}</style></head><body><div class="bta"><div><div class="bta-t">LedgerOS</div><div class="bta-l">Arkham Retail Ltd</div></div><a href="#" onclick="try{if(window.opener&&window.opener.__closePrintWin){window.opener.__closePrintWin();return;}if(window.opener){window.opener.postMessage('__ledgeros_close__','*');}window.close();}catch(e){window.close();}">&#x2715;</a></div><div class="accent-bar"></div><div class="hdr"><div class="logo-wrap"><div class="logo-box"><svg width=\"28\" height=\"28\" viewBox=\"0 0 48 48\" fill=\"none\"><rect x=\"10\" y=\"13\" width=\"28\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\"/><rect x=\"10\" y=\"20\" width=\"20\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".6\"/><rect x=\"10\" y=\"27\" width=\"24\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".35\"/><rect x=\"10\" y=\"34\" width=\"14\" height=\"3\" rx=\"1.5\" fill=\"#818cf8\" fill-opacity=\".18\"/><rect x=\"30\" y=\"21\" width=\"2.5\" height=\"14\" rx=\"1.25\" fill=\"#60a5fa\"/><polygon points=\"36,27 30,21 30,35\" fill=\"#60a5fa\" fill-opacity=\".4\"/></svg></div><div><div class="co-name">${COMPANY.name}</div><div class="co-det">${COMPANY.address}<br>${COMPANY.city}, ${COMPANY.postcode}<br>Tel: ${COMPANY.phone} &middot; ${COMPANY.email}<br>VAT: ${COMPANY.vatNumber}</div></div></div><div style="text-align:right;flex-shrink:0;max-width:160px"><div class="inv-title">INVOICE</div><div class="inv-num">${savedInvoice.invoice_number}</div><div class="inv-status">${(savedInvoice.status||'pending').toUpperCase()}</div></div></div><div class="meta"><div class="meta-dk"><div class="lbl">Invoice to</div><div class="val">${escHtml(savedInvoice.customer)}</div></div><div class="mgrid"><div class="mbox"><div class="lbl">Invoice #</div><div class="val">${savedInvoice.invoice_number}</div></div><div class="mbox"><div class="lbl">Invoice date</div><div class="val">${fmtDate(savedInvoice.invoice_date)}</div></div><div class="mbox"><div class="lbl">Due date</div><div class="val">${fmtDate(savedInvoice.due_date)}</div></div><div class="mbox"><div class="lbl">Terms</div><div class="val">Due on receipt</div></div></div></div><table><thead><tr><th style="width:40%">Description</th><th style="text-align:center">VAT</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th>Amount</th></tr></thead><tbody>${invLines.map(l=>`<tr><td style="font-weight:600">${escHtml(l.description)}</td><td style="text-align:center;color:#94a3b8">${l.vat_rate===0?'Exempt':l.vat_rate+'% S'}</td><td style="text-align:right">${escHtml(String(l.qty))}</td><td style="text-align:right">${fmt(l.unit_price)}</td><td>${fmt(l.qty*l.unit_price)}</td></tr>`).join('')}</tbody></table><div class="totals"><div class="tr"><span>Subtotal</span><span>${fmt(sub)}</span></div><div class="tr"><span>VAT total</span><span>${fmt(vat)}</span></div><div class="tt"><span>Total</span><span>${fmt(tot)}</span></div><div class="bb"><span class="bb-l">Balance due</span><span class="bb-v">${fmt(tot)}</span></div></div>${overdueSection}${savedInvoice.notes?'<div class="nb"><div class="lbl">Notes</div><div class="val">'+escHtml(savedInvoice.notes)+'</div></div>':""} <div class="tb"><div class="lbl">Payment terms</div><div class="val">Payment due within 7 days of invoice date unless otherwise agreed in writing. Late payments may be subject to interest and recovery costs in accordance with the Late Payment of Commercial Debts (Interest) Act 1998. Goods remain the property of Arkham Retail Ltd until paid for in full.</div></div><div class="bank"><div><div class="lbl">Bank</div><div class="val">${COMPANY.bankName}</div></div><div><div class="lbl">Sort code</div><div class="val">${COMPANY.sortCode}</div></div><div><div class="lbl">Account</div><div class="val">${COMPANY.accountNumber}</div></div></div><div class="footer"><span>${COMPANY.name} &middot; VAT: ${COMPANY.vatNumber}</span><span>Ref: ${savedInvoice.invoice_number} &middot; Printed: ${new Date().toLocaleDateString('en-GB')}</span></div></body></html>`;
+    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
   };
 
   const downloadInvoicePDF = () => {
     const html = buildInvoiceHtml();
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   // Create delivery note from invoice
@@ -2818,7 +2821,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
   .footer-brand{font-weight:700;color:#0a0f1e;font-size:10px}
 
   /* Outstanding balance section */
-  .os-section{margin-top:24px;margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}
+  .os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}
 
   /* Driver strip */
   .driver-strip{background:#f0f4ff;border:1px solid #c7d7fc;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
@@ -2937,6 +2940,11 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
     const contactRecord = contacts.find(c => c.name === dn.customer_name);
     const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
+    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
+    window.addEventListener('message', _closeMsg);
     let overdueInvs = [];
     try {
       const res = await fetch(
@@ -2980,7 +2988,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
         <div class="os-notice">Goods are delivered subject to full payment of all outstanding balances. Please arrange settlement of overdue invoices immediately. Continued supply may be withheld until account is brought up to date.</div>
       </div>` : '';
     const html = buildDNHtml(dn, overdueSection);
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
   };
 
   const emailDN = async (dn) => {
@@ -3519,7 +3527,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
 // │ AgentDashboard                                             │
 // │ Dashboard view for agent role users                        │
 // └────────────────────────────────────────────────────────────┘
-function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile, setPage, token, userId }) {
+function AgentDashboard({ invoices, setInvoices, contacts, profile, setPage, token, userId }) {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [markingPaidId, setMarkingPaidId] = useState(null);
@@ -3586,106 +3594,6 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
     setPartPayId(null);
     setPartPayAmount({});
   };
-
-  if (isMobile()) {
-    const todayStr = new Date().toISOString().split("T")[0];
-    const todayInv = myInv.filter(i => (i.invoice_date===todayStr || (i.created_at||"").startsWith(todayStr)));
-    const todayCollected = todayInv.filter(i=>i.status==="paid").reduce((s,i)=>s+parseFloat(i.amount||0),0);
-    const myOutstanding = myInv.filter(i => i.status!=="paid" && i.status!=="draft");
-    const myOverdueInv = myInv.filter(i => i.status==="overdue").sort((a,b)=>new Date(a.due_date||a.invoice_date)-new Date(b.due_date||b.invoice_date));
-    const recentInvoices = [...myInv].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
-    const phoneFor = (custName) => contacts.find(c=>c.name===custName)?.phone;
-    const waLink = (phone, msg) => `https://wa.me/${(phone||"").replace(/\s+/g,"").replace(/^0/,"44")}?text=${encodeURIComponent(msg)}`;
-    return (
-      <div>
-        {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
-          onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
-          onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
-        />}
-        <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
-          <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
-            <div style={{ display:"flex", gap:24 }}>
-              <div>
-                <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-1px" }}>{todayInv.length}</div>
-                <div style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>Invoices today</div>
-              </div>
-              <div>
-                <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-1px" }}>{fmt(todayCollected)}</div>
-                <div style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>Collected today</div>
-              </div>
-            </div>
-          </div>
-
-          {myOverdueInv.length > 0 && (() => { const top = myOverdueInv[0]; const phone = phoneFor(top.customer); const days = Math.max(0, Math.floor((new Date()-new Date(top.due_date||top.invoice_date))/(1000*60*60*24)));
-            return (
-              <div style={{ background:"var(--red-lt)", border:"1px solid #fecaca", borderRadius:"var(--rl)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12 }}>
-                <AlertCircle size={20} color="var(--red)" />
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:"var(--red)" }}>{top.customer} — {fmt(top.balance||top.amount)}</div>
-                  <div style={{ fontSize:12, color:"var(--text2)" }}>{days} day{days!==1?"s":""} overdue{myOverdueInv.length>1?` · +${myOverdueInv.length-1} more`:""}</div>
-                </div>
-                {phone && <a href={waLink(phone, `Hi ${top.customer}, this is a reminder that ${fmt(top.balance||top.amount)} (${top.invoice_number}) is overdue with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                  style={{ flexShrink:0, padding:"8px 14px", borderRadius:8, background:"var(--red)", color:"#fff", fontSize:12, fontWeight:700, textDecoration:"none", minHeight:36, display:"flex", alignItems:"center" }}>Chase</a>}
-              </div>
-            );
-          })()}
-
-          {myOutstanding.length > 0 && (
-            <div>
-              <div style={{ fontSize:14, fontWeight:700, marginBottom:10 }}>Outstanding</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {myOutstanding.slice(0,6).map(inv => {
-                  const phone = phoneFor(inv.customer);
-                  return (
-                    <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
-                      style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", display:"flex", flexDirection:"column", gap:8 }}>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                        <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
-                        <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{fmt(inv.status==="partial"?(inv.balance||0):inv.amount)}</span>
-                      </div>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                        <span className={"badge "+(inv.status==="overdue"?"b-red":"b-amber")}>{inv.status}</span>
-                        {phone && <div style={{ display:"flex", gap:8 }}>
-                          <a href={`tel:${phone}`} onClick={e=>e.stopPropagation()} style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text2)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
-                          <a href={waLink(phone, `Hi ${inv.customer}, this is a reminder that ${fmt(inv.status==="partial"?(inv.balance||0):inv.amount)} (${inv.invoice_number}) is ${inv.status} with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                            style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"#16a34a" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
-                        </div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>Recent Invoices</div>
-              <span role="button" tabIndex={0} onClick={()=>setPage("invoices")} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setPage("invoices");}} style={{ fontSize:12, fontWeight:600, color:"var(--blue)", cursor:"pointer" }}>View all</span>
-            </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {recentInvoices.map(inv => (
-                <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
-                  style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", minHeight:64, display:"flex", flexDirection:"column", justifyContent:"center", gap:6 }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                    <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
-                    <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{inv.status==="partial"?fmt(inv.balance||0):fmt(inv.amount)}</span>
-                  </div>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                    <span style={{ fontSize:12, color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
-                    <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
-                  </div>
-                </div>
-              ))}
-              {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
@@ -3730,7 +3638,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
                 {inv.status !== "paid" && (payingId === inv.id ? (
                   <div style={{ display: "flex", gap: 4 }}>
                     <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none" }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
-                      <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option>
+                      <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
                     </select>
                     <button className="btn bp bsm" disabled={markingPaidId === inv.id} onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")} style={{opacity: markingPaidId === inv.id ? 0.6 : 1, cursor: markingPaidId === inv.id ? "not-allowed" : "pointer"}}>
                       {markingPaidId === inv.id ? <div className="spin" style={{width:12,height:12,borderWidth:2}}/> : "✓"}
@@ -3757,9 +3665,9 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
 // │ Dashboard                                                  │
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
-function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
+function Dashboard({ accounts, invoices, setInvoices, contacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [overpaymentData, setOverpaymentData] = useState(null);
@@ -3836,78 +3744,6 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
     pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
     paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
   ].filter(Boolean).slice(0, 3);
-
-  if (isMobile()) {
-    const totalRevenue = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0);
-    const recentInvoices = [...invoices].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
-    const kpiTiles = [
-      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#2563eb", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
-      { label:"Outstanding", val:fmt(unpaid), accent:"#ef4444", onClick:()=>{setPendingFilter("overdue");setPage("invoices");} },
-      { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
-      { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
-      { label:"Today", val:fmt(todayRevenue), accent:"#7c3aed", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
-      { label:"Invoices Today", val:String(todayCount), accent:"#0891b2", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
-    ];
-    return (
-      <>
-      {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
-        onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }} />}
-      <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
-        <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
-          <div style={{ fontSize:32, fontWeight:900, letterSpacing:"-1px", marginBottom:6 }}>{fmt(totalRevenue)}</div>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,.55)" }}>
-            {fmt(unpaid)} outstanding{overdueCount>0?` · ${overdueCount} overdue`:""}
-          </div>
-        </div>
-
-        {overdueCount > 0 && (
-          <div role="button" tabIndex={0} onClick={()=>{setPendingFilter("overdue");setPage("invoices");}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){setPendingFilter("overdue");setPage("invoices");}}}
-            style={{ display:"flex", alignItems:"center", gap:12, background:"var(--red-lt)", border:"1px solid #fecaca", borderRadius:"var(--rl)", padding:"12px 16px", cursor:"pointer" }}>
-            <AlertCircle size={20} color="var(--red)" />
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:"var(--red)" }}>{overdueCount} overdue invoice{overdueCount>1?"s":""}</div>
-              <div style={{ fontSize:12, color:"var(--text2)" }}>Totalling {fmt(overdue)} — tap to review</div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-          {kpiTiles.map(k => (
-            <div key={k.label} role="button" tabIndex={0} onClick={k.onClick} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")k.onClick();}}
-              style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", borderTop:`3px solid ${k.accent}` }}>
-              <div style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:6 }}>{k.label}</div>
-              <div style={{ fontSize:18, fontWeight:800, fontFamily:"var(--mono)" }}>{k.val}</div>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-            <div style={{ fontSize:14, fontWeight:700 }}>Recent Invoices</div>
-            <span role="button" tabIndex={0} onClick={()=>setPage("invoices")} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setPage("invoices");}} style={{ fontSize:12, fontWeight:600, color:"var(--blue)", cursor:"pointer" }}>View all</span>
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {recentInvoices.map(inv => (
-              <div key={inv.id} role="button" tabIndex={0} onClick={()=>setViewInvoice(inv)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
-                style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", minHeight:64, display:"flex", flexDirection:"column", justifyContent:"center", gap:6 }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                  <span style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{inv.customer}</span>
-                  <span style={{ fontWeight:800, fontSize:16, fontFamily:"var(--mono)", flexShrink:0, marginLeft:8 }}>{inv.status==="partial"?fmt(inv.balance||0):fmt(inv.amount)}</span>
-                </div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-                  <span style={{ fontSize:12, color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
-                  <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
-                </div>
-              </div>
-            ))}
-            {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
-          </div>
-        </div>
-      </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -4335,17 +4171,13 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-function Invoices({ invoices, setInvoices, contacts, setContacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
+function Invoices({ invoices, setInvoices, contacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter }) {
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [bulkPayCustomer, setBulkPayCustomer] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
-  const [mobActionsInv, setMobActionsInv] = useState(null);
-  const [mobMarkPaidInv, setMobMarkPaidInv] = useState(null);
-  const [mobMarkPaidMethod, setMobMarkPaidMethod] = useState("cash");
-  const [mobMarkPaidSaving, setMobMarkPaidSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQ, setSearchQ] = useState("");
   const [sortCol, setSortCol] = useState("created_at");
@@ -4398,8 +4230,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
   useEffect(() => {
     if (pendingInvoiceView) { setViewInvoice(pendingInvoiceView); onClearPending && onClearPending(); }
     if (pendingFilter) { setFilterStatus(pendingFilter); onClearFilter && onClearFilter(); }
-    if (triggerNewInvoice) { setShowForm(true); onTriggerHandled && onTriggerHandled(); }
-  }, [pendingInvoiceView, pendingFilter, triggerNewInvoice]);
+  }, [pendingInvoiceView, pendingFilter]);
 
   const markPaid = async (id, method) => {
     const inv = invoices.find(i => i.id === id);
@@ -4491,11 +4322,21 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
 </div>
 <div class="footer"><span><span class="footer-brand">${COMPANY.name}</span> · VAT: ${COMPANY.vatNumber}</span><span>${dn_number} · Printed: ${new Date().toLocaleDateString("en-GB")}</span><span>Goods remain property of ${COMPANY.name} until signed</span></div>
 </div></body></html>`;
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const downloadDNpdf = (html, dn_number) => {
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 800);
   };
 
   const totals = {
@@ -4614,15 +4455,6 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
       {/* ── Invoices Page Header ── */}
-      {isMobile() ? (
-        <div style={{ margin: "-12px -12px 0", padding: "16px 16px 12px", background: "#0f172a" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Invoices</div>
-          <div style={{ position: "relative" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search invoices..." style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 12, height: 44, border: "1px solid rgba(255,255,255,.15)", borderRadius: 10, fontSize: 14, outline: "none", color: "#fff", background: "rgba(255,255,255,.07)", fontFamily: "var(--sans)" }} />
-          </div>
-        </div>
-      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -4686,15 +4518,11 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
           );})}
         </div>
       </div>
-      )}
 
       {/* Status filter tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: isMobile() ? "8px 12px" : "5px 36px", margin: isMobile() ? "-12px -12px 12px" : "0 -28px 16px", flexWrap: isMobile() ? "nowrap" : "wrap", overflowX: isMobile() ? "auto" : "visible" }}>
-        {(isMobile()
-          ? [["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length]]
-          : [["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]]
-        ).map(([s, lbl, cnt]) => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
+        {[["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]].map(([s, lbl, cnt]) => (
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none" }}>
             {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
           </button>
         ))}
@@ -4720,100 +4548,12 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>
-          {!isMobile() && <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => setViewMode("table")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="table"?"var(--blue)":"var(--border)"),background:viewMode==="table"?"var(--blue-lt)":"var(--white)",color:viewMode==="table"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
             <button onClick={() => setViewMode("card")} style={{ width:30,height:30,borderRadius:"var(--r)",border:"1px solid "+(viewMode==="card"?"var(--blue)":"var(--border)"),background:viewMode==="card"?"var(--blue-lt)":"var(--white)",color:viewMode==="card"?"var(--blue)":"var(--text3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-          </div>}
-        </div>
-        {(isMobile() || viewMode === "card") ? (
-          isMobile() ? (
-          <div style={{ display:"flex", flexDirection:"column", gap:10, padding:12 }}>
-            {filtered.map(inv => (
-              <div key={inv.id} role="button" tabIndex={0}
-                onClick={() => setViewInvoice(inv)}
-                onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewInvoice(inv);}}
-                style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px",boxShadow:"var(--sh)",cursor:"pointer",minHeight:64,display:"flex",flexDirection:"column",justifyContent:"center",gap:6 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:10 }}>
-                  <span style={{ fontWeight:700,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{inv.customer}</span>
-                  <span style={{ fontWeight:800,fontSize:16,fontFamily:"var(--mono)",flexShrink:0,marginLeft:8 }}>
-                    {inv.status === "partial" ? fmt(inv.balance || 0) : fmt(inv.amount)}
-                  </span>
-                </div>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:10 }}>
-                  <span style={{ fontSize:12,color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
-                  <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                    <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
-                    {(inv.status!=="paid" || profile?.role==="admin") && (
-                      <button aria-label="More actions" onClick={e=>{e.stopPropagation();setMobActionsInv(inv);}}
-                        style={{ width:32,height:32,borderRadius:8,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
-            {mobActionsInv && (
-              <ModalPortal>
-                <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => setMobActionsInv(null)}>
-                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(20px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
-                    <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
-                    <div style={{ padding:"14px 20px 4px" }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>{mobActionsInv.invoice_number}</div>
-                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{mobActionsInv.customer} · {fmt(mobActionsInv.status==="partial"?(mobActionsInv.balance||0):mobActionsInv.amount)}</div>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"12px 20px 20px" }}>
-                      {mobActionsInv.status!=="paid" && (
-                        <button className="btn bo" style={{ minHeight:48, justifyContent:"flex-start", paddingLeft:16, color:"#16a34a", borderColor:"#bbf7d0" }} onClick={() => { const inv=mobActionsInv; setMobActionsInv(null); setMobMarkPaidInv(inv); }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:8}}><polyline points="20 6 9 17 4 12"/></svg>
-                          Mark as Paid
-                        </button>
-                      )}
-                      {profile?.role==="admin" && (
-                        <button className="btn bo" style={{ minHeight:48, justifyContent:"flex-start", paddingLeft:16, color:"var(--red)", borderColor:"#fecaca" }} onClick={() => { const inv=mobActionsInv; setMobActionsInv(null); deleteInvoice(inv); }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:8}}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                          Delete Invoice
-                        </button>
-                      )}
-                      <button className="btn" style={{ minHeight:48 }} onClick={() => setMobActionsInv(null)}>Cancel</button>
-                    </div>
-                  </div>
-                </div>
-              </ModalPortal>
-            )}
-            {mobMarkPaidInv && (
-              <ModalPortal>
-                <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => !mobMarkPaidSaving && setMobMarkPaidInv(null)}>
-                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(20px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
-                    <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
-                    <div style={{ padding:"14px 20px 4px" }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>Mark as Paid</div>
-                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{mobMarkPaidInv.invoice_number} · {mobMarkPaidInv.customer} · {fmt(mobMarkPaidInv.status==="partial"?(mobMarkPaidInv.balance||0):mobMarkPaidInv.amount)}</div>
-                    </div>
-                    <div style={{ padding:"12px 20px" }}>
-                      <div style={{ fontSize:12, fontWeight:600, color:"var(--text2)", marginBottom:8 }}>Payment method</div>
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8 }}>
-                        {[["cash","Cash"],["card","Card"],["bank_transfer","Bank Transfer"]].map(([val,lbl]) => (
-                          <div key={val} role="button" tabIndex={0} onClick={() => setMobMarkPaidMethod(val)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setMobMarkPaidMethod(val);}}
-                            style={{ padding:"12px 10px", borderRadius:10, border:"2px solid "+(mobMarkPaidMethod===val?"var(--blue)":"var(--border)"), background:mobMarkPaidMethod===val?"var(--blue-lt)":"var(--white)", color:mobMarkPaidMethod===val?"var(--blue)":"var(--text2)", fontSize:13, fontWeight:600, textAlign:"center", cursor:"pointer", minHeight:44, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                            {lbl}
-                          </div>
-                        ))}
-                        <button className="btn bo" style={{ minHeight:44, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:600 }} disabled={mobMarkPaidSaving} onClick={() => setMobMarkPaidInv(null)}>Cancel</button>
-                      </div>
-                    </div>
-                    <div style={{ display:"flex", justifyContent:"center", padding:"4px 20px 20px" }}>
-                      <button className="btn bp" style={{ minHeight:42, width:"100%", maxWidth:160, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", fontSize:13 }} disabled={mobMarkPaidSaving} onClick={async () => { setMobMarkPaidSaving(true); await markPaid(mobMarkPaidInv.id, mobMarkPaidMethod); setMobMarkPaidSaving(false); setMobMarkPaidInv(null); setMobMarkPaidMethod("cash"); }}>
-                        {mobMarkPaidSaving ? "Saving..." : "Confirm Payment"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </ModalPortal>
-            )}
           </div>
-          ) : (
+        </div>
+        {viewMode === "card" ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14, padding: 16 }}>
             {filtered.map(inv => (
               <div key={inv.id} style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:18,boxShadow:"var(--sh)",cursor:"pointer",transition:"all .15s" }}
@@ -4840,7 +4580,6 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
             ))}
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
           </div>
-          )
         ) : (
         <div className="tw" style={{overflowX:"clip"}}><table style={{minWidth:1000}}><thead className="inv-thead"><tr>
           <th style={{width:36}}><input type="checkbox" checked={selectedIds.size===filtered.length&&filtered.length>0} onChange={()=>toggleSelectAll()} style={{accentColor:"var(--blue)"}} /></th>
@@ -4919,7 +4658,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                     payingId===inv.id?(
                       <div style={{display:"flex",gap:3,alignItems:"center"}}>
                         <select style={{padding:"3px 5px",fontSize:11,border:"1px solid var(--border)",borderRadius:6,outline:"none",background:"var(--white)",color:"var(--text)"}} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(prev=>({...prev,[inv.id]:e.target.value}))}>
-                          <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option>
+                          <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
                         </select>
                         <button onClick={()=>markPaid(inv.id,payMethod[inv.id]||"cash")} style={{padding:"4px 8px",borderRadius:6,background:"#16a34a",color:"#fff",border:"none",fontSize:11,fontWeight:600,cursor:"pointer"}}>✓</button>
                         <button onClick={()=>setPayingId(null)} style={{padding:"4px 6px",borderRadius:6,background:"var(--bg)",color:"var(--text2)",border:"1px solid var(--border)",fontSize:11,cursor:"pointer"}}>✕</button>
@@ -4953,7 +4692,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
 // │ Contacts                                                   │
 // │ Customer and supplier contact management                   │
 // └────────────────────────────────────────────────────────────┘
-function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile, triggerNewContact, onTriggerContactHandled }) {
+function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
@@ -4977,10 +4716,6 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
       });
     }
   }, [viewContact, token]);
-
-  React.useEffect(() => {
-    if (triggerNewContact) { setShowForm(true); onTriggerContactHandled && onTriggerContactHandled(); }
-  }, [triggerNewContact]);
 
   const savePrice = async () => {
     if (!priceForm.product_id || !priceForm.custom_price) return;
@@ -5059,14 +4794,16 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             <div style={{ padding:"20px 24px" }}>
               {/* KPI row */}
               {(() => {
-                const liveContact = contacts.find(c => c.id === viewContact.id) || viewContact;
-                const custInvoices = invoices.filter(i => i.customer === liveContact.name);
-                // Always derive financial KPIs from the live invoices list so the modal
-                // reflects payments recorded during this session immediately, even if the
-                // DB-trigger columns on `contacts` haven't been refetched yet.
-                const totalSpend = custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
-                const paid = custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
-                const outstanding = custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+                const custInvoices = invoices.filter(i => i.customer === viewContact.name);
+                // Use DB trigger columns for all 3 financial KPIs — accurate across ALL agents
+                // Falls back to local calculation for admins who see all invoices anyway
+                const hasDbValues = viewContact.total_revenue != null;
+                const totalSpend = hasDbValues ? parseFloat(viewContact.total_revenue||0)
+                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount||0),0);
+                const paid = hasDbValues ? parseFloat(viewContact.total_paid||0)
+                  : custInvoices.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+                const outstanding = hasDbValues ? parseFloat(viewContact.total_outstanding||0)
+                  : custInvoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial").reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
                 return (
                   <div>
                     <div className="ct-modal-kpi" style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:20 }}>
@@ -5183,23 +4920,6 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div></ModalPortal>
       )}
       {/* ── Customers Page Header ── */}
-      {isMobile() ? (
-      <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#0f172a" }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Contacts</div>
-        <div style={{ position: "relative", marginBottom: 10 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts..." style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 12, height: 44, border: "1px solid rgba(255,255,255,.15)", borderRadius: 10, fontSize: 14, outline: "none", color: "#fff", background: "rgba(255,255,255,.07)", fontFamily: "var(--sans)" }} />
-        </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
-            <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
-              style={{ flex:1, textAlign:"center", padding:"8px 14px", fontSize:13, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#818cf8":"rgba(255,255,255,.07)", borderRadius:8, cursor:"pointer" }}>
-              {l} <span style={{ fontSize:10, fontWeight:700, opacity:.8 }}>{contacts.filter(c=>c.type===k||c.type==="both").length}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -5257,8 +4977,6 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           );})}
         </div>
       </div>
-      )}
-      {!isMobile() && <>
       {/* ── TABS + UTILITY BAR ── */}
       <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 36px", margin:"0 -28px", marginTop:0 }}>
         <div style={{ display:"flex", gap:3 }}>
@@ -5304,7 +5022,6 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           </select>
         </div>
       </div>
-      </>}
 
       {/* ── ADD / EDIT FORM ── */}
       {showForm && (
@@ -5340,40 +5057,6 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         const fmt = (n) => "£" + parseFloat(n).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
         const hasOverdue = (name) => (invoices||[]).some(i => i.customer===name && i.status==="overdue");
         const isVIP = (name) => (custInvMap[name]?.revenue||0) > 10000;
-        if (isMobile()) {
-          return (
-            <div style={{ display:"flex", flexDirection:"column", gap:10, padding:"12px 0" }}>
-              {sortedContacts.map(c => {
-                const bg = avatarBg(c.name);
-                const ci = custInvMap[c.name] || { count:0, revenue:0, outstanding:0 };
-                const overdue = hasOverdue(c.name);
-                return (
-                  <div key={c.id} role="button" tabIndex={0}
-                    onClick={() => setViewContact(c)}
-                    onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setViewContact(c);}}
-                    style={{ background:"var(--white)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px",boxShadow:"var(--sh)",cursor:"pointer",minHeight:64,display:"flex",alignItems:"center",gap:12 }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff", flexShrink:0 }}>
-                      {c.name?.[0]?.toUpperCase()}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:15, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</div>
-                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                        {c.city || c.phone || c.email || "No details"}
-                      </div>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
-                      <span style={{ fontWeight:800, fontSize:14, fontFamily:"var(--mono)" }}>{ci.outstanding > 0 ? fmt(ci.outstanding) : ci.revenue > 0 ? fmt(ci.revenue) : "—"}</span>
-                      {ci.outstanding > 0
-                        ? <span className={"badge "+(overdue?"b-red":"b-amber")}>{overdue?"overdue":"owes"}</span>
-                        : <span className="badge b-green">settled</span>}
-                    </div>
-                  </div>
-                );
-              })}
-              {filtered.length===0&&<EmptyState icon="customer" title={`No ${tab}s`} sub="No contacts match your current search or filter" />}
-            </div>
-          );
-        }
         return (
           <>
             {/* Column headers */}
@@ -7323,6 +7006,13 @@ function DeliveryNotes({ contacts, products, token, userId }) {
     const contactRecord = contacts.find(c => c.name === dn.customer_name);
     const totalOutstanding = parseFloat(contactRecord?.total_outstanding || 0);
 
+    // Open window IMMEDIATELY — before any await — so browser popup security allows it
+    const win = window.open('', '_blank');
+    if (!win) return;
+    window.__closePrintWin = () => { try { win.close(); } catch(_) {} delete window.__closePrintWin; };
+    const _closeMsg = (e) => { if (e.data === '__ledgeros_close__') { try { win.close(); } catch(_) {} window.removeEventListener('message', _closeMsg); } };
+    window.addEventListener('message', _closeMsg);
+    win.document.write(`<!DOCTYPE html><html><head><title>${dn.dn_number||'Delivery Note'}</title><style>body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#64748b;font-size:14px}</style></head><body><div style="text-align:center"><div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div><div>Preparing delivery note...</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></body></html>`);
 
     let overdueInvs = [];
     try {
@@ -7392,7 +7082,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </table>
       ${hasPrice ? `<div class="deliv-total"><div class="deliv-total-box"><span class="deliv-total-lbl">This delivery value</span><span class="deliv-total-val">${fmt(deliveryTotal)}</span></div></div>` : ''}`;
 
-    const html = `<!DOCTYPE html><html><head><title>${dn.dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.dn-title{font-size:24px;font-weight:900;color:#e2e8f0;letter-spacing:-1px;text-align:right;line-height:1}.dn-num{font-size:15px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.dn-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:.5px solid #bfdbfe}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.7}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:16px}thead tr{background:#1e1b4b}th{padding:9px 10px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0}td{padding:10px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}.deliv-total{display:flex;justify-content:flex-end;margin-bottom:20px}.deliv-total-box{display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 16px;min-width:220px;gap:16px}.deliv-total-lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px}.deliv-total-val{font-size:15px;font-weight:700;color:#0f172a}.os-section{margin-top:24px;margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:16px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px}.sig-box{border:.5px solid #e2e8f0;border-radius:8px;padding:14px 16px}.sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}.sig-line{height:44px;border-bottom:1.5px solid #cbd5e1;margin-bottom:8px}.sig-hint{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}</style></head><body>
+    const html = `<!DOCTYPE html><html><head><title>${dn.dn_number}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 0 20px;border-bottom:.5px solid #e2e8f0;margin-bottom:20px}.logo-wrap{display:flex;align-items:center;gap:14px;flex:1;min-width:0}.logo-box{width:48px;height:48px;background:#1e1b4b;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.co-name{font-size:15px;font-weight:700;color:#0f172a}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px;word-break:break-word}.dn-title{font-size:24px;font-weight:900;color:#e2e8f0;letter-spacing:-1px;text-align:right;line-height:1}.dn-num{font-size:15px;font-weight:800;text-align:right;color:#0f172a;margin-top:2px}.dn-status{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#dbeafe;color:#1e40af;border:.5px solid #bfdbfe}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.meta-dk{background:#1e1b4b;border-radius:8px;padding:14px 16px}.meta-dk .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.meta-dk .val{font-size:18px;font-weight:700;color:#fff;line-height:1.2}.meta-dk .sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.7}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600;color:#0f172a}table{width:100%;border-collapse:collapse;margin-bottom:16px}thead tr{background:#1e1b4b}th{padding:9px 10px;font-size:9px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;text-align:left}th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0}td{padding:10px;border-bottom:.5px solid #f1f5f9;font-size:12px}tr:last-child td{border-bottom:none}.deliv-total{display:flex;justify-content:flex-end;margin-bottom:20px}.deliv-total-box{display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 16px;min-width:220px;gap:16px}.deliv-total-lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px}.deliv-total-val{font-size:15px;font-weight:700;color:#0f172a}.os-section{margin-bottom:20px}.os-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.os-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}.os-total{background:#fee2e2;border:.5px solid #fca5a5;border-radius:8px;padding:4px 14px;font-size:13px;font-weight:700;color:#991b1b}.os-table{width:100%;border-collapse:collapse;margin-bottom:12px}.os-table thead tr{background:#f8fafc;border-bottom:.5px solid #e2e8f0}.os-table th{padding:6px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;text-align:left}.os-table td{padding:7px 8px;border-bottom:.5px solid #f8fafc;font-size:11px}.os-table tr:last-child td{border-bottom:none}.overdue-badge{background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.partial-badge{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.pending-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}.os-notice{border:.5px solid #fca5a5;border-left:3px solid #dc2626;border-radius:0 8px 8px 0;padding:10px 14px;background:#fff7f7;margin-bottom:20px;font-size:11px;color:#991b1b;line-height:1.6}.nb{background:#fef9ec;border:.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:16px}.nb .lbl{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.nb .val{font-size:12px;color:#78350f;line-height:1.6}.sig-section{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px}.sig-box{border:.5px solid #e2e8f0;border-radius:8px;padding:14px 16px}.sig-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}.sig-line{height:44px;border-bottom:1.5px solid #cbd5e1;margin-bottom:8px}.sig-hint{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8}.tb{border:.5px solid #e2e8f0;border-left:3px solid #4f46e5;border-radius:0 8px 8px 0;padding:12px 14px;background:#f8fafc;margin-bottom:14px}.tb .lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}.tb .val{font-size:11px;color:#64748b;line-height:1.7}.footer{font-size:10px;color:#94a3b8;border-top:.5px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between}</style></head><body>
       <div class="accent-bar"></div>
       <div class="hdr">
         <div class="logo-wrap">
@@ -7436,7 +7126,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
       </div>
     </body></html>`;
 
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
+    const _hp=html.replace('</head>','<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script></head>');const _b=new Blob([_hp],{type:'text/html;charset=utf-8'});const _u=URL.createObjectURL(_b);win.location.href=_u;win.focus();setTimeout(()=>URL.revokeObjectURL(_u),15000);
   };
 
     const sendWhatsApp = (dn) => {
@@ -7481,15 +7171,6 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 
   return (
     <div>
-      {isMobile() ? (
-        <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#0f172a", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Delivery Notes</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop:2 }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div>
-          </div>
-          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink:0 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New</button>
-        </div>
-      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -7507,10 +7188,9 @@ function DeliveryNotes({ contacts, products, token, userId }) {
           ))}
         </div>
       </div>
-      )}
 
       {/* Summary KPIs */}
-      {!isMobile() && <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
+      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
         {[
           { label: "Total", val: dns.length, color: "var(--text)" },
           { label: "Pending", val: dns.filter(d => d.status === "pending").length, color: "var(--amber)" },
@@ -7522,7 +7202,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
             <div className="kpi-val" style={{ color: k.color }}>{k.val}</div>
           </div>
         ))}
-      </div>}
+      </div>
 
       {/* Create form */}
       {showForm && (
@@ -7831,9 +7511,9 @@ const NAV = [
 const MOBILE_NAV = [
   { id: "dashboard", label: "Home" },
   { id: "invoices", label: "Invoices" },
-];
-const MOBILE_NAV_RIGHT = [
   { id: "contacts", label: "Contacts" },
+  { id: "inventory", label: "Stock" },
+  { id: "analytics", label: "Analytics" },
 ];
 
 // ── APP ───────────────────────────────────────────────────────────────────────
@@ -7858,15 +7538,11 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  const [printOverlayHTML, setPrintOverlayHTML] = useState(null);
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
   const [pendingFilter, setPendingFilter] = useState(null);
-  const [triggerNewInvoice, setTriggerNewInvoice] = useState(0);
-  const [triggerNewContact, setTriggerNewContact] = useState(0);
-  const [showFabMenu, setShowFabMenu] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -7888,19 +7564,6 @@ export default function App() {
   const [allProfiles, setAllProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Expose print overlay setter globally so sub-components can trigger it without prop drilling
-  React.useEffect(() => {
-    window.__ledgerosPrint = (html) => {
-      // Strip the .bta toolbar (React overlay has its own close button) and fix body padding
-      const clean = html
-        .replace(/<div class="bta">[\s\S]*?&#x2715;<\/a><\/div>/, '')
-        .replace(/body\{padding-top:calc\(30mm \+ 54px\)\}/g, '')
-        .replace(/@media print\{\.bta\{display:none!important\}body\{padding-top:0!important\}\}/g, '');
-      setPrintOverlayHTML(clean || html);
-    };
-    return () => { delete window.__ledgerosPrint; };
-  }, []);
-
   // PWA install prompt
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -7918,14 +7581,6 @@ export default function App() {
   };
 
   const [realtimeStatus, setRealtimeStatus] = useState("connecting"); // connecting | live | offline
-
-  // Lightweight page-view tracking for usage analytics (skips initial mount)
-  const pageViewMounted = useRef(false);
-  useEffect(() => {
-    if (!auth) return;
-    if (!pageViewMounted.current) { pageViewMounted.current = true; return; }
-    logAudit(auth.token, auth.user.id, "page_view", "page", null, page);
-  }, [page]);
 
   useEffect(() => {
     if (!auth) return; setLoading(true);
@@ -8277,7 +7932,7 @@ export default function App() {
             ].filter(n=>!dismissedNotifs.includes(n.id));
             const unreadU = notifsU.length;
             window.__utilityBtns = (
-              <div className="util-btns-bar" style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid rgba(255,255,255,.08)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto",paddingLeft:16,borderLeft:"1px solid rgba(255,255,255,.08)"}}>
                 <div className="tb-btn" onClick={() => setShowCmdK(true)} title="Search (⌘K)">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </div>
@@ -8323,7 +7978,7 @@ export default function App() {
           })()}
           {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
           {page === "dashboard" && (
-            <div className="dash-util-bar" style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+            <div style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
               {window.__utilityBtns}
             </div>
           )}
@@ -8437,7 +8092,7 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div className="subnav-bar" style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
                   <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#a5b4fc":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #818cf8":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
                     onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(129,140,248,.3)";}}}
@@ -8475,9 +8130,9 @@ export default function App() {
               </div>
             ) : (
               <>
-                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
-                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
-                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
+                {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
+                {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} />}
+                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
@@ -8489,7 +8144,7 @@ export default function App() {
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
-                {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}
+                {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} />}
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
               </>
             )}
@@ -8592,33 +8247,9 @@ export default function App() {
         <nav className="mob-nav">
           <div className="mob-nav-inner">
             {MOBILE_NAV.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
-            <div className="mob-nav-item mob-nav-fab-slot" onClick={() => setShowFabMenu(v => !v)}>
-              <div className="mob-nav-fab" style={showFabMenu?{background:"linear-gradient(135deg,#ef4444,#f87171)",transform:"translateY(-14px) rotate(45deg)"}:undefined}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-            </div>
-            {MOBILE_NAV_RIGHT.filter(n => !n.adminOnly || profile?.role === "admin").map(n => <div key={n.id} className={"mob-nav-item "+(page===n.id?"active":"")} onClick={() => setPage(n.id)}>{NAV_ICONS[n.id]}<span className="mob-nav-lbl">{n.label}</span></div>)}
             <div className={"mob-nav-item "+(showMobMore?"active":"")} onClick={() => setShowMobMore(v => !v)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span className="mob-nav-lbl">More</span></div>
           </div>
         </nav>
-        {showFabMenu && (
-          <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.5)" }} onClick={() => setShowFabMenu(false)}>
-            <div style={{ position:"absolute", bottom:"calc(64px + env(safe-area-inset-bottom))", left:0, right:0, padding:"0 16px 16px" }} onClick={e => e.stopPropagation()}>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
-                {[
-                  { label:"New Invoice", color:"#6366f1", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
-                  { label:"Record Payment", color:"#16a34a", action:() => { setPage("invoices"); setPendingFilter("pending"); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
-                  { label:"New Customer", color:"#f59e0b", action:() => { setPage("contacts"); setTriggerNewContact(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> },
-                  { label:"Delivery Note", color:"#7c3aed", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
-                ].map(a => (
-                  <div key={a.label} role="button" tabIndex={0} onClick={() => { a.action(); setShowFabMenu(false); }} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){a.action();setShowFabMenu(false);}}}
-                    style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"16px 14px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, boxShadow:"0 4px 20px rgba(0,0,0,.15)", cursor:"pointer", minHeight:80 }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:a.color+"1a", color:a.color, display:"flex", alignItems:"center", justifyContent:"center" }}>{a.icon}</div>
-                    <span style={{ fontSize:13, fontWeight:700, color:"#0f172a" }}>{a.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
         {showMobMore && (
           <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(0,0,0,.5)" }} onClick={() => setShowMobMore(false)}>
             <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(24px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
@@ -8629,26 +8260,13 @@ export default function App() {
                 <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>More</div>
                 <button onClick={() => setShowMobMore(false)} style={{ background:"#f1f5f9", border:"none", cursor:"pointer", color:"#475569", padding:"4px 8px", fontSize:14, lineHeight:1, borderRadius:6, fontWeight:600 }}>✕</button>
               </div>
-              {/* Agent: access level info box */}
-              {profile?.role!=="admin" && (
-                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#eff6ff", border:"1px solid #bfdbfe", display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                  <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#1e40af" }}>Your Access Level: Agent</div>
-                    <div style={{ fontSize:11, color:"#3b82f6", marginTop:2 }}>You can manage your own invoices, customers and delivery notes. Admin-only sections (inventory, banking, reports) aren't shown.</div>
-                  </div>
-                </div>
-              )}
               {/* Grouped nav sections */}
-              {(profile?.role==="admin" ? [
-                { label:"Sales", color:"#2563eb", items:["statement","agent-report","analytics"] },
-                { label:"Operations", color:"#7c3aed", items:["inventory","purchases","stock-adj","delivery-notes","import"] },
+              {[
+                { label:"Sales", color:"#2563eb", items:["statement","agent-report"] },
+                { label:"Operations", color:"#7c3aed", items:["purchases","stock-adj","delivery-notes","import"] },
                 { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
                 { label:"Settings", color:"#64748b", items:["settings"] },
-              ] : [
-                { label:"My Tools", color:"#16a34a", items:["delivery-notes","agent-report"] },
-                { label:"Account", color:"#64748b", items:["settings"] },
-              ]).map(group => {
+              ].map(group => {
                 const visItems = NAV.filter(n =>
                   group.items.includes(n.id) &&
                   (!n.adminOnly || profile?.role==="admin" || profile?.role==="manager")
@@ -8686,39 +8304,10 @@ export default function App() {
                   </div>
                 );
               })}
-              <div style={{ padding:"4px 12px 0" }}>
-                <button onClick={() => { setShowMobMore(false); signOut(); }}
-                  style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px", borderRadius:12, border:"1.5px solid #fecaca", background:"#fef2f2", color:"#dc2626", fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:"var(--sans)", minHeight:44 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                  Sign Out
-                </button>
-              </div>
             </div>
           </div>
         )}
       </div>
-      {/* ── PRINT OVERLAY ── replaces popup windows; X button is pure React ── */}
-      {printOverlayHTML && (
-        <div style={{position:'fixed',inset:0,zIndex:99999,display:'flex',flexDirection:'column',background:'#0d1829'}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',background:'#0d1829',borderBottom:'1px solid rgba(255,255,255,.12)',flexShrink:0}}>
-            <div>
-              <div style={{fontSize:15,fontWeight:700,color:'#fff',letterSpacing:'-0.3px'}}>LedgerOS</div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:1}}>Arkham Retail Ltd</div>
-            </div>
-            <button
-              onClick={() => setPrintOverlayHTML(null)}
-              style={{width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.3)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,cursor:'pointer',lineHeight:1,fontFamily:'sans-serif',flexShrink:0}}
-              title="Close"
-            >&#x2715;</button>
-          </div>
-          <iframe
-            srcDoc={printOverlayHTML}
-            onLoad={e => { try { e.target.contentWindow.print(); } catch(_) {} }}
-            style={{flex:1,border:'none',background:'#fff',width:'100%'}}
-            title="Print Preview"
-          />
-        </div>
-      )}
     </>
   );
 }
@@ -8939,14 +8528,14 @@ function UserApproval({ token, profile }) {
             <div className="ct" style={{ marginBottom:4 }}>Pending Approval</div>
             <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting</div>
             {pending.length===0 ? <div style={{ padding:"16px 0",color:"var(--text3)",fontSize:13 }}>No pending users</div> : pending.map(u=>(
-              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
                 <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
                   <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.email||u.id}</div></div>
                 </div>
                 <div style={{ display:"flex",gap:8 }}>
-                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Approve</button>
-                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reject</button>
+                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff" }}>Approve</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)" }}>Reject</button>
                 </div>
               </div>
             ))}
@@ -8955,18 +8544,15 @@ function UserApproval({ token, profile }) {
             <div className="ct" style={{ marginBottom:4 }}>Approved Users</div>
             <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
             {approved.map(u=>(
-              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
-                <div style={{ display:"flex",alignItems:"center",gap:12,justifyContent:"space-between" }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                    <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||"U")[0].toUpperCase()}</div>
-                    <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
-                  </div>
-                  {isMobile() && <span className="badge b-green">Active</span>}
+              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                  <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
                 </div>
                 <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                  {!isMobile() && <span className="badge b-green">Active</span>}
-                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset Password</button>
-                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Revoke</button>
+                  <span className="badge b-green">Active</span>
+                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11 }}>Reset PW</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--text3)" }}>Revoke</button>
                 </div>
               </div>
             ))}
@@ -9216,7 +8802,7 @@ function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, 
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:11,fontWeight:600,color:"var(--text3)",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:".5px"}}>Payment method</label>
                   <div style={{display:"flex",gap:8}}>
-                    {[["cash","💵 Cash"],["bank","🏦 Bank"],["card","💳 Card"]].map(([v,l]) => (
+                    {[["cash","💵 Cash"],["bank","🏦 Bank"],["card","💳 Card"],["cheque","📝 Cheque"]].map(([v,l]) => (
                       <button key={v} type="button" onClick={()=>setMethod(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid "+(method===v?"var(--blue)":"var(--border)"),background:method===v?"var(--blue)":"var(--white)",color:method===v?"#fff":"var(--text2)",fontSize:12,fontWeight:method===v?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{l}</button>
                     ))}
                   </div>
@@ -9784,69 +9370,7 @@ function BankingPage({ token, userId, profile }) {
   );
 }
 
-function ProductAliases({ token, products = [] }) {
-  const [aliases, setAliases] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [aliasText, setAliasText] = useState("");
-  const [selProduct, setSelProduct] = useState(null);
-
-  const load = async () => {
-    setLoading(true);
-    const data = await sb.get(token, "product_aliases", "select=*,products(name)&order=alias.asc");
-    setAliases(Array.isArray(data) ? data : []);
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
-
-  const addAlias = async () => {
-    if (!aliasText.trim() || !selProduct) { toast.error("Enter the customer's wording and pick a product"); return; }
-    const res = await sb.post(token, "product_aliases", { alias: aliasText.trim(), product_id: selProduct.id });
-    if (res?.error) { toast.error(res.error.message || "Failed to add alias"); return; }
-    toast.success("Alias added");
-    setAliasText(""); setSelProduct(null);
-    load();
-  };
-
-  const removeAlias = async (id) => {
-    await sb.del(token, "product_aliases", id);
-    toast.success("Alias removed");
-    setAliases(aliases.filter(a => a.id !== id));
-  };
-
-  return (
-    <div className="card" style={{ padding:24 }}>
-      <div className="ct" style={{ marginBottom:6 }}>WhatsApp Product Aliases</div>
-      <div style={{ fontSize:12, color:"var(--text3)", marginBottom:20 }}>
-        Map the wording customers use over WhatsApp to the correct product, so incoming orders match automatically.
-      </div>
-      <div style={{ display:"flex", flexDirection:isMobile()?"column":"row", gap:10, marginBottom:20, alignItems:isMobile()?"stretch":"flex-end" }}>
-        <div style={{ flex:1 }}>
-          <label style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5, display:"block" }}>Customer's wording</label>
-          <input value={aliasText} onChange={e=>setAliasText(e.target.value)} placeholder="e.g. Hayati 6k" style={{ width:"100%", padding:"10px 14px", borderRadius:"var(--r)", border:"1px solid var(--border2)", fontSize:13, fontFamily:"var(--sans)", outline:"none" }} />
-        </div>
-        <div style={{ flex:1 }}>
-          <label style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5, display:"block" }}>Maps to product</label>
-          <SearchDropdown placeholder="Search products..." items={products} value={selProduct?.name || ""} onSelect={p=>setSelProduct(p)} />
-        </div>
-        <button className="btn bp" onClick={addAlias} style={{ minHeight:isMobile()?44:undefined }}>Add Alias</button>
-      </div>
-      {loading ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>Loading…</div> :
-        aliases.length===0 ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>No aliases configured yet</div> :
-        aliases.map(a=>(
-          <div key={a.id} style={{ display:"flex", flexDirection:isMobile()?"column":"row", alignItems:isMobile()?"stretch":"center", justifyContent:"space-between", gap:isMobile()?10:0, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
-            <div>
-              <div style={{ fontWeight:600, fontSize:14 }}>{a.alias}</div>
-              <div style={{ fontSize:12, color:"var(--text3)" }}>→ {a.products?.name || "Unknown product"}</div>
-            </div>
-            <button className="btn bo bsm" onClick={()=>removeAlias(a.id)} style={{ color:"var(--red)", borderColor:"#fecaca", flex:isMobile()?1:"none", minHeight:isMobile()?40:undefined }}>Remove</button>
-          </div>
-        ))
-      }
-    </div>
-  );
-}
-
-function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut, products = [] }) {
+function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut }) {
   const darkMode = darkModeProp;
   const [activeTab, setActiveTab] = useState("company");
   if (profile?.role !== "admin" && profile?.role !== "manager") return (
@@ -9878,7 +9402,7 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut
         </div>
       </div>
       <div style={{ display:"flex",gap:8,marginBottom:24,flexWrap:"wrap" }}>
-        {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"],["aliases","WhatsApp Aliases"]].map(([k,l])=>(
+        {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"]].map(([k,l])=>(
           <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px",borderRadius:20,border:"1px solid "+(activeTab===k?"var(--blue)":"var(--border)"),background:activeTab===k?"var(--blue)":"var(--white)",color:activeTab===k?"#fff":"var(--text2)",fontSize:13,fontWeight:activeTab===k?600:400,cursor:"pointer",fontFamily:"var(--sans)" }}>{l}</button>
         ))}
       </div>
@@ -9920,7 +9444,6 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut
         </div>
       )}
       {activeTab==="users" && <UserApproval token={auth?.token} profile={profile} />}
-      {activeTab==="aliases" && <ProductAliases token={auth?.token} products={products} />}
     </div>
   );
 }

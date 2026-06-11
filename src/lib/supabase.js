@@ -51,6 +51,11 @@ export const sb = {
     if (res.status === 401) { window._jwtExpired = true; return null; }
     return res.json();
   },
+  async del(t, table, id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "DELETE", headers: sb.h(t) });
+    if (res.status === 401) { window._jwtExpired = true; return null; }
+    return res.ok;
+  },
   async getPayments(t, invoiceId) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments?invoice_id=eq.${invoiceId}&order=created_at.asc`, { headers: sb.h(t) })).json(); },
   async addPayment(t, row) { return (await fetch(`${SUPABASE_URL}/rest/v1/invoice_payments`, { method: "POST", headers: { ...sb.h(t), "Prefer": "return=representation" }, body: JSON.stringify(row) })).json(); },
   async getCredits(t, customer) { return (await fetch(`${SUPABASE_URL}/rest/v1/customer_credits?customer=eq.${encodeURIComponent(customer)}&order=created_at.desc`, { headers: sb.h(t) })).json(); },

@@ -41,13 +41,21 @@ export default async function handler(req, res) {
     const prodData = await prodRes.json();
     const products = Array.isArray(prodData) ? prodData : [];
 
+    // ── 2b. Fetch product aliases ─────────────────────────────────────────────
+    const aliasRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/product_aliases?select=alias,product_id`,
+      { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
+    );
+    const aliasData = await aliasRes.json();
+    const aliases   = Array.isArray(aliasData) ? aliasData : [];
+
     // ── 3. Parse the order message ────────────────────────────────────────────
     const parsedItems = parseOrderMessage(msgBody);
     const lines       = [];
     const unmatched   = [];
 
     for (const item of parsedItems) {
-      const product = matchProduct(item.name, products);
+      const product = matchProduct(item.name, products, aliases);
       if (product) {
         lines.push({
           description : product.name,
@@ -177,9 +185,16 @@ function parseOrderMessage(text) {
  * Fuzzy-match a product name against the catalogue
  * Priority: exact → starts-with → contains → partial token match
  */
-function matchProduct(query, products) {
+function matchProduct(query, products, aliases = []) {
   const q = query.toLowerCase().trim();
   if (!q || !products.length) return null;
+
+  // 0. Alias match (manually mapped customer wording → product)
+  const aliasHit = aliases.find(a => (a.alias || '').toLowerCase().trim() === q);
+  if (aliasHit) {
+    const p = products.find(p => p.id === aliasHit.product_id);
+    if (p) return p;
+  }
 
   // 1. Exact match
   let hit = products.find(p => p.name.toLowerCase() === q);
