@@ -1301,16 +1301,21 @@ function CommandPalette({ onClose, setPage, invoices, contacts, products }) {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const commands = [
-    { icon: "ti-file-plus",      label: "New Invoice",          action: () => setPage("invoices"),       tag: "Invoices" },
-    { icon: "ti-user-plus",      label: "Add Customer",         action: () => setPage("contacts"),       tag: "Contacts" },
-    { icon: "ti-package",        label: "Add Product",          action: () => setPage("inventory"),      tag: "Inventory" },
-    { icon: "ti-truck-delivery", label: "New Delivery Note",    action: () => setPage("delivery-notes"), tag: "Delivery" },
-    { icon: "ti-chart-bar",      label: "View Dashboard",       action: () => setPage("dashboard"),      tag: "Navigation" },
-    { icon: "ti-report-money",   label: "Reports",        action: () => setPage("admin-reports"),  tag: "Reports" },
-    { icon: "ti-chart-line",     label: "Analytics",            action: () => setPage("analytics"),      tag: "Reports" },
-    { icon: "ti-building-bank",  label: "View Accounts",        action: () => setPage("reports"),        tag: "Finance" },
+    { icon: "ti-chart-bar",      label: "Dashboard",            action: () => setPage("dashboard"),      tag: "Navigation" },
+    { icon: "ti-file-plus",      label: "Invoices",             action: () => setPage("invoices"),       tag: "Invoices" },
+    { icon: "ti-user-plus",      label: "Contacts",             action: () => setPage("contacts"),       tag: "Contacts" },
+    { icon: "ti-package",        label: "Inventory",            action: () => setPage("inventory"),      tag: "Inventory" },
+    { icon: "ti-truck-delivery", label: "Delivery Notes",       action: () => setPage("delivery-notes"), tag: "Delivery" },
+    { icon: "ti-shopping-cart",  label: "Purchases",            action: () => setPage("purchases"),      tag: "Operations" },
     { icon: "ti-adjustments",    label: "Stock Adjustment",     action: () => setPage("stock-adj"),      tag: "Inventory" },
     { icon: "ti-upload",         label: "Import CSV",           action: () => setPage("import"),         tag: "Data" },
+    { icon: "ti-credit-card",    label: "Credits",              action: () => setPage("credits"),        tag: "Finance" },
+    { icon: "ti-building-bank",  label: "Banking",              action: () => setPage("banking"),        tag: "Finance" },
+    { icon: "ti-report-money",   label: "Reports",              action: () => setPage("admin-reports"),  tag: "Reports" },
+    { icon: "ti-chart-line",     label: "Analytics",            action: () => setPage("analytics"),      tag: "Reports" },
+    { icon: "ti-file-text",      label: "Statements",           action: () => setPage("reports"),        tag: "Reports" },
+    { icon: "ti-users",          label: "Agent Sales",          action: () => setPage("agent-report"),   tag: "Reports" },
+    { icon: "ti-settings",       label: "Settings",             action: () => setPage("settings"),       tag: "Settings" },
   ];
 
   const invResults = q.length > 1 ? invoices.filter(i => i.customer?.toLowerCase().includes(q.toLowerCase()) || i.invoice_number?.toLowerCase().includes(q.toLowerCase())).slice(0, 3) : [];
