@@ -8964,7 +8964,7 @@ function UserApproval({ token, profile }) {
                 </div>
                 <div style={{ display:"flex",alignItems:"center",gap:8 }}>
                   {!isMobile() && <span className="badge b-green">Active</span>}
-                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset PW</button>
+                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset Password</button>
                   <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Revoke</button>
                 </div>
               </div>
