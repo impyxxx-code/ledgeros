@@ -115,6 +115,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes headlineUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Layout ── */
 .app{display:flex;min-height:100vh}
@@ -1809,7 +1811,10 @@ function Auth({ onAuth, sessionExpired }) {
               Business Finance Platform
             </div>
             <div style={{ fontSize: 48, fontWeight: 900, color: "#fff", letterSpacing: "-2px", lineHeight: 1.04, marginBottom: 20 }}>
-              Run every<br />invoice.<br />Know every<br /><span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>number.</span>
+              <span style={{ display: "inline-block", animation: "headlineUp .6s ease-out both" }}>Run every</span><br />
+              <span style={{ display: "inline-block", animation: "headlineUp .6s ease-out .1s both" }}>invoice.</span><br />
+              <span style={{ display: "inline-block", animation: "headlineUp .6s ease-out .2s both" }}>Know every</span><br />
+              <span style={{ display: "inline-block", animation: "headlineUp .6s ease-out .3s both, gradientMove 6s ease-in-out infinite", background: "linear-gradient(135deg,#a78bfa,#60a5fa,#a78bfa)", backgroundSize: "200% 200%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>number.</span>
             </div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,.38)", lineHeight: 1.75, maxWidth: 320 }}>
               Everything your retail business needs. Invoicing, inventory, deliveries, and real-time insights — beautifully connected in one platform.
