@@ -7847,6 +7847,14 @@ export default function App() {
 
   const [realtimeStatus, setRealtimeStatus] = useState("connecting"); // connecting | live | offline
 
+  // Lightweight page-view tracking for usage analytics (skips initial mount)
+  const pageViewMounted = useRef(false);
+  useEffect(() => {
+    if (!auth) return;
+    if (!pageViewMounted.current) { pageViewMounted.current = true; return; }
+    logAudit(auth.token, auth.user.id, "page_view", "page", null, page);
+  }, [page]);
+
   useEffect(() => {
     if (!auth) return; setLoading(true);
     // Step 1: fetch profile FIRST to know the role before fetching invoices
