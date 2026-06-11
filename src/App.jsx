@@ -1786,13 +1786,13 @@ function Auth({ onAuth, sessionExpired }) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
             <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
               <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
-                <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#818cf8"/>
-                <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".58"/>
-                <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".32"/>
-                <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".16"/>
+                <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
+                <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
+                <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
+                <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#fff" fillOpacity=".3"/>
                 <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#lgGrad)"/>
-                <polygon points="38,28 31,20 31,36" fill="#60a5fa" fillOpacity=".45"/>
-                <defs><linearGradient id="lgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#60a5fa"/><stop offset="100%" stopColor="#818cf8"/></linearGradient></defs>
+                <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
+                <defs><linearGradient id="lgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
               </svg>
             </div>
             <div>
