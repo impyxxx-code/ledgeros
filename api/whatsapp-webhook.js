@@ -50,25 +50,27 @@ export default async function handler(req, res) {
     const aliases   = Array.isArray(aliasData) ? aliasData : [];
 
     // ── 3. Parse the order message ────────────────────────────────────────────
-    const parsedItems = parseOrderMessage(msgBody);
+    // Customers send "Product Name" headers followed by one variant per line
+    // (e.g. "Hayati 6k Device" then 7 flavours = qty 7 of "Hayati 6k Device")
+    const parsedItems = parseOrder(msgBody, products, aliases);
     const lines       = [];
     const unmatched   = [];
 
     for (const item of parsedItems) {
-      const product = matchProduct(item.name, products, aliases);
-      if (product) {
+      const qty = Math.max(item.qty, 1);
+      if (item.product) {
         lines.push({
-          description : product.name,
-          qty         : item.qty,
-          unit_price  : parseFloat(product.sale_price || 0),
-          vat_rate    : parseFloat(product.vat_rate || 0),
-          unit        : product.unit || 'unit',
+          description : item.product.name,
+          qty,
+          unit_price  : parseFloat(item.product.sale_price || 0),
+          vat_rate    : parseFloat(item.product.vat_rate || 0),
+          unit        : item.product.unit || 'unit',
         });
       } else {
-        unmatched.push(`${item.qty}× ${item.name}`);
+        unmatched.push(`${qty}× ${item.unmatchedName}`);
         lines.push({
-          description : `${item.name} ⚠️ UNMATCHED`,
-          qty         : item.qty,
+          description : `${item.unmatchedName} ⚠️ UNMATCHED`,
+          qty,
           unit_price  : 0,
           vat_rate    : 20,
           unit        : 'unit',
@@ -154,30 +156,73 @@ export default async function handler(req, res) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Parse "5 Hayati 6k, 3 Lost Mary" → [{qty:5,name:"Hayati 6k"},{qty:3,name:"Lost Mary"}]
+ * Parse a WhatsApp order into matched line items.
+ *
+ * Customers send messages structured as:
+ *   "Product Name"        ← header line — names a product
+ *   "Variant 1"           ← one unit of the preceding header product
+ *   "Variant 2"
+ *   "Variant 3a, Variant 3b"  ← comma = 2 separate units
+ *
+ * So a header followed by N variant lines = qty N of that product.
+ * Plain "5 Hayati 6k" / "Hayati 6k x5" style lines (no variants) are
+ * still supported as standalone qty-prefixed items.
+ *
+ * Returns: [{ product, qty }] for matched lines, or
+ *          [{ unmatchedName, qty }] when nothing matches.
  */
-function parseOrderMessage(text) {
+function parseOrder(text, products, aliases) {
+  const rawLines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
-  // Split on comma, newline, semicolon
-  const parts = text.split(/[,;\n]+/).map(p => p.trim()).filter(Boolean);
+  let current = null;
 
-  for (const part of parts) {
-    let qty = 1;
-    let name = part;
+  // Strict header match: alias or exact product name only (avoids variant
+  // lines like "Ice Pop" accidentally being treated as headers)
+  const findHeader = (line) => {
+    const q = line.toLowerCase().trim();
+    const aliasHit = aliases.find(a => (a.alias || '').toLowerCase().trim() === q);
+    if (aliasHit) {
+      const p = products.find(p => p.id === aliasHit.product_id);
+      if (p) return p;
+    }
+    return products.find(p => p.name.toLowerCase().trim() === q) || null;
+  };
 
-    // "5 Hayati 6k" or "5x Hayati 6k"
-    const m1 = part.match(/^(\d+)\s*x?\s+(.+)$/i);
-    // "Hayati 6k x5" or "Hayati 6k x 5"
-    const m2 = part.match(/^(.+?)\s+x\s*(\d+)$/i);
-    // "Hayati 6k×5"
-    const m3 = part.match(/^(.+?)\s*[×x](\d+)$/i);
+  for (const line of rawLines) {
+    const headerProduct = findHeader(line);
+    if (headerProduct) {
+      current = { product: headerProduct, qty: 0 };
+      items.push(current);
+      continue;
+    }
 
-    if (m1) { qty = parseInt(m1[1], 10); name = m1[2].trim(); }
-    else if (m2) { qty = parseInt(m2[2], 10); name = m2[1].trim(); }
-    else if (m3) { qty = parseInt(m3[2], 10); name = m3[1].trim(); }
+    // Standalone qty-prefixed item: "5 Hayati 6k" / "Hayati 6k x5" / "Hayati 6k×5"
+    const m1 = line.match(/^(\d+)\s*x?\s+(.+)$/i);
+    const m2 = line.match(/^(.+?)\s+x\s*(\d+)$/i);
+    const m3 = line.match(/^(.+?)\s*[×x](\d+)$/i);
+    let standaloneQty = null, standaloneName = null;
+    if (m1) { standaloneQty = parseInt(m1[1], 10); standaloneName = m1[2].trim(); }
+    else if (m2) { standaloneQty = parseInt(m2[2], 10); standaloneName = m2[1].trim(); }
+    else if (m3) { standaloneQty = parseInt(m3[2], 10); standaloneName = m3[1].trim(); }
 
-    if (name) items.push({ qty: qty || 1, name });
+    if (standaloneName) {
+      const p = matchProduct(standaloneName, products, aliases);
+      current = p ? { product: p, qty: standaloneQty || 1 } : { unmatchedName: standaloneName, qty: standaloneQty || 1 };
+      items.push(current);
+      continue;
+    }
+
+    // Plain variant line — count comma-separated parts as units of the current header
+    const parts = line.split(',').map(p => p.trim()).filter(Boolean);
+    if (current) {
+      current.qty += parts.length;
+    } else {
+      // No header context yet — try matching the line itself
+      const p = matchProduct(line, products, aliases);
+      items.push(p ? { product: p, qty: parts.length } : { unmatchedName: line, qty: parts.length });
+    }
   }
+
   return items;
 }
 
