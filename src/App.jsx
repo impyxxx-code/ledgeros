@@ -2473,7 +2473,6 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                     <option value="cash">💵 Cash</option>
                     <option value="bank">🏦 Bank</option>
                     <option value="card">💳 Card</option>
-                    <option value="cheque">📝 Cheque</option>
                   </select>
                   <input type="date" value={partPayDate} onChange={e => setPartPayDate(e.target.value)} title="Date payment was received" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, outline: "none", fontFamily: "var(--sans)", background: "var(--white)", color: "var(--text)", cursor: "pointer" }} />
                   <button className="btn bp" disabled={!partPayAmount || partPayLoading} onClick={async () => {
@@ -3731,7 +3730,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
                 {inv.status !== "paid" && (payingId === inv.id ? (
                   <div style={{ display: "flex", gap: 4 }}>
                     <select style={{ background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: 6, padding: "4px 8px", fontSize: 11, outline: "none" }} value={payMethod[inv.id] || "cash"} onChange={e => setPayMethod(prev => ({ ...prev, [inv.id]: e.target.value }))}>
-                      <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
+                      <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option>
                     </select>
                     <button className="btn bp bsm" disabled={markingPaidId === inv.id} onClick={() => markPaid(inv.id, payMethod[inv.id] || "cash")} style={{opacity: markingPaidId === inv.id ? 0.6 : 1, cursor: markingPaidId === inv.id ? "not-allowed" : "pointer"}}>
                       {markingPaidId === inv.id ? <div className="spin" style={{width:12,height:12,borderWidth:2}}/> : "✓"}
@@ -4342,6 +4341,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
   const [viewInvoice, setViewInvoice] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [payMethod, setPayMethod] = useState({});
+  const [mobActionsInv, setMobActionsInv] = useState(null);
   const [mobMarkPaidInv, setMobMarkPaidInv] = useState(null);
   const [mobMarkPaidMethod, setMobMarkPaidMethod] = useState("cash");
   const [mobMarkPaidSaving, setMobMarkPaidSaving] = useState(false);
@@ -4742,8 +4742,8 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                   <span style={{ fontSize:12,color:"var(--text3)" }}>{inv.invoice_number} · {fmtDate(inv.invoice_date)}</span>
                   <div style={{ display:"flex",alignItems:"center",gap:8 }}>
                     <span className={"badge "+(inv.status==="paid"?"b-green":inv.status==="overdue"?"b-red":inv.status==="pending"?"b-amber":"b-gray")}>{inv.status}</span>
-                    {inv.status!=="paid" && (
-                      <button aria-label="More actions" onClick={e=>{e.stopPropagation();setMobMarkPaidInv(inv);}}
+                    {(inv.status!=="paid" || profile?.role==="admin") && (
+                      <button aria-label="More actions" onClick={e=>{e.stopPropagation();setMobActionsInv(inv);}}
                         style={{ width:32,height:32,borderRadius:8,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                       </button>
@@ -4753,6 +4753,34 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
               </div>
             ))}
             {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+            {mobActionsInv && (
+              <ModalPortal>
+                <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => setMobActionsInv(null)}>
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"var(--white)", borderRadius:"16px 16px 0 0", paddingBottom:"max(20px,env(safe-area-inset-bottom))", boxShadow:"0 -4px 24px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
+                    <div style={{ width:36, height:4, background:"var(--border2)", borderRadius:2, margin:"12px auto 0" }} />
+                    <div style={{ padding:"14px 20px 4px" }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:"#0f172a" }}>{mobActionsInv.invoice_number}</div>
+                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{mobActionsInv.customer} · {fmt(mobActionsInv.status==="partial"?(mobActionsInv.balance||0):mobActionsInv.amount)}</div>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"12px 20px 20px" }}>
+                      {mobActionsInv.status!=="paid" && (
+                        <button className="btn bo" style={{ minHeight:48, justifyContent:"flex-start", paddingLeft:16, color:"#16a34a", borderColor:"#bbf7d0" }} onClick={() => { const inv=mobActionsInv; setMobActionsInv(null); setMobMarkPaidInv(inv); }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:8}}><polyline points="20 6 9 17 4 12"/></svg>
+                          Mark as Paid
+                        </button>
+                      )}
+                      {profile?.role==="admin" && (
+                        <button className="btn bo" style={{ minHeight:48, justifyContent:"flex-start", paddingLeft:16, color:"var(--red)", borderColor:"#fecaca" }} onClick={() => { const inv=mobActionsInv; setMobActionsInv(null); deleteInvoice(inv); }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:8}}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                          Delete Invoice
+                        </button>
+                      )}
+                      <button className="btn" style={{ minHeight:48 }} onClick={() => setMobActionsInv(null)}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </ModalPortal>
+            )}
             {mobMarkPaidInv && (
               <ModalPortal>
                 <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => !mobMarkPaidSaving && setMobMarkPaidInv(null)}>
@@ -4765,17 +4793,17 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                     <div style={{ padding:"12px 20px" }}>
                       <div style={{ fontSize:12, fontWeight:600, color:"var(--text2)", marginBottom:8 }}>Payment method</div>
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8 }}>
-                        {[["cash","Cash"],["card","Card"],["bank_transfer","Bank Transfer"],["cheque","Cheque"]].map(([val,lbl]) => (
+                        {[["cash","Cash"],["card","Card"],["bank_transfer","Bank Transfer"]].map(([val,lbl]) => (
                           <div key={val} role="button" tabIndex={0} onClick={() => setMobMarkPaidMethod(val)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setMobMarkPaidMethod(val);}}
                             style={{ padding:"12px 10px", borderRadius:10, border:"2px solid "+(mobMarkPaidMethod===val?"var(--blue)":"var(--border)"), background:mobMarkPaidMethod===val?"var(--blue-lt)":"var(--white)", color:mobMarkPaidMethod===val?"var(--blue)":"var(--text2)", fontSize:13, fontWeight:600, textAlign:"center", cursor:"pointer", minHeight:44, display:"flex", alignItems:"center", justifyContent:"center" }}>
                             {lbl}
                           </div>
                         ))}
+                        <button className="btn bo" style={{ minHeight:44, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:600 }} disabled={mobMarkPaidSaving} onClick={() => setMobMarkPaidInv(null)}>Cancel</button>
                       </div>
                     </div>
-                    <div style={{ display:"flex", gap:10, padding:"4px 20px 20px" }}>
-                      <button className="btn bo" style={{ flex:1, minHeight:48 }} disabled={mobMarkPaidSaving} onClick={() => setMobMarkPaidInv(null)}>Cancel</button>
-                      <button className="btn bp" style={{ flex:1, minHeight:48 }} disabled={mobMarkPaidSaving} onClick={async () => { setMobMarkPaidSaving(true); await markPaid(mobMarkPaidInv.id, mobMarkPaidMethod); setMobMarkPaidSaving(false); setMobMarkPaidInv(null); setMobMarkPaidMethod("cash"); }}>
+                    <div style={{ display:"flex", justifyContent:"center", padding:"4px 20px 20px" }}>
+                      <button className="btn bp" style={{ minHeight:42, width:"100%", maxWidth:160, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", fontSize:13 }} disabled={mobMarkPaidSaving} onClick={async () => { setMobMarkPaidSaving(true); await markPaid(mobMarkPaidInv.id, mobMarkPaidMethod); setMobMarkPaidSaving(false); setMobMarkPaidInv(null); setMobMarkPaidMethod("cash"); }}>
                         {mobMarkPaidSaving ? "Saving..." : "Confirm Payment"}
                       </button>
                     </div>
@@ -4890,7 +4918,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                     payingId===inv.id?(
                       <div style={{display:"flex",gap:3,alignItems:"center"}}>
                         <select style={{padding:"3px 5px",fontSize:11,border:"1px solid var(--border)",borderRadius:6,outline:"none",background:"var(--white)",color:"var(--text)"}} value={payMethod[inv.id]||"cash"} onChange={e=>setPayMethod(prev=>({...prev,[inv.id]:e.target.value}))}>
-                          <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option><option value="cheque">📝 Cheque</option>
+                          <option value="cash">💵 Cash</option><option value="bank">🏦 Bank</option><option value="card">💳 Card</option>
                         </select>
                         <button onClick={()=>markPaid(inv.id,payMethod[inv.id]||"cash")} style={{padding:"4px 8px",borderRadius:6,background:"#16a34a",color:"#fff",border:"none",fontSize:11,fontWeight:600,cursor:"pointer"}}>✓</button>
                         <button onClick={()=>setPayingId(null)} style={{padding:"4px 6px",borderRadius:6,background:"var(--bg)",color:"var(--text2)",border:"1px solid var(--border)",fontSize:11,cursor:"pointer"}}>✕</button>
@@ -9184,7 +9212,7 @@ function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, 
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:11,fontWeight:600,color:"var(--text3)",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:".5px"}}>Payment method</label>
                   <div style={{display:"flex",gap:8}}>
-                    {[["cash","💵 Cash"],["bank","🏦 Bank"],["card","💳 Card"],["cheque","📝 Cheque"]].map(([v,l]) => (
+                    {[["cash","💵 Cash"],["bank","🏦 Bank"],["card","💳 Card"]].map(([v,l]) => (
                       <button key={v} type="button" onClick={()=>setMethod(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid "+(method===v?"var(--blue)":"var(--border)"),background:method===v?"var(--blue)":"var(--white)",color:method===v?"#fff":"var(--text2)",fontSize:12,fontWeight:method===v?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{l}</button>
                     ))}
                   </div>
