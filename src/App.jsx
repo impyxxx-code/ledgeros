@@ -8938,14 +8938,14 @@ function UserApproval({ token, profile }) {
             <div className="ct" style={{ marginBottom:4 }}>Pending Approval</div>
             <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting</div>
             {pending.length===0 ? <div style={{ padding:"16px 0",color:"var(--text3)",fontSize:13 }}>No pending users</div> : pending.map(u=>(
-              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
                 <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
                   <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.email||u.id}</div></div>
                 </div>
                 <div style={{ display:"flex",gap:8 }}>
-                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff" }}>Approve</button>
-                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)" }}>Reject</button>
+                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Approve</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reject</button>
                 </div>
               </div>
             ))}
@@ -8954,15 +8954,18 @@ function UserApproval({ token, profile }) {
             <div className="ct" style={{ marginBottom:4 }}>Approved Users</div>
             <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
             {approved.map(u=>(
-              <div key={u.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
-                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff" }}>{(u.full_name||"U")[0].toUpperCase()}</div>
-                  <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
+              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12,justifyContent:"space-between" }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                    <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                    <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
+                  </div>
+                  {isMobile() && <span className="badge b-green">Active</span>}
                 </div>
                 <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                  <span className="badge b-green">Active</span>
-                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11 }}>Reset PW</button>
-                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--text3)" }}>Revoke</button>
+                  {!isMobile() && <span className="badge b-green">Active</span>}
+                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset PW</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Revoke</button>
                 </div>
               </div>
             ))}
