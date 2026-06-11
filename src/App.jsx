@@ -3871,10 +3871,10 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
           </div>
         )}
 
-        <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4, marginRight:-16 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
           {kpiTiles.map(k => (
             <div key={k.label} role="button" tabIndex={0} onClick={k.onClick} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")k.onClick();}}
-              style={{ flex:"0 0 auto", minWidth:128, background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", borderTop:`3px solid ${k.accent}` }}>
+              style={{ background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", boxShadow:"var(--sh)", cursor:"pointer", borderTop:`3px solid ${k.accent}` }}>
               <div style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:6 }}>{k.label}</div>
               <div style={{ fontSize:18, fontWeight:800, fontFamily:"var(--mono)" }}>{k.val}</div>
             </div>
