@@ -1784,7 +1784,7 @@ function Auth({ onAuth, sessionExpired }) {
 
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(145deg,#1e1b4b,#2d2a6e)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 20px rgba(99,102,241,.35),inset 0 1px 0 rgba(255,255,255,.08)" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
               <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
                 <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#818cf8"/>
                 <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#818cf8" fillOpacity=".58"/>
