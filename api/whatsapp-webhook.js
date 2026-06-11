@@ -218,29 +218,36 @@ function parseOrder(text, products, aliases) {
       continue;
     }
 
-    // Standalone qty-prefixed item: "5 Hayati 6k" / "Hayati 6k x5" / "Hayati 6k×5"
-    const m1 = line.match(/^(\d+)\s*x?\s+(.+)$/i);
-    const m2 = line.match(/^(.+?)\s+x\s*(\d+)$/i);
-    const m3 = line.match(/^(.+?)\s*[×x](\d+)$/i);
-    let standaloneQty = null, standaloneName = null;
-    if (m1) { standaloneQty = parseInt(m1[1], 10); standaloneName = m1[2].trim(); }
-    else if (m2) { standaloneQty = parseInt(m2[2], 10); standaloneName = m2[1].trim(); }
-    else if (m3) { standaloneQty = parseInt(m3[2], 10); standaloneName = m3[1].trim(); }
+    // Extract a quantity multiplier from a part, e.g. "Summer dreams x2" → {qty:2, name:"Summer dreams"}
+    // or "10 cases" → {qty:10, name:"cases"}. Returns qty:1 + original text if no pattern found.
+    const extractQty = (part) => {
+      const m1 = part.match(/^(\d+)\s*x?\s+(.+)$/i);          // "10 cases" / "5x Hayati 6k"
+      const m2 = part.match(/^(.+?)\s*[x×]\s*(\d+)$/i);        // "Summer dreams x2" / "Fresh mint x 3"
+      if (m2) return { qty: parseInt(m2[2], 10) || 1, name: m2[1].trim() };
+      if (m1) return { qty: parseInt(m1[1], 10) || 1, name: m1[2].trim() };
+      return { qty: 1, name: part };
+    };
 
-    if (standaloneName) {
-      const p = matchProduct(standaloneName, products, aliases);
-      current = p ? { product: p, qty: standaloneQty || 1 } : { unmatchedName: standaloneName, qty: standaloneQty || 1 };
-      items.push(current);
-      continue;
-    }
-
-    // Plain variant line — count comma-separated parts as units of the current header
     const parts = line.split(',').map(p => p.trim()).filter(Boolean);
+
     if (current) {
-      current.qty += parts.length;
+      // Variant line(s) within the current header group — add up quantities
+      for (const part of parts) {
+        current.qty += extractQty(part).qty;
+      }
     } else {
-      // No header context yet — likely a greeting/customer name, not a product
-      nameHints.push(line);
+      // No active header — only treat as an order item if a quantity pattern was found,
+      // otherwise it's a greeting/customer name
+      for (const part of parts) {
+        const { qty, name } = extractQty(part);
+        if (name !== part) {
+          const p = matchProduct(name, products, aliases);
+          current = p ? { product: p, qty } : { unmatchedName: name, qty };
+          items.push(current);
+        } else {
+          nameHints.push(part);
+        }
+      }
     }
   }
 
