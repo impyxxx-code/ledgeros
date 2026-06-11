@@ -172,7 +172,8 @@ export default async function handler(req, res) {
  *          [{ unmatchedName, qty }] when nothing matches.
  */
 function parseOrder(text, products, aliases) {
-  const rawLines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+  // Strip WhatsApp markdown (e.g. *Hayati 6k Device* → Hayati 6k Device)
+  const rawLines = text.split(/\n/).map(l => l.trim().replace(/^[*_~]+|[*_~]+$/g, '').trim()).filter(Boolean);
   const items = [];
   let current = null;
 
