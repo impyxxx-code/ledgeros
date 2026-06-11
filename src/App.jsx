@@ -4679,12 +4679,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
               style={{ padding: "12px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", background: isActive ? "rgba(255,255,255,.08)" : "transparent", borderTop: `3px solid ${isActive ? k.accent : "transparent"}`, outline: isActive ? `1px solid ${k.accent}33` : "none" }}
               onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
               onMouseLeave={e => { e.currentTarget.style.background=isActive?"rgba(255,255,255,.08)":"transparent"; e.currentTarget.style.borderTop=isActive?`3px solid ${k.accent}`:"3px solid transparent"; }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: isActive ? k.color : "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{k.label}</span>
-                {isActive
-                  ? <span style={{ color: "#fff", fontSize: 9, fontWeight: 700, background: k.accent, padding: "2px 6px", borderRadius: 4, letterSpacing: ".3px" }}>ACTIVE ✕</span>
-                  : <span style={{ color: "rgba(255,255,255,.3)", fontSize: 9 }}>↓ FILTER</span>}
-              </div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: isActive ? k.color : "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 4 }}>{k.label}</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", marginBottom: 2 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: isActive ? k.color : "rgba(255,255,255,.5)" }}>{k.sub}</div>
             </div>
