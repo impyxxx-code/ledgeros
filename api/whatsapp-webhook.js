@@ -218,9 +218,7 @@ function parseOrder(text, products, aliases) {
     if (current) {
       current.qty += parts.length;
     } else {
-      // No header context yet — try matching the line itself
-      const p = matchProduct(line, products, aliases);
-      items.push(p ? { product: p, qty: parts.length } : { unmatchedName: line, qty: parts.length });
+      // No header context yet — likely a greeting/customer name, not a product. Skip it.
     }
   }
 
