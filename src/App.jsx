@@ -9928,11 +9928,11 @@ function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, onSignOut
             </div>
           ))}
         </div>
-      </div>
-      <div style={{ display:"flex",gap:4,marginBottom:24,flexWrap:"wrap",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:10,padding:4 }}>
-        {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"],["aliases","WhatsApp Aliases"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setActiveTab(k)} style={{ padding:"7px 16px",borderRadius:7,border:"none",background:activeTab===k?"var(--white)":"transparent",color:activeTab===k?"var(--text)":"var(--text3)",fontSize:13,fontWeight:activeTab===k?600:500,cursor:"pointer",fontFamily:"var(--sans)",boxShadow:activeTab===k?"var(--sh1, 0 1px 3px rgba(0,0,0,.08))":"none",transition:"all .12s" }}>{l}</button>
-        ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 3, borderTop: "1px solid rgba(99,102,241,.18)", padding: "5px 0", margin: "0", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+          {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"],["aliases","WhatsApp Aliases"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setActiveTab(k)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: activeTab===k ? "#818cf8" : "transparent", color: activeTab===k ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: activeTab===k ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .15s", boxShadow: activeTab===k ? "0 2px 8px rgba(129,140,248,.35)" : "none" }}>{l}</button>
+          ))}
+        </div>
       </div>
       {activeTab==="company" && (
         <div className="card" style={{ padding:24 }}>
