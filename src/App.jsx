@@ -1815,7 +1815,7 @@ function Auth({ onAuth, sessionExpired }) {
               Everything your retail business needs. Invoicing, inventory, deliveries, and real-time insights — beautifully connected in one platform.
             </div>
             {/* Feature pills */}
-            <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 16, padding: 16, marginTop: 32, maxWidth: 420 }}>
+            <div style={{ marginTop: 32, maxWidth: 420 }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                 {[
                   { label: "VAT Invoices", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
