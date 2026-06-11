@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     );
     const contacts     = await custRes.json();
     const contact      = Array.isArray(contacts) && contacts[0] ? contacts[0] : null;
-    const customerName = contact?.name || profileName;
+    let customerName   = contact?.name || profileName;
 
     // ── 2. Fetch product catalogue ────────────────────────────────────────────
     const prodRes = await fetch(
@@ -52,9 +52,29 @@ export default async function handler(req, res) {
     // ── 3. Parse the order message ────────────────────────────────────────────
     // Customers send "Product Name" headers followed by one variant per line
     // (e.g. "Hayati 6k Device" then 7 flavours = qty 7 of "Hayati 6k Device")
-    const parsedItems = parseOrder(msgBody, products, aliases);
+    const { items: parsedItems, nameHints } = parseOrder(msgBody, products, aliases);
     const lines       = [];
     const unmatched   = [];
+
+    // ── 3b. If no contact matched by phone, try matching a name mentioned
+    // at the top of the message (e.g. "Gulam Bhai") against contacts ────────
+    if (!contact && nameHints.length) {
+      const allContactsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/contacts?select=id,name&order=name.asc`,
+        { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
+      );
+      const allContactsData = await allContactsRes.json();
+      const allContacts     = Array.isArray(allContactsData) ? allContactsData : [];
+
+      for (const hint of nameHints) {
+        const h = hint.toLowerCase().trim();
+        const match = allContacts.find(c => {
+          const n = (c.name || '').toLowerCase().trim();
+          return n && (h.includes(n) || n.includes(h));
+        });
+        if (match) { customerName = match.name; break; }
+      }
+    }
 
     for (const item of parsedItems) {
       const qty = Math.max(item.qty, 1);
@@ -175,6 +195,7 @@ function parseOrder(text, products, aliases) {
   // Strip WhatsApp markdown (e.g. *Hayati 6k Device* → Hayati 6k Device)
   const rawLines = text.split(/\n/).map(l => l.trim().replace(/^[*_~]+|[*_~]+$/g, '').trim()).filter(Boolean);
   const items = [];
+  const nameHints = [];
   let current = null;
 
   // Strict header match: alias or exact product name only (avoids variant
@@ -218,11 +239,12 @@ function parseOrder(text, products, aliases) {
     if (current) {
       current.qty += parts.length;
     } else {
-      // No header context yet — likely a greeting/customer name, not a product. Skip it.
+      // No header context yet — likely a greeting/customer name, not a product
+      nameHints.push(line);
     }
   }
 
-  return items;
+  return { items, nameHints };
 }
 
 /**
