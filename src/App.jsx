@@ -4613,6 +4613,15 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
       {/* ── Invoices Page Header ── */}
+      {isMobile() ? (
+        <div style={{ margin: "-12px -12px 0", padding: "16px 16px 12px", background: "#0f172a" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Invoices</div>
+          <div style={{ position: "relative" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search invoices..." style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 12, height: 44, border: "1px solid rgba(255,255,255,.15)", borderRadius: 10, fontSize: 14, outline: "none", color: "#fff", background: "rgba(255,255,255,.07)", fontFamily: "var(--sans)" }} />
+          </div>
+        </div>
+      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -4676,11 +4685,15 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
           );})}
         </div>
       </div>
+      )}
 
       {/* Status filter tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
-        {[["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]].map(([s, lbl, cnt]) => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#0d1829", borderBottom: "1px solid rgba(99,102,241,.18)", padding: isMobile() ? "8px 12px" : "5px 36px", margin: isMobile() ? "-12px -12px 12px" : "0 -28px 16px", flexWrap: isMobile() ? "nowrap" : "wrap", overflowX: isMobile() ? "auto" : "visible" }}>
+        {(isMobile()
+          ? [["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length]]
+          : [["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]]
+        ).map(([s, lbl, cnt]) => (
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none", flexShrink: 0 }}>
             {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
           </button>
         ))}
@@ -5141,6 +5154,23 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
         </div></ModalPortal>
       )}
       {/* ── Customers Page Header ── */}
+      {isMobile() ? (
+      <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#0f172a" }}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Contacts</div>
+        <div style={{ position: "relative", marginBottom: 10 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts..." style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 12, height: 44, border: "1px solid rgba(255,255,255,.15)", borderRadius: 10, fontSize: 14, outline: "none", color: "#fff", background: "rgba(255,255,255,.07)", fontFamily: "var(--sans)" }} />
+        </div>
+        <div style={{ display:"flex", gap:6 }}>
+          {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
+            <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
+              style={{ flex:1, textAlign:"center", padding:"8px 14px", fontSize:13, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#818cf8":"rgba(255,255,255,.07)", borderRadius:8, cursor:"pointer" }}>
+              {l} <span style={{ fontSize:10, fontWeight:700, opacity:.8 }}>{contacts.filter(c=>c.type===k||c.type==="both").length}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -5198,6 +5228,8 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           );})}
         </div>
       </div>
+      )}
+      {!isMobile() && <>
       {/* ── TABS + UTILITY BAR ── */}
       <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 36px", margin:"0 -28px", marginTop:0 }}>
         <div style={{ display:"flex", gap:3 }}>
@@ -5243,6 +5275,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
           </select>
         </div>
       </div>
+      </>}
 
       {/* ── ADD / EDIT FORM ── */}
       {showForm && (
@@ -7419,6 +7452,15 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 
   return (
     <div>
+      {isMobile() ? (
+        <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#0f172a", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Delivery Notes</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop:2 }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div>
+          </div>
+          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink:0 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New</button>
+        </div>
+      ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
@@ -7436,9 +7478,10 @@ function DeliveryNotes({ contacts, products, token, userId }) {
           ))}
         </div>
       </div>
+      )}
 
       {/* Summary KPIs */}
-      <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
+      {!isMobile() && <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
         {[
           { label: "Total", val: dns.length, color: "var(--text)" },
           { label: "Pending", val: dns.filter(d => d.status === "pending").length, color: "var(--amber)" },
@@ -7450,7 +7493,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
             <div className="kpi-val" style={{ color: k.color }}>{k.val}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* Create form */}
       {showForm && (
