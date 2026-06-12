@@ -32,7 +32,7 @@
 import Analytics from "./Analytics.jsx";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList } from "recharts";
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, CheckCircle2, FileText, AlertTriangle, Users, ShoppingBag, Landmark, Sun } from "lucide-react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "./lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "./lib/utils.js";
@@ -4136,6 +4136,96 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                   <div style={{fontSize:18,fontWeight:700,color:"var(--blue)"}}>{bestMonth?.lbl} · {fmt(bestMonth?.Collected||0)}</div>
                 </div>
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Monthly Comparison Widget ── */}
+      {(() => {
+        const months = Array.from({length:6},(_,i)=>{
+          const d = new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1);
+          const ly = new Date(d.getFullYear()-1, d.getMonth(), 1);
+          const lbl = d.toLocaleDateString("en-GB",{month:"short"});
+          const mPaid = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear();
+          }).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+          const mPending = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid"&&inv.status!=="draft";
+          }).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
+          const lyPaid = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===ly.getMonth()&&id.getFullYear()===ly.getFullYear();
+          }).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+          return {lbl, Collected: Math.round(mPaid*100)/100, Pending: Math.round(mPending*100)/100, "Last year": Math.round(lyPaid*100)/100};
+        });
+        const withDelta = months.map((m,i)=>{
+          const prev = i>0 ? months[i-1].Collected : null;
+          const delta = prev ? Math.round(((m.Collected-prev)/prev)*100) : null;
+          return {...m, delta};
+        });
+        const latestDelta = withDelta[withDelta.length-1].delta;
+        const ComparisonTooltip = ({ active, payload, label }) => {
+          if (!active || !payload || !payload.length) return null;
+          const row = withDelta.find(m=>m.lbl===label);
+          return (
+            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+              <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
+              {payload.map(p=>(
+                <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:p.color}}/>
+                  <span style={{color:"rgba(255,255,255,.7)"}}>{p.name}:</span>
+                  <span style={{color:"#fff",fontWeight:700}}>£{(p.value||0).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                </div>
+              ))}
+              {row?.delta !== null && row?.delta !== undefined && (
+                <div style={{marginTop:4,paddingTop:4,borderTop:"1px solid rgba(255,255,255,.1)",color: row.delta>=0 ? "#86efac" : "#fca5a5",fontWeight:700}}>
+                  {row.delta>=0?"+":""}{row.delta}% vs previous month
+                </div>
+              )}
+            </div>
+          );
+        };
+        return (
+          <div className="card" style={{marginBottom:18}}>
+            <div className="ch">
+              <div>
+                <div className="ct">Monthly Comparison</div>
+                <div className="cs">Month-over-month and year-over-year revenue</div>
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:"#818cf8"}}/>Collected
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:14,height:2,background:"#16a34a",marginTop:1}}/>Last year
+                </div>
+                {latestDelta !== null && (
+                  <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:700,padding:"4px 10px",borderRadius:8,background: latestDelta>=0 ? "rgba(34,197,94,.12)" : "rgba(220,38,38,.12)",color: latestDelta>=0 ? "#16a34a" : "#dc2626"}}>
+                    {latestDelta>=0?"▲":"▼"} {latestDelta>=0?"+":""}{latestDelta}% vs last month
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{padding:"4px 24px 20px"}}>
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart data={withDelta} margin={{top:24,right:10,left:0,bottom:0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+                  <XAxis dataKey="lbl" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
+                  <YAxis tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={40}/>
+                  <Tooltip content={ComparisonTooltip}/>
+                  <Bar dataKey="Collected" stackId="rev" fill="#818cf8" radius={[4,4,0,0]}>
+                    <LabelList dataKey="delta" position="top" formatter={(v)=> v===null||v===undefined?"":`${v>=0?"+":""}${v}%`} style={{fontSize:11,fontWeight:700,fill:"var(--text2)"}}/>
+                  </Bar>
+                  <Bar dataKey="Pending" stackId="rev" fill="#f59e0b" radius={[4,4,0,0]}/>
+                  <Line type="monotone" dataKey="Last year" stroke="#16a34a" strokeWidth={2} strokeDasharray="5 4" dot={false}/>
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
           </div>
         );
