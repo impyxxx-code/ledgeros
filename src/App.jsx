@@ -2717,7 +2717,7 @@ function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoi
   ${overdueSection}
 
   <!-- Notes -->
-  ${inv.notes ? `<div style="background:#fef9ec;border:1px solid #fcd34d;border-radius:9px;padding:12px 16px;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Invoice Notes</div><div style="font-size:12px;color:#78350f;line-height:1.6">${inv.notes}</div></div>` : ""}
+  ${dn.notes ? `<div style="background:#fef9ec;border:1px solid #fcd34d;border-radius:9px;padding:12px 16px;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Invoice Notes</div><div style="font-size:12px;color:#78350f;line-height:1.6">${dn.notes}</div></div>` : ""}
   <!-- Signatures -->
   <div class="sig-section">
     <div>
