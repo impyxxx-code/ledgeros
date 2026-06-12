@@ -5758,6 +5758,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({ customer_id: "", invoice_id: "", reason: "", amount: "", issue_date: today() });
+  const [cnFilter, setCnFilter] = useState("all");
   useEffect(() => { sb.get(token,"credit_notes","order=created_at.desc").then(d => Array.isArray(d)&&setCNs(d)); }, [token]);
   const customers = contacts.filter(c => c.type==="customer"||c.type==="both");
   const save = async () => {
@@ -5780,18 +5781,25 @@ function CreditNotes({ contacts, invoices, token, userId }) {
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button>
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb"},{label:"Open",val:cns.filter(c=>c.status==="open").length,sub:"outstanding",accent:"#d97706"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626"}].map((k,i)=>(
-            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+          {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb",filter:"all"},{label:"Open",val:cns.filter(c=>c.status==="open").length,sub:"outstanding",accent:"#d97706",filter:"open"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a",filter:"applied"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626",filter:null}].map((k,i)=>{
+            const isActive = k.filter && k.filter !== "all" && cnFilter === k.filter;
+            const isClickable = !!k.filter;
+            return (
+            <div key={i} onClick={() => k.filter && setCnFilter(cnFilter === k.filter ? "all" : k.filter)}
+              title={isClickable ? `Click to filter by ${k.label}` : undefined}
+              style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${isActive ? k.accent : "transparent"}`, cursor:isClickable?"pointer":"default", background: isActive ? "rgba(255,255,255,.08)" : "transparent", transition:"all .15s" }}
+              onMouseEnter={e => { if(isClickable){ e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}}
+              onMouseLeave={e => { if(isClickable){ e.currentTarget.style.background=isActive?"rgba(255,255,255,.08)":"transparent"; e.currentTarget.style.borderTop=isActive?`3px solid ${k.accent}`:"3px solid transparent"; }}}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="cr-table" style={{minWidth:420}}><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {cns.map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
+        {cns.filter(cn => cnFilter === "all" || cn.status === cnFilter).map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
         {cns.length===0&&<tr><td colSpan={7}><EmptyState icon="report" title="No credit notes yet" sub="Issue a credit note to refund or adjust a customer invoice" action={() => setShowForm(true)} actionLabel="New Credit Note" /></td></tr>}
       </tbody></table></div></div>
     </div>
@@ -5955,7 +5963,9 @@ function CustomerStatement({ contacts, invoices, token }) {
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Finance</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customer <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Statements</span></div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>View and share full account statements</div></div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"active accounts",accent:"#2563eb"},{label:"With Balance",val:contacts.filter(c=>invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"outstanding balance",accent:"#d97706"},{label:"Fully Paid",val:contacts.filter(c=>!invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"clear accounts",accent:"#16a34a"},{label:"Total Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"across all",accent:"#dc2626"}].map((k,i)=>(
-            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:"3px solid transparent", transition:"all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
@@ -6141,7 +6151,9 @@ function AgentReport({ invoices, allProfiles, contacts }) {
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Analytics</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Sales by <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Agent</span></div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Detailed agent performance breakdown</div></div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Active Agents",val:allProfiles.filter(p=>p.role==="agent").length,sub:"field sales team",accent:"#2563eb"},{label:"Total Invoices",val:invoices.length,sub:"raised by all agents",accent:"#7c3aed"},{label:"Total Revenue",val:fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"all agents combined",accent:"#16a34a"},{label:"Avg Per Agent",val:allProfiles.filter(p=>p.role==="agent").length>0?fmt(invoices.reduce((s,i)=>s+(parseFloat(i.amount)||0),0)/allProfiles.filter(p=>p.role==="agent").length):"—",sub:"revenue per agent",accent:"#d97706"}].map((k,i)=>(
-            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:"3px solid transparent", transition:"all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
@@ -7285,6 +7297,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({ customer_id: "", delivery_date: today(), delivery_address: "", notes: "", driver: "" });
   const [lines, setLines] = useState([{ product_id: "", description: "", qty: 1, unit: "unit" }]);
+  const [dnFilter, setDnFilter] = useState("all");
 
   useEffect(() => {
     sb.get(token, "delivery_notes", "order=created_at.desc")
@@ -7513,13 +7526,20 @@ function DeliveryNotes({ contacts, products, token, userId }) {
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Delivery Note</button>
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed"}].map((k,i)=>(
-            <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${k.accent}` }}>
+          {[{label:"Total DNs",val:dns.length,sub:"all delivery notes",accent:"#2563eb",filter:"all"},{label:"Pending",val:dns.filter(d=>d.status==="pending").length,sub:"awaiting delivery",accent:"#d97706",filter:"pending"},{label:"Delivered",val:dns.filter(d=>d.status==="delivered").length,sub:"completed",accent:"#16a34a",filter:"delivered"},{label:"This Month",val:dns.filter(d=>{const m=new Date();return new Date(d.created_at).getMonth()===m.getMonth()&&new Date(d.created_at).getFullYear()===m.getFullYear();}).length,sub:"this month",accent:"#7c3aed",filter:null}].map((k,i)=>{
+            const isActive = k.filter && dnFilter === k.filter && k.filter !== "all" || (k.filter === "all" && dnFilter === "all");
+            const isClickable = !!k.filter;
+            return (
+            <div key={i} onClick={() => k.filter && setDnFilter(dnFilter === k.filter ? "all" : k.filter)}
+              title={isClickable ? `Click to filter by ${k.label}` : undefined}
+              style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:`3px solid ${isActive && k.filter!=="all" ? k.accent : (k.filter==="all" ? "transparent" : "transparent")}`, cursor:isClickable?"pointer":"default", background: isActive && k.filter!=="all" ? "rgba(255,255,255,.08)" : "transparent", transition:"all .15s" }}
+              onMouseEnter={e => { if(isClickable){ e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}}
+              onMouseLeave={e => { if(isClickable){ e.currentTarget.style.background=(isActive && k.filter!=="all")?"rgba(255,255,255,.08)":"transparent"; e.currentTarget.style.borderTop=(isActive && k.filter!=="all")?`3px solid ${k.accent}`:"3px solid transparent"; }}}>
               <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4 }}>{k.label}</div>
               <div style={{ fontSize:16,fontWeight:800,color:"#fff",fontFamily:"var(--mono)",marginBottom:2 }}>{k.val}</div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{k.sub}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
       )}
@@ -7606,7 +7626,7 @@ function DeliveryNotes({ contacts, products, token, userId }) {
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="dn-list-table" style={{minWidth:420}}>
           <thead><tr><th>DN #</th><th>Customer</th><th className="hm">Date</th><th className="hm">Driver</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            {dns.map(dn => {
+            {dns.filter(d => dnFilter === "all" || d.status === dnFilter).map(dn => {
               const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
               return (
                 <tr key={dn.id}>
