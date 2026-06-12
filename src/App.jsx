@@ -7939,6 +7939,7 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [printOverlayHTML, setPrintOverlayHTML] = useState(null);
+  const [printOverlayTitle, setPrintOverlayTitle] = useState(null);
   const [auth, setAuth] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
@@ -7976,6 +7977,8 @@ export default function App() {
         .replace(/<div class="bta">[\s\S]*?&#x2715;<\/a><\/div>/, '')
         .replace(/body\{padding-top:calc\(30mm \+ 54px\)\}/g, '')
         .replace(/@media print\{\.bta\{display:none!important\}body\{padding-top:0!important\}\}/g, '');
+      const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/);
+      setPrintOverlayTitle(titleMatch ? titleMatch[1] : null);
       setPrintOverlayHTML(clean || html);
     };
     return () => { delete window.__ledgerosPrint; };
@@ -8786,14 +8789,20 @@ export default function App() {
               <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:1}}>Arkham Retail Ltd</div>
             </div>
             <button
-              onClick={() => setPrintOverlayHTML(null)}
+              onClick={() => { document.title = "LedgerOS"; setPrintOverlayHTML(null); setPrintOverlayTitle(null); }}
               style={{width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.3)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,cursor:'pointer',lineHeight:1,fontFamily:'sans-serif',flexShrink:0}}
               title="Close"
             >&#x2715;</button>
           </div>
           <iframe
             srcDoc={printOverlayHTML}
-            onLoad={e => { try { e.target.contentWindow.print(); } catch(_) {} }}
+            onLoad={e => {
+              try {
+                if (printOverlayTitle) document.title = printOverlayTitle;
+                window.addEventListener('afterprint', () => { document.title = "LedgerOS"; }, { once: true });
+                e.target.contentWindow.print();
+              } catch(_) {}
+            }}
             style={{flex:1,border:'none',background:'#fff',width:'100%'}}
             title="Print Preview"
           />
