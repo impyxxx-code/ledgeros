@@ -32,7 +32,7 @@
 import Analytics from "./Analytics.jsx";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList, PieChart, Pie, Cell, BarChart } from "recharts";
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, CheckCircle2, FileText, AlertTriangle, Users, ShoppingBag, Landmark, Sun } from "lucide-react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "./lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "./lib/utils.js";
@@ -4277,21 +4277,40 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
           {/* Revenue breakdown mini card */}
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "16px 18px", boxShadow: "var(--sh)", overflow: "hidden", minWidth: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Revenue Breakdown</div>
-            {[
-              { label: "Collected", val: paid, total: revenue, color: "var(--green)", onClick: drillPaid },
-              { label: "Pending", val: unpaid - overdue, total: revenue, color: "var(--amber)", onClick: drillOutstanding },
-              { label: "Overdue", val: overdue, total: revenue, color: "var(--red)", onClick: drillOutstanding },
-            ].map(r => (
-              <div key={r.label} onClick={r.onClick} style={{ marginBottom: 10, cursor: "pointer" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: r.color, whiteSpace: "nowrap", flexShrink: 0 }}>{fmt(r.val)}</span>
+            {(() => {
+              const segs = [
+                { label: "Collected", val: paid, color: "#16a34a", onClick: drillPaid },
+                { label: "Pending", val: unpaid - overdue, color: "#f59e0b", onClick: drillOutstanding },
+                { label: "Overdue", val: overdue, color: "#dc2626", onClick: drillOutstanding },
+              ].filter(s => s.val > 0);
+              const total = segs.reduce((s,x)=>s+x.val,0);
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 100, height: 100, flexShrink: 0, position: "relative" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={segs} dataKey="val" nameKey="label" innerRadius={32} outerRadius={48} paddingAngle={2} stroke="none">
+                          {segs.map((s,i) => <Cell key={i} fill={s.color} style={{ cursor: "pointer" }} onClick={s.onClick} />)}
+                        </Pie>
+                        <Tooltip formatter={(v)=>fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center", pointerEvents: "none" }}>
+                      <div style={{ fontSize: 9, color: "var(--text3)", fontWeight: 700, textTransform: "uppercase" }}>Total</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "var(--mono)" }}>{fmt(total)}</div>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {segs.map(r => (
+                      <div key={r.label} onClick={r.onClick} style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8, cursor: "pointer" }}>
+                        <span style={{ fontSize: 12, color: "var(--text2)", display: "flex", alignItems: "center", gap: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: r.color, flexShrink: 0 }}/>{r.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: r.color, whiteSpace: "nowrap", flexShrink: 0 }}>{fmt(r.val)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(r.val / (revenue || 1) * 100, 100)}%`, background: r.color, borderRadius: 3, transition: "width .6s var(--ease)" }} />
-                </div>
-              </div>
-            ))}
+              );
+            })()}
           </div>
 
           {/* Activity feed */}
@@ -5727,6 +5746,43 @@ function Inventory({ products, setProducts, token, userId, profile }) {
         ))}
       </div>
 
+      {lowStock.length > 0 && (() => {
+        const chartData = [...lowStock]
+          .sort((a,b) => (a.stock_qty - (a.reorder_level||DEFAULT_REORDER)) - (b.stock_qty - (b.reorder_level||DEFAULT_REORDER)))
+          .slice(0, 6)
+          .map(p => ({ name: p.name.length > 18 ? p.name.slice(0,17)+"…" : p.name, stock: p.stock_qty||0, reorder: p.reorder_level||DEFAULT_REORDER, full: p.name }));
+        return (
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div className="ch">
+              <div>
+                <div className="ct">Low Stock Levels</div>
+                <div className="cs">Current stock vs reorder level — lowest first</div>
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:"#dc2626"}}/>Current stock
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:14,height:2,background:"#94a3b8"}}/>Reorder level
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: "4px 24px 20px" }}>
+              <ResponsiveContainer width="100%" height={Math.max(chartData.length*40+60, 160)}>
+                <ComposedChart data={chartData} layout="vertical" margin={{top:8,right:30,left:10,bottom:0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false}/>
+                  <XAxis type="number" tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
+                  <YAxis type="category" dataKey="name" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={130}/>
+                  <Tooltip formatter={(v,n)=>[`${v} units`, n==="stock"?"Current stock":"Reorder level"]} labelFormatter={(_,p)=>p?.[0]?.payload?.full} contentStyle={{ fontSize: 12, borderRadius: 8 }}/>
+                  <Bar dataKey="stock" fill="#dc2626" radius={[0,4,4,0]} barSize={14}/>
+                  <Line dataKey="reorder" stroke="#94a3b8" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3, fill: "#94a3b8" }}/>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })()}
+
       {showForm && (profile?.role === "admin" || profile?.role === "manager") && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
 
       <div className="card">
@@ -6271,6 +6327,98 @@ function AgentReport({ invoices, allProfiles, contacts }) {
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Pending</div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(totalPending)}</div></div>
         <div className="kpi" style={{ marginBottom: 0 }}><div className="kpi-label">Overdue</div><div className="kpi-val tr-c">{fmt(totalOverdue)}</div></div>
       </div>
+
+      {selectedAgent === "all" && (() => {
+        const PROD_COLORS = ["#818cf8","#38bdf8","#34d399","#f59e0b","#94a3b8"];
+        const agents = allProfiles.filter(p => p.role === "agent");
+        if (agents.length === 0) return null;
+
+        const agentRows = agents.map(a => ({ id: a.id, name: a.full_name || "Unknown", products: {} }));
+        displayInvoices.forEach(inv => {
+          const row = agentRows.find(r => r.id === inv.created_by);
+          if (!row) return;
+          let lines = inv.lines;
+          if (typeof lines === "string") { try { lines = JSON.parse(lines); } catch { lines = []; } }
+          if (!Array.isArray(lines)) return;
+          lines.forEach(l => {
+            const name = (l.description||"Other").replace(" ⚠️ UNMATCHED","");
+            const val = (parseFloat(l.qty)||0) * (parseFloat(l.unit_price)||0);
+            row.products[name] = (row.products[name]||0) + val;
+          });
+        });
+
+        const totals = {};
+        agentRows.forEach(r => Object.entries(r.products).forEach(([k,v]) => { totals[k] = (totals[k]||0)+v; }));
+        const topProducts = Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k])=>k);
+        const seriesKeys = [...topProducts, "Other"];
+
+        const data = agentRows.map(r => {
+          const row = { name: r.name };
+          let other = 0;
+          Object.entries(r.products).forEach(([k,v]) => {
+            if (topProducts.includes(k)) row[k] = Math.round(v*100)/100;
+            else other += v;
+          });
+          topProducts.forEach(p => { if (row[p]===undefined) row[p]=0; });
+          row["Other"] = Math.round(other*100)/100;
+          return row;
+        }).filter(r => seriesKeys.some(k => r[k] > 0))
+          .sort((a,b) => seriesKeys.reduce((s,k)=>s+(b[k]||0),0) - seriesKeys.reduce((s,k)=>s+(a[k]||0),0));
+
+        if (data.length === 0) return null;
+
+        const AgentTooltip = ({ active, payload, label }) => {
+          if (!active || !payload || !payload.length) return null;
+          const total = payload.reduce((s,p)=>s+(p.value||0),0);
+          return (
+            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+              <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
+              {payload.filter(p=>p.value>0).map(p=>(
+                <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:p.color}}/>
+                  <span style={{color:"rgba(255,255,255,.7)"}}>{p.name}:</span>
+                  <span style={{color:"#fff",fontWeight:700}}>{fmt(p.value)}</span>
+                </div>
+              ))}
+              <div style={{marginTop:4,paddingTop:4,borderTop:"1px solid rgba(255,255,255,.1)",color:"#fff",fontWeight:700}}>
+                Total: {fmt(total)}
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div className="ch">
+              <div>
+                <div className="ct">Sales by Product per Agent</div>
+                <div className="cs">Revenue breakdown by top products</div>
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+                {seriesKeys.map((k,i)=>(
+                  <div key={k} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                    <div style={{width:10,height:10,borderRadius:2,background:PROD_COLORS[i]}}/>{k}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding: "4px 24px 20px" }}>
+              <ResponsiveContainer width="100%" height={Math.max(data.length*40+60, 160)}>
+                <BarChart data={data} layout="vertical" margin={{top:8,right:30,left:10,bottom:0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false}/>
+                  <XAxis type="number" tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
+                  <YAxis type="category" dataKey="name" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={110}/>
+                  <Tooltip content={AgentTooltip}/>
+                  {seriesKeys.map((k,i)=>(
+                    <Bar key={k} dataKey={k} stackId="sales" fill={PROD_COLORS[i]} radius={i===seriesKeys.length-1?[0,4,4,0]:[0,0,0,0]} barSize={18}/>
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="card">
         <div className="ch"><div className="ct">Invoice Detail</div><div className="cs">{displayInvoices.length} records</div></div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="ar-table" style={{minWidth:420}}><thead><tr><th>Customer</th><th className="hm">Agent</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
