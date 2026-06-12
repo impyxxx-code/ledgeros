@@ -1973,6 +1973,26 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
     setTimeout(() => setEmailStatus(null), 4000);
   };
 
+  const [waReminderStatus, setWaReminderStatus] = useState(null); // null | "sending" | "sent" | "error"
+  const handleWaReminder = async () => {
+    if (!savedPhone) { toast.warn(`No phone number found for ${invoice.customer}. Please add one in Customers first.`); return; }
+    setWaReminderStatus("sending");
+    const balance = invoice.balance > 0 ? invoice.balance : (invoice.amount || total);
+    const message = `⏰ *Payment Reminder — ${COMPANY.name}*\n\nHi ${invoice.customer}, this is a friendly reminder that invoice *${invoice.invoice_number}* (dated ${fmtDate(invoice.invoice_date)}, due ${fmtDate(invoice.due_date)}) has an outstanding balance of *${fmt(balance)}*.\n\nPayment to:\nBank: ${COMPANY.bankName}\nSort Code: ${COMPANY.sortCode}\nAcc No: ${COMPANY.accountNumber}\nRef: ${invoice.invoice_number}\n\nThank you! 🙏`;
+    try {
+      const res = await fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ to: savedPhone, message }),
+      });
+      const data = await res.json();
+      setWaReminderStatus(res.ok && data.success ? "sent" : "error");
+    } catch {
+      setWaReminderStatus("error");
+    }
+    setTimeout(() => setWaReminderStatus(null), 4000);
+  };
+
   // Timeline events derived from invoice data
   const timeline = [
     { icon: "ti-file-plus", color: "var(--blue)", bg: "var(--blue-lt)", label: "Created", date: invoice.created_at || invoice.invoice_date, desc: `Invoice ${invoice.invoice_number} created · ${fmt(invoice.amount)}` },
@@ -2383,6 +2403,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button className="btn bo" onClick={() => onDuplicate && onDuplicate(invoice)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplicate Invoice</button>
                 <button className="btn bo" onClick={() => handleEmail(true)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Send Reminder</button>
+                {savedPhone && <button className="btn bo" onClick={handleWaReminder} disabled={waReminderStatus==="sending"} style={{color:waReminderStatus==="sent"?"var(--green)":waReminderStatus==="error"?"var(--red)":undefined,borderColor:waReminderStatus==="sent"?"var(--green)":waReminderStatus==="error"?"var(--red)":undefined}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>{waReminderStatus==="sending"?"Sending...":waReminderStatus==="sent"?"Sent!":waReminderStatus==="error"?"Failed":"WhatsApp Reminder"}</button>}
               </div>
             </div>
           </div>
