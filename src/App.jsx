@@ -5706,24 +5706,70 @@ function Purchases({ contacts, products, token, userId }) {
 // │ CreditNotes                                                │
 // │ Issue and apply credit notes to invoices                   │
 // └────────────────────────────────────────────────────────────┘
-function CreditNotes({ contacts, invoices, token, userId }) {
+function CreditNotes({ contacts, invoices, setInvoices, profile, token, userId }) {
   const [cns, setCNs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [applyingId, setApplyingId] = useState(null);
   const [f, setF] = useState({ customer_id: "", invoice_id: "", reason: "", amount: "", issue_date: today() });
   const [cnFilter, setCnFilter] = useState("all");
   useEffect(() => { sb.get(token,"credit_notes","order=created_at.desc").then(d => Array.isArray(d)&&setCNs(d)); }, [token]);
   const customers = contacts.filter(c => c.type==="customer"||c.type==="both");
+  const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   const save = async () => {
     if (!f.customer_id||!f.amount) return; setSaving(true);
-    const num = `CN-${String(cns.length+1).padStart(3,"0")}`;
+    const existing = await sb.get(token, "credit_notes", "select=cn_number&order=cn_number.desc&limit=1");
+    let nextNum = 1;
+    if (Array.isArray(existing) && existing.length > 0 && existing[0].cn_number) {
+      const lastNum = parseInt(String(existing[0].cn_number).replace("CN-", ""), 10);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+    const num = `CN-${String(nextNum).padStart(3,"0")}`;
     const cust = customers.find(c => c.id===f.customer_id);
-    const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:parseFloat(f.amount),created_by:userId});
+    const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:parseFloat(f.amount),status:"draft",created_by:userId});
     if (data[0]) { setCNs(prev => [data[0],...prev]); logAudit(token, userId, "credit_note_created", "credit_note", data[0].id, `${num} issued to ${cust?.name} — £${parseFloat(f.amount).toFixed(2)}${f.reason ? ' · ' + f.reason : ''}`); }
     setF({ customer_id:"",invoice_id:"",reason:"",amount:"",issue_date:today() });
     setShowForm(false); setSaving(false);
   };
-  const updateStatus = async (id,status) => { await sb.patch(token,"credit_notes",id,{status}); setCNs(prev => prev.map(c => c.id===id?{...c,status}:c)); };
+  const issueCredit = async (cn) => {
+    await sb.patch(token,"credit_notes",cn.id,{status:"issued"});
+    setCNs(prev => prev.map(c => c.id===cn.id?{...c,status:"issued"}:c));
+    logAudit(token, userId, "credit_note_issued", "credit_note", cn.id, `${cn.cn_number} issued to ${cn.customer_name}`);
+  };
+  // Apply a credit note — reduces the balance of its linked invoice (if any) and records it in the payment ledger
+  const applyCredit = async (cn) => {
+    setApplyingId(cn.id);
+    const cnAmount = parseFloat(cn.amount || 0);
+    const inv = cn.invoice_id ? invoices.find(i => i.id === cn.invoice_id) : null;
+    if (inv) {
+      const prevPaid = parseFloat(inv.amount_paid || 0);
+      const invAmount = parseFloat(inv.amount || 0);
+      const totalPaid = prevPaid + cnAmount;
+      const balance = Math.max(0, invAmount - totalPaid);
+      const actualPaid = Math.min(totalPaid, invAmount);
+      const newStatus = balance <= 0 ? "paid" : "partial";
+      await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance, status: newStatus });
+      const payRow = {
+        invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
+        amount: cnAmount, method: "credit_note",
+        payment_date: today(),
+        notes: `${cn.cn_number} applied${cn.reason ? ' · ' + cn.reason : ''}`,
+        recorded_by_name: profile?.full_name || "Admin"
+      };
+      if (isUUID(userId)) payRow.recorded_by = userId;
+      await sb.addPayment(token, payRow).catch(e => ({ error: e }));
+      setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance, status: newStatus } : i));
+    }
+    await sb.patch(token,"credit_notes",cn.id,{status:"applied"});
+    setCNs(prev => prev.map(c => c.id===cn.id?{...c,status:"applied"}:c));
+    logAudit(token, userId, "credit_note_applied", "credit_note", cn.id, `${cn.cn_number} applied to ${cn.customer_name}${inv ? ' against ' + inv.invoice_number : ''} — £${cnAmount.toFixed(2)}`);
+    setApplyingId(null);
+  };
+  const printCreditNote = (cn) => {
+    const html = `<!DOCTYPE html><html><head><title>${escHtml(cn.cn_number)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a}.accent-bar{height:5px;background:linear-gradient(90deg,#1e1b4b 0%,#4f46e5 60%,#818cf8 100%);margin:-30mm -20mm 20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:.5px solid #e2e8f0;padding-bottom:20px;margin-bottom:20px}.co-name{font-size:15px;font-weight:700}.co-det{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:2px}.cn-title{font-size:28px;font-weight:900;color:#e2e8f0;letter-spacing:-1.5px;text-align:right}.cn-num{font-size:16px;font-weight:800;text-align:right;margin-top:2px}.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}.mbox{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:10px 12px}.mbox .lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}.mbox .val{font-size:12px;font-weight:600}.bb{background:#1e1b4b;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}.bb-l{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.bb-v{color:#fff;font-size:18px;font-weight:800}</style></head><body><div class="accent-bar"></div><div class="hdr"><div><div class="co-name">${escHtml(COMPANY.name)}</div><div class="co-det">${escHtml(COMPANY.address)}<br>${escHtml(COMPANY.city)}, ${escHtml(COMPANY.postcode)}<br>VAT: ${escHtml(COMPANY.vatNumber)}</div></div><div><div class="cn-title">CREDIT NOTE</div><div class="cn-num">${escHtml(cn.cn_number)}</div></div></div><div class="mgrid"><div class="mbox"><div class="lbl">Customer</div><div class="val">${escHtml(cn.customer_name)}</div></div><div class="mbox"><div class="lbl">Issue date</div><div class="val">${fmtDate(cn.issue_date)}</div></div><div class="mbox"><div class="lbl">Related invoice</div><div class="val">${escHtml(invoices.find(i=>i.id===cn.invoice_id)?.invoice_number || '—')}</div></div><div class="mbox"><div class="lbl">Status</div><div class="val">${escHtml((cn.status||'draft').toUpperCase())}</div></div></div><div class="mbox" style="margin-bottom:20px"><div class="lbl">Reason</div><div class="val">${escHtml(cn.reason || '—')}</div></div><div class="bb"><span class="bb-l">Credit amount</span><span class="bb-v">${fmt(cn.amount)}</span></div></body></html>`;
+    if (window.__ledgerosPrint) window.__ledgerosPrint(html);
+    else { const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500); }
+  };
   return (
     <div>
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -5734,7 +5780,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
           <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Credit Note</button>
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb",filter:"all"},{label:"Open",val:cns.filter(c=>c.status==="open").length,sub:"outstanding",accent:"#d97706",filter:"open"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a",filter:"applied"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626",filter:null}].map((k,i)=>{
+          {[{label:"Total Credits",val:cns.length,sub:"all credit notes",accent:"#2563eb",filter:"all"},{label:"Open",val:cns.filter(c=>c.status==="draft"||c.status==="issued").length,sub:"outstanding",accent:"#d97706",filter:"open"},{label:"Applied",val:cns.filter(c=>c.status==="applied").length,sub:"used",accent:"#16a34a",filter:"applied"},{label:"Total Value",val:fmt(cns.reduce((s,c)=>s+(parseFloat(c.amount)||0),0)),sub:"credits issued",accent:"#dc2626",filter:null}].map((k,i)=>{
             const isActive = k.filter && k.filter !== "all" && cnFilter === k.filter;
             const isClickable = !!k.filter;
             return (
@@ -5752,7 +5798,7 @@ function CreditNotes({ contacts, invoices, token, userId }) {
       </div>
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Credit Note</div></div><div className="fg"><div className="fgrp"><label>Customer *</label><select value={f.customer_id} onChange={e => setF({...f,customer_id:e.target.value})}><option value="">Select customer...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div className="fgrp"><label>Related Invoice</label><select value={f.invoice_id} onChange={e => setF({...f,invoice_id:e.target.value})}><option value="">Select invoice (optional)...</option>{invoices.map(i => <option key={i.id} value={i.id}>{i.invoice_number} — {fmt(i.amount)}</option>)}</select></div><div className="fgrp"><label>Amount (£) *</label><input type="number" value={f.amount} onChange={e => setF({...f,amount:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Issue Date</label><input type="date" value={f.issue_date} onChange={e => setF({...f,issue_date:e.target.value})} /></div><div className="fgrp full"><label>Reason *</label><input value={f.reason} onChange={e => setF({...f,reason:e.target.value})} placeholder="Reason for credit note..." /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Issue Credit Note"}</button></div></div>}
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="cr-table" style={{minWidth:420}}><thead><tr><th>CN #</th><th>Customer</th><th className="hm">Date</th><th>Amount</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {cns.filter(cn => cnFilter === "all" || cn.status === cnFilter).map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(cn.id,"issued")}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => updateStatus(cn.id,"applied")}>Apply</button>}</td></tr>)}
+        {cns.filter(cn => cnFilter === "all" || (cnFilter === "open" ? (cn.status==="draft"||cn.status==="issued") : cn.status === cnFilter)).map(cn => <tr key={cn.id}><td className="mono" style={{color:"var(--purple)",fontSize:12}}>{cn.cn_number}</td><td style={{fontWeight:500}}>{cn.customer_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(cn.issue_date)}</td><td className="mono tr-c" style={{fontWeight:600}}>{fmt(cn.amount)}</td><td className="tm">{cn.reason}</td><td><span className={"badge "+(cn.status==="applied"?"b-green":cn.status==="issued"?"b-blue":"b-gray")}>{cn.status}</span></td><td style={{display:"flex",gap:6}}>{cn.status==="draft"&&<button className="btn bo bsm" onClick={() => issueCredit(cn)}>Issue</button>}{cn.status==="issued"&&<button className="btn bp bsm" onClick={() => applyCredit(cn)} disabled={applyingId===cn.id}>{applyingId===cn.id?"Applying...":"Apply"}</button>}<button className="btn bo bsm" onClick={() => printCreditNote(cn)}>Print</button></td></tr>)}
         {cns.length===0&&<tr><td colSpan={7}><EmptyState icon="report" title="No credit notes yet" sub="Issue a credit note to refund or adjust a customer invoice" action={() => setShowForm(true)} actionLabel="New Credit Note" /></td></tr>}
       </tbody></table></div></div>
     </div>
@@ -8563,7 +8609,7 @@ export default function App() {
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
-                {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
+                {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} setInvoices={setInvoices} profile={profile} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
                 {page==="analytics"&&<div style={{margin:"-26px -28px",overflow:"hidden"}}><Analytics invoices={invoices} products={products} contacts={contacts} /></div>}
                 {page==="import"&&<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}><span style={{fontSize:40,display:"block",marginBottom:12}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></span><div style={{fontSize:16,fontWeight:600,marginBottom:6}}>CSV Import</div><div style={{fontSize:13}}>Coming soon — import contacts and products from CSV</div></div>}
