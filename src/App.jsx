@@ -34,7 +34,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList, PieChart, Pie, Cell, BarChart } from "recharts";
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, CheckCircle2, FileText, AlertTriangle, Users, ShoppingBag, Landmark, Sun } from "lucide-react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "./lib/supabase.js";
-import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "./lib/utils.js";
+import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, shortName, DEFAULT_REORDER } from "./lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "./lib/email.js";
 import { logAudit } from "./lib/audit.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "./components/ui.jsx";
@@ -2488,8 +2488,6 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
 // │ SearchDropdown                                             │
 // │ Searchable dropdown for product/contact selection          │
 // └────────────────────────────────────────────────────────────┘
-// shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
-const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };
 
 function SearchDropdown({ placeholder, items, onSelect, onCreateNew, displayKey = "name", value = "" }) {
   const [query, setQuery] = useState(shortName(value));

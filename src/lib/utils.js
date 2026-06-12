@@ -18,3 +18,6 @@ export const fmtRelative = (d) => {
 export const dueDelta = (d) => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
 export const today = () => new Date().toISOString().split("T")[0];
 export const escHtml = (s) => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+// shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
+export const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };
