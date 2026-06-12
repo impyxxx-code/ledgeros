@@ -4295,9 +4295,9 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                         <Tooltip formatter={(v)=>fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center", pointerEvents: "none" }}>
-                      <div style={{ fontSize: 9, color: "var(--text3)", fontWeight: 700, textTransform: "uppercase" }}>Total</div>
-                      <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "var(--mono)" }}>{fmt(total)}</div>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center", pointerEvents: "none", width: 56 }}>
+                      <div style={{ fontSize: 8, color: "var(--text3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>Total</div>
+                      <div style={{ fontSize: 11, fontWeight: 800, fontFamily: "var(--mono)", lineHeight: 1.15, wordBreak: "break-word" }}>{fmt(total)}</div>
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
