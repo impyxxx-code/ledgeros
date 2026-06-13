@@ -685,10 +685,11 @@ tr:hover td{background:#f8fafd}
   width:100%;max-width:740px;max-height:92vh;
   overflow-y:auto;
   box-shadow:0 8px 40px rgba(99,102,241,.12),var(--sh3);
-  animation:scaleIn .2s var(--ease) both;
+  animation:modalPop .4s cubic-bezier(.34,1.56,.64,1) both;
   border:1px solid rgba(99,102,241,.2);
   border-top:3px solid #818cf8;
 }
+@keyframes modalPop{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-header{
   padding:16px 22px;
   border-bottom:1px solid var(--border);
