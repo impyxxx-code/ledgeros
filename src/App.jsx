@@ -1859,6 +1859,7 @@ function Auth({ onAuth, sessionExpired }) {
 // └────────────────────────────────────────────────────────────┘
 function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDuplicate, onEdit, onPartPay, onLogPartPay, token, profile }) {
   const [showWaInput, setShowWaInput] = useState(false);
+  const [showPayments, setShowPayments] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [activeTab, setActiveTab] = useState("invoice");
   const [partPayAmount, setPartPayAmount] = useState("");
@@ -2216,18 +2217,20 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             </div>
             {payments.length > 0 && (
               <div style={{ margin:"0 0 16px", border:".5px solid #e2e8f0", borderRadius:9, overflow:"hidden" }}>
-                <div style={{ background:"#f8fafc", padding:"8px 14px", fontSize:9, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:".8px", borderBottom:".5px solid #e2e8f0" }}>Payments Received</div>
-                {payments.map((p, i) => (
+                <div onClick={() => setShowPayments(s => !s)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", background:"#f0fdf4", padding:"8px 14px", borderBottom: showPayments ? ".5px solid #bbf7d0" : "none" }}>
+                  <span style={{ fontSize:9, fontWeight:700, color:"#15803d", textTransform:"uppercase", letterSpacing:".8px" }}>Payments Received · {payments.length}</span>
+                  <span style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontWeight:700, color:"#15803d", fontFamily:"var(--mono)", fontSize:12 }}>{fmt(payments.reduce((s,p)=>s+parseFloat(p.amount||0),0))}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showPayments ? "rotate(180deg)" : "none", transition:"transform .15s" }}><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                {showPayments && payments.map((p, i) => (
                   <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 14px", borderBottom: i < payments.length-1 ? ".5px solid #f1f5f9" : "none", fontSize:12 }}>
                     <span style={{ color:"#64748b" }}>{fmtDate(p.created_at || p.payment_date)}</span>
                     <span style={{ color:"#64748b" }}>{p.method==="cash"?"💵":p.method==="bank"?"🏦":p.method==="card"?"💳":"📝"} {p.method}</span>
                     <span style={{ fontWeight:700, color:"#16a34a", fontFamily:"var(--mono)" }}>-{fmt(parseFloat(p.amount||0))}</span>
                   </div>
                 ))}
-                <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 14px", background:"#f0fdf4", borderTop:".5px solid #bbf7d0", fontSize:12, fontWeight:700, color:"#15803d" }}>
-                  <span>Total paid</span>
-                  <span style={{ fontFamily:"var(--mono)" }}>{fmt(payments.reduce((s,p)=>s+parseFloat(p.amount||0),0))}</span>
-                </div>
               </div>
             )}
             <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span></div>
