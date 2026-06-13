@@ -9165,7 +9165,7 @@ function UserApproval({ token, profile }) {
   const approved = users.filter(u => u.approved===true);
   return (
     <div>
-      {loading ? <div style={{ padding:24,color:"var(--text3)" }}>Loading users...</div> : (
+      {loading ? <div className="card" style={{padding:20}}><SkeletonTable rows={5} cols={3} /></div> : (
         <div>
           <div className="card" style={{ marginBottom:16,padding:20 }}>
             <div className="ct" style={{ marginBottom:4 }}>Pending Approval</div>
