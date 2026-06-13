@@ -4020,10 +4020,17 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
             const id = new Date(inv.invoice_date||inv.created_at);
             return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=="paid"&&inv.status!=="draft";
           }).reduce((s,i)=>s+parseFloat(i.balance||i.amount||0),0);
-          return {lbl, Collected: Math.round(mPaid*100)/100, Pending: Math.round(mPending*100)/100};
+          const pd = new Date(new Date().getFullYear(), new Date().getMonth()-11+i, 1);
+          const pPaid = invoices.filter(inv=>{
+            const id = new Date(inv.invoice_date||inv.created_at);
+            return id.getMonth()===pd.getMonth()&&id.getFullYear()===pd.getFullYear();
+          }).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+          return {lbl, Collected: Math.round(mPaid*100)/100, Pending: Math.round(mPending*100)/100, PrevCollected: Math.round(pPaid*100)/100};
         });
         const totalPaid6 = months.reduce((s,m)=>s+m.Collected,0);
         const totalPend6 = months.reduce((s,m)=>s+m.Pending,0);
+        const totalPrevPaid6 = months.reduce((s,m)=>s+m.PrevCollected,0);
+        const pctChange = totalPrevPaid6>0 ? Math.round(((totalPaid6-totalPrevPaid6)/totalPrevPaid6)*1000)/10 : null;
         const bestMonth = months.reduce((a,b)=>b.Collected>a.Collected?b:a,months[0]);
         const ChartTooltip = ({ active, payload, label }) => {
           if (!active || !payload || !payload.length) return null;
@@ -4054,6 +4061,15 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
                   <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
                 </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
+                  <div style={{width:10,height:2,background:"var(--text3)",borderTop:"2px dashed var(--text3)"}}/>Prev. period
+                </div>
+                {pctChange!==null && (
+                  <div className={"badge "+(pctChange>=0?"b-green":"b-red")} style={{fontWeight:700}}>
+                    <i className={"ti "+(pctChange>=0?"ti-trending-up":"ti-trending-down")} style={{fontSize:12}}/>
+                    {pctChange>=0?"+":""}{pctChange}%
+                  </div>
+                )}
                 <button className="btn bo bsm" onClick={()=>setPage("admin-reports")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Reports</button>
               </div>
             </div>
@@ -4080,6 +4096,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                   <Tooltip content={ChartTooltip}/>
                   <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:5,strokeWidth:2,stroke:"#fff",fill:"#f59e0b"}} animationDuration={900} animationEasing="ease-out"/>
                   <Area type="monotone" dataKey="Collected" stroke="url(#strokeCollected)" strokeWidth={2.5} fill="url(#gradCollected)" dot={false} activeDot={{r:6,strokeWidth:2,stroke:"#fff",fill:"#4338ca"}} animationDuration={1100} animationEasing="ease-out"/>
+                  <Area type="monotone" dataKey="PrevCollected" stroke="var(--text3)" strokeWidth={1.5} strokeDasharray="4 4" fill="none" fillOpacity={0} dot={false} activeDot={{r:4,strokeWidth:2,stroke:"#fff",fill:"var(--text3)"}} animationDuration={1100} animationEasing="ease-out"/>
                 </AreaChart>
               </ResponsiveContainer>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
@@ -4778,7 +4795,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
           : [["all","All",invoices.length],["pending","Pending",invoices.filter(i=>i.status==="pending").length],["paid","Paid",invoices.filter(i=>i.status==="paid").length],["overdue","Overdue",invoices.filter(i=>i.status==="overdue").length],["draft","Draft",invoices.filter(i=>i.status==="draft").length]]
         ).map(([s, lbl, cnt]) => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: filterStatus === s ? "#818cf8" : "transparent", color: filterStatus === s ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: filterStatus === s ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: filterStatus === s ? "0 2px 8px rgba(129,140,248,.35)" : "none", flexShrink: 0 }}>
-            {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
+            {lbl} <span style={{ background: filterStatus === s ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 7px", borderRadius: 10, fontSize: 11, fontWeight: 800, color: filterStatus === s ? "#fff" : "rgba(255,255,255,.55)" }}>{cnt.toLocaleString()}</span>
           </button>
         ))}
       </div>
@@ -5371,10 +5388,10 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
             style={{ width:"100%", padding:"8px 12px 8px 32px", borderRadius:8, border:"1.5px solid var(--border)", fontSize:12, color:"var(--text)", outline:"none", background:"var(--bg)", fontFamily:"var(--sans)", transition:"border-color .15s" }} />
         </div>
         <div style={{ display:"flex", gap:5 }}>
-          {[["all","All"],["has-email","Has Email"],["no-email","No Email"],["has-phone","Has Phone"],["no-phone","No Phone"]].map(([v,l]) => (
+          {[["all","All",contacts.length],["has-email","Has Email",contacts.filter(c=>c.email).length],["no-email","No Email",contacts.filter(c=>!c.email).length],["has-phone","Has Phone",contacts.filter(c=>c.phone).length],["no-phone","No Phone",contacts.filter(c=>!c.phone).length]].map(([v,l,cnt]) => (
             <div key={v} onClick={() => setContactFilter(v)}
-              style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#818cf8":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#818cf8":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(129,140,248,.3)":"none" }}>
-              {l}
+              style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#818cf8":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#818cf8":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(129,140,248,.3)":"none", display:"flex", alignItems:"center", gap:5 }}>
+              {l} <span style={{ fontWeight:800, fontSize:11, opacity:contactFilter===v?1:.6 }}>{cnt.toLocaleString()}</span>
             </div>
           ))}
         </div>
