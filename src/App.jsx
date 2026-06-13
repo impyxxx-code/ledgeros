@@ -217,7 +217,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   margin-left:auto;background:var(--red);color:#fff;
   font-size:9px;font-weight:700;
   padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;
+  animation:badgePulse 2s ease-in-out infinite;
 }
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 4px rgba(239,68,68,0)}}
 
 .nav-bottom{
   margin-top:auto;padding:0 8px 12px;
@@ -381,8 +383,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .kpi-icon{
   width:38px;height:38px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1);
 }
 .kpi-icon i{font-size:19px}
+.kpi:hover .kpi-icon{transform:scale(1.15) rotate(-8deg)}
 .kpi-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600}
 .kpi-val{
   font-size:22px;font-weight:700;color:var(--text);
