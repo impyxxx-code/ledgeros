@@ -3978,20 +3978,24 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                 <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
                   <defs>
                     <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25}/>
+                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="strokeCollected" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#4338ca"/>
+                      <stop offset="100%" stopColor="#a5b4fc"/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
                   <XAxis dataKey="lbl" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
                   <YAxis tickFormatter={v=>v===0?"£0":"£"+Math.round(v/1000)+"k"} tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={40}/>
                   <Tooltip content={ChartTooltip}/>
-                  <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:4,fill:"#f59e0b"}}/>
-                  <Area type="monotone" dataKey="Collected" stroke="#818cf8" strokeWidth={2} fill="url(#gradCollected)" dot={{r:3,fill:"#818cf8",strokeWidth:0}} activeDot={{r:5,fill:"#818cf8"}}/>
+                  <Area type="monotone" dataKey="Pending" stroke="#f59e0b" strokeWidth={1.5} fill="url(#gradPending)" strokeOpacity={0.7} dot={false} activeDot={{r:5,strokeWidth:2,stroke:"#fff",fill:"#f59e0b"}} animationDuration={900} animationEasing="ease-out"/>
+                  <Area type="monotone" dataKey="Collected" stroke="url(#strokeCollected)" strokeWidth={2.5} fill="url(#gradCollected)" dot={false} activeDot={{r:6,strokeWidth:2,stroke:"#fff",fill:"#4338ca"}} animationDuration={1100} animationEasing="ease-out"/>
                 </AreaChart>
               </ResponsiveContainer>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
