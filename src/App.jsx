@@ -522,7 +522,8 @@ tr:hover td{background:#f8fafd}
   background-size:200% 100%;background-position:-200% center;
   transition:none;pointer-events:none;border-radius:inherit;
 }
-.bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 4px 14px rgba(37,99,235,.35);transform:translateY(-1px)}
+.bp{transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+.bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 8px 24px rgba(37,99,235,.45);transform:translateY(-3px) scale(1.04)}
 .bp:hover::after{animation:btn-glint .55s ease forwards}
 .bp:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
 .bp:disabled::after{display:none}
