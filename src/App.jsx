@@ -1000,7 +1000,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .onboard-check{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
 
 /* ── Empty States ── */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(129,140,248,.07),transparent 70%);border-radius:var(--rl)}
 .empty-state-icon{margin-bottom:16px;opacity:0.6;animation:emptyFloat 3s ease-in-out infinite}
 @keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .empty-state-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
