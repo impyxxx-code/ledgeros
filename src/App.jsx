@@ -355,7 +355,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   cursor:pointer;
   transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s;
   position:relative;overflow:hidden;
+  animation:fadeUp .32s var(--ease) both;
 }
+.kgrid .kpi:nth-child(1){animation-delay:0s}
+.kgrid .kpi:nth-child(2){animation-delay:.04s}
+.kgrid .kpi:nth-child(3){animation-delay:.08s}
+.kgrid .kpi:nth-child(4){animation-delay:.12s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .kpi::before{
   content:'';position:absolute;top:0;left:0;right:0;
   height:2.5px;border-radius:var(--rl) var(--rl) 0 0;
