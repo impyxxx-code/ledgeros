@@ -992,7 +992,8 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 
 /* ── Empty States ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center}
-.empty-state-icon{margin-bottom:16px;opacity:0.25}
+.empty-state-icon{margin-bottom:16px;opacity:0.6;animation:emptyFloat 3s ease-in-out infinite}
+@keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .empty-state-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
 .empty-state-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:280px;margin-bottom:20px}
 
@@ -3629,7 +3630,20 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
               </div></td>
             </tr>
           ))}
-          {filteredMyInv.length === 0 && <tr><td colSpan={5} className="empty">{agentSearch ? `No invoices found for "${agentSearch}"` : "No invoices yet — create your first one!"}</td></tr>}
+          {filteredMyInv.length === 0 && <tr><td colSpan={5}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <rect x="10" y="16" width="44" height="36" rx="6" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
+                  <path d="M10 24 L32 38 L54 24" stroke="#a5b4fc" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="48" cy="14" r="7" fill="#818cf8"/>
+                  <path d="M45 14h6M48 11v6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <div className="empty-state-title">{agentSearch ? "No invoices found" : "No invoices yet"}</div>
+              <div className="empty-state-sub">{agentSearch ? `Nothing matches "${agentSearch}" — try a different search.` : "Create your first invoice to get started."}</div>
+            </div>
+          </td></tr>}
         </tbody></table></div>
       </div>
     </div>
