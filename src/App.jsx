@@ -726,7 +726,7 @@ tr:hover td{background:#f8fafd}
 .inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
-.inv-tot-row.divider{border-top:2px solid #e2e8f0;margin-top:8px;padding-top:10px;font-size:13px;font-weight:600}
+.inv-tot-row.inv-tot-grand{border-top:2px solid #e2e8f0;margin-top:8px;padding:10px 10px 6px;border-radius:6px;background:#eff6ff;font-size:13px;font-weight:600}
 .inv-balance-box{background:#1e1b4b;border-radius:9px;padding:11px 14px;margin-top:16px;display:flex;justify-content:space-between;align-items:center}
 .inv-balance-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .inv-balance-val{color:#fff;font-size:17px;font-weight:800}
@@ -2213,7 +2213,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             <div className="inv-totals-box">
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>Subtotal</span><span className="mono">{fmt(subtotal)}</span></div>
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>VAT Total</span><span className="mono">{fmt(vatTotal)}</span></div>
-              <div className="inv-tot-row divider"><span>Total</span><span className="mono">{fmt(total)}</span></div>
+              <div className="inv-tot-row inv-tot-grand"><span>Total</span><span className="mono">{fmt(total)}</span></div>
             </div>
             {payments.length > 0 && (
               <div style={{ margin:"0 0 16px", border:".5px solid #e2e8f0", borderRadius:9, overflow:"hidden" }}>
