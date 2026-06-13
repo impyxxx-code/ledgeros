@@ -728,8 +728,9 @@ tr:hover td{background:#f8fafd}
 .inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
-.inv-table tbody tr{transition:background .12s;cursor:pointer}
-.inv-table tbody tr:hover td{background:rgba(37,99,235,.04)!important}
+.inv-table tbody tr{transition:background .12s,transform .18s var(--ease),box-shadow .18s var(--ease);cursor:pointer}
+.inv-table tbody tr:hover td{background:rgba(37,99,235,.05)!important}
+.inv-table tbody tr:hover{transform:scale(1.008);box-shadow:0 4px 16px rgba(37,99,235,.12);position:relative;z-index:1}
 .inventory-table{width:100%;border-collapse:collapse}
 .inventory-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 .inventory-table td{padding:10px 14px;font-size:13px;border-bottom:0.5px solid var(--border)}
