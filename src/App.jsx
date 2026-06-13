@@ -161,7 +161,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   border-radius:11px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   box-shadow:0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18);
+  animation:logoGlow 4s ease-in-out infinite;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
 }
+.logo-mark:hover{transform:scale(1.08) rotate(-4deg)}
+@keyframes logoGlow{0%,100%{box-shadow:0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)}50%{box-shadow:0 4px 32px rgba(165,180,252,.85),inset 0 1px 0 rgba(255,255,255,.25)}}
 .logo-inner{display:flex;align-items:center;gap:12px}
 .logo-wm{display:flex;flex-direction:column;gap:1px}
 .logo-wm-row{display:flex;align-items:baseline;gap:1px}
@@ -600,11 +604,12 @@ tr:hover td{background:#f8fafd}
   padding:8px 11px;
   font-size:13px;color:var(--text);
   font-family:var(--sans);outline:none;
-  transition:border .14s,box-shadow .14s;width:100%;
+  transition:border .2s var(--ease),box-shadow .25s var(--ease),transform .2s var(--ease);width:100%;
 }
 .fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{
   border-color:var(--blue);
-  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+  box-shadow:0 0 0 4px rgba(37,99,235,.16);
+  transform:translateY(-1px);
 }
 .fgrp input::placeholder,.fgrp textarea::placeholder{color:var(--text3)}
 .inp-error{border-color:var(--red)!important;background:var(--red-lt)!important;box-shadow:0 0 0 3px rgba(239,68,68,.1)!important}
