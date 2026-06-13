@@ -1014,7 +1014,8 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 
 /* ── Empty States ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(129,140,248,.07),transparent 70%);border-radius:var(--rl)}
-.empty-state-icon{margin-bottom:16px;opacity:0.6;animation:emptyFloat 3s ease-in-out infinite}
+.empty-state-icon{margin-bottom:16px;animation:emptyFloat 3s ease-in-out infinite}
+.empty-state-icon-badge{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center}
 @keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .empty-state-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
 .empty-state-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:280px;margin-bottom:20px}
@@ -3643,7 +3644,7 @@ function AgentDashboard({ invoices, setInvoices, contacts, setContacts, profile,
                   </div>
                 </div>
               ))}
-              {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
+              {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" action={() => setPage("invoices")} actionLabel="Go to Invoices" />}
             </div>
           </div>
         </div>
@@ -3880,7 +3881,7 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
                 </div>
               </div>
             ))}
-            {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" />}
+            {recentInvoices.length===0 && <EmptyState icon="invoice" title="No invoices yet" sub="Create your first invoice to get started" action={() => setPage("invoices")} actionLabel="Go to Invoices" />}
           </div>
         </div>
       </div>
@@ -4885,7 +4886,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                 </div>
               </div>
             ))}
-            {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+            {filtered.length===0&&<EmptyState icon="invoice" title={searchQ||filterStatus!=="all"?"No invoices match":"No invoices yet"} sub={searchQ||filterStatus!=="all"?"Try adjusting your search or filter":"Create your first invoice to get started"} action={searchQ||filterStatus!=="all"?undefined:()=>setShowForm(true)} actionLabel="New Invoice" />}
             {mobActionsInv && (
               <ModalPortal>
                 <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)" }} onClick={() => setMobActionsInv(null)}>
@@ -4970,7 +4971,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
                 </div>
               </div>
             ))}
-            {filtered.length===0&&<EmptyState icon="invoice" title="No invoices" sub="No invoices match your current filter" />}
+            {filtered.length===0&&<EmptyState icon="invoice" title={searchQ||filterStatus!=="all"?"No invoices match":"No invoices yet"} sub={searchQ||filterStatus!=="all"?"Try adjusting your search or filter":"Create your first invoice to get started"} action={searchQ||filterStatus!=="all"?undefined:()=>setShowForm(true)} actionLabel="New Invoice" />}
           </div>
           )
         ) : (
@@ -5071,7 +5072,7 @@ function Invoices({ invoices, setInvoices, contacts, setContacts, products, toke
               </td>
             </tr>
           ))}
-          {filtered.length === 0 && <tr><td colSpan={10}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} /></td></tr>}
+          {filtered.length === 0 && <tr><td colSpan={10}><EmptyState icon="invoice" title={searchQ || filterStatus !== "all" ? "No invoices match" : "No invoices yet"} sub={searchQ || filterStatus !== "all" ? "Try adjusting your search or filter" : "Create your first VAT invoice to get started"} action={searchQ||filterStatus!=="all"?undefined:()=>setShowForm(true)} actionLabel="New Invoice" /></td></tr>}
         </tbody></table></div>
         )}
       </div>
@@ -5502,7 +5503,7 @@ function Contacts({ contacts, setContacts, token, userId, invoices = [], product
                   </div>
                 );
               })}
-              {filtered.length===0&&<EmptyState icon="customer" title={`No ${tab}s`} sub="No contacts match your current search or filter" />}
+              {filtered.length===0&&<EmptyState icon="customer" title={contactSearch||contactFilter!=="all"?`No ${tab}s match`:`No ${tab}s yet`} sub={contactSearch||contactFilter!=="all"?"Try adjusting your search or filter":"Add your first contact to get started"} action={contactSearch||contactFilter!=="all"?undefined:()=>{setShowForm(true);setF({...f,type:tab});}} actionLabel="Add Contact" />}
             </div>
           );
         }
