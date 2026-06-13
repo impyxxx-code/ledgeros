@@ -861,13 +861,22 @@ tr:hover td{background:#f8fafd}
 /* ── Tabs ── */
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px}
 .tab{
+  position:relative;
   padding:10px 16px;font-size:13px;font-weight:500;
   color:var(--text2);cursor:pointer;
   border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:all .14s;
+  transition:color .2s var(--ease);
+}
+.tab::after{
+  content:'';position:absolute;left:8px;right:8px;bottom:-2px;height:2px;
+  background:var(--blue);border-radius:2px;
+  transform:scaleX(0);opacity:0;
+  transform-origin:center;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s var(--ease);
 }
 .tab:hover{color:var(--text)}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab.active{color:var(--blue);font-weight:600}
+.tab.active::after{transform:scaleX(1);opacity:1}
 
 /* ────────────────────────────────────
    MOBILE NAV
