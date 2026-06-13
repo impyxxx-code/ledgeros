@@ -934,6 +934,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .modal-overlay{padding:0;align-items:flex-end}
   .modal-body{flex-direction:column}
   .inv-side{width:100%;border-left:none;border-top:1px solid var(--border);padding:14px 0 0}
+  .inv-side-actions{display:none}
   td{padding:9px 10px;font-size:12px;word-break:break-word}
   th{padding:8px 10px;font-size:10px}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -2496,9 +2497,16 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
           <div>
             <div className="inv-meta-lbl" style={{ marginBottom: 6 }}>Status</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[["pending","b-amber","ti-clock"],["paid","b-green","ti-circle-check"],["overdue","b-red","ti-alert-circle"],["partial","b-orange","ti-clock-dollar"],["draft","b-gray","ti-file"],["cancelled","b-gray","ti-ban"]].map(([s, cls, icon]) => (
+              {[
+                ["pending","b-amber",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>],
+                ["paid","b-green",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>],
+                ["overdue","b-red",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>],
+                ["partial","b-orange",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/><path d="M9.5 21a2 2 0 0 0 5 0"/></svg>],
+                ["draft","b-gray",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>],
+                ["cancelled","b-gray",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>],
+              ].map(([s, cls, icon]) => (
                 <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} title={s.charAt(0).toUpperCase() + s.slice(1)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: invoice.status === s ? "var(--blue)" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text3)", transition: "all .12s" }}>
-                  <i className={"ti " + icon} style={{ fontSize: 13 }} />
+                  {icon}
                 </button>
               ))}
             </div>
@@ -2526,7 +2534,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div className="inv-side-actions" style={{ display: "flex", gap: 8 }}>
             <button className="btn bo bsm" onClick={handlePrint} style={{ flex: 1, justifyContent: "center" }} title="Print"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
             <button className="btn bo bsm" onClick={handleEmail} disabled={emailStatus==="sending"} style={{ flex: 1, justifyContent: "center" }} title="Email"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
             {savedPhone && <button className="btn bo bsm" onClick={() => sendWhatsApp(savedPhone)} style={{ flex: 1, justifyContent: "center", color: "#16a34a" }} title="WhatsApp"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>}
