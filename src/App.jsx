@@ -1001,10 +1001,16 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 
 /* ── Onboarding ── */
 .onboard-overlay{position:fixed;inset:0;background:rgba(10,14,26,.7);z-index:800;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);animation:fadeIn .2s var(--ease)}
-.onboard-card{background:var(--white);border-radius:24px;padding:40px;max-width:520px;width:90%;box-shadow:var(--sh3);animation:scaleIn .25s var(--ease)}
+.onboard-card{background:var(--white);border-radius:24px;padding:40px;max-width:640px;width:90%;box-shadow:var(--sh3);animation:scaleIn .25s var(--ease)}
 .onboard-step{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
 .onboard-step:last-child{border-bottom:none}
 .onboard-check{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.onboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.onboard-item{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--border);border-radius:var(--rl);cursor:pointer;transition:border-color .15s var(--ease),background .15s var(--ease),transform .15s var(--ease)}
+.onboard-item:hover{border-color:var(--blue);background:var(--bg);transform:translateY(-2px)}
+.onboard-item.done{opacity:.6;cursor:default}
+.onboard-item.done:hover{transform:none;border-color:var(--border);background:transparent}
+.onboard-icon-lg{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
 
 /* ── Empty States ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(129,140,248,.07),transparent 70%);border-radius:var(--rl)}
@@ -1018,6 +1024,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 
 /* ── Mobile ── */
 @media(max-width:768px){
+  .onboard-grid{grid-template-columns:1fr}
   .sidebar{display:none}
   .main-content{margin-left:0!important;padding:12px!important}
   .ph{flex-direction:column;align-items:flex-start;gap:8px}
@@ -1383,18 +1390,20 @@ function OnboardingChecklist({ onClose, invoices, contacts, products, setPage })
         </div>
 
         {/* Steps */}
-        {steps.map(step => (
-          <div key={step.key} className="onboard-step" style={{ cursor: step.page ? "pointer" : "default" }} onClick={() => { if (step.page) { setPage(step.page); onClose(); } }}>
-            <div className="onboard-check" style={{ background: step.done ? "var(--green-lt)" : "var(--border)", color: step.done ? "var(--green)" : "var(--text3)" }}>
-              <i className={"ti " + (step.done ? "ti-check" : step.icon)} style={{ fontSize: 13 }} />
+        <div className="onboard-grid">
+          {steps.map(step => (
+            <div key={step.key} className={"onboard-item" + (step.done ? " done" : "")} onClick={() => { if (step.page && !step.done) { setPage(step.page); onClose(); } }}>
+              <div className="onboard-icon-lg" style={{ background: step.done ? "var(--green-lt)" : "var(--bg)", color: step.done ? "var(--green)" : "var(--text3)" }}>
+                <i className={"ti " + (step.done ? "ti-check" : step.icon)} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: step.done ? "var(--text3)" : "var(--text)", textDecoration: step.done ? "line-through" : "none", marginBottom: 2 }}>{step.label}</div>
+                <div style={{ fontSize: 11, color: "var(--text3)" }}>{step.done ? "Completed" : "Tap to get started"}</div>
+              </div>
+              {!step.done && step.page && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: step.done ? "var(--text3)" : "var(--text)", textDecoration: step.done ? "line-through" : "none" }}>{step.label}</div>
-            </div>
-            {!step.done && step.page && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>}
-            {step.done && <span style={{ color: "var(--green)", fontSize: 18 }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>}
-          </div>
-        ))}
+          ))}
+        </div>
 
         <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button className="btn bo" onClick={onClose}>Maybe later</button>
