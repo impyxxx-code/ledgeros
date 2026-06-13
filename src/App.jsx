@@ -246,7 +246,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   position:absolute;bottom:0;right:0;
   width:9px;height:9px;border-radius:50%;
   background:#22c55e;border:1.5px solid #060d1f;
+  animation:onlinePulse 2.5s ease-in-out infinite;
 }
+@keyframes onlinePulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{box-shadow:0 0 0 3px rgba(34,197,94,0)}}
+.user-av{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.user-row:hover .user-av{transform:scale(1.1) rotate(-6deg)}
 .user-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.82);line-height:1.2}
 .user-role-badge{
   display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.4px;
