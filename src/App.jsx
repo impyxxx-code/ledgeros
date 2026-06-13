@@ -1293,13 +1293,16 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 
 /* ── Toast Notifications ── */
 .toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .25s var(--ease);border:1px solid rgba(0,0,0,.06)}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .45s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(0,0,0,.06)}
 .toast.success{background:#fff;color:#166534;border-left:3px solid var(--green)}
 .toast.error{background:#fff;color:#991b1b;border-left:3px solid var(--red)}
 .toast.info{background:#fff;color:#1e40af;border-left:3px solid var(--blue)}
 .toast.warn{background:#fff;color:#92400e;border-left:3px solid var(--amber)}
-@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-@keyframes slideOutRight{from{opacity:1;transform:none}to{opacity:0;transform:translateX(20px)}}
+.toast i{transition:transform .3s var(--ease)}
+.toast.success i{animation:toastIconPop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
+@keyframes toastIconPop{0%{transform:scale(0) rotate(-45deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes slideOutRight{from{opacity:1;transform:none}to{opacity:0;transform:translateX(60px) scale(.9)}}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
