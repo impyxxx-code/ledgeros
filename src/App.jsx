@@ -278,7 +278,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   transform:translateY(-50%);
   color:rgba(255,255,255,.28);pointer-events:none;
   width:15px;height:15px;flex-shrink:0;
+  transition:color .25s var(--ease),transform .35s cubic-bezier(.34,1.56,.64,1);
 }
+.search-input:focus ~ i,.search-input:focus ~ svg{color:#818cf8;transform:translateY(-50%) scale(1.15) rotate(-10deg)}
 .search-input{
   width:100%;
   background:rgba(255,255,255,.06);
@@ -296,6 +298,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   background:rgba(255,255,255,.08);
   box-shadow:0 0 0 3px rgba(37,99,235,.12);
 }
+.search-wrap:has(.search-input:focus) i,.search-wrap:has(.search-input:focus)>svg{color:#818cf8;transform:translateY(-50%) scale(1.15) rotate(-10deg)}
 .search-input::placeholder{color:rgba(255,255,255,.25)}
 
 .tb-btn{
