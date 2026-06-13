@@ -189,26 +189,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   padding:9px 16px;border-radius:8px;
   color:rgba(255,255,255,.4);font-size:13px;font-weight:500;
   cursor:pointer;
-  transition:color .12s var(--ease),background .12s var(--ease);
+  transition:color .15s var(--ease),background .15s var(--ease),transform .15s var(--ease);
   margin-bottom:1px;user-select:none;letter-spacing:-.1px;
   position:relative;overflow:hidden;
 }
 .nav-item::before{
-  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:0;height:16px;border-radius:0 3px 3px 0;
-  background:#818cf8;transition:width .12s;
+  content:'';position:absolute;left:0;top:50%;
+  width:3px;height:16px;border-radius:0 3px 3px 0;
+  background:#818cf8;
+  transform:translateY(-50%) scaleY(0);transform-origin:center;
+  transition:transform .22s var(--ease);
 }
 .nav-item:hover{
   background:rgba(255,255,255,.05);
   color:rgba(255,255,255,.7);
+  transform:translateX(3px);
 }
 .nav-item.active{
   background:linear-gradient(90deg,rgba(99,102,241,.22),rgba(99,102,241,.06));
   color:#a5b4fc;font-weight:600;
 }
-.nav-item.active::before{width:3px}
-.nav-item svg{flex-shrink:0;opacity:.85;width:15px;height:15px}
+.nav-item.active::before{transform:translateY(-50%) scaleY(1)}
+.nav-item svg{flex-shrink:0;opacity:.85;width:15px;height:15px;transition:transform .2s var(--ease)}
 .nav-item.active svg{opacity:1}
+.nav-item:hover svg{transform:scale(1.12)}
 .nav-badge{
   margin-left:auto;background:var(--red);color:#fff;
   font-size:9px;font-weight:700;
@@ -300,8 +304,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .content{
   flex:1;padding:26px 28px;
   width:100%;
-  animation:fadeIn .22s var(--ease) both;
+  animation:fadeUpPage .32s var(--ease) both;
 }
+@keyframes fadeUpPage{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
 /* ────────────────────────────────────
    DASHBOARD ELEMENTS
