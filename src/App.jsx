@@ -713,6 +713,11 @@ tr:hover td{background:#f8fafd}
   border-top:3px solid #818cf8;
 }
 @keyframes modalPop{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-body{display:flex;gap:20px;align-items:flex-start}
+.modal-main{flex:1;min-width:0}
+.inv-side{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;padding:20px 20px 20px 0;border-left:1px solid var(--border);margin-left:0}
+.inv-side-progress{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.inv-side-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s var(--ease)}
 .modal-header{
   padding:16px 22px;
   border-bottom:1px solid var(--border);
@@ -927,6 +932,8 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .inv-meta,.inv-bank-grid{grid-template-columns:1fr}
   .modal{max-height:96vh;border-radius:16px;margin:0;width:100%}
   .modal-overlay{padding:0;align-items:flex-end}
+  .modal-body{flex-direction:column}
+  .inv-side{width:100%;border-left:none;border-top:1px solid var(--border);padding:14px 0 0}
   td{padding:9px 10px;font-size:12px;word-break:break-word}
   th{padding:8px 10px;font-size:10px}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -2076,7 +2083,7 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
   const sc = statusConfig[invoice.status] || statusConfig.pending;
 
   return (<ModalPortal><div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 800 }}>
+      <div className="modal" style={{ maxWidth: 980 }}>
         <div className="modal-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, background: "var(--blue-lt)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--blue)", fontSize: 17 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span></div>
@@ -2106,6 +2113,8 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
               </button>
           </div>
         </div>
+        <div className="modal-body">
+        <div className="modal-main">
         {/* ── PAYMENTS TAB ── */}
         {activeTab === "payments" && (
           <div style={{padding:"20px 24px"}}>
@@ -2462,6 +2471,58 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
             </div>
           </div>
         )}
+        </div>
+
+        {/* ── SIDEBAR (persistent across tabs) ── */}
+        <div className="inv-side">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][invoice.customer?.charCodeAt(0) % 5] || "#6366f1", width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>{invoice.customer?.[0]?.toUpperCase()}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{invoice.customer}</div>
+              <div style={{ fontSize: 11, color: "var(--text3)" }}>{invoice.invoice_number}</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="inv-meta-lbl" style={{ marginBottom: 6 }}>Status</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {[["pending","b-amber","ti-clock"],["paid","b-green","ti-circle-check"],["overdue","b-red","ti-alert-circle"],["partial","b-orange","ti-clock-dollar"],["draft","b-gray","ti-file"],["cancelled","b-gray","ti-ban"]].map(([s, cls, icon]) => (
+                <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} title={s.charAt(0).toUpperCase() + s.slice(1)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: invoice.status === s ? "var(--blue)" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text3)", transition: "all .12s" }}>
+                  <i className={"ti " + icon} style={{ fontSize: 13 }} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div><div className="inv-meta-lbl">Date</div><div className="inv-meta-val" style={{ fontSize: 12 }}>{fmtDate(invoice.invoice_date)}</div></div>
+            <div><div className="inv-meta-lbl">Due</div><div className="inv-meta-val" style={{ fontSize: 12 }}>{fmtDate(invoice.due_date)}</div></div>
+          </div>
+
+          <div className="inv-balance-box" style={{ padding: "9px 12px" }}>
+            <span className="inv-balance-lbl" style={{ fontSize: 10 }}>Balance Due</span>
+            <span className="inv-balance-val" style={{ fontSize: 14 }}>{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span>
+          </div>
+
+          {invoice.amount_paid > 0 && invoice.amount > 0 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text3)", marginBottom: 6 }}>
+                <span>Collected</span>
+                <span>{Math.min(100, Math.round((invoice.amount_paid / invoice.amount) * 100))}%</span>
+              </div>
+              <div className="inv-side-progress">
+                <div className="inv-side-progress-fill" style={{ width: Math.min(100, Math.round((invoice.amount_paid / invoice.amount) * 100)) + "%" }} />
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn bo bsm" onClick={handlePrint} style={{ flex: 1, justifyContent: "center" }} title="Print"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+            <button className="btn bo bsm" onClick={handleEmail} disabled={emailStatus==="sending"} style={{ flex: 1, justifyContent: "center" }} title="Email"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+            {savedPhone && <button className="btn bo bsm" onClick={() => sendWhatsApp(savedPhone)} style={{ flex: 1, justifyContent: "center", color: "#16a34a" }} title="WhatsApp"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>}
+          </div>
+        </div>
+        </div>
 
         <div className="modal-actions">
           <div style={{ display: "flex", gap: 8, flex: 1, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
