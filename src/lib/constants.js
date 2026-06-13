@@ -3,8 +3,9 @@ export const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jsp
 
 export const COMPANY = {
   name: "Arkham Retail Ltd",
-  address: "2 Fieldhead Street, Fieldhead Business Centre",
-  city: "Bradford, West Yorkshire", postcode: "BD7 1LW",
+  address: "2 Fieldhead Street",
+  address2: "Fieldhead Business Centre",
+  city: "Bradford", county: "West Yorkshire", postcode: "BD7 1LW",
   phone: "07801 567209 / 07851 983151",
   email: "ARKHAMRETAIL@GMAIL.COM",
   vatNumber: "GB462229106",
