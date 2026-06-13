@@ -9408,7 +9408,18 @@ function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, 
                       </div>
                     );
                   })}
-                  {filteredCustomers.length === 0 && <div style={{textAlign:"center",padding:"20px",color:"var(--text3)",fontSize:13}}>No customers with outstanding invoices</div>}
+                  {filteredCustomers.length === 0 && (
+                    <div className="empty-state" style={{padding:"32px 16px"}}>
+                      <div className="empty-state-icon">
+                        <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                          <circle cx="32" cy="24" r="11" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
+                          <path d="M14 52c0-9 8-16 18-16s18 7 18 16" stroke="#a5b4fc" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                          <path d="M24 24l16 0M32 16l0 16" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+                        </svg>
+                      </div>
+                      <div className="empty-state-title" style={{fontSize:13}}>No customers with outstanding invoices</div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : !preview ? (
