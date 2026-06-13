@@ -747,9 +747,9 @@ tr:hover td{background:#f8fafd}
 .inv-meta-lbl{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
 .inv-meta-val{font-size:13px;font-weight:600;color:#0f172a}
 .inv-table{width:100%;border-collapse:collapse;margin-bottom:22px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
-.inv-table th{background:#1e1b4b;color:#fff;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:left}
+.inv-table th{background:#1e1b4b;color:#fff;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:left}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
-.inv-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
+.inv-table td{padding:7px 14px;font-size:13px;border-bottom:1px solid #f0f3f8}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
 .inv-table tbody tr{transition:background .12s,transform .18s var(--ease),box-shadow .18s var(--ease);cursor:pointer}
