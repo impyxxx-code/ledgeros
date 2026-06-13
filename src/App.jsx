@@ -934,7 +934,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .modal-overlay{padding:0;align-items:flex-end}
   .modal-body{flex-direction:column}
   .inv-side{width:100%;border-left:none;border-top:1px solid var(--border);padding:14px 0 0}
-  .inv-side-actions{display:none}
+  .inv-side-actions{display:none!important}
   td{padding:9px 10px;font-size:12px;word-break:break-word}
   th{padding:8px 10px;font-size:10px}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
