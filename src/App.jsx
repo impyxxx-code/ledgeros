@@ -307,11 +307,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   background:rgba(255,255,255,.07);
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;color:rgba(255,255,255,.5);
-  transition:all .12s;position:relative;
+  transition:all .25s cubic-bezier(.34,1.56,.64,1);position:relative;
   flex-shrink:0;
 }
-.tb-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.85)}
-.tb-btn i{font-size:15px}
+.tb-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(129,140,248,.4);color:#fff;transform:translateY(-2px) scale(1.08);box-shadow:0 4px 12px rgba(129,140,248,.3)}
+.tb-btn:active{transform:scale(.92)}
+.tb-btn i{font-size:15px;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.tb-btn:hover i{transform:scale(1.15)}
 
 /* ── Content ── */
 .content{
