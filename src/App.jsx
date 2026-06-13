@@ -564,7 +564,10 @@ tr:hover td{background:#f8fafd}
 /* 6 · STATUS PILLS — Sliding indicator handled inline via JS state */
 /* The pill group uses .pill-group; active pill transitions handled by background/color */
 .pill-group{position:relative;display:flex;gap:4px}
-.pill-group button{transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
+.pill-group button{transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease),transform .3s cubic-bezier(.34,1.56,.64,1)}
+.pill-group button:active{transform:scale(.92)}
+.pill-group button[class*="active"],.pill-group button.b-blue,.pill-group button[aria-pressed="true"]{animation:pillPop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pillPop{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
 
 /* 7 · QTY COUNTER — Count Flash on the display span */
 .qty-flash{animation:qty-flash .25s ease}
