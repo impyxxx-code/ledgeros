@@ -6972,6 +6972,35 @@ function AdminReports({ invoices, products, contacts, accounts, allProfiles, set
             </div>
           ))}
         </div>
+        <div className="card" style={{marginBottom:20}}>
+          <div className="ch"><div><div className="ct">Invoice Status Breakdown</div><div className="cs">{periodLabels[period]} · {filteredInv.length} invoices</div></div></div>
+          <div style={{display:"flex",alignItems:"center",gap:24,padding:"4px 24px 20px",flexWrap:"wrap"}}>
+            <div style={{position:"relative",width:180,height:180,flexShrink:0}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={[{name:"Collected",value:totalPaid,color:"#16a34a"},{name:"Pending",value:totalPending,color:"#d97706"},{name:"Overdue",value:totalOverdue,color:"#dc2626"}].filter(d=>d.value>0)} dataKey="value" nameKey="name" innerRadius={58} outerRadius={80} paddingAngle={2} animationDuration={900}>
+                    {[{name:"Collected",value:totalPaid,color:"#16a34a"},{name:"Pending",value:totalPending,color:"#d97706"},{name:"Overdue",value:totalOverdue,color:"#dc2626"}].filter(d=>d.value>0).map((d,i)=><Cell key={i} fill={d.color}/>)}
+                  </Pie>
+                  <Tooltip formatter={(v)=>fmt(v)}/>
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
+                <div style={{fontSize:16,fontWeight:800,color:"var(--text)",fontFamily:"var(--mono)"}}>{fmt(totalSales)}</div>
+                <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px"}}>Total Invoiced</div>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {[{name:"Collected",value:totalPaid,color:"#16a34a"},{name:"Pending",value:totalPending,color:"#d97706"},{name:"Overdue",value:totalOverdue,color:"#dc2626"}].map((d,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:d.color}}/>
+                  <div style={{fontSize:12,color:"var(--text2)",minWidth:70}}>{d.name}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"var(--text)",fontFamily:"var(--mono)"}}>{fmt(d.value)}</div>
+                  <div style={{fontSize:11,color:"var(--text3)"}}>{totalSales>0?Math.round(d.value/totalSales*100):0}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="card">
           <div className="ch" style={{alignItems:"flex-start"}}>
             <div><div className="ct">Monthly Revenue</div><div className="cs">Last 12 months — invoiced vs collected</div></div>
