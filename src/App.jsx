@@ -512,7 +512,8 @@ tr:hover td{background:#f8fafd}
   white-space:nowrap;
   position:relative;overflow:hidden;
 }
-.btn:active{transform:scale(.98)}
+.btn:active{transform:scale(.94)}
+.btn{transition:all .2s cubic-bezier(.34,1.56,.64,1)}
 .btn i{font-size:14px}
 
 /* 1 · PRIMARY — Shine Glint */
