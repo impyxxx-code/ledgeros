@@ -9856,9 +9856,8 @@ function BankingPage({ token, userId, profile }) {
       </div>
 
       {loading ? (
-        <div style={{textAlign:"center",padding:"60px 0",color:"var(--text3)"}}>
-          <div className="spin" style={{width:24,height:24,borderWidth:2,margin:"0 auto 12px"}} />
-          Loading payments...
+        <div className="card" style={{overflow:"hidden"}}>
+          <SkeletonTable rows={7} cols={8} />
         </div>
       ) : payments.length === 0 ? (
         <div style={{textAlign:"center",padding:"60px 0",color:"var(--text3)"}}>
