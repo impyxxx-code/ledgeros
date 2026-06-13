@@ -3688,7 +3688,8 @@ function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, pro
     return (
       <>
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
-        onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }} />}
+        onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
+        onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)} />}
       <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
         <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
