@@ -566,10 +566,10 @@ tr:hover td{background:#f8fafd}
 
 /* 5 · ICON ACTION BUTTONS — Scale Pop (apply .bicon to 28×28 action buttons) */
 .bicon{
-  transition:transform .12s var(--ease),box-shadow .12s var(--ease),background .12s var(--ease);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .25s var(--ease),background .25s var(--ease);
 }
-.bicon:hover{transform:scale(1.18);box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.bicon:active{transform:scale(.94)}
+.bicon:hover{transform:scale(1.25) rotate(-6deg);box-shadow:0 4px 14px rgba(0,0,0,.16)}
+.bicon:active{transform:scale(.9)}
 
 /* 6 · STATUS PILLS — Sliding indicator handled inline via JS state */
 /* The pill group uses .pill-group; active pill transitions handled by background/color */
