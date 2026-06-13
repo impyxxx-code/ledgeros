@@ -5761,6 +5761,22 @@ function Inventory({ products, setProducts, token, userId, profile }) {
           .sort((a,b) => (a.stock_qty - (a.reorder_level||DEFAULT_REORDER)) - (b.stock_qty - (b.reorder_level||DEFAULT_REORDER)))
           .slice(0, 6)
           .map(p => ({ name: p.name.length > 18 ? p.name.slice(0,17)+"…" : p.name, stock: p.stock_qty||0, reorder: p.reorder_level||DEFAULT_REORDER, full: p.name }));
+        const StockTooltip = ({ active, payload, label }) => {
+          if (!active || !payload || !payload.length) return null;
+          const full = payload[0]?.payload?.full || label;
+          return (
+            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+              <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{full}</div>
+              {payload.map(p=>(
+                <div key={p.dataKey} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:p.dataKey==="stock"?"#dc2626":"#94a3b8"}}/>
+                  <span style={{color:"rgba(255,255,255,.7)"}}>{p.dataKey==="stock"?"Current stock":"Reorder level"}:</span>
+                  <span style={{color:"#fff",fontWeight:700}}>{p.value} units</span>
+                </div>
+              ))}
+            </div>
+          );
+        };
         return (
           <div className="card" style={{ marginBottom: 20 }}>
             <div className="ch">
@@ -5780,11 +5796,17 @@ function Inventory({ products, setProducts, token, userId, profile }) {
             <div style={{ padding: "4px 24px 20px" }}>
               <ResponsiveContainer width="100%" height={Math.max(chartData.length*40+60, 160)}>
                 <ComposedChart data={chartData} layout="vertical" margin={{top:8,right:30,left:10,bottom:0}}>
+                  <defs>
+                    <linearGradient id="gradStock" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#f87171"/>
+                      <stop offset="100%" stopColor="#dc2626"/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false}/>
                   <XAxis type="number" tick={{fontSize:10,fill:"var(--text3)"}} axisLine={false} tickLine={false}/>
                   <YAxis type="category" dataKey="name" tick={{fontSize:11,fill:"var(--text3)"}} axisLine={false} tickLine={false} width={130}/>
-                  <Tooltip formatter={(v,n)=>[`${v} units`, n==="stock"?"Current stock":"Reorder level"]} labelFormatter={(_,p)=>p?.[0]?.payload?.full} contentStyle={{ fontSize: 12, borderRadius: 8 }}/>
-                  <Bar dataKey="stock" fill="#dc2626" radius={[0,4,4,0]} barSize={14}/>
+                  <Tooltip content={StockTooltip} cursor={{fill:"rgba(220,38,38,.06)"}}/>
+                  <Bar dataKey="stock" fill="url(#gradStock)" radius={[0,4,4,0]} barSize={14} animationDuration={800} animationEasing="ease-out"/>
                   <Line dataKey="reorder" stroke="#94a3b8" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3, fill: "#94a3b8" }}/>
                 </ComposedChart>
               </ResponsiveContainer>
