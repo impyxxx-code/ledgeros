@@ -2228,30 +2228,11 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
         {activeTab === "invoice" && (
           <div className="inv-doc">
             <div className="inv-header">
-              <div>
-<div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 44, height: 44, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
-                  <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
-                    <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
-                    <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
-                    <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
-                    <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#fff" fillOpacity=".3"/>
-                    <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#lgGradInv)"/>
-                    <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
-                    <defs><linearGradient id="lgGradInv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#1e1b4b", letterSpacing: "-.3px" }}>{COMPANY.name}</div>
-                  <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.6, marginTop: 2 }}>{COMPANY.address}, {COMPANY.address2}.<br />{COMPANY.city}, {COMPANY.county}.<br />{COMPANY.postcode}</div>
-                  <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 3 }}>VAT: {COMPANY.vatNumber}<br />Tel: {COMPANY.phone}<br />{COMPANY.email}</div>
-                </div>
-              </div>
-
+              <div style={{ width: 160, height: 90, display: "flex", alignItems: "center", justifyContent: "flex-start", flexShrink: 0 }}>
+                <img src={LOGO} alt="Arkham Retail" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "left" }} />
               </div>
               <div className="inv-title-block">
                 <div className="inv-title">INVOICE</div>
-                <div className="inv-num">{invoice.invoice_number}</div>
                 <div style={{ marginTop: 8 }}><span className={"badge " + sc.cls}>{sc.label}</span></div>
               </div>
             </div>
@@ -2320,6 +2301,10 @@ function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, onDupli
                 <div><div className="inv-bank-lbl">Account</div><div className="inv-bank-val mono">{COMPANY.accountNumber}</div></div>
               </div>
               <div style={{ marginTop: 16, fontSize: 11, color: "#94a3b8", lineHeight: 1.6 }}>All goods remain our property until payment is received in full. VAT Reg No: {COMPANY.vatNumber}</div>
+            </div>
+            <div style={{ border: ".5px solid #e2e8f0", borderRadius: 8, padding: "10px 14px", fontSize: 9, color: "#64748b", lineHeight: 1.8, marginTop: 16 }}>
+              <div><b style={{ color: "#475569" }}>{COMPANY.name}</b> &middot; {COMPANY.address}, {COMPANY.address2}, {COMPANY.city}, {COMPANY.county}, {COMPANY.postcode}</div>
+              <div>VAT: {COMPANY.vatNumber} &middot; Tel: {COMPANY.phone} &middot; {COMPANY.email}</div>
             </div>
           </div>
         )}
