@@ -1723,6 +1723,11 @@ function Auth({ onAuth, sessionExpired }) {
             <div style={{ alignSelf: "flex-start", background: "#fff", borderRadius: 16, padding: "14px 22px", marginBottom: 28, boxShadow: "0 12px 40px rgba(0,0,0,.35)", animation: "logoFadeIn .7s ease-out both, logoFloat 6s ease-in-out 1s infinite" }}>
               <img src={LOGO} alt="Arkham Retail" style={{ width: 200, display: "block" }} />
             </div>
+
+            <div style={{ display: "flex", alignItems: "baseline", gap: 1, marginBottom: 28 }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.6px", lineHeight: 1 }}>Ledger</span>
+              <span style={{ fontSize: 20, fontWeight: 300, color: "rgba(255,255,255,.38)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
+            </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(167,139,250,.85)", marginBottom: 20 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />
               Business Finance Platform
