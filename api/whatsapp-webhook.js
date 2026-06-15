@@ -178,29 +178,54 @@ export default async function handler(req, res) {
 /**
  * Parse a WhatsApp order into matched line items.
  *
- * Simple format — one product per line:
- *   "Adam"            ← first line, no qty/product match → customer name hint
- *   "Hayati 6k"        ← qty 1 of this product
- *   "Watermelon ice"   ← qty 1 of this product
- *   "Redbull 2"        ← qty 2 of "Redbull" (trailing number = quantity)
- *   "2x Redbull"       ← qty 2 (leading "Nx")
- *   "Redbull x2"       ← qty 2 (trailing "xN")
+ * Real order format — header product line, followed by flavour/variant
+ * lines that each count as +1 (or ":N") toward that header's quantity:
  *
- * Each line is matched independently against the product catalogue/aliases.
+ *   DISHA CONVENIENCE - LEEDS   ← title/customer line → name hint
+ *   INVOICE                     ← ignored label
  *
- * Returns: [{ product, qty }] for matched lines, or
- *          [{ unmatchedName, qty }] when nothing matches.
+ *   Hayati 6k pods               ← header — matches a product
+ *   Strawberry watermelon:1      ← variant → qty +1 (":1" = explicit qty)
+ *   Cola lime:1                  ← variant → qty +1
+ *   ...
+ *
+ *   Hayati 6k device             ← new header, resets the running qty
+ *   Juicy peach:1
+ *   Strawberry kiwi:1
+ *
+ * A standalone line with no active header and an explicit quantity
+ * (e.g. "Redbull 2" or "2x Redbull") is still supported as its own item.
+ *
+ * Returns: { items: [{ product, qty } | { unmatchedName, qty }], nameHints }
  */
+const ORDER_LABEL_LINES = new Set(['invoice', 'order', 'receipt', 'order:', 'invoice:']);
+
 function parseOrder(text, products, aliases) {
   // Strip WhatsApp markdown (e.g. *Hayati 6k Device* → Hayati 6k Device)
   const rawLines = text.split(/\n/).map(l => l.trim().replace(/^[*_~]+|[*_~]+$/g, '').trim()).filter(Boolean);
   const items = [];
   const nameHints = [];
+  let current = null;
 
-  // Extract a quantity from a line, e.g. "Redbull 2" / "2x Redbull" / "Redbull x2" → {qty, name}
+  // Strict header match: alias, exact product name, or short name (after last colon)
+  const findHeader = (line) => {
+    const q = line.toLowerCase().trim();
+    const aliasHit = aliases.find(a => (a.alias || '').toLowerCase().trim() === q);
+    if (aliasHit) {
+      const p = products.find(p => p.id === aliasHit.product_id);
+      if (p) return p;
+    }
+    return products.find(p => p.name.toLowerCase().trim() === q)
+      || products.find(p => p.name.toLowerCase().split(':').pop().trim() === q)
+      || null;
+  };
+
+  // Extract a quantity from a line, e.g. "Strawberry watermelon:1" / "Redbull 2" / "2x Redbull" → {qty, name}
   // Returns hadQty:true only if an explicit quantity pattern was found.
   const extractQty = (line) => {
-    let m = line.match(/^(\d+)\s*[x×]\s*(.+)$/i);            // "2x Redbull"
+    let m = line.match(/^(.+?):\s*(\d+)\s*$/);               // "Strawberry watermelon:1"
+    if (m) return { qty: parseInt(m[2], 10) || 1, name: m[1].trim(), hadQty: true };
+    m = line.match(/^(\d+)\s*[x×]\s*(.+)$/i);                // "2x Redbull"
     if (m) return { qty: parseInt(m[1], 10) || 1, name: m[2].trim(), hadQty: true };
     m = line.match(/^(.+?)\s*[x×]\s*(\d+)$/i);               // "Redbull x2"
     if (m) return { qty: parseInt(m[2], 10) || 1, name: m[1].trim(), hadQty: true };
@@ -212,16 +237,32 @@ function parseOrder(text, products, aliases) {
   };
 
   rawLines.forEach((line, idx) => {
-    const { qty, name, hadQty } = extractQty(line);
-    const product = matchProduct(name, products, aliases);
+    if (ORDER_LABEL_LINES.has(line.toLowerCase().trim())) return;
 
+    const headerProduct = findHeader(line);
+    if (headerProduct) {
+      current = { product: headerProduct, qty: 0 };
+      items.push(current);
+      return;
+    }
+
+    const { qty, name, hadQty } = extractQty(line);
+
+    if (current) {
+      // Variant line under the current header — add to its running quantity
+      current.qty += qty;
+      return;
+    }
+
+    // No active header context
+    const product = matchProduct(name, products, aliases);
     if (product) {
       items.push({ product, qty });
-    } else if (idx === 0 && !hadQty && items.length === 0) {
-      // First line with no quantity and no product match — treat as customer name
-      nameHints.push(line);
-    } else {
+    } else if (hadQty) {
       items.push({ unmatchedName: name, qty });
+    } else if (items.length === 0) {
+      // No header yet and no quantity/product match — title or customer-name line
+      nameHints.push(line);
     }
   });
 
