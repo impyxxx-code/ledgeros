@@ -178,46 +178,47 @@ export default async function handler(req, res) {
 /**
  * Parse a WhatsApp order into matched line items.
  *
- * Real order format — header product line, followed by flavour/variant
- * lines that each count as +1 (or ":N") toward that header's quantity:
+ * Real order format — WhatsApp *bold* lines mark category/product headers;
+ * each header starts a new group, and the plain lines underneath it
+ * (each counting as +1, or ":N" for an explicit quantity) sum into that
+ * group's running quantity until the next bold line:
  *
- *   DISHA CONVENIENCE - LEEDS   ← title/customer line → name hint
- *   INVOICE                     ← ignored label
+ *   *DISHA CONVENIENCE - LEEDS*   ← bold, no variants below → name hint
+ *   *INVOICE*                     ← bold, no variants below → ignored hint
  *
- *   Hayati 6k pods               ← header — matches a product
- *   Strawberry watermelon:1      ← variant → qty +1 (":1" = explicit qty)
- *   Cola lime:1                  ← variant → qty +1
- *   ...
+ *   *Hayati 6k pods*               ← bold header — matched to a product
+ *   Strawberry watermelon:1        ← variant → qty +1
+ *   Cola lime:1                    ← variant → qty +1
+ *   ...                            ← group closes at next bold line, qty=5
  *
- *   Hayati 6k device             ← new header, resets the running qty
+ *   *Hayati 6k device*              ← new header (fuzzy-matched too)
  *   Juicy peach:1
  *   Strawberry kiwi:1
  *
- * A standalone line with no active header and an explicit quantity
- * (e.g. "Redbull 2" or "2x Redbull") is still supported as its own item.
+ *   *Hayato 25k pods*                ← bold header that matches no product
+ *   Mr blue:1                        → kept as an UNMATCHED group, qty summed
+ *   Fresh mint:1
+ *
+ * A standalone (non-bold) line with no active group and an explicit
+ * quantity (e.g. "Redbull 2" or "2x Redbull") is still its own item.
  *
  * Returns: { items: [{ product, qty } | { unmatchedName, qty }], nameHints }
  */
-const ORDER_LABEL_LINES = new Set(['invoice', 'order', 'receipt', 'order:', 'invoice:']);
-
 function parseOrder(text, products, aliases) {
-  // Strip WhatsApp markdown (e.g. *Hayati 6k Device* → Hayati 6k Device)
-  const rawLines = text.split(/\n/).map(l => l.trim().replace(/^[*_~]+|[*_~]+$/g, '').trim()).filter(Boolean);
+  const rawLines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
   const nameHints = [];
-  let current = null;
+  let current = null; // { product?, unmatchedName?, qty }
 
-  // Strict header match: alias, exact product name, or short name (after last colon)
-  const findHeader = (line) => {
-    const q = line.toLowerCase().trim();
-    const aliasHit = aliases.find(a => (a.alias || '').toLowerCase().trim() === q);
-    if (aliasHit) {
-      const p = products.find(p => p.id === aliasHit.product_id);
-      if (p) return p;
+  const closeCurrent = () => {
+    if (!current) return;
+    if (current.qty > 0) {
+      items.push(current);
+    } else {
+      const label = current.product ? current.product.name : current.unmatchedName;
+      if (label) nameHints.push(label);
     }
-    return products.find(p => p.name.toLowerCase().trim() === q)
-      || products.find(p => p.name.toLowerCase().split(':').pop().trim() === q)
-      || null;
+    current = null;
   };
 
   // Extract a quantity from a line, e.g. "Strawberry watermelon:1" / "Redbull 2" / "2x Redbull" → {qty, name}
@@ -236,36 +237,37 @@ function parseOrder(text, products, aliases) {
     return { qty: 1, name: line, hadQty: false };
   };
 
-  rawLines.forEach((line, idx) => {
-    if (ORDER_LABEL_LINES.has(line.toLowerCase().trim())) return;
+  for (const line of rawLines) {
+    const isBold = /^[*_~]+.+[*_~]+$/.test(line);
 
-    const headerProduct = findHeader(line);
-    if (headerProduct) {
-      current = { product: headerProduct, qty: 0 };
-      items.push(current);
-      return;
+    if (isBold) {
+      closeCurrent();
+      const clean = line.replace(/^[*_~]+|[*_~]+$/g, '').trim();
+      if (!clean) continue;
+      const product = matchProduct(clean, products, aliases);
+      current = product ? { product, qty: 0 } : { unmatchedName: clean, qty: 0 };
+      continue;
     }
 
     const { qty, name, hadQty } = extractQty(line);
 
     if (current) {
-      // Variant line under the current header — add to its running quantity
       current.qty += qty;
-      return;
+      continue;
     }
 
-    // No active header context
+    // No active group — standalone line
     const product = matchProduct(name, products, aliases);
     if (product) {
       items.push({ product, qty });
     } else if (hadQty) {
       items.push({ unmatchedName: name, qty });
-    } else if (items.length === 0) {
-      // No header yet and no quantity/product match — title or customer-name line
+    } else if (items.length === 0 && nameHints.length === 0) {
       nameHints.push(line);
     }
-  });
+  }
 
+  closeCurrent();
   return { items, nameHints };
 }
 
