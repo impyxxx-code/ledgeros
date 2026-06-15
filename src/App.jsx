@@ -119,6 +119,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes headlineUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes logoFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+@keyframes logoFadeIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 /* ── Layout ── */
 .app{display:flex;min-height:100vh}
@@ -1739,6 +1741,9 @@ function Auth({ onAuth, sessionExpired }) {
 
           {/* Hero */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 0 32px", position: "relative", zIndex: 1 }}>
+            <div style={{ alignSelf: "flex-start", background: "#fff", borderRadius: 16, padding: "14px 22px", marginBottom: 28, boxShadow: "0 12px 40px rgba(0,0,0,.35)", animation: "logoFadeIn .7s ease-out both, logoFloat 6s ease-in-out 1s infinite" }}>
+              <img src={LOGO} alt="Arkham Retail" style={{ width: 200, display: "block" }} />
+            </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(167,139,250,.85)", marginBottom: 20 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />
               Business Finance Platform
