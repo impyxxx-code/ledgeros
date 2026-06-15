@@ -42,11 +42,6 @@ import { SearchDropdown } from "./components/SearchDropdown.jsx";
 import { CommandPalette } from "./components/CommandPalette.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "./lib/constants.js";
 import LOGO_NEW from "./assets/logo-ar-new.png";
-import { OnboardingChecklist } from "./components/OnboardingChecklist.jsx";
-import { AIAssistant } from "./components/AIAssistant.jsx";
-import { ChangePasswordForm } from "./components/settings/ChangePasswordForm.jsx";
-import { UserApproval } from "./components/settings/UserApproval.jsx";
-import { ProductAliases } from "./components/settings/ProductAliases.jsx";
 
 // ── All shared utilities, constants, sb, email builders now imported from lib/ ──
 // CSS stays here until App.jsx is further split (it's only used in the style tag inject below)
@@ -1366,6 +1361,66 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 `;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
+// ── Onboarding Checklist ──────────────────────────────────────────────────────
+
+// ┌────────────────────────────────────────────────────────────┐
+// │ OnboardingChecklist                                        │
+// │ First-run checklist for new users                          │
+// └────────────────────────────────────────────────────────────┘
+function OnboardingChecklist({ onClose, invoices, contacts, products, setPage }) {
+  const steps = [
+    { key: "profile",  icon: "ti-user",          label: "Set up your profile",          done: true,                                     page: null },
+    { key: "customer", icon: "ti-users",          label: "Add your first customer",      done: contacts.length > 0,                      page: "contacts" },
+    { key: "product",  icon: "ti-package",        label: "Add products to inventory",    done: products.length > 0,                      page: "inventory" },
+    { key: "invoice",  icon: "ti-file-invoice",   label: "Create your first invoice",    done: invoices.length > 0,                      page: "invoices" },
+    { key: "delivery", icon: "ti-truck-delivery", label: "Send a delivery note",         done: false,                                    page: "delivery-notes" },
+    { key: "report",   icon: "ti-chart-bar",      label: "Explore Reports",        done: false,                                    page: "admin-reports" },
+  ];
+  const completed = steps.filter(s => s.done).length;
+  const pct = Math.round((completed / steps.length) * 100);
+
+  return (
+    <div className="onboard-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="onboard-card">
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.5px", marginBottom: 4 }}>Get started with LedgerOS 🚀</div>
+            <div style={{ fontSize: 13, color: "var(--text2)" }}>{completed} of {steps.length} steps completed</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: 20 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", marginBottom: 24 }}>
+          <div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg,var(--blue),#7c3aed)", borderRadius: 3, transition: "width .5s var(--ease)" }} />
+        </div>
+
+        {/* Steps */}
+        <div className="onboard-grid">
+          {steps.map(step => (
+            <div key={step.key} className={"onboard-item" + (step.done ? " done" : "")} onClick={() => { if (step.page && !step.done) { setPage(step.page); onClose(); } }}>
+              <div className="onboard-icon-lg" style={{ background: step.done ? "var(--green-lt)" : "var(--bg)", color: step.done ? "var(--green)" : "var(--text3)" }}>
+                <i className={"ti " + (step.done ? "ti-check" : step.icon)} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: step.done ? "var(--text3)" : "var(--text)", textDecoration: step.done ? "line-through" : "none", marginBottom: 2 }}>{step.label}</div>
+                <div style={{ fontSize: 11, color: "var(--text3)" }}>{step.done ? "Completed" : "Tap to get started"}</div>
+              </div>
+              {!step.done && step.page && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button className="btn bo" onClick={onClose}>Maybe later</button>
+          <button className="btn bp" onClick={onClose}>Let\'s go! 🎉</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ┌────────────────────────────────────────────────────────────┐
 // │ Auth                                                       │
@@ -1721,10 +1776,22 @@ function Auth({ onAuth, sessionExpired }) {
           {/* Logo row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <img src={LOGO_NEW} alt="Arkham Retail" style={{ height: 40, display: "block" }} />
-              <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.5px", lineHeight: 1 }}>Ledger</span>
-                <span style={{ fontSize: 17, fontWeight: 300, color: "rgba(255,255,255,.35)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+                  <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
+                  <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
+                  <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
+                  <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#mgGrad)"/>
+                  <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
+                  <defs><linearGradient id="mgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
+                </svg>
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.5px", lineHeight: 1 }}>Ledger</span>
+                  <span style={{ fontSize: 17, fontWeight: 300, color: "rgba(255,255,255,.35)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
+                </div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,.2)", letterSpacing: ".3px", marginTop: 2 }}>Arkham Retail Ltd</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "4px 10px" }}>
@@ -7916,6 +7983,129 @@ function DeliveryNotes({ contacts, products, token, userId }) {
 // │ AIAssistant                                                │
 // │ AI chat assistant — hover to open, local smart responses   │
 // └────────────────────────────────────────────────────────────┘
+function AIAssistant({ invoices, contacts, products, accounts, onClose }) {
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Hi! I am your LedgerOS AI assistant. Ask me anything about your invoices, customers, stock or finances." }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setLoading(true);
+
+    const q = userMsg.toLowerCase();
+
+    let reply = "";
+    if (q.includes("owe") || q.includes("most money") || q.includes("outstanding") || q.includes("unpaid")) {
+      const byCustomer = invoices.filter(i => i.status !== "paid").reduce((acc, i) => { acc[i.customer] = (acc[i.customer]||0) + i.amount; return acc; }, {});
+      const sorted = Object.entries(byCustomer).sort((a,b) => b[1]-a[1]);
+      reply = sorted.length > 0
+        ? "Top customers with outstanding balances:\n\n" + sorted.slice(0,5).map(([name,amt],i) => (i+1) + ". " + name + " - " + fmt(amt)).join("\n") + "\n\nTotal outstanding: " + fmt(sorted.reduce((s,[,a])=>s+a,0))
+        : "No outstanding invoices at the moment.";
+    } else if (q.includes("overdue")) {
+      const ov = invoices.filter(i => i.status === "overdue");
+      reply = ov.length > 0
+        ? "You have " + ov.length + " overdue invoice" + (ov.length>1?"s":"") + ":\n\n" + ov.map(i => "- " + i.customer + " - " + fmt(i.amount) + " (" + i.invoice_number + ")").join("\n")
+        : "No overdue invoices.";
+    } else if (q.includes("low stock") || q.includes("running low") || q.includes("stock")) {
+      const low = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
+      reply = low.length > 0
+        ? low.length + " products low on stock:\n\n" + low.map(p => "- " + p.name + " - " + p.stock_qty + " " + (p.unit||"units") + " remaining").join("\n")
+        : "All products are well stocked.";
+    } else if (q.includes("revenue") || q.includes("total") || q.includes("sales") || q.includes("made")) {
+      const paid = invoices.filter(i => i.status==="paid").reduce((s,i)=>s+i.amount,0);
+      const pending = invoices.filter(i=>i.status==="pending").reduce((s,i)=>s+i.amount,0);
+      reply = "Revenue Summary:\n\nCollected: " + fmt(paid) + "\nPending: " + fmt(pending) + "\nTotal invoiced: " + fmt(paid+pending) + "\nTotal invoices: " + invoices.length;
+    } else if (q.includes("customer") || q.includes("top") || q.includes("best")) {
+      const top = Object.entries(invoices.reduce((acc,i)=>{ acc[i.customer]=(acc[i.customer]||0)+i.amount; return acc; },{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      reply = top.length > 0
+        ? "Top customers by spend:\n\n" + top.map(([name,amt],i)=>(i+1)+". "+name+" - "+fmt(amt)).join("\n")
+        : "No customer data yet.";
+    } else if (q.includes("paid") || q.includes("collected")) {
+      const paidInv = invoices.filter(i=>i.status==="paid");
+      reply = "Paid invoices: " + paidInv.length + "\nTotal collected: " + fmt(paidInv.reduce((s,i)=>s+i.amount,0));
+    } else if (q.includes("product") || q.includes("inventory")) {
+      reply = "You have " + products.length + " products.\n\nTop by price:\n" + products.sort((a,b)=>(b.sale_price||0)-(a.sale_price||0)).slice(0,5).map(p=>"- "+p.name+" - "+fmt(p.sale_price||0)).join("\n");
+    } else {
+      reply = "I can help you with:\n\n- Who owes the most money?\n- Show overdue invoices\n- Which products are low on stock?\n- What is my total revenue?\n- Who are my top customers?";
+    }
+
+    setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    setLoading(false);
+  };
+
+  const suggestions = ["Who owes the most money?", "Which products are low on stock?", "What is my total revenue?", "Show overdue invoices"];
+
+  return (
+    <>
+    <div style={{ width: 360, height: 520, background: "var(--white)", border: "1px solid var(--border)", borderRadius: 20, boxShadow: "var(--sh3)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "scaleIn .2s var(--ease) both", transformOrigin: "bottom right", outline: "none" }}>
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, outline: "none" }}>
+        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
+          <span style={{ color: "#fff", display: "flex", pointerEvents: "none" }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></span>
+        </div>
+        <div style={{ flex: "1" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>AI Assistant</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>Live business data</div>
+        </div>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12, outline: "none" }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 8, alignItems: "flex-end" }}>
+            {msg.role === "assistant" && (
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
+                <span style={{ color: "#fff", display: "flex", pointerEvents: "none" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
+              </div>
+            )}
+            <div style={{ maxWidth: "80%", padding: "10px 13px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? "var(--blue)" : "#f4f6f9", color: msg.role === "user" ? "#fff" : "var(--text)", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ padding: "8px 14px" }}>
+            <span style={{ fontSize: 13, color: "var(--text3)" }}>Thinking...</span>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {messages.length <= 1 && (
+        <div style={{ padding: "0 14px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {suggestions.map(s => (
+            <button key={s} onClick={() => setInput(s)} style={{ padding: "5px 10px", background: "var(--blue-lt)", border: "1px solid var(--blue-mid)", borderRadius: 20, fontSize: 11, color: "var(--blue)", cursor: "pointer", fontFamily: "var(--sans)", fontWeight: 500, whiteSpace: "nowrap" }}>{s}</button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexShrink: 0, outline: "none" }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
+          placeholder="Ask anything about your business..."
+          style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontFamily: "var(--sans)", outline: "none", color: "var(--text)", background: "#f8fafd" }}
+        />
+        <button onClick={send} disabled={!input.trim() || loading} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: "var(--blue)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </>
+  );
+}
+
+
 // ── NAV CONFIG ────────────────────────────────────────────────────────────────
 const NAV_ICONS = {
   "dashboard":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -9039,12 +9229,132 @@ function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token
 // │ UserApproval                                               │
 // │ Admin user approval panel — approve/revoke agents          │
 // └────────────────────────────────────────────────────────────┘
+function UserApproval({ token, profile }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  if (profile?.role !== "admin") return (
+    <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--text3)" }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <div style={{ fontWeight: 600, fontSize: 13 }}>Admin access required</div>
+    </div>
+  );
+  useEffect(() => {
+    sb.get(token, "profiles", "order=created_at.desc").then(d => {
+      if (Array.isArray(d)) setUsers(d);
+      setLoading(false);
+    });
+  }, [token]);
+  const approve = async (id) => {
+    const res = await sb.patch(token, "profiles", id, { approved: true });
+    if (res && !res.error && !res.message?.includes("error")) {
+      setUsers(prev => prev.map(u => u.id===id ? {...u, approved:true} : u));
+      toast.success("User approved successfully");
+    } else {
+      toast.error("Failed to approve user. Check Supabase RLS policies on profiles table.");
+      console.error("Approve error:", res);
+    }
+  };
+  const revoke = async (id) => {
+    const user = users.find(u => u.id === id);
+    const isPending = user && (user.approved === false || user.approved === null);
+    if (isPending) {
+      // Delete profile row entirely so they can't reappear via re-fetch
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, { method: "DELETE", headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
+      if (res.ok || res.status === 204) {
+        setUsers(prev => prev.filter(u => u.id !== id));
+        toast.warn("User rejected");
+      } else {
+        toast.error("Failed to reject user. Check Supabase RLS policies.");
+      }
+    } else {
+      const res = await sb.patch(token, "profiles", id, { approved: false });
+      if (res && !res.error && !res.message?.includes("error")) {
+        setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
+        toast.warn("User access revoked");
+      } else {
+        toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
+        console.error("Revoke error:", res);
+      }
+    }
+  };
+  const pending = users.filter(u => u.approved===false||u.approved===null);
+  const approved = users.filter(u => u.approved===true);
+  return (
+    <div>
+      {loading ? <div className="card" style={{padding:20}}><SkeletonTable rows={5} cols={3} /></div> : (
+        <div>
+          <div className="card" style={{ marginBottom:16,padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>Pending Approval</div>
+            <div className="cs" style={{ marginBottom:16 }}>{pending.length} user{pending.length!==1?"s":""} waiting</div>
+            {pending.length===0 ? <div style={{ padding:"16px 0",color:"var(--text3)",fontSize:13 }}>No pending users</div> : pending.map(u=>(
+              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||u.email||"U")[0].toUpperCase()}</div>
+                  <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.email||u.id}</div></div>
+                </div>
+                <div style={{ display:"flex",gap:8 }}>
+                  <button className="btn bp bsm" onClick={()=>approve(u.id)} style={{ background:"var(--green)",border:"none",color:"#fff",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Approve</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reject</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="card" style={{ padding:20 }}>
+            <div className="ct" style={{ marginBottom:4 }}>Approved Users</div>
+            <div className="cs" style={{ marginBottom:16 }}>{approved.length} active user{approved.length!==1?"s":""}</div>
+            {approved.map(u=>(
+              <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:12,justifyContent:"space-between" }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                    <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                    <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.role||"agent"}</div></div>
+                  </div>
+                  {isMobile() && <span className="badge b-green">Active</span>}
+                </div>
+                <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                  {!isMobile() && <span className="badge b-green">Active</span>}
+                  <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset Password</button>
+                  <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Revoke</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
 
 // ┌────────────────────────────────────────────────────────────┐
 // │ Settings                                                   │
 // │ Settings page — company, appearance, account, users        │
 // └────────────────────────────────────────────────────────────┘
+function ChangePasswordForm({ token }) {
+  const [newPw, setNewPw] = React.useState("");
+  const [confirmPw, setConfirmPw] = React.useState("");
+  const [msg, setMsg] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const update = async () => {
+    if (newPw.length < 6) { setMsg("Minimum 6 characters."); return; }
+    if (newPw !== confirmPw) { setMsg("Passwords do not match."); return; }
+    setLoading(true);
+    const res = await sb.updatePassword(token, newPw);
+    if (res.id || res.email) { setMsg("✓ Password updated."); setNewPw(""); setConfirmPw(""); }
+    else { setMsg("Failed — please try again."); }
+    setLoading(false);
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 300 }}>
+      <input type="password" placeholder="New password" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, outline: "none", background: "var(--white)", color: "var(--text)" }} />
+      <input type="password" placeholder="Confirm new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--border)", borderRadius: "var(--r)", fontSize: 13, outline: "none", background: "var(--white)", color: "var(--text)" }} />
+      {msg && <div style={{ fontSize: 12, color: msg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{msg}</div>}
+      <button className="btn bp bsm" onClick={update} disabled={loading} style={{ alignSelf: "flex-start" }}>{loading ? "Updating..." : "Update Password"}</button>
+    </div>
+  );
+}
+
 
 // ── BULK PAYMENT MODAL ────────────────────────────────────────────────────────
 function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, profile, onClose, onComplete }) {
@@ -9829,6 +10139,120 @@ function BankingPage({ token, userId, profile }) {
         </>
       )}
     </div>
+  );
+}
+
+function ProductAliases({ token, products = [] }) {
+  const [aliases, setAliases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [aliasText, setAliasText] = useState("");
+  const [selProduct, setSelProduct] = useState(null);
+  const [pending, setPending] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
+  const [pendingPicks, setPendingPicks] = useState({});
+
+  const load = async () => {
+    setLoading(true);
+    const data = await sb.get(token, "product_aliases", "select=*,products(name)&order=alias.asc");
+    setAliases(Array.isArray(data) ? data : []);
+    setLoading(false);
+  };
+
+  const loadPending = async () => {
+    setPendingLoading(true);
+    const invs = await sb.get(token, "invoices", "select=lines&notes=ilike.*UNMATCHED*&order=created_at.desc&limit=30");
+    const names = new Set();
+    (Array.isArray(invs) ? invs : []).forEach(inv => {
+      let lines = inv.lines;
+      try { if (typeof lines === "string") lines = JSON.parse(lines); } catch { lines = []; }
+      (Array.isArray(lines) ? lines : []).forEach(l => {
+        if (l.description?.endsWith(" ⚠️ UNMATCHED")) names.add(l.description.replace(" ⚠️ UNMATCHED", "").trim());
+      });
+    });
+    setPending([...names]);
+    setPendingLoading(false);
+  };
+
+  useEffect(() => { load(); loadPending(); }, []);
+
+  const addAlias = async (alias, product) => {
+    if (!alias.trim() || !product) { toast.error("Enter the customer's wording and pick a product"); return; }
+    const res = await sb.post(token, "product_aliases", { alias: alias.trim(), product_id: product.id });
+    if (res?.error) { toast.error(res.error.message || "Failed to add alias"); return; }
+    toast.success("Alias added");
+    return true;
+  };
+
+  const resolvePending = async (name) => {
+    const product = pendingPicks[name];
+    if (!product) { toast.error("Pick a product first"); return; }
+    if (!(await addAlias(name, product))) return;
+    setPending(pending.filter(n => n !== name));
+    load();
+  };
+
+  const onAddManual = async () => {
+    if (!(await addAlias(aliasText, selProduct))) return;
+    setAliasText(""); setSelProduct(null);
+    load();
+  };
+
+  const removeAlias = async (id) => {
+    await sb.del(token, "product_aliases", id);
+    toast.success("Alias removed");
+    setAliases(aliases.filter(a => a.id !== id));
+  };
+
+  return (
+    <>
+    <div className="card" style={{ padding:24, marginBottom:20 }}>
+      <div className="ct" style={{ marginBottom:6 }}>Pending Unmatched Items</div>
+      <div style={{ fontSize:12, color:"var(--text3)", marginBottom:20 }}>
+        Items from recent WhatsApp orders the system couldn't match. Pick the correct product to teach it for next time.
+      </div>
+      {pendingLoading ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>Loading…</div> :
+        pending.length===0 ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>Nothing pending — all recent orders matched cleanly.</div> :
+        pending.map(name=>(
+          <div key={name} style={{ display:"flex", flexDirection:isMobile()?"column":"row", alignItems:isMobile()?"stretch":"center", justifyContent:"space-between", gap:isMobile()?10:8, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+            <div style={{ fontWeight:600, fontSize:14, flex:1 }}>{name}</div>
+            <div style={{ flex:1 }}>
+              <SearchDropdown placeholder="Search products..." items={products} value={pendingPicks[name]?.name || ""} onSelect={p=>setPendingPicks({...pendingPicks, [name]: p})} />
+            </div>
+            <button className="btn bp bsm" onClick={()=>resolvePending(name)} style={{ minHeight:isMobile()?40:undefined }}>Save Alias</button>
+          </div>
+        ))
+      }
+    </div>
+    <div className="card" style={{ padding:24 }}>
+      <div className="ct" style={{ marginBottom:6 }}>WhatsApp Product Aliases</div>
+      <div style={{ fontSize:12, color:"var(--text3)", marginBottom:20 }}>
+        Map the wording customers use over WhatsApp to the correct product, so incoming orders match automatically.
+      </div>
+      <div style={{ display:"flex", flexDirection:isMobile()?"column":"row", gap:10, marginBottom:20, alignItems:isMobile()?"stretch":"flex-end" }}>
+        <div style={{ flex:1 }}>
+          <label style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5, display:"block" }}>Customer's wording</label>
+          <input value={aliasText} onChange={e=>setAliasText(e.target.value)} placeholder="e.g. Hayati 6k" style={{ width:"100%", padding:"10px 14px", borderRadius:"var(--r)", border:"1px solid var(--border2)", fontSize:13, fontFamily:"var(--sans)", outline:"none" }} />
+        </div>
+        <div style={{ flex:1 }}>
+          <label style={{ fontSize:11, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:5, display:"block" }}>Maps to product</label>
+          <SearchDropdown placeholder="Search products..." items={products} value={selProduct?.name || ""} onSelect={p=>setSelProduct(p)} />
+        </div>
+        <button className="btn bp" onClick={onAddManual} style={{ minHeight:isMobile()?44:undefined }}>Add Alias</button>
+      </div>
+      {loading ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>Loading…</div> :
+        aliases.length===0 ? <div style={{ padding:"16px 0", color:"var(--text3)", fontSize:13 }}>No aliases configured yet</div> :
+        aliases.map(a=>(
+          <div key={a.id} style={{ display:"flex", flexDirection:isMobile()?"column":"row", alignItems:isMobile()?"stretch":"center", justifyContent:"space-between", gap:isMobile()?10:0, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14 }}>{a.alias}</div>
+              <div style={{ fontSize:12, color:"var(--text3)" }}>→ {a.products?.name || "Unknown product"}</div>
+            </div>
+            <button className="btn bo bsm" onClick={()=>removeAlias(a.id)} style={{ color:"var(--red)", borderColor:"#fecaca", flex:isMobile()?1:"none", minHeight:isMobile()?40:undefined }}>Remove</button>
+          </div>
+        ))
+      }
+    </div>
+    </>
   );
 }
 
