@@ -67,7 +67,7 @@ export function ProductAliases({ token, products = [] }) {
 
   return (
     <>
-    <div className="card" style={{ padding:24, marginBottom:20, overflow:"visible" }}>
+    <div className="card" style={{ padding:24, marginBottom:20, overflow:"visible", position:"relative", zIndex:1 }}>
       <div className="ct" style={{ marginBottom:6 }}>Pending Unmatched Items</div>
       <div style={{ fontSize:12, color:"var(--text3)", marginBottom:20 }}>
         Items from recent WhatsApp orders the system couldn't match. Pick the correct product to teach it for next time.
