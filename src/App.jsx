@@ -41,6 +41,7 @@ import { ModalPortal, SkeletonTable, EmptyState } from "./components/ui.jsx";
 import { SearchDropdown } from "./components/SearchDropdown.jsx";
 import { CommandPalette } from "./components/CommandPalette.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "./lib/constants.js";
+import LOGO_NEW from "./assets/logo-ar-new.png";
 
 // ── All shared utilities, constants, sb, email builders now imported from lib/ ──
 // CSS stays here until App.jsx is further split (it's only used in the style tag inject below)
@@ -1726,8 +1727,8 @@ function Auth({ onAuth, sessionExpired }) {
 
           {/* Hero */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 0 32px", position: "relative", zIndex: 1 }}>
-            <div style={{ alignSelf: "flex-start", background: "#fff", borderRadius: 16, padding: "14px 22px", marginBottom: 28, animation: "logoFadeIn .7s ease-out both, logoTilt 4s ease-in-out 1s infinite" }}>
-              <img src={LOGO} alt="Arkham Retail" style={{ width: 200, display: "block" }} />
+            <div style={{ alignSelf: "flex-start", marginBottom: 28, animation: "logoFadeIn .7s ease-out both, logoTilt 4s ease-in-out 1s infinite" }}>
+              <img src={LOGO_NEW} alt="Arkham Retail" style={{ width: 220, display: "block" }} />
             </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(167,139,250,.85)", marginBottom: 20 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />
