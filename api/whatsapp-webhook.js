@@ -56,9 +56,11 @@ export default async function handler(req, res) {
     const lines       = [];
     const unmatched   = [];
 
-    // ── 3b. If no contact matched by phone, try matching a name mentioned
-    // at the top of the message (e.g. "Gulam Bhai") against contacts ────────
-    if (!contact && nameHints.length) {
+    // ── 3b. If the message names a customer (e.g. "DISHA CONVENIENCE - LEEDS"),
+    // prefer matching that against contacts over the sender's phone-matched
+    // contact — orders are often sent from a shared/staff phone on behalf
+    // of many different customers ─────────────────────────────────────────
+    if (nameHints.length) {
       const allContactsRes = await fetch(
         `${SUPABASE_URL}/rest/v1/contacts?select=id,name&order=name.asc`,
         { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
