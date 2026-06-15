@@ -1776,22 +1776,10 @@ function Auth({ onAuth, sessionExpired }) {
           {/* Logo row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
-                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
-                  <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
-                  <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
-                  <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
-                  <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#mgGrad)"/>
-                  <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
-                  <defs><linearGradient id="mgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
-                </svg>
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                  <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.5px", lineHeight: 1 }}>Ledger</span>
-                  <span style={{ fontSize: 17, fontWeight: 300, color: "rgba(255,255,255,.35)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
-                </div>
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,.2)", letterSpacing: ".3px", marginTop: 2 }}>Arkham Retail Ltd</div>
+              <img src={LOGO_NEW} alt="Arkham Retail" style={{ height: 40, display: "block" }} />
+              <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-.5px", lineHeight: 1 }}>Ledger</span>
+                <span style={{ fontSize: 17, fontWeight: 300, color: "rgba(255,255,255,.35)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "4px 10px" }}>
