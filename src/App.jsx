@@ -156,16 +156,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 }
 .logo-mark{
   width:38px;height:38px;
-  background:linear-gradient(145deg,#4338ca,#6d28d9);
+  background:#fff;
   border:1px solid rgba(165,180,252,.4);
   border-radius:11px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  box-shadow:0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18);
+  overflow:hidden;
+  box-shadow:0 4px 24px rgba(129,140,248,.35),inset 0 1px 0 rgba(255,255,255,.18);
   animation:logoGlow 4s ease-in-out infinite;
   transition:transform .3s cubic-bezier(.34,1.56,.64,1);
 }
+.logo-mark img{width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.7)}
 .logo-mark:hover{transform:scale(1.08) rotate(-4deg)}
-@keyframes logoGlow{0%,100%{box-shadow:0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)}50%{box-shadow:0 4px 32px rgba(165,180,252,.85),inset 0 1px 0 rgba(255,255,255,.25)}}
+@keyframes logoGlow{0%,100%{box-shadow:0 4px 24px rgba(129,140,248,.35),inset 0 1px 0 rgba(255,255,255,.18)}50%{box-shadow:0 4px 32px rgba(165,180,252,.55),inset 0 1px 0 rgba(255,255,255,.25)}}
 .logo-inner{display:flex;align-items:center;gap:12px}
 .logo-wm{display:flex;flex-direction:column;gap:1px}
 .logo-wm-row{display:flex;align-items:baseline;gap:1px}
@@ -8525,15 +8527,7 @@ export default function App() {
           <div className="sidebar-logo">
             <div className="logo-inner">
               <div className="logo-mark">
-                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
-                  <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
-                  <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
-                  <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
-                  <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#fff" fillOpacity=".3"/>
-                  <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#sbGrad)"/>
-                  <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
-                  <defs><linearGradient id="sbGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
-                </svg>
+                <img src={LOGO} alt="Arkham Retail" />
               </div>
               <div className="logo-wm">
                 <div className="logo-wm-row">
