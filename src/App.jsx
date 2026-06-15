@@ -1717,27 +1717,6 @@ function Auth({ onAuth, sessionExpired }) {
           {/* Orb bottom-right */}
           <div style={{ position: "absolute", bottom: -80, right: -60, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.2) 0%,transparent 65%)", pointerEvents: "none" }} />
 
-          {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(145deg,#4338ca,#6d28d9)", border: "1px solid rgba(165,180,252,.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 24px rgba(129,140,248,.55),inset 0 1px 0 rgba(255,255,255,.18)" }}>
-              <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
-                <rect x="9" y="12" width="30" height="3.5" rx="1.75" fill="#fff"/>
-                <rect x="9" y="19.5" width="22" height="3.5" rx="1.75" fill="#fff" fillOpacity=".75"/>
-                <rect x="9" y="27" width="26" height="3.5" rx="1.75" fill="#fff" fillOpacity=".5"/>
-                <rect x="9" y="34.5" width="15" height="3.5" rx="1.75" fill="#fff" fillOpacity=".3"/>
-                <rect x="31" y="20" width="3" height="16" rx="1.5" fill="url(#lgGrad)"/>
-                <polygon points="38,28 31,20 31,36" fill="#c4b5fd" fillOpacity=".7"/>
-                <defs><linearGradient id="lgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#c4b5fd"/></linearGradient></defs>
-              </svg>
-            </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-.6px", lineHeight: 1 }}>Ledger</span>
-                <span style={{ fontSize: 20, fontWeight: 300, color: "rgba(255,255,255,.38)", letterSpacing: "-.3px", lineHeight: 1 }}>OS</span>
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,.22)", letterSpacing: ".4px", marginTop: 2 }}>Arkham Retail Ltd</div>
-            </div>
-          </div>
 
           {/* Hero */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 0 32px", position: "relative", zIndex: 1 }}>
