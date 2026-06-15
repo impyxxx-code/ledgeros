@@ -259,9 +259,12 @@ function matchProduct(query, products, aliases = []) {
   if (hit) return hit;
 
   // 4. Token overlap (at least half the query words match product name words)
-  const qTokens = q.split(/\s+/);
+  // Ignore short tokens (e.g. "&", "m", "r") to avoid spurious matches like "Adam" → "R & M"
+  const qTokens = q.split(/\s+/).filter(t => t.length >= 3);
+  if (qTokens.length === 0) return null;
   hit = products.find(p => {
-    const pTokens = p.name.toLowerCase().split(/[\s:]+/);
+    const pTokens = p.name.toLowerCase().split(/[\s:]+/).filter(t => t.length >= 3);
+    if (pTokens.length === 0) return false;
     const matches = qTokens.filter(t => pTokens.some(pt => pt.includes(t) || t.includes(pt)));
     return matches.length >= Math.ceil(qTokens.length / 2);
   });
