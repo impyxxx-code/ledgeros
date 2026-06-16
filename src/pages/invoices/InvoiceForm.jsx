@@ -884,9 +884,9 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
                       });
                     }} displayKey="name" value={l.description} />
             </div>
-            <input type="text" inputMode="numeric" className="il-input mono" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
+            <input type="text" inputMode="numeric" className="il-input mono" value={String(l.qty ?? "")} onChange={e => updateLine(i, "qty", e.target.value)} />
             <div style={{ display:"flex",flexDirection:"column",gap:3 }}>
-              <input type="text" inputMode="decimal" className="il-input mono" placeholder="0.00" value={l.unit_price} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); }} />
+              <input type="text" inputMode="decimal" className="il-input mono" placeholder="0.00" value={String(l.unit_price ?? "")} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); }} />
               {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
             </div>
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
