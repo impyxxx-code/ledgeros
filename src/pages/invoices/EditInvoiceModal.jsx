@@ -114,8 +114,8 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
             {lines.map((l, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 0.6fr 1fr 1fr 0.8fr 30px", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i, "description", p.name); updateLine(i, "unit_price", p.sale_price || p.cost_price || ""); }} displayKey="name" value={l.description || ""} />
-                <input className="il-input mono" type="number" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
-                <input className="il-input mono" type="number" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
+                <input className="il-input mono" type="text" inputMode="numeric" value={l.qty} onChange={e => updateLine(i, "qty", e.target.value)} />
+                <input className="il-input mono" type="text" inputMode="decimal" value={l.unit_price} onChange={e => updateLine(i, "unit_price", e.target.value)} />
                 <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}>
                   <option value={0}>0%</option>
                   <option value={5}>5%</option>
