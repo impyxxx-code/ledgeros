@@ -1487,6 +1487,7 @@ export default function App() {
   const [printOverlayHTML, setPrintOverlayHTML] = useState(null);
   const [printOverlayTitle, setPrintOverlayTitle] = useState(null);
   const [auth, setAuth] = useState(null);
+  const [authRestoring, setAuthRestoring] = useState(() => !!localStorage.getItem('ledgeros_rt'));
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
@@ -1514,6 +1515,28 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Auto-restore session from stored refresh token on page load (avoids login + MFA on every refresh)
+  useEffect(() => {
+    const rt = localStorage.getItem('ledgeros_rt');
+    if (!rt) { setAuthRestoring(false); return; }
+    (async () => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ refresh_token: rt })
+        });
+        const data = await res.json();
+        if (data?.access_token) {
+          if (data.refresh_token) localStorage.setItem('ledgeros_rt', data.refresh_token);
+          setAuth({ token: data.access_token, user: data.user });
+        } else {
+          localStorage.removeItem('ledgeros_rt');
+        }
+      } catch { localStorage.removeItem('ledgeros_rt'); }
+      setAuthRestoring(false);
+    })();
+  }, []);
 
   // Expose print overlay setter globally so sub-components can trigger it without prop drilling
   React.useEffect(() => {
@@ -1785,7 +1808,8 @@ export default function App() {
   }, [auth, loading]);
   const initials = (profile?.full_name||auth?.user?.email||"U")[0]?.toUpperCase();
 
-  if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} sessionExpired={!!localStorage.getItem('ledgeros_rt')} /></>;
+  if (authRestoring) return <><style>{CSS}</style><div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f6f9"}}><div className="spin" style={{width:32,height:32,borderWidth:3}} /></div></>;
+  if (!auth) return <><style>{CSS}</style><Auth onAuth={setAuth} sessionExpired={false} /></>;
 
   // ── Mobile PWA install banner rendered inline in JSX ──────────────────────
 
