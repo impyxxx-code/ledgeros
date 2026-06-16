@@ -54,6 +54,7 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
   const save = async () => {
     setSubmitted(true);
     if (!f.customer) return;
+    const amendedLines = lines.filter(l => l.price_amended && l.description);
     setSaving(true);
     // Safety net — if anything hangs >15s on mobile network, reset button
     const saveTimeout = setTimeout(() => {
@@ -70,7 +71,8 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
       const invoice_number = `INV-${String(nextNum).padStart(4, "0")}`;
       const inv = await sb.post(token, "invoices", {
         customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || f.invoice_date || null,
-        status: f.status, notes: f.notes || null,
+        status: f.status,
+        notes: [f.notes, amendedLines.length ? `⚠️ Price amended by user on: ${amendedLines.map(l => l.description).join(", ")}` : null].filter(Boolean).join("\n") || null,
         amount: total, subtotal, vat_total: vatTotal, balance: total, amount_paid: 0, invoice_number, created_by: userId,
         lines: JSON.stringify(lines.filter(l => l.description && l.description.trim() !== ""))
       });
@@ -886,8 +888,9 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
             </div>
             <input type="text" inputMode="numeric" className="il-input mono" value={String(l.qty ?? "")} onChange={e => updateLine(i, "qty", e.target.value)} />
             <div style={{ display:"flex",flexDirection:"column",gap:3 }}>
-              <input type="text" inputMode="decimal" className="il-input mono" placeholder="0.00" value={String(l.unit_price ?? "")} onChange={e => { updateLine(i, "unit_price", e.target.value); updateLine(i, "custom_price_applied", false); }} />
+              <input type="text" inputMode="decimal" className="il-input mono" placeholder="0.00" value={String(l.unit_price ?? "")} onChange={e => setLines(prev => prev.map((ln, idx) => idx === i ? {...ln, unit_price: e.target.value, custom_price_applied: false, price_amended: true} : ln))} />
               {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
+              {l.price_amended && !l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#d97706",background:"#fffbeb",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>✏️ Price amended</span>}
             </div>
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
             <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{fmt((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0))}</span>
