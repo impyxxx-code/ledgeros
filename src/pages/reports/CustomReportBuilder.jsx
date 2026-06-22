@@ -60,6 +60,25 @@ const SOURCES = {
     groupable: ["type", "city"],
     numericFields: [],
   },
+  purchases: {
+    label: "Purchases / Vendors",
+    fields: [
+      { key: "po_number", label: "PO #", type: "text" },
+      { key: "supplier", label: "Vendor", type: "text" },
+      { key: "order_date", label: "Order Date", type: "date" },
+      { key: "product_name", label: "Product", type: "text" },
+      { key: "qty", label: "Qty", type: "number" },
+      { key: "unit_cost", label: "Unit Cost", type: "number" },
+      { key: "vat_rate", label: "VAT Rate", type: "number" },
+      { key: "total", label: "Line Total (excl VAT)", type: "number" },
+      { key: "vat_amount", label: "VAT Amount", type: "number" },
+      { key: "status", label: "PO Status", type: "text" },
+      { key: "month", label: "Month", type: "text" },
+    ],
+    defaultFields: ["po_number", "supplier", "order_date", "product_name", "qty", "total"],
+    groupable: ["supplier", "product_name", "status", "month"],
+    numericFields: ["qty", "unit_cost", "total", "vat_amount"],
+  },
 };
 
 const OPS_BY_TYPE = {
@@ -70,7 +89,7 @@ const OPS_BY_TYPE = {
 
 const blankFilter = () => ({ field: "", op: "", value: "" });
 
-export function CustomReportBuilder({ invoices, products, contacts, allProfiles, token, userId, profile }) {
+export function CustomReportBuilder({ invoices, products, contacts, allProfiles, purchaseOrders = [], purchaseOrderLines = [], token, userId, profile }) {
   const [source, setSource] = useState("invoices");
   const [selectedFields, setSelectedFields] = useState(SOURCES.invoices.defaultFields);
   const [filters, setFilters] = useState([blankFilter()]);
@@ -83,7 +102,11 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
   const [showSaveBox, setShowSaveBox] = useState(false);
 
   const meta = SOURCES[source];
-  const rawData = source === "invoices" ? invoices : source === "products" ? products : contacts;
+  const purchasesJoined = purchaseOrderLines.map(l => {
+    const po = purchaseOrders.find(p => p.id === l.po_id) || {};
+    return { ...l, po_number: po.po_number, supplier: po.supplier_name, order_date: po.order_date, status: po.status, vat_amount: (parseFloat(l.total) || 0) * (parseFloat(l.vat_rate) || 0) / 100 };
+  });
+  const rawData = source === "invoices" ? invoices : source === "products" ? products : source === "purchases" ? purchasesJoined : contacts;
 
   useEffect(() => {
     if (!token) return;
@@ -91,11 +114,18 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
   }, [token]);
 
   const enrichRow = (row) => {
-    if (source !== "invoices") return row;
-    const agent = allProfiles?.find(p => p.id === row.created_by)?.full_name || "Unknown";
-    const d = new Date(row.invoice_date || row.created_at);
-    const month = isNaN(d) ? "" : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
-    return { ...row, agent, month };
+    if (source === "invoices") {
+      const agent = allProfiles?.find(p => p.id === row.created_by)?.full_name || "Unknown";
+      const d = new Date(row.invoice_date || row.created_at);
+      const month = isNaN(d) ? "" : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      return { ...row, agent, month };
+    }
+    if (source === "purchases") {
+      const d = new Date(row.order_date || row.created_at);
+      const month = isNaN(d) ? "" : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      return { ...row, month };
+    }
+    return row;
   };
 
   const switchSource = (s) => {

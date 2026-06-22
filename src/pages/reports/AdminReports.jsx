@@ -894,7 +894,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
         </div>
       </div>}
 
-      {tab==="custom" && <CustomReportBuilder invoices={invoices} products={products} contacts={contacts} allProfiles={allProfiles} token={token} userId={userId} profile={profile} />}
+      {tab==="custom" && <CustomReportBuilder invoices={invoices} products={products} contacts={contacts} allProfiles={allProfiles} purchaseOrders={pos} purchaseOrderLines={poLines} token={token} userId={userId} profile={profile} />}
     </div>
   );
 }
