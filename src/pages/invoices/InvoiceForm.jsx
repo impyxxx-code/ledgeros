@@ -610,14 +610,24 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
     : mobRecent;
   const mobActiveLines = lines.filter(l => l.description);
 
-  const mobAddProduct = (p) => {
+  const mobAddProduct = async (p) => {
     const idx = lines.findIndex(l => l.product_id === p.id);
     if (idx >= 0) {
       const nxt = [...lines];
       nxt[idx] = { ...nxt[idx], qty: (parseFloat(nxt[idx].qty) || 0) + 1 };
       setLines(nxt);
     } else {
-      const nl = { product_id: p.id, description: p.name, qty: 1, unit_price: p.sale_price || 0, vat_rate: p.vat_rate ?? 20 };
+      // Check for customer-specific price first, same lookup as desktop
+      let customPrice = null;
+      const custName = f?.customer || f?.customer_name;
+      if (custName) {
+        const contact = localContacts?.find(c => c.name === custName);
+        if (contact) {
+          const prices = await sb.get(token, "customer_prices", `contact_id=eq.${contact.id}&product_id=eq.${p.id}`);
+          if (Array.isArray(prices) && prices[0]) customPrice = prices[0].custom_price;
+        }
+      }
+      const nl = { product_id: p.id, description: p.name, qty: 1, unit_price: customPrice !== null ? customPrice : (p.sale_price || 0), vat_rate: p.vat_rate ?? 20, custom_price_applied: customPrice !== null };
       setLines(prev => prev[0]?.description === "" && !prev[0]?.product_id ? [nl] : [...prev, nl]);
     }
     setMobPickerOpen(false);
@@ -716,7 +726,9 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
             <div style={{ display:"flex", gap:8, marginBottom:10 }}>
               <div style={{ flex:1 }}>
                 <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>Unit Price £</label>
-                <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
+                <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value,custom_price_applied:false,price_amended:true}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
+                {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,display:"inline-block",marginTop:3 }}>★ Custom price</span>}
+                {l.price_amended && !l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#d97706",background:"#fffbeb",padding:"1px 6px",borderRadius:4,display:"inline-block",marginTop:3 }}>✏️ Price amended</span>}
               </div>
               <div style={{ width:100 }}>
                 <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>VAT Rate</label>
