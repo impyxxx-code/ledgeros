@@ -34,7 +34,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   useEffect(() => {
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
-    sb.get(token, "purchase_order_lines", "order=created_at.desc").then(d => Array.isArray(d) && setPoLines(d));
+    sb.get(token, "purchase_order_lines", "order=id.desc").then(d => Array.isArray(d) && setPoLines(d));
     sb.get(token, "audit_log", "action=in.(reminder_sent,payment_received,part_payment,bulk_payment)&order=created_at.desc&limit=2000").then(d => Array.isArray(d) && setCollAudit(d));
     sb.get(token, "journal_entries", "order=entry_date.asc,created_at.asc&limit=5000").then(d => Array.isArray(d) && setJournal(d));
     loadBudgets();
