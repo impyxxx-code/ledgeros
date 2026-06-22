@@ -26,12 +26,26 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const [poLines, setPoLines] = useState([]);
   const [pcCategory, setPcCategory] = useState("all");
   const [collAudit, setCollAudit] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [budgetEdits, setBudgetEdits] = useState({});
+  const loadBudgets = () => sb.get(token, "budgets", "order=period.desc").then(d => Array.isArray(d) && setBudgets(d));
   useEffect(() => {
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
     sb.get(token, "purchase_order_lines", "order=created_at.desc").then(d => Array.isArray(d) && setPoLines(d));
     sb.get(token, "audit_log", "action=in.(reminder_sent,payment_received,part_payment,bulk_payment)&order=created_at.desc&limit=2000").then(d => Array.isArray(d) && setCollAudit(d));
+    loadBudgets();
   }, [token]);
+  const saveBudget = async (periodKey) => {
+    const val = parseFloat(budgetEdits[periodKey]);
+    if (isNaN(val)) return;
+    const existing = budgets.find(b => b.period === periodKey);
+    if (existing) await sb.patch(token, "budgets", existing.id, { revenue_target: val });
+    else await sb.post(token, "budgets", { period: periodKey, revenue_target: val, created_by: userId });
+    setBudgetEdits(prev => { const n = {...prev}; delete n[periodKey]; return n; });
+    loadBudgets();
+    toast.success("Budget saved");
+  };
   const [hoveredBar, setHoveredBar] = React.useState(null);
   const [reconPeriod, setReconPeriod] = useState("week");
   const [reconFrom, setReconFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); });
@@ -54,8 +68,9 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const monthlySales = Array.from({length:12}, (_,i) => {
     const d = new Date(now.getFullYear(), now.getMonth()-11+i, 1);
     const month = d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
+    const periodKey = d.toISOString().slice(0,7);
     const invs = invoices.filter(inv => { const id = new Date(inv.invoice_date || inv.created_at); return id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear(); });
-    return { month, total: invs.reduce((s,i)=>s+parseFloat(i.amount||0),0), paid: invs.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0), count: invs.length };
+    return { month, periodKey, total: invs.reduce((s,i)=>s+parseFloat(i.amount||0),0), paid: invs.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0), count: invs.length };
   });
   const maxMonthly = Math.max(...monthlySales.map(m=>m.total), 1);
   const customerSales = contacts.filter(c=>c.type==="customer"||c.type==="both").map(c => ({ name: c.name, total: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+parseFloat(i.amount||0),0), count: filteredInv.filter(i=>i.customer===c.name).length, paid: filteredInv.filter(i=>i.customer===c.name).reduce((s,i)=>s+parseFloat(i.amount_paid||0),0) })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
@@ -219,7 +234,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
           { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
           { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"],["physical-count","Physical Count"]] },
-          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["custom","Custom Reports"]] },
+          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["budget","Budget vs Actuals"],["custom","Custom Reports"]] },
         ];
         const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
         return (
@@ -1044,6 +1059,45 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
         </div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",border:"1px solid var(--border)",borderRadius:"var(--r)"}}><table style={{minWidth:420}}><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>System Qty</th></tr></thead><tbody>{pcProducts.slice(0,30).map(p => <tr key={p.id}><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td></tr>)}</tbody></table>{pcProducts.length>30 && <div style={{padding:"10px 16px",fontSize:12,color:"var(--text3)"}}>+{pcProducts.length-30} more — full list included in print</div>}</div>
       </div>}
+
+      {tab==="budget" && (() => {
+        const rows = monthlySales.map(m => {
+          const b = budgets.find(x=>x.period===m.periodKey);
+          const target = b?.revenue_target ?? null;
+          const variance = target!=null ? m.total - target : null;
+          const variancePct = target>0 ? (variance/target*100) : null;
+          return { ...m, target, variance, variancePct };
+        });
+        const monthsWithTarget = rows.filter(r=>r.target!=null);
+        const totalTarget = monthsWithTarget.reduce((s,r)=>s+r.target,0);
+        const totalActual = monthsWithTarget.reduce((s,r)=>s+r.total,0);
+        return (
+          <div>
+            <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Months Budgeted</div><div className="kpi-val">{monthsWithTarget.length} / 12</div></div>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Target</div><div className="kpi-val">{fmt(totalTarget)}</div></div>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Actual</div><div className="kpi-val tg">{fmt(totalActual)}</div></div>
+              <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Variance</div><div className="kpi-val" style={{color:totalActual-totalTarget>=0?"var(--green)":"var(--red)"}}>{fmt(totalActual-totalTarget)}</div></div>
+            </div>
+            <div className="card">
+              <div className="ch"><div><div className="ct">Sales Budget vs Actuals</div><div className="cs">Set a monthly revenue target and track actual sales against it</div></div></div>
+              <div style={{padding:"0 16px 8px",fontSize:11,color:"var(--text3)"}}>Scoped to revenue only — expense budgeting needs dated expense transactions, which LedgerOS doesn't track yet (expenses are a running balance, not per-month).</div>
+              <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:480}}><thead><tr><th>Month</th><th style={{textAlign:"right"}}>Target</th><th style={{textAlign:"right"}}>Actual</th><th style={{textAlign:"right"}}>Variance</th><th style={{textAlign:"right"}}>Variance %</th><th></th></tr></thead><tbody>{rows.map(r => (
+                <tr key={r.periodKey}>
+                  <td style={{fontWeight:600}}>{r.month}</td>
+                  <td style={{textAlign:"right"}}>
+                    <input type="number" placeholder="Set target" value={budgetEdits[r.periodKey] ?? r.target ?? ""} onChange={e=>setBudgetEdits(prev=>({...prev,[r.periodKey]:e.target.value}))} style={{width:100,padding:"5px 8px",borderRadius:6,border:"1px solid var(--border)",fontSize:12,textAlign:"right",fontFamily:"var(--mono)"}} />
+                  </td>
+                  <td className="mono" style={{textAlign:"right",fontWeight:600}}>{fmt(r.total)}</td>
+                  <td className="mono" style={{textAlign:"right",color:r.variance==null?"var(--text3)":r.variance>=0?"var(--green)":"var(--red)"}}>{r.variance==null?"—":fmt(r.variance)}</td>
+                  <td className="mono" style={{textAlign:"right",color:r.variancePct==null?"var(--text3)":r.variancePct>=0?"var(--green)":"var(--red)"}}>{r.variancePct==null?"—":r.variancePct.toFixed(1)+"%"}</td>
+                  <td>{budgetEdits[r.periodKey]!=null && <button className="btn bp bsm" onClick={()=>saveBudget(r.periodKey)}>Save</button>}</td>
+                </tr>
+              ))}</tbody></table></div>
+            </div>
+          </div>
+        );
+      })()}
 
       {tab==="custom" && <CustomReportBuilder invoices={invoices} products={products} contacts={contacts} allProfiles={allProfiles} purchaseOrders={pos} purchaseOrderLines={poLines} token={token} userId={userId} profile={profile} />}
     </div>
