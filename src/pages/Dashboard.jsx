@@ -7,6 +7,7 @@ import { logAudit } from "../lib/audit.js";
 import { ModalPortal, EmptyState } from "../components/ui.jsx";
 import { InvoiceModal } from "../components/InvoiceModal.jsx";
 import { OverpaymentModal } from "../components/OverpaymentModal.jsx";
+import { EditInvoiceModal } from "./invoices/EditInvoiceModal.jsx";
 import { AgentDashboard } from "./AgentDashboard.jsx";
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [overpaymentData, setOverpaymentData] = useState(null);
+  const [editInvoice, setEditInvoice] = useState(null);
 
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
@@ -109,8 +111,15 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
     return (
       <>
       {viewInvoice && <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
+        onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)} />}
+      {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token}
+        onSaved={(updatedFields) => {
+          if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
+          sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
+          setEditInvoice(null);
+        }} />}
       <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
         <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
@@ -724,6 +733,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
       contacts={contacts}
       token={token}
       profile={profile}
+      onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
       onStatusChange={async (id, status) => {
         await sb.patch(token, "invoices", id, { status });
         setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
@@ -743,6 +753,12 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
       }}
     />}
+    {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token}
+      onSaved={(updatedFields) => {
+        if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
+        sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
+        setEditInvoice(null);
+      }} />}
   </>);
 }
 
