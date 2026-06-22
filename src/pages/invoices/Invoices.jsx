@@ -3,6 +3,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
+import { postPaymentJournal } from "../../lib/journal.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -18,7 +19,7 @@ import { OverpaymentModal } from "../../components/OverpaymentModal.jsx";
 // │ Invoices                                                   │
 // │ Invoice list — filter, sort, mark paid, part pay, edit     │
 // └────────────────────────────────────────────────────────────┘
-export function Invoices({ invoices, setInvoices, contacts, setContacts, products, token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
+export function Invoices({ invoices, setInvoices, contacts, setContacts, products, accounts = [], token, userId, profile, allProfiles = [], pendingInvoiceView, onClearPending, pendingFilter, onClearFilter, triggerNewInvoice, onTriggerHandled }) {
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [bulkPayCustomer, setBulkPayCustomer] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -91,6 +92,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
     toast.success("Invoice marked as paid");
     if (inv) {
       logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
+      postPaymentJournal(token, accounts, { invoice_id: id, invoice_number: inv.invoice_number, amount: parseFloat(inv.amount) - parseFloat(inv.amount_paid||0), date: new Date().toISOString().slice(0,10) });
       const cust = contacts.find(c => c.name === inv.customer);
       if (cust?.email) sendEmail({ to: cust.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, inv.amount, method || "cash", 0), token }).catch(()=>{});
     }
@@ -135,6 +137,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
+    postPaymentJournal(token, accounts, { invoice_id: inv.id, invoice_number: inv.invoice_number, amount: paid, date: resolvedDate });
     const custForReceipt = contacts.find(c => c.name === inv.customer);
     if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, paid, resolvedMethod, newBalance), token }).catch(()=>{});
     if (overpayment > 0) {
@@ -239,6 +242,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
         customer={bulkPayCustomer}
         invoices={invoices}
         contacts={contacts}
+        accounts={accounts}
         token={token}
         userId={userId}
         profile={profile}
@@ -405,7 +409,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
           <button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: "auto", padding: "5px 10px", borderRadius: 7, border: "1px solid rgba(255,255,255,.12)", background: "transparent", color: "rgba(255,255,255,.4)", fontSize: 12, cursor: "pointer", fontFamily: "var(--sans)" }}>Clear</button>
         </div>
       )}
-      {showForm && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:600,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
+      {showForm && <ModalPortal><div style={{position:"fixed",inset:0,zIndex:600,background:"var(--bg)",overflowY:"auto"}}><InvoiceForm contacts={contacts} products={products} accounts={accounts} token={token} userId={userId} invoices={invoices} onSave={inv => { setInvoices(prev => { if (prev.find(i=>i.id===inv.id)) return prev; return [inv,...prev]; }); setTimeout(() => sb.get(token,"invoices","order=created_at.desc&limit=1000").then(d=>Array.isArray(d)&&setInvoices(d)), 1000); }} onClose={() => setShowForm(false)} /></div></ModalPortal>}
       <div className="card">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 12, color: "var(--text3)" }}>{filtered.length} invoice{filtered.length!==1?"s":""}</div>

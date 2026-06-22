@@ -3,12 +3,13 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildBulkReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
+import { postPaymentJournal } from "../../lib/journal.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 
 // ── BULK PAYMENT MODAL ────────────────────────────────────────────────────────
-export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts = [], token, userId, profile, onClose, onComplete }) {
+export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts = [], accounts = [], token, userId, profile, onClose, onComplete }) {
   const [customer, setCustomer] = useState(initialCustomer === "__pick__" ? "" : initialCustomer);
   const [custSearch, setCustSearch] = useState("");
   const [amount, setAmount] = useState("");
@@ -99,6 +100,8 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
       `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} for ${customer} dated ${payDate} — ${preview.allocs.length} invoice(s) updated`
     );
 
+    const appliedTotal = summary.reduce((s,a)=>s+a.apply,0);
+    if (appliedTotal > 0) postPaymentJournal(token, accounts, { invoice_id: null, invoice_number: `Bulk — ${customer}`, amount: appliedTotal, date: payDate });
     const custForReceipt = contacts.find(c => c.name === customer);
     if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${customer}`, html: buildBulkReceiptEmailHtml(customer, parseFloat(amount), method, summary, preview.leftover), token }).catch(()=>{});
 

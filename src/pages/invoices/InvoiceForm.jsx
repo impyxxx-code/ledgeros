@@ -3,6 +3,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
+import { postInvoiceJournal } from "../../lib/journal.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -13,7 +14,7 @@ import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 // │ InvoiceForm                                                │
 // │ Create new invoice form with line items and VAT            │
 // └────────────────────────────────────────────────────────────┘
-export function InvoiceForm({ contacts, products, token, userId, onSave, onClose, invoices = [] }) {
+export function InvoiceForm({ contacts, products, accounts = [], token, userId, onSave, onClose, invoices = [] }) {
   const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
@@ -80,6 +81,7 @@ export function InvoiceForm({ contacts, products, token, userId, onSave, onClose
         const fullInv = { ...inv[0], lines };
         onSave(fullInv);
         logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}`);
+        if (f.status !== "draft") postInvoiceJournal(token, accounts, { invoice_id: inv[0].id, invoice_number, amount: total, date: f.invoice_date });
         // Pre-fill DN fields from customer contact
         const cust = contacts.find(c => c.name === f.customer);
         setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));

@@ -28,12 +28,15 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const [collAudit, setCollAudit] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [budgetEdits, setBudgetEdits] = useState({});
+  const [journal, setJournal] = useState([]);
+  const [glAccount, setGlAccount] = useState("");
   const loadBudgets = () => sb.get(token, "budgets", "order=period.desc").then(d => Array.isArray(d) && setBudgets(d));
   useEffect(() => {
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
     sb.get(token, "purchase_order_lines", "order=created_at.desc").then(d => Array.isArray(d) && setPoLines(d));
     sb.get(token, "audit_log", "action=in.(reminder_sent,payment_received,part_payment,bulk_payment)&order=created_at.desc&limit=2000").then(d => Array.isArray(d) && setCollAudit(d));
+    sb.get(token, "journal_entries", "order=entry_date.asc,created_at.asc&limit=5000").then(d => Array.isArray(d) && setJournal(d));
     loadBudgets();
   }, [token]);
   const saveBudget = async (periodKey) => {
@@ -234,7 +237,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
           { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
           { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"],["physical-count","Physical Count"]] },
-          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["budget","Budget vs Actuals"],["custom","Custom Reports"]] },
+          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["general-ledger","General Ledger"],["journal","Journal"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["budget","Budget vs Actuals"],["custom","Custom Reports"]] },
         ];
         const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
         return (
@@ -974,6 +977,63 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
           </tbody></table></div>
         </div>
       </div>}
+
+      {tab==="general-ledger" && (() => {
+        const glRows = glAccount ? journal.filter(j => j.account_id === glAccount).slice().sort((a,b)=> new Date(a.entry_date)-new Date(b.entry_date) || new Date(a.created_at)-new Date(b.created_at)) : [];
+        const account = accounts.find(a=>a.id===glAccount);
+        const isDebitNormal = account && ["Asset","Expense"].includes(account.type);
+        let running = 0;
+        const glRowsWithRunning = glRows.map(r => { running += (parseFloat(r.debit)||0) - (parseFloat(r.credit)||0); return { ...r, running: isDebitNormal ? running : -running }; });
+        return (
+          <div>
+            <div className="card" style={{padding:20,marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>Select Account</div>
+              <select value={glAccount} onChange={e=>setGlAccount(e.target.value)} style={{padding:"8px 12px",borderRadius:8,border:"1px solid var(--border)",fontSize:13,fontFamily:"var(--sans)",minWidth:280}}>
+                <option value="">Choose an account...</option>
+                {accounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name} ({a.type})</option>)}
+              </select>
+            </div>
+            {glAccount && (
+              <div className="card">
+                <div className="ch"><div><div className="ct">{account?.name}</div><div className="cs">{account?.code} · {account?.type} · {glRows.length} entries</div></div>
+                  {glRows.length>0 && <button className="btn bo bsm" onClick={() => downloadCsv(`ledger-${account?.code}.csv`, ["Date","Description","Source","Debit","Credit","Running Balance"], glRowsWithRunning.map(r=>[fmtDate(r.entry_date),r.description||"",r.source_type||"",parseFloat(r.debit||0).toFixed(2),parseFloat(r.credit||0).toFixed(2),r.running.toFixed(2)]))}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export CSV
+                  </button>}
+                </div>
+                {glRows.length===0 ? <div className="empty" style={{padding:"32px 16px"}}>No journal entries yet for this account. Entries post automatically when invoices are created, payments recorded, or purchase orders raised — going forward from today.</div> : (
+                  <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:480}}><thead><tr><th>Date</th><th>Description</th><th>Source</th><th style={{textAlign:"right"}}>Debit</th><th style={{textAlign:"right"}}>Credit</th><th style={{textAlign:"right"}}>Running Balance</th></tr></thead><tbody>{glRowsWithRunning.map(r => <tr key={r.id}><td style={{fontSize:12,color:"var(--text3)"}}>{fmtDate(r.entry_date)}</td><td style={{fontWeight:500}}>{r.description}</td><td><span className="tag" style={{fontSize:10}}>{r.source_type}</span></td><td className="mono" style={{textAlign:"right"}}>{parseFloat(r.debit)>0?fmt(r.debit):"—"}</td><td className="mono" style={{textAlign:"right"}}>{parseFloat(r.credit)>0?fmt(r.credit):"—"}</td><td className="mono" style={{textAlign:"right",fontWeight:700}}>{fmt(r.running)}</td></tr>)}</tbody></table></div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {tab==="journal" && (() => {
+        const grouped = {};
+        journal.forEach(j => { const key = `${j.source_type}-${j.source_id}-${j.entry_date}`; if (!grouped[key]) grouped[key] = []; grouped[key].push(j); });
+        const txns = Object.values(grouped).sort((a,b)=> new Date(b[0].entry_date)-new Date(a[0].entry_date));
+        return (
+          <div className="card">
+            <div className="ch">
+              <div><div className="ct">Journal — All Transactions</div><div className="cs">{txns.length} transactions · {journal.length} journal lines</div></div>
+              {journal.length>0 && <button className="btn bo bsm" onClick={() => downloadCsv("journal.csv", ["Date","Description","Source","Account","Debit","Credit"], journal.map(j=>[fmtDate(j.entry_date),j.description||"",j.source_type||"",accounts.find(a=>a.id===j.account_id)?.name||"",parseFloat(j.debit||0).toFixed(2),parseFloat(j.credit||0).toFixed(2)]))}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export CSV
+              </button>}
+            </div>
+            {txns.length===0 ? <div className="empty" style={{padding:"32px 16px"}}>No journal entries yet. Entries post automatically going forward from today when invoices are created, payments recorded, or purchase orders raised.</div> : (
+              <div style={{padding:"4px 16px 16px"}}>{txns.map((lines,i) => (
+                <div key={i} style={{marginBottom:14,border:"1px solid var(--border)",borderRadius:8,overflow:"hidden"}}>
+                  <div style={{padding:"8px 14px",background:"#f8fafc",display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{fontWeight:600}}>{lines[0].description}</span><span style={{color:"var(--text3)"}}>{fmtDate(lines[0].entry_date)}</span></div>
+                  <table style={{width:"100%"}}><tbody>{lines.map(l => <tr key={l.id}><td style={{padding:"6px 14px",fontSize:12}}>{accounts.find(a=>a.id===l.account_id)?.code} — {accounts.find(a=>a.id===l.account_id)?.name}</td><td className="mono" style={{padding:"6px 14px",textAlign:"right",fontSize:12}}>{parseFloat(l.debit)>0?fmt(l.debit):""}</td><td className="mono" style={{padding:"6px 14px",textAlign:"right",fontSize:12,color:"var(--text3)"}}>{parseFloat(l.credit)>0?fmt(l.credit):""}</td></tr>)}</tbody></table>
+                </div>
+              ))}</div>
+            )}
+          </div>
+        );
+      })()}
 
       {tab==="trial-balance" && <div>
         <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>

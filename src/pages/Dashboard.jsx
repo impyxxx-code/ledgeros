@@ -18,7 +18,7 @@ import { AgentDashboard } from "./AgentDashboard.jsx";
 // └────────────────────────────────────────────────────────────┘
 export function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
   const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} />;
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} accounts={accounts} />;
 
   const [viewInvoice, setViewInvoice] = useState(null);
   const [overpaymentData, setOverpaymentData] = useState(null);

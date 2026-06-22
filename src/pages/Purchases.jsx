@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, today } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
+import { postPurchaseJournal } from "../lib/journal.js";
 import { EmptyState } from "../components/ui.jsx";
 
-export function Purchases({ contacts, products, token, userId }) {
+export function Purchases({ contacts, products, accounts = [], token, userId }) {
   const [pos, setPOs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -21,7 +22,7 @@ export function Purchases({ contacts, products, token, userId }) {
     const num = `PO-${String(pos.length+1).padStart(3,"0")}`;
     const sup = suppliers.find(s => s.id === f.supplier_id);
     const po = await sb.post(token, "purchase_orders", { ...f, po_number: num, supplier_name: sup?.name, total: total+vatTotal, created_by: userId });
-    if (po[0]) { for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty)||0, unit_cost: parseFloat(l.unit_cost)||0, vat_rate: parseFloat(l.vat_rate)||0, total: lineTotal(l) }); setPOs(prev => [po[0],...prev]); logAudit(token, userId, "purchase_created", "purchase_order", po[0].id, `${num} raised for ${sup?.name} — £${(total+vatTotal).toFixed(2)}`); }
+    if (po[0]) { for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty)||0, unit_cost: parseFloat(l.unit_cost)||0, vat_rate: parseFloat(l.vat_rate)||0, total: lineTotal(l) }); setPOs(prev => [po[0],...prev]); logAudit(token, userId, "purchase_created", "purchase_order", po[0].id, `${num} raised for ${sup?.name} — £${(total+vatTotal).toFixed(2)}`); postPurchaseJournal(token, accounts, { po_id: po[0].id, po_number: num, amount: total, date: f.order_date }); }
     setLines([{ product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20" }]);
     setF({ supplier_id:"",order_date:today(),expected_date:"",notes:"" });
     setShowForm(false); setSaving(false);
