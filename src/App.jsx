@@ -2124,7 +2124,7 @@ export default function App() {
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} accounts={accounts} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
-                {page==="purchases"&&<Purchases contacts={contacts} products={products} accounts={accounts} token={auth.token} userId={auth.user.id} />}
+                {page==="purchases"&&<Purchases contacts={contacts} setContacts={setContacts} products={products} accounts={accounts} token={auth.token} userId={auth.user.id} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} setInvoices={setInvoices} profile={profile} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
                 {page==="analytics"&&<div style={{margin:"-26px -28px",overflow:"hidden"}}><Analytics invoices={invoices} products={products} contacts={contacts} /></div>}
