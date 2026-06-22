@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
-import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "../../lib/email.js";
+import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
@@ -89,7 +89,11 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
     await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     toast.success("Invoice marked as paid");
-    if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
+    if (inv) {
+      logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
+      const cust = contacts.find(c => c.name === inv.customer);
+      if (cust?.email) sendEmail({ to: cust.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, inv.amount, method || "cash", 0), token }).catch(()=>{});
+    }
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
 
@@ -131,6 +135,8 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
+    const custForReceipt = contacts.find(c => c.name === inv.customer);
+    if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, paid, resolvedMethod, newBalance), token }).catch(()=>{});
     if (overpayment > 0) {
       const outstanding = invoices.filter(i => i.customer === inv.customer && i.id !== inv.id && (i.status === "pending" || i.status === "overdue" || i.status === "partial"));
       setOverpaymentData({ inv: { ...inv, amount_paid: actualPaid }, overpayment, outstandingInvoices: outstanding });
@@ -232,6 +238,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
       {bulkPayCustomer && <BulkPaymentModal
         customer={bulkPayCustomer}
         invoices={invoices}
+        contacts={contacts}
         token={token}
         userId={userId}
         profile={profile}

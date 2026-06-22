@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
-import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "../../lib/email.js";
+import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildBulkReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 
 // ── BULK PAYMENT MODAL ────────────────────────────────────────────────────────
-export function BulkPaymentModal({ customer: initialCustomer, invoices, token, userId, profile, onClose, onComplete }) {
+export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts = [], token, userId, profile, onClose, onComplete }) {
   const [customer, setCustomer] = useState(initialCustomer === "__pick__" ? "" : initialCustomer);
   const [custSearch, setCustSearch] = useState("");
   const [amount, setAmount] = useState("");
@@ -98,6 +98,9 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, token, u
     await logAudit(token, userId, "bulk_payment", "customer", null,
       `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} for ${customer} dated ${payDate} — ${preview.allocs.length} invoice(s) updated`
     );
+
+    const custForReceipt = contacts.find(c => c.name === customer);
+    if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${customer}`, html: buildBulkReceiptEmailHtml(customer, parseFloat(amount), method, summary, preview.leftover), token }).catch(()=>{});
 
     setSaving(false);
     setSavedSummary({ allocs: summary, leftover: preview.leftover });

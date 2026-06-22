@@ -3,7 +3,8 @@ import { AlertCircle } from "lucide-react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
-import { toast } from "../lib/constants.js";
+import { toast, COMPANY } from "../lib/constants.js";
+import { sendEmail, buildReceiptEmailHtml } from "../lib/email.js";
 import { EmptyState } from "../components/ui.jsx";
 import { InvoiceModal } from "../components/InvoiceModal.jsx";
 
@@ -46,7 +47,11 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
     setPayingId(null);
     setMarkingPaidId(null);
-    if (inv) logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
+    if (inv) {
+      logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — £${inv.amount}`);
+      const cust = contacts.find(c => c.name === inv.customer);
+      if (cust?.email) sendEmail({ to: cust.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, inv.amount, method || "cash", 0), token }).catch(()=>{});
+    }
   };
 
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -77,6 +82,8 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
     setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance: newBalance, status: newStatus } : i));
     setPartPayId(null);
     setPartPayAmount({});
+    const custForReceipt = contacts.find(c => c.name === inv.customer);
+    if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, paid, resolvedMethod, newBalance), token }).catch(()=>{});
   };
 
   if (isMobile()) {
