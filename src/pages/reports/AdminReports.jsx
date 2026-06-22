@@ -25,10 +25,12 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const [pos, setPOs] = useState([]);
   const [poLines, setPoLines] = useState([]);
   const [pcCategory, setPcCategory] = useState("all");
+  const [collAudit, setCollAudit] = useState([]);
   useEffect(() => {
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
     sb.get(token, "purchase_order_lines", "order=created_at.desc").then(d => Array.isArray(d) && setPoLines(d));
+    sb.get(token, "audit_log", "action=in.(reminder_sent,payment_received,part_payment,bulk_payment)&order=created_at.desc&limit=2000").then(d => Array.isArray(d) && setCollAudit(d));
   }, [token]);
   const [hoveredBar, setHoveredBar] = React.useState(null);
   const [reconPeriod, setReconPeriod] = useState("week");
@@ -117,6 +119,25 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
       vatExceptions.push({ source:"Purchase", doc:po?.po_number||"—", party:po?.supplier_name||"—", date:po?.order_date, product:l.product_name, lineRate, catalogRate:product?parseFloat(product.vat_rate):null, amount:parseFloat(l.total)||0 });
     }
   });
+  // ── Collections Report ──
+  const collOutstanding = invoices.filter(i=>i.status==="pending"||i.status==="overdue"||i.status==="partial");
+  const collRows = collOutstanding.map(inv => {
+    const reminders = collAudit.filter(a=>a.action==="reminder_sent"&&a.entity_id===inv.id);
+    const payments = collAudit.filter(a=>(a.action==="payment_received"||a.action==="part_payment")&&a.entity_id===inv.id);
+    const daysOverdue = Math.max(0, Math.floor((now - new Date(inv.due_date||inv.invoice_date)) / 86400000));
+    return {
+      inv, customer: inv.customer, invoice_number: inv.invoice_number,
+      balance: parseFloat(inv.balance)>0?parseFloat(inv.balance):parseFloat(inv.amount)||0,
+      daysOverdue,
+      reminderCount: reminders.length,
+      lastReminder: reminders[0]?.created_at || null,
+      lastPaymentActivity: payments[0]?.created_at || null,
+      chased: reminders.length > 0,
+    };
+  }).sort((a,b)=>b.daysOverdue-a.daysOverdue);
+  const chasedCount = collRows.filter(r=>r.chased).length;
+  const notChasedCount = collRows.length - chasedCount;
+  const notChasedValue = collRows.filter(r=>!r.chased).reduce((s,r)=>s+r.balance,0);
   // ── Trial Balance ──
   const debitTypes = ["Asset","Expense"];
   const trialRows = accounts.map(a => ({ ...a, debit: debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0, credit: !debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0 }));
@@ -194,7 +215,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
       {(() => {
         const groups = [
           { label:"Business Overview", key:"ovw", icon:"📊", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-          { label:"Receivables", key:"rec", icon:"💳", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["customers","Customers"],["cashflow","Cash Flow"]] },
+          { label:"Receivables", key:"rec", icon:"💳", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["collections","Collections",notChasedCount],["customers","Customers"],["cashflow","Cash Flow"]] },
           { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
           { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"],["physical-count","Physical Count"]] },
@@ -383,6 +404,21 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
         const expenses = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
         const netProfit = grossProfit - expenses;
         const netMargin = netRevenue > 0 ? Math.round((netProfit/netRevenue)*100) : 0;
+        // ── Prior period comparison (revenue is the only field with real per-period dates) ──
+        const filterByPriorPeriod = (inv) => {
+          const d = new Date(inv.invoice_date || inv.created_at);
+          if (period === "week") { const start = new Date(now); start.setDate(now.getDate()-14); const end = new Date(now); end.setDate(now.getDate()-7); return d >= start && d < end; }
+          if (period === "month") { const pm = now.getMonth()===0?11:now.getMonth()-1; const py = now.getMonth()===0?now.getFullYear()-1:now.getFullYear(); return d.getMonth()===pm && d.getFullYear()===py; }
+          if (period === "quarter") { const pq = Math.floor(now.getMonth()/3)-1; const py = pq<0?now.getFullYear()-1:now.getFullYear(); const pqn = pq<0?3:pq; return Math.floor(d.getMonth()/3)===pqn && d.getFullYear()===py; }
+          if (period === "year") return d.getFullYear() === now.getFullYear()-1;
+          return false;
+        };
+        const priorInv = period === "all" ? [] : invoices.filter(filterByPriorPeriod);
+        const priorRevenue = priorInv.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
+        const priorVat = priorInv.filter(i=>i.status==="paid").reduce((s,i)=>s+(i.vat_total||0),0);
+        const priorNetRevenue = priorRevenue - priorVat;
+        const revenueChange = priorNetRevenue > 0 ? ((netRevenue-priorNetRevenue)/priorNetRevenue*100) : null;
+        const priorLabels = { week:"Prior Week", month:"Prior Month", quarter:"Prior Quarter", year:"Prior Year", all:"" };
         return (
           <div>
             <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
@@ -390,6 +426,23 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
                 <div key={k.l} className="kpi" style={{marginBottom:0}}><div className="kpi-label">{k.l}</div><div className="kpi-val" style={{color:k.c}}>{k.v}</div></div>
               ))}
             </div>
+            {period !== "all" && (
+              <div className="card" style={{marginBottom:20,padding:18}}>
+                <div style={{fontSize:11,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>Revenue vs {priorLabels[period]}</div>
+                <div style={{display:"flex",alignItems:"flex-end",gap:24}}>
+                  <div><div style={{fontSize:10,color:"var(--text3)",marginBottom:3}}>{periodLabels[period]}</div><div style={{fontSize:22,fontWeight:800,color:"var(--blue)"}}>{fmt(netRevenue)}</div></div>
+                  <div style={{fontSize:18,color:"var(--text3)",paddingBottom:4}}>vs</div>
+                  <div><div style={{fontSize:10,color:"var(--text3)",marginBottom:3}}>{priorLabels[period]}</div><div style={{fontSize:22,fontWeight:800,color:"var(--text2)"}}>{fmt(priorNetRevenue)}</div></div>
+                  {revenueChange !== null && (
+                    <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,background:revenueChange>=0?"#f0fdf4":"#fef2f2"}}>
+                      <span style={{fontSize:16}}>{revenueChange>=0?"▲":"▼"}</span>
+                      <span style={{fontSize:16,fontWeight:800,color:revenueChange>=0?"var(--green)":"var(--red)"}}>{Math.abs(revenueChange).toFixed(1)}%</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{fontSize:11,color:"var(--text3)",marginTop:10}}>Note: Gross Profit/Net Profit/Expenses can't be compared period-over-period — Cost of Goods uses today's stock snapshot and Expenses use a running account balance, neither tracked historically by period yet.</div>
+              </div>
+            )}
             <div className="card">
               <div className="ch"><div className="ct">Profit & Loss Statement</div><div className="cs">{periodLabels[period]}</div></div>
               <div className="rs-title">Revenue</div>
@@ -565,6 +618,25 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
           </div>
         );
       })()}
+
+      {tab==="collections" && <div>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Outstanding Invoices</div><div className="kpi-val">{collRows.length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Chased (Reminder Sent)</div><div className="kpi-val tg">{chasedCount}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Never Chased</div><div className="kpi-val" style={{color:"var(--red)"}}>{notChasedCount}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Never-Chased Value</div><div className="kpi-val" style={{color:"var(--red)"}}>{fmt(notChasedValue)}</div></div>
+        </div>
+        <div className="card">
+          <div className="ch">
+            <div><div className="ct">Collections — Chase Activity</div><div className="cs">Every outstanding invoice with reminder/payment history, oldest first</div></div>
+            <button className="btn bo bsm" onClick={() => downloadCsv("collections.csv", ["Customer","Invoice #","Balance","Days Overdue","Reminders Sent","Last Reminder","Last Payment Activity"], collRows.map(r=>[r.customer,r.invoice_number,r.balance.toFixed(2),r.daysOverdue,r.reminderCount,r.lastReminder?fmtDate(r.lastReminder):"",r.lastPaymentActivity?fmtDate(r.lastPaymentActivity):""]))}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Customer</th><th>Invoice #</th><th style={{textAlign:"right"}}>Balance</th><th style={{textAlign:"right"}}>Days Overdue</th><th style={{textAlign:"right"}}>Reminders</th><th>Last Reminder</th><th>Last Payment Activity</th></tr></thead><tbody>{collRows.map(r => <tr key={r.inv.id}><td style={{fontWeight:500}}>{r.customer}</td><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{r.invoice_number}</td><td className="mono" style={{textAlign:"right",fontWeight:600}}>{fmt(r.balance)}</td><td className="mono" style={{textAlign:"right",color:r.daysOverdue>30?"var(--red)":r.daysOverdue>0?"var(--amber)":"var(--text3)"}}>{r.daysOverdue}</td><td style={{textAlign:"right"}}>{r.chased?<span className="badge b-green">{r.reminderCount}</span>:<span className="badge b-red">0</span>}</td><td style={{fontSize:12,color:"var(--text3)"}}>{r.lastReminder?fmtDate(r.lastReminder):"—"}</td><td style={{fontSize:12,color:"var(--text3)"}}>{r.lastPaymentActivity?fmtDate(r.lastPaymentActivity):"—"}</td></tr>)}{collRows.length===0&&<tr><td colSpan={7} className="empty">No outstanding invoices</td></tr>}</tbody></table></div>
+        </div>
+      </div>}
 
       {tab==="aged-creditors" && (() => {
         const suppliers = contacts.filter(c=>c.type==="supplier"||c.type==="both");
