@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
-import { COMPANY, toast } from "../../lib/constants.js";
+import { COMPANY, LOGO, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
 import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
 import { AgentProductsReport } from "./AgentProductsReport.jsx";
@@ -24,6 +24,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const [tab, setTab] = useState("overview");
   const [pos, setPOs] = useState([]);
   const [poLines, setPoLines] = useState([]);
+  const [pcCategory, setPcCategory] = useState("all");
   useEffect(() => {
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
@@ -89,11 +90,52 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
       return s + (Array.isArray(lines) ? lines.filter(l=>(parseFloat(l.vat_rate)??20)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(rate/100),0) : 0);
     }, 0),
   }));
+  // ── VAT Exceptions ──
+  const validRates = [0, 5, 20];
+  const vatExceptions = [];
+  invoices.filter(i=>i.status!=="draft"&&i.status!=="cancelled").forEach(inv => {
+    let lines = []; try { lines = typeof inv.lines === "string" ? JSON.parse(inv.lines) : (inv.lines||[]); } catch {}
+    (Array.isArray(lines)?lines:[]).forEach(l => {
+      const lineRate = parseFloat(l.vat_rate);
+      if (isNaN(lineRate)) return;
+      const product = l.product_id ? products.find(p=>p.id===l.product_id) : products.find(p=>p.name===l.description);
+      if (product && parseFloat(product.vat_rate) !== lineRate) {
+        vatExceptions.push({ source:"Invoice", doc:inv.invoice_number, party:inv.customer, date:inv.invoice_date, product:l.description, lineRate, catalogRate:parseFloat(product.vat_rate), amount:(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0) });
+      } else if (!validRates.includes(lineRate)) {
+        vatExceptions.push({ source:"Invoice", doc:inv.invoice_number, party:inv.customer, date:inv.invoice_date, product:l.description, lineRate, catalogRate:product?parseFloat(product.vat_rate):null, amount:(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0) });
+      }
+    });
+  });
+  poLines.forEach(l => {
+    const lineRate = parseFloat(l.vat_rate);
+    if (isNaN(lineRate)) return;
+    const po = pos.find(p=>p.id===l.po_id);
+    const product = l.product_id ? products.find(p=>p.id===l.product_id) : null;
+    if (product && parseFloat(product.vat_rate) !== lineRate) {
+      vatExceptions.push({ source:"Purchase", doc:po?.po_number||"—", party:po?.supplier_name||"—", date:po?.order_date, product:l.product_name, lineRate, catalogRate:parseFloat(product.vat_rate), amount:parseFloat(l.total)||0 });
+    } else if (!validRates.includes(lineRate)) {
+      vatExceptions.push({ source:"Purchase", doc:po?.po_number||"—", party:po?.supplier_name||"—", date:po?.order_date, product:l.product_name, lineRate, catalogRate:product?parseFloat(product.vat_rate):null, amount:parseFloat(l.total)||0 });
+    }
+  });
   // ── Trial Balance ──
   const debitTypes = ["Asset","Expense"];
   const trialRows = accounts.map(a => ({ ...a, debit: debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0, credit: !debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0 }));
   const totalDebits = trialRows.reduce((s,a)=>s+a.debit,0);
   const totalCredits = trialRows.reduce((s,a)=>s+a.credit,0);
+  // ── Physical Inventory Worksheet ──
+  const pcProducts = (pcCategory==="all" ? products : products.filter(p=>(p.category||"General")===pcCategory)).slice().sort((a,b)=>(a.category||"").localeCompare(b.category||"")||a.name.localeCompare(b.name));
+  const printPhysicalCount = () => {
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Physical Inventory Worksheet</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0a0f1e;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:820px;margin:0 auto;padding:28px 32px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:3px solid #1e1b4b;margin-bottom:20px}.logo-wrap img{height:60px;object-fit:contain}.doc-title{font-size:26px;font-weight:900;color:#1e1b4b;letter-spacing:-1px}.doc-sub{font-size:11px;color:#64748b;margin-top:4px}table{width:100%;border-collapse:collapse;margin-bottom:20px}thead tr{background:#1e1b4b}th{padding:9px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff;text-align:left}td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9}tr:nth-child(even) td{background:#fafbfd}.td-blank{text-align:center;color:#cbd5e1;width:90px}.footer-box{margin-top:16px;font-size:9px;color:#64748b;line-height:1.7}</style>
+</head><body><div class="page">
+<div class="header"><div class="logo-wrap"><img src="${LOGO}" alt="Arkham Retail"/></div><div style="text-align:right"><div class="doc-title">PHYSICAL INVENTORY WORKSHEET</div><div class="doc-sub">${pcCategory==="all"?"All categories":escHtml(pcCategory)} · ${pcProducts.length} products · Generated ${fmtDate(new Date().toISOString().slice(0,10))}</div></div></div>
+<table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>System Qty</th><th class="td-blank">Counted Qty</th><th class="td-blank">Variance</th></tr></thead><tbody>
+${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weight:600">${escHtml(p.name)}</td><td>${escHtml(p.category||"General")}</td><td>${p.stock_qty||0} ${escHtml(p.unit||"")}</td><td class="td-blank">________</td><td class="td-blank">________</td></tr>`).join("")}
+</tbody></table>
+<div class="footer-box"><div><b>${COMPANY.name}</b> · ${COMPANY.address}, ${COMPANY.city}, ${COMPANY.postcode}</div><div>Counted by: ____________________ &nbsp;&nbsp; Date: ____________ &nbsp;&nbsp; Signature: ____________________</div></div>
+</div></body></html>`;
+    window.__ledgerosPrint && window.__ledgerosPrint(html);
+  };
   return (
     <div>
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -155,8 +197,8 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
           { label:"Receivables", key:"rec", icon:"💳", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["customers","Customers"],["cashflow","Cash Flow"]] },
           { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
-          { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"]] },
-          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["custom","Custom Reports"]] },
+          { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"],["physical-count","Physical Count"]] },
+          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["custom","Custom Reports"]] },
         ];
         const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
         return (
@@ -892,6 +934,43 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
           <div className="ch"><div className="ct">Output VAT by Rate</div><div className="cs">Breakdown of sales VAT by rate band — {periodLabels[period]}</div></div>
           <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Rate</th><th>Net Sales</th><th style={{textAlign:"right"}}>VAT</th></tr></thead><tbody>{outputVATByRate.map(r => <tr key={r.rate}><td style={{fontWeight:600}}>{r.rate===0?"Exempt / 0%":r.rate+"%"}</td><td className="mono">{fmt(r.net)}</td><td className="mono" style={{textAlign:"right",fontWeight:600}}>{fmt(r.vat)}</td></tr>)}</tbody></table></div>
         </div>
+      </div>}
+
+      {tab==="vat-exceptions" && <div>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Exceptions Found</div><div className="kpi-val" style={{color:vatExceptions.length>0?"var(--red)":"var(--green)"}}>{vatExceptions.length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">From Invoices</div><div className="kpi-val">{vatExceptions.filter(e=>e.source==="Invoice").length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">From Purchases</div><div className="kpi-val">{vatExceptions.filter(e=>e.source==="Purchase").length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Amount at Stake</div><div className="kpi-val" style={{color:"var(--red)"}}>{fmt(vatExceptions.reduce((s,e)=>s+e.amount,0))}</div></div>
+        </div>
+        <div className="card">
+          <div className="ch">
+            <div><div className="ct">VAT Exceptions</div><div className="cs">Lines where the VAT rate charged doesn't match the product's current catalog VAT rate, or is an invalid rate</div></div>
+            {vatExceptions.length>0 && <button className="btn bo bsm" onClick={() => downloadCsv("vat-exceptions.csv", ["Source","Document","Party","Date","Product","Line VAT %","Catalog VAT %","Amount"], vatExceptions.map(e=>[e.source,e.doc,e.party,e.date||"",e.product,e.lineRate,e.catalogRate??"n/a",e.amount.toFixed(2)]))}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>}
+          </div>
+          {vatExceptions.length===0 ? <div className="empty" style={{padding:"32px 16px"}}>✓ No VAT exceptions found — all line items match their product's catalog VAT rate.</div> : (
+            <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Source</th><th>Document</th><th>Party</th><th>Date</th><th>Product</th><th style={{textAlign:"right"}}>Line VAT %</th><th style={{textAlign:"right"}}>Catalog VAT %</th><th style={{textAlign:"right"}}>Amount</th></tr></thead><tbody>{vatExceptions.map((e,i) => <tr key={i}><td><span className={"badge "+(e.source==="Invoice"?"b-blue":"b-amber")} style={{fontSize:10}}>{e.source}</span></td><td className="mono" style={{fontSize:12,color:"var(--blue)"}}>{e.doc}</td><td style={{fontWeight:500}}>{e.party}</td><td style={{fontSize:12,color:"var(--text3)"}}>{fmtDate(e.date)}</td><td>{e.product}</td><td className="mono" style={{textAlign:"right",fontWeight:700,color:"var(--red)"}}>{e.lineRate}%</td><td className="mono" style={{textAlign:"right"}}>{e.catalogRate??"—"}{e.catalogRate!=null?"%":""}</td><td className="mono" style={{textAlign:"right"}}>{fmt(e.amount)}</td></tr>)}</tbody></table></div>
+          )}
+        </div>
+      </div>}
+
+      {tab==="physical-count" && <div className="card" style={{padding:24}}>
+        <div className="ct" style={{marginBottom:6}}>Physical Inventory Worksheet</div>
+        <div style={{fontSize:12,color:"var(--text3)",marginBottom:20}}>Printable stock-count sheet — system quantity listed, blank columns for counted qty and variance. Hand to staff for manual stocktakes.</div>
+        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:18}}>
+          <select value={pcCategory} onChange={e=>setPcCategory(e.target.value)} style={{padding:"8px 12px",borderRadius:8,border:"1px solid var(--border)",fontSize:13,fontFamily:"var(--sans)"}}>
+            <option value="all">All categories ({products.length} products)</option>
+            {categories.map(c => <option key={c} value={c}>{c} ({products.filter(p=>(p.category||"General")===c).length})</option>)}
+          </select>
+          <button className="btn bp" onClick={printPhysicalCount}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print Worksheet ({pcProducts.length} items)
+          </button>
+        </div>
+        <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",border:"1px solid var(--border)",borderRadius:"var(--r)"}}><table style={{minWidth:420}}><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>System Qty</th></tr></thead><tbody>{pcProducts.slice(0,30).map(p => <tr key={p.id}><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{p.code||"—"}</td><td style={{fontWeight:500}}>{p.name}</td><td><span className="tag" style={{fontSize:10}}>{p.category||"General"}</span></td><td className="mono">{p.stock_qty||0} {p.unit}</td></tr>)}</tbody></table>{pcProducts.length>30 && <div style={{padding:"10px 16px",fontSize:12,color:"var(--text3)"}}>+{pcProducts.length-30} more — full list included in print</div>}</div>
       </div>}
 
       {tab==="custom" && <CustomReportBuilder invoices={invoices} products={products} contacts={contacts} allProfiles={allProfiles} purchaseOrders={pos} purchaseOrderLines={poLines} token={token} userId={userId} profile={profile} />}
