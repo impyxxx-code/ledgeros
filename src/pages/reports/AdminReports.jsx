@@ -1,17 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { COMPANY, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
 import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
 import { AgentProductsReport } from "./AgentProductsReport.jsx";
 
+const downloadCsv = (filename, header, rows) => {
+  const csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = filename;
+  a.click();
+};
+
 // ┌────────────────────────────────────────────────────────────┐
 // │ AdminReports                                               │
-// │ Full 13-tab reports suite                                  │
+// │ Full reports hub — QuickBooks-style categorized suite      │
 // └────────────────────────────────────────────────────────────┘
-export function AdminReports({ invoices, products, contacts, accounts, allProfiles, setPage, setPendingFilter }) {
+export function AdminReports({ invoices, products, contacts, accounts, allProfiles, setPage, setPendingFilter, token }) {
   const [tab, setTab] = useState("overview");
+  const [pos, setPOs] = useState([]);
+  const [poLines, setPoLines] = useState([]);
+  useEffect(() => {
+    if (!token) return;
+    sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
+    sb.get(token, "purchase_order_lines", "order=created_at.desc").then(d => Array.isArray(d) && setPoLines(d));
+  }, [token]);
   const [hoveredBar, setHoveredBar] = React.useState(null);
   const [reconPeriod, setReconPeriod] = useState("week");
   const [reconFrom, setReconFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); });
@@ -46,6 +62,37 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const lowStockItems = products.filter(p=>p.stock_qty<=(p.reorder_level||DEFAULT_REORDER));
   const productSales = products.map(p => ({ ...p, stockValue: (p.stock_qty||0)*(p.cost_price||0), retailValue: (p.stock_qty||0)*(p.sale_price||0), margin: p.sale_price > 0 ? Math.round(((p.sale_price-p.cost_price)/p.sale_price)*100) : 0 })).sort((a,b)=>b.stockValue-a.stockValue);
   const periodLabels = { week:"This Week", month:"This Month", quarter:"This Quarter", year:"This Year", all:"All Time" };
+  // ── VAT Liability ──
+  const filterPOByPeriod = (po) => {
+    const d = new Date(po.order_date || po.created_at);
+    if (period === "week") return (now - d) < 7 * 86400000;
+    if (period === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    if (period === "quarter") return Math.floor(d.getMonth()/3) === Math.floor(now.getMonth()/3) && d.getFullYear() === now.getFullYear();
+    if (period === "year") return d.getFullYear() === now.getFullYear();
+    return true;
+  };
+  const filteredPOs = pos.filter(filterPOByPeriod);
+  const filteredPOIds = new Set(filteredPOs.map(p => p.id));
+  const filteredPOLines = poLines.filter(l => filteredPOIds.has(l.po_id));
+  const outputVAT = filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => s + parseFloat(i.vat_total||0), 0);
+  const inputVAT = filteredPOLines.reduce((s,l) => s + (parseFloat(l.total)||0) * (parseFloat(l.vat_rate)||0) / 100, 0);
+  const netVAT = outputVAT - inputVAT;
+  const outputVATByRate = [20,5,0].map(rate => ({
+    rate,
+    net: filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => {
+      let lines = []; try { lines = typeof i.lines === "string" ? JSON.parse(i.lines) : (i.lines||[]); } catch {}
+      return s + (Array.isArray(lines) ? lines.filter(l=>(parseFloat(l.vat_rate)??20)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0),0) : 0);
+    }, 0),
+    vat: filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => {
+      let lines = []; try { lines = typeof i.lines === "string" ? JSON.parse(i.lines) : (i.lines||[]); } catch {}
+      return s + (Array.isArray(lines) ? lines.filter(l=>(parseFloat(l.vat_rate)??20)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(rate/100),0) : 0);
+    }, 0),
+  }));
+  // ── Trial Balance ──
+  const debitTypes = ["Asset","Expense"];
+  const trialRows = accounts.map(a => ({ ...a, debit: debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0, credit: !debitTypes.includes(a.type) ? parseFloat(a.balance||0) : 0 }));
+  const totalDebits = trialRows.reduce((s,a)=>s+a.debit,0);
+  const totalCredits = trialRows.reduce((s,a)=>s+a.credit,0);
   return (
     <div>
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -84,22 +131,31 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
         .ar2-row1 { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
         .ar2-group { padding: 10px 20px; font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .7px; cursor: pointer; border-bottom: 2.5px solid transparent; border: none; background: none; font-family: var(--sans); display: flex; align-items: center; gap: 6px; transition: color .12s, background .12s; white-space: nowrap; }
         .ar2-group:hover { color: var(--text); background: var(--border); }
-        .ar2-group.gr-rev { color: #2563eb; border-bottom: 2.5px solid #2563eb; background: #eff6ff; }
-        .ar2-group.gr-deb { color: #dc2626; border-bottom: 2.5px solid #dc2626; background: #fef2f2; }
-        .ar2-group.gr-ops { color: #7c3aed; border-bottom: 2.5px solid #7c3aed; background: #f5f3ff; }
+        .ar2-group.gr-ovw { color: #2563eb; border-bottom: 2.5px solid #2563eb; background: #eff6ff; }
+        .ar2-group.gr-rec { color: #0891b2; border-bottom: 2.5px solid #0891b2; background: #ecfeff; }
+        .ar2-group.gr-pay { color: #ea580c; border-bottom: 2.5px solid #ea580c; background: #fff7ed; }
+        .ar2-group.gr-sal { color: #16a34a; border-bottom: 2.5px solid #16a34a; background: #f0fdf4; }
+        .ar2-group.gr-inv { color: #7c3aed; border-bottom: 2.5px solid #7c3aed; background: #f5f3ff; }
+        .ar2-group.gr-acc { color: #b45309; border-bottom: 2.5px solid #b45309; background: #fffbeb; }
         .ar2-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: #fee2e2; color: #991b1b; }
         .ar2-row2 { display: flex; background: var(--white); }
         .ar2-tab { padding: 10px 16px; font-size: 12px; font-weight: 400; color: var(--text2); cursor: pointer; border: none; background: none; font-family: var(--sans); white-space: nowrap; border-bottom: 2px solid transparent; transition: color .12s, background .12s; }
         .ar2-tab:hover { color: var(--text); background: var(--bg); }
-        .ar2-tab.on-rev { color: #2563eb; font-weight: 600; border-bottom-color: #2563eb; }
-        .ar2-tab.on-deb { color: #dc2626; font-weight: 600; border-bottom-color: #dc2626; }
-        .ar2-tab.on-ops { color: #7c3aed; font-weight: 600; border-bottom-color: #7c3aed; }
+        .ar2-tab.on-ovw { color: #2563eb; font-weight: 600; border-bottom-color: #2563eb; }
+        .ar2-tab.on-rec { color: #0891b2; font-weight: 600; border-bottom-color: #0891b2; }
+        .ar2-tab.on-pay { color: #ea580c; font-weight: 600; border-bottom-color: #ea580c; }
+        .ar2-tab.on-sal { color: #16a34a; font-weight: 600; border-bottom-color: #16a34a; }
+        .ar2-tab.on-inv { color: #7c3aed; font-weight: 600; border-bottom-color: #7c3aed; }
+        .ar2-tab.on-acc { color: #b45309; font-weight: 600; border-bottom-color: #b45309; }
       `}</style>
       {(() => {
         const groups = [
-          { label:"Revenue", key:"rev", icon:"💰", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-          { label:"Debtors", key:"deb", icon:"⚠️", color:"#dc2626", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["aged-creditors","Aged Creditors"],["cashflow","Cash Flow"],["cash-recon","Cash Recon"]] },
-          { label:"Operations", key:"ops", icon:"⚙️", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["customers","Customers"],["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+          { label:"Business Overview", key:"ovw", icon:"📊", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
+          { label:"Receivables", key:"rec", icon:"💳", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["customers","Customers"],["cashflow","Cash Flow"]] },
+          { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
+          { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
+          { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"]] },
+          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"]] },
         ];
         const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
         return (
@@ -111,7 +167,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
                   className={`ar2-group${activeGroup.key===g.key ? " gr-"+g.key : ""}`}
                   onClick={() => { const firstTab = g.tabs[0][0]; setTab(firstTab); }}>
                   {g.icon} {g.label}
-                  {g.key==="deb" && invoices.filter(i=>i.status==="overdue").length > 0 &&
+                  {g.key==="rec" && invoices.filter(i=>i.status==="overdue").length > 0 &&
                     <span className="ar2-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
                 </button>
               ))}
@@ -767,6 +823,75 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
           </div>
         );
       })()}
+
+      {tab==="inventory-valuation" && <div>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Products</div><div className="kpi-val">{products.length}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Value (Cost)</div><div className="kpi-val">{fmt(totalStockValue)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Stock Value (Retail)</div><div className="kpi-val tg">{fmt(totalRetailValue)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Unrealised Margin</div><div className="kpi-val" style={{color:"var(--purple)"}}>{fmt(totalRetailValue-totalStockValue)}</div></div>
+        </div>
+        <div className="card">
+          <div className="ch">
+            <div><div className="ct">Inventory Valuation by Category</div><div className="cs">As of {fmtDate(new Date().toISOString().slice(0,10))} · valued at cost</div></div>
+            <button className="btn bo bsm" onClick={() => downloadCsv("inventory-valuation.csv", ["Category","Products","Cost Value","Retail Value","Low Stock"], catData.map(c=>[c.name,c.products,c.stockValue.toFixed(2),c.retailValue.toFixed(2),c.lowStock]))}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Low Stock</th></tr></thead><tbody>{catData.map(c => <tr key={c.name}><td style={{fontWeight:600}}>{c.name}</td><td className="mono">{c.products}</td><td className="mono">{fmt(c.stockValue)}</td><td className="mono tg">{fmt(c.retailValue)}</td><td>{c.lowStock>0?<span className="badge b-red">{c.lowStock}</span>:<span className="badge b-green">✓</span>}</td></tr>)}
+          <tr style={{background:"#f8fafc",fontWeight:700}}><td>TOTAL</td><td className="mono">{products.length}</td><td className="mono">{fmt(totalStockValue)}</td><td className="mono tg">{fmt(totalRetailValue)}</td><td className="mono">{lowStockItems.length}</td></tr>
+          </tbody></table></div>
+        </div>
+      </div>}
+
+      {tab==="trial-balance" && <div>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Debits</div><div className="kpi-val">{fmt(totalDebits)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Total Credits</div><div className="kpi-val">{fmt(totalCredits)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Difference</div><div className="kpi-val" style={{color:Math.abs(totalDebits-totalCredits)<0.01?"var(--green)":"var(--red)"}}>{fmt(totalDebits-totalCredits)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Status</div><div className="kpi-val" style={{fontSize:14,color:Math.abs(totalDebits-totalCredits)<0.01?"var(--green)":"var(--red)"}}>{Math.abs(totalDebits-totalCredits)<0.01?"✓ Balanced":"⚠️ Unbalanced"}</div></div>
+        </div>
+        <div className="card">
+          <div className="ch">
+            <div><div className="ct">Trial Balance</div><div className="cs">{accounts.length} accounts · as of {fmtDate(new Date().toISOString().slice(0,10))}</div></div>
+            <button className="btn bo bsm" onClick={() => downloadCsv("trial-balance.csv", ["Code","Account","Type","Debit","Credit"], trialRows.map(a=>[a.code||"",a.name,a.type,a.debit.toFixed(2),a.credit.toFixed(2)]))}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Code</th><th>Account</th><th>Type</th><th style={{textAlign:"right"}}>Debit</th><th style={{textAlign:"right"}}>Credit</th></tr></thead><tbody>{trialRows.map(a => <tr key={a.id}><td className="mono" style={{fontSize:11,color:"var(--text3)"}}>{a.code||"—"}</td><td style={{fontWeight:600}}>{a.name}</td><td><span className="tag" style={{fontSize:10}}>{a.type}</span></td><td className="mono" style={{textAlign:"right"}}>{a.debit>0?fmt(a.debit):"—"}</td><td className="mono" style={{textAlign:"right"}}>{a.credit>0?fmt(a.credit):"—"}</td></tr>)}
+          <tr style={{background:"#f8fafc",fontWeight:700}}><td colSpan={3}>TOTAL</td><td className="mono" style={{textAlign:"right"}}>{fmt(totalDebits)}</td><td className="mono" style={{textAlign:"right"}}>{fmt(totalCredits)}</td></tr>
+          </tbody></table></div>
+        </div>
+      </div>}
+
+      {tab==="vat-summary" && <div>
+        <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom:20 }}>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Output VAT (Sales)</div><div className="kpi-val tg">{fmt(outputVAT)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Input VAT (Purchases)</div><div className="kpi-val" style={{color:"var(--red)"}}>{fmt(inputVAT)}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Net VAT</div><div className="kpi-val" style={{color:netVAT>=0?"var(--red)":"var(--green)"}}>{fmt(Math.abs(netVAT))}</div></div>
+          <div className="kpi" style={{marginBottom:0}}><div className="kpi-label">Status</div><div className="kpi-val" style={{fontSize:13}}>{netVAT>=0?"Owed to HMRC":"Reclaimable"}</div></div>
+        </div>
+        <div className="card" style={{marginBottom:20}}>
+          <div className="ch">
+            <div><div className="ct">VAT Liability Summary</div><div className="cs">{periodLabels[period]} · output VAT minus input VAT</div></div>
+            <button className="btn bo bsm" onClick={() => downloadCsv("vat-summary.csv", ["Box","Description","Amount"], [["1","VAT due on sales (Output VAT)",outputVAT.toFixed(2)],["4","VAT reclaimed on purchases (Input VAT)",inputVAT.toFixed(2)],["5","Net VAT due / (reclaimable)",netVAT.toFixed(2)]])}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Box</th><th>Description</th><th style={{textAlign:"right"}}>Amount</th></tr></thead><tbody>
+            <tr><td className="mono">1</td><td style={{fontWeight:600}}>VAT due on sales (Output VAT)</td><td className="mono tg" style={{textAlign:"right",fontWeight:700}}>{fmt(outputVAT)}</td></tr>
+            <tr><td className="mono">4</td><td style={{fontWeight:600}}>VAT reclaimed on purchases (Input VAT)</td><td className="mono" style={{textAlign:"right",fontWeight:700,color:"var(--red)"}}>({fmt(inputVAT)})</td></tr>
+            <tr style={{background:"#f8fafc",fontWeight:700}}><td className="mono">5</td><td>Net VAT due / (reclaimable)</td><td className="mono" style={{textAlign:"right",color:netVAT>=0?"var(--red)":"var(--green)"}}>{fmt(Math.abs(netVAT))} {netVAT>=0?"due":"reclaimable"}</td></tr>
+          </tbody></table></div>
+        </div>
+        <div className="card">
+          <div className="ch"><div className="ct">Output VAT by Rate</div><div className="cs">Breakdown of sales VAT by rate band — {periodLabels[period]}</div></div>
+          <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Rate</th><th>Net Sales</th><th style={{textAlign:"right"}}>VAT</th></tr></thead><tbody>{outputVATByRate.map(r => <tr key={r.rate}><td style={{fontWeight:600}}>{r.rate===0?"Exempt / 0%":r.rate+"%"}</td><td className="mono">{fmt(r.net)}</td><td className="mono" style={{textAlign:"right",fontWeight:600}}>{fmt(r.vat)}</td></tr>)}</tbody></table></div>
+        </div>
+      </div>}
     </div>
   );
 }
