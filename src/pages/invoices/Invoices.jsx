@@ -208,6 +208,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
         contacts={contacts}
         products={products}
         token={token}
+        userId={userId}
         onSaved={(updatedFields) => {
           if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
           sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));

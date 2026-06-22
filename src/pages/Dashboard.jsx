@@ -114,7 +114,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)} />}
-      {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token}
+      {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token} userId={userId}
         onSaved={(updatedFields) => {
           if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
           sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
@@ -753,7 +753,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         setViewInvoice(prev => prev?.id === inv.id ? { ...prev, amount_paid: totalPaid, balance: Math.max(0, balance), status: newStatus } : prev);
       }}
     />}
-    {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token}
+    {editInvoice && <EditInvoiceModal invoice={editInvoice} onClose={() => setEditInvoice(null)} contacts={contacts} products={products} token={token} userId={userId}
       onSaved={(updatedFields) => {
         if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
         sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));

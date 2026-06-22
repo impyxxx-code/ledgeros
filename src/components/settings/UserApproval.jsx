@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { isMobile } from "../../lib/utils.js";
 import { toast } from "../../lib/constants.js";
+import { logAudit } from "../../lib/audit.js";
 import { SkeletonTable } from "../ui.jsx";
 
 export function UserApproval({ token, profile }) {
@@ -20,10 +21,12 @@ export function UserApproval({ token, profile }) {
     });
   }, [token]);
   const approve = async (id) => {
+    const user = users.find(u => u.id === id);
     const res = await sb.patch(token, "profiles", id, { approved: true });
     if (res && !res.error && !res.message?.includes("error")) {
       setUsers(prev => prev.map(u => u.id===id ? {...u, approved:true} : u));
       toast.success("User approved successfully");
+      logAudit(token, profile?.id, "user_approved", "user", id, `${user?.full_name || user?.email || id} approved by ${profile?.full_name || "Admin"}`);
     } else {
       toast.error("Failed to approve user. Check Supabase RLS policies on profiles table.");
       console.error("Approve error:", res);
@@ -38,6 +41,7 @@ export function UserApproval({ token, profile }) {
       if (res.ok || res.status === 204) {
         setUsers(prev => prev.filter(u => u.id !== id));
         toast.warn("User rejected");
+        logAudit(token, profile?.id, "user_rejected", "user", id, `${user?.full_name || user?.email || id} rejected by ${profile?.full_name || "Admin"}`);
       } else {
         toast.error("Failed to reject user. Check Supabase RLS policies.");
       }
@@ -46,6 +50,7 @@ export function UserApproval({ token, profile }) {
       if (res && !res.error && !res.message?.includes("error")) {
         setUsers(prev => prev.map(u => u.id===id ? {...u, approved:false} : u));
         toast.warn("User access revoked");
+        logAudit(token, profile?.id, "user_revoked", "user", id, `${user?.full_name || user?.email || id} access revoked by ${profile?.full_name || "Admin"}`);
       } else {
         toast.error("Failed to revoke user. Check Supabase RLS policies on profiles table.");
         console.error("Revoke error:", res);

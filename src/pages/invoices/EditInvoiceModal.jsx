@@ -13,7 +13,7 @@ import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 // │ EditInvoiceModal                                           │
 // │ Edit existing invoice — customer, lines, status            │
 // └────────────────────────────────────────────────────────────┘
-export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token }) {
+export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products, token, userId }) {
   const existing = (() => { try { return invoice.lines ? (typeof invoice.lines === "string" ? JSON.parse(invoice.lines) : invoice.lines) : []; } catch(e) { return []; } })();
   const [customer, setCustomer] = useState(invoice.customer || "");
   const [invoiceDate, setInvoiceDate] = useState(invoice.invoice_date || "");
@@ -47,6 +47,12 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
       balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)),
     });
     const updatedFields = { customer, invoice_date: invoiceDate, due_date: dueDate || null, status, notes, lines: JSON.stringify(validLines), amount: total, subtotal, vat_total: vatTotal, balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)) };
+    const changes = [];
+    if (invoice.customer !== customer) changes.push(`customer ${invoice.customer} → ${customer}`);
+    if (parseFloat(invoice.amount) !== total) changes.push(`amount £${parseFloat(invoice.amount||0).toFixed(2)} → £${total.toFixed(2)}`);
+    if (invoice.status !== status) changes.push(`status ${invoice.status} → ${status}`);
+    if ((invoice.due_date||"") !== (dueDate||"")) changes.push(`due date ${invoice.due_date||"none"} → ${dueDate||"none"}`);
+    logAudit(token, userId, "invoice_edited", "invoice", invoice.id, `${invoice.invoice_number} edited${changes.length ? " — " + changes.join(", ") : " (no field changes detected)"}`);
     onSaved(updatedFields);
     onClose();
     setSaving(false);
