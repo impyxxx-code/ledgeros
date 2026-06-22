@@ -12,6 +12,23 @@ const downloadCsv = (filename, header, rows) => {
 };
 
 const SOURCES = {
+  invoiceLines: {
+    label: "Invoice Line Items",
+    fields: [
+      { key: "product", label: "Product", type: "text" },
+      { key: "invoice_number", label: "Invoice #", type: "text" },
+      { key: "customer", label: "Customer", type: "text" },
+      { key: "invoice_date", label: "Invoice Date", type: "date" },
+      { key: "status", label: "Invoice Status", type: "text" },
+      { key: "qty", label: "Qty", type: "number" },
+      { key: "unit_price", label: "Unit Price", type: "number" },
+      { key: "line_total", label: "Line Total", type: "number" },
+      { key: "month", label: "Month", type: "text" },
+    ],
+    defaultFields: ["product", "customer", "invoice_number", "invoice_date", "qty", "line_total"],
+    groupable: ["customer", "product", "status", "month"],
+    numericFields: ["qty", "unit_price", "line_total"],
+  },
   invoices: {
     label: "Invoices",
     fields: [
@@ -106,7 +123,21 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
     const po = purchaseOrders.find(p => p.id === l.po_id) || {};
     return { ...l, po_number: po.po_number, supplier: po.supplier_name, order_date: po.order_date, status: po.status, vat_amount: (parseFloat(l.total) || 0) * (parseFloat(l.vat_rate) || 0) / 100 };
   });
-  const rawData = source === "invoices" ? invoices : source === "products" ? products : source === "purchases" ? purchasesJoined : contacts;
+  const invoiceLinesFlat = invoices.flatMap(inv => {
+    let lines = []; try { lines = typeof inv.lines === "string" ? JSON.parse(inv.lines) : (inv.lines || []); } catch {}
+    return (Array.isArray(lines) ? lines : []).filter(l => l.description).map((l, idx) => ({
+      id: `${inv.id}-${idx}`,
+      product: l.description,
+      invoice_number: inv.invoice_number,
+      customer: inv.customer,
+      invoice_date: inv.invoice_date,
+      status: inv.status,
+      qty: parseFloat(l.qty) || 0,
+      unit_price: parseFloat(l.unit_price) || 0,
+      line_total: (parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0),
+    }));
+  });
+  const rawData = source === "invoiceLines" ? invoiceLinesFlat : source === "invoices" ? invoices : source === "products" ? products : source === "purchases" ? purchasesJoined : contacts;
 
   useEffect(() => {
     if (!token) return;
@@ -114,6 +145,11 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
   }, [token]);
 
   const enrichRow = (row) => {
+    if (source === "invoiceLines") {
+      const d = new Date(row.invoice_date);
+      const month = isNaN(d) ? "" : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      return { ...row, month };
+    }
     if (source === "invoices") {
       const agent = allProfiles?.find(p => p.id === row.created_by)?.full_name || "Unknown";
       const d = new Date(row.invoice_date || row.created_at);
