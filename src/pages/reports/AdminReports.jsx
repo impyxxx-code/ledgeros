@@ -6,6 +6,7 @@ import { COMPANY, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
 import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
 import { AgentProductsReport } from "./AgentProductsReport.jsx";
+import { CustomReportBuilder } from "./CustomReportBuilder.jsx";
 
 const downloadCsv = (filename, header, rows) => {
   const csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
@@ -19,7 +20,7 @@ const downloadCsv = (filename, header, rows) => {
 // │ AdminReports                                               │
 // │ Full reports hub — QuickBooks-style categorized suite      │
 // └────────────────────────────────────────────────────────────┘
-export function AdminReports({ invoices, products, contacts, accounts, allProfiles, setPage, setPendingFilter, token }) {
+export function AdminReports({ invoices, products, contacts, accounts, allProfiles, setPage, setPendingFilter, token, userId, profile }) {
   const [tab, setTab] = useState("overview");
   const [pos, setPOs] = useState([]);
   const [poLines, setPoLines] = useState([]);
@@ -155,7 +156,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
           { label:"Payables", key:"pay", icon:"📤", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"📈", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
           { label:"Inventory", key:"inv", icon:"📦", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"]] },
-          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"]] },
+          { label:"Accountant", key:"acc", icon:"🧮", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["vat-summary","VAT Summary"],["custom","Custom Reports"]] },
         ];
         const activeGroup = groups.find(g => g.tabs.some(([k]) => k === tab)) || groups[0];
         return (
@@ -892,6 +893,8 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
           <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>Rate</th><th>Net Sales</th><th style={{textAlign:"right"}}>VAT</th></tr></thead><tbody>{outputVATByRate.map(r => <tr key={r.rate}><td style={{fontWeight:600}}>{r.rate===0?"Exempt / 0%":r.rate+"%"}</td><td className="mono">{fmt(r.net)}</td><td className="mono" style={{textAlign:"right",fontWeight:600}}>{fmt(r.vat)}</td></tr>)}</tbody></table></div>
         </div>
       </div>}
+
+      {tab==="custom" && <CustomReportBuilder invoices={invoices} products={products} contacts={contacts} allProfiles={allProfiles} token={token} userId={userId} profile={profile} />}
     </div>
   );
 }
