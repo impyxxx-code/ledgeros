@@ -1755,6 +1755,41 @@ export default function App() {
 
   const signOut = async () => { await sb.signOut(auth.token); localStorage.removeItem('ledgeros_rt'); setAuth(null); };
 
+  // Auto-logout after 30 minutes of inactivity, with a 1-minute warning first
+  const [showIdleWarning, setShowIdleWarning] = useState(false);
+  const [idleSecondsLeft, setIdleSecondsLeft] = useState(60);
+  useEffect(() => {
+    if (!auth) return;
+    const IDLE_LIMIT = 30 * 60 * 1000;
+    const WARNING_AT = IDLE_LIMIT - 60 * 1000;
+    let lastActivity = Date.now();
+    let warned = false;
+
+    const resetActivity = () => {
+      lastActivity = Date.now();
+      if (warned) { warned = false; setShowIdleWarning(false); }
+    };
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetActivity, { passive: true }));
+
+    const tick = setInterval(() => {
+      const idleFor = Date.now() - lastActivity;
+      if (idleFor >= IDLE_LIMIT) {
+        clearInterval(tick);
+        signOut();
+      } else if (idleFor >= WARNING_AT) {
+        warned = true;
+        setShowIdleWarning(true);
+        setIdleSecondsLeft(Math.ceil((IDLE_LIMIT - idleFor) / 1000));
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(tick);
+      events.forEach(e => window.removeEventListener(e, resetActivity));
+    };
+  }, [auth]);
+
   // Auto-refresh JWT when a 401 is detected — runs once on mount
   useEffect(() => {
     const checkAndRefresh = async () => {
@@ -2142,6 +2177,18 @@ export default function App() {
           </div>
         </div>
         {showCmdK && <CommandPalette onClose={() => setShowCmdK(false)} setPage={setPage} invoices={invoices} contacts={contacts} products={products} />}
+        {showIdleWarning && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(10,14,26,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: "var(--white)", borderRadius: 16, padding: 28, maxWidth: 360, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.3)", textAlign: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>Still there?</div>
+              <div style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>You'll be signed out in <strong>{idleSecondsLeft}s</strong> due to inactivity.</div>
+              <button className="btn bp" style={{ width: "100%" }} onClick={() => setShowIdleWarning(false)}>Stay signed in</button>
+            </div>
+          </div>
+        )}
         {showInstallBanner && isMobile() && (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, padding: "12px 16px 20px", background: "#060d1f", borderTop: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 -4px 24px rgba(0,0,0,.4)" }}>
             <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0, borderRadius: 9 }}><rect width="32" height="32" rx="7" fill="#1e1b4b"/><rect x="9" y="7" width="4" height="18" rx="2" fill="#ffffff"/><rect x="9" y="21" width="14" height="4" rx="2" fill="#ffffff"/><rect x="18" y="7" width="4" height="9" rx="2" fill="#60a5fa"/></svg>
