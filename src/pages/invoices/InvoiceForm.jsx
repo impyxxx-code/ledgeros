@@ -63,7 +63,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       toast.error("Request timed out. Check your connection and try again.");
     }, 15000);
     try {
-      const existing = await sb.get(token, "invoices", "select=invoice_number&order=invoice_number.desc&limit=1");
+      const existing = await sb.get(token, "invoices", "invoice_number=like.INV-*&select=invoice_number&order=invoice_number.desc&limit=1");
       let nextNum = 1;
       if (Array.isArray(existing) && existing.length > 0 && existing[0].invoice_number) {
         const lastNum = parseInt(existing[0].invoice_number.replace("INV-", ""), 10);

@@ -102,7 +102,7 @@ export default async function handler(req, res) {
 
     // ── 4. Generate invoice number ────────────────────────────────────────────
     const countRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/invoices?select=invoice_number&order=invoice_number.desc&limit=1`,
+      `${SUPABASE_URL}/rest/v1/invoices?invoice_number=like.INV-*&select=invoice_number&order=invoice_number.desc&limit=1`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
     );
     const lastInvs     = await countRes.json();
