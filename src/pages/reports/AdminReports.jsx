@@ -8,6 +8,16 @@ import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
 import { AgentProductsReport } from "./AgentProductsReport.jsx";
 import { CustomReportBuilder } from "./CustomReportBuilder.jsx";
 
+const SUBTAB_ICONS = {
+  "trial-balance": "ti-scale",
+  "general-ledger": "ti-book-2",
+  "journal": "ti-list-details",
+  "vat-summary": "ti-receipt-tax",
+  "vat-exceptions": "ti-alert-triangle",
+  "budget": "ti-target-arrow",
+  "custom": "ti-adjustments-horizontal",
+};
+
 const downloadCsv = (filename, header, rows) => {
   const csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
   const a = document.createElement("a");
@@ -262,6 +272,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
                 <button key={k}
                   className={`ar2-tab${tab===k ? " on-"+activeGroup.key : ""}`}
                   onClick={() => setTab(k)}>
+                  {SUBTAB_ICONS[k] && <i className={"ti " + SUBTAB_ICONS[k]} style={{ fontSize: 15, marginRight: 6 }} aria-hidden="true" />}
                   {l}
                   {badge > 0 && <span className="ar2-badge" style={{marginLeft:4}}>{badge}</span>}
                 </button>
