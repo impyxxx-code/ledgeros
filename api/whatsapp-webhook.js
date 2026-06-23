@@ -27,14 +27,14 @@ export default async function handler(req, res) {
   const FROM_NUMBER     = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
 
   // ── Verify the request genuinely came from Twilio ─────────────────────────
-  // TEMPORARY: log-only, not enforced — re-enable blocking once the exact
-  // webhook URL Twilio is configured with is confirmed (a mismatch here
-  // breaks ALL real incoming messages, not just forged ones).
-  const webhookUrl = process.env.TWILIO_WEBHOOK_URL || 'https://arkos.uk/api/whatsapp-webhook';
+  // Confirmed exact URL from Twilio Sandbox Settings → "When a message comes
+  // in": https://www.arkos.uk/api/whatsapp-webhook (note the www — the
+  // earlier outage was caused by signing against the apex domain instead).
+  const webhookUrl = process.env.TWILIO_WEBHOOK_URL || 'https://www.arkos.uk/api/whatsapp-webhook';
   const signature  = req.headers['x-twilio-signature'];
-  const validSig   = isValidTwilioRequest(webhookUrl, req.body || {}, signature, AUTH_TOKEN);
-  if (!validSig) {
-    console.error('[whatsapp-webhook] Twilio signature check failed (not blocking — diagnostic mode)', { webhookUrl, hasSignature: !!signature, hasAuthToken: !!AUTH_TOKEN });
+  if (!isValidTwilioRequest(webhookUrl, req.body || {}, signature, AUTH_TOKEN)) {
+    console.error('[whatsapp-webhook] Invalid Twilio signature — rejecting request', { webhookUrl, hasSignature: !!signature, hasAuthToken: !!AUTH_TOKEN });
+    return res.status(403).send('<Response></Response>');
   }
 
   const body        = req.body || {};
