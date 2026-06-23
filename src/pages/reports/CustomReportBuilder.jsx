@@ -23,10 +23,12 @@ const SOURCES = {
       { key: "qty", label: "Qty", type: "number" },
       { key: "unit_price", label: "Unit Price", type: "number" },
       { key: "line_total", label: "Line Total", type: "number" },
+      { key: "custom_price_applied", label: "Custom Price Applied", type: "text" },
+      { key: "price_amended", label: "Price Manually Amended", type: "text" },
       { key: "month", label: "Month", type: "text" },
     ],
     defaultFields: ["product", "customer", "invoice_number", "invoice_date", "qty", "line_total"],
-    groupable: ["customer", "product", "status", "month"],
+    groupable: ["customer", "product", "status", "month", "price_amended"],
     numericFields: ["qty", "unit_price", "line_total"],
   },
   invoices: {
@@ -99,10 +101,11 @@ const SOURCES = {
 };
 
 const OPS_BY_TYPE = {
-  text: [["contains", "Contains"], ["equals", "Equals"]],
-  number: [["eq", "="], ["gt", ">"], ["gte", "≥"], ["lt", "<"], ["lte", "≤"]],
-  date: [["on_or_after", "On/After"], ["on_or_before", "On/Before"]],
+  text: [["contains", "Contains"], ["equals", "Equals"], ["is_empty", "Is empty"], ["is_not_empty", "Is not empty"]],
+  number: [["eq", "="], ["gt", ">"], ["gte", "≥"], ["lt", "<"], ["lte", "≤"], ["is_empty", "Is empty"], ["is_not_empty", "Is not empty"]],
+  date: [["on_or_after", "On/After"], ["on_or_before", "On/Before"], ["is_empty", "Is empty"], ["is_not_empty", "Is not empty"]],
 };
+const NO_VALUE_OPS = ["is_empty", "is_not_empty"];
 
 const blankFilter = () => ({ field: "", op: "", value: "" });
 
@@ -135,6 +138,8 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
       qty: parseFloat(l.qty) || 0,
       unit_price: parseFloat(l.unit_price) || 0,
       line_total: (parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0),
+      custom_price_applied: l.custom_price_applied ? "Yes" : "No",
+      price_amended: l.price_amended ? "Yes" : "No",
     }));
   });
   const rawData = source === "invoiceLines" ? invoiceLinesFlat : source === "invoices" ? invoices : source === "products" ? products : source === "purchases" ? purchasesJoined : contacts;
@@ -182,6 +187,8 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
     if (!f.field || !f.op) return true;
     const fieldMeta = meta.fields.find(x => x.key === f.field);
     const val = row[f.field];
+    if (f.op === "is_empty") return val === null || val === undefined || String(val).trim() === "";
+    if (f.op === "is_not_empty") return !(val === null || val === undefined || String(val).trim() === "");
     if (fieldMeta?.type === "text") {
       const a = String(val ?? "").toLowerCase();
       const b = String(f.value ?? "").toLowerCase();
@@ -324,7 +331,7 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
                   <option value="">Condition...</option>
                   {fieldMeta && OPS_BY_TYPE[fieldMeta.type].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
-                <input type={fieldMeta?.type === "date" ? "date" : fieldMeta?.type === "number" ? "number" : "text"} value={f.value} onChange={e => updateFilter(i, { value: e.target.value })} placeholder="Value" style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, fontFamily: "var(--sans)", flex: 1, maxWidth: 180 }} />
+                {!NO_VALUE_OPS.includes(f.op) && <input type={fieldMeta?.type === "date" ? "date" : fieldMeta?.type === "number" ? "number" : "text"} value={f.value} onChange={e => updateFilter(i, { value: e.target.value })} placeholder="Value" style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, fontFamily: "var(--sans)", flex: 1, maxWidth: 180 }} />}
                 <button onClick={() => removeFilter(i)} style={{ background: "none", border: "none", color: "var(--red)", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
               </div>
             );
