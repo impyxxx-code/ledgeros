@@ -9,6 +9,29 @@ import { AgentProductsReport } from "./AgentProductsReport.jsx";
 import { CustomReportBuilder } from "./CustomReportBuilder.jsx";
 
 const SUBTAB_ICONS = {
+  // Business Overview
+  "overview": "ti-layout-dashboard",
+  "monthly": "ti-calendar",
+  "pl": "ti-report-money",
+  "balance": "ti-building-bank",
+  // Receivables
+  "aged-debtors": "ti-hourglass",
+  "collections": "ti-phone-outgoing",
+  "customers": "ti-users",
+  "cashflow": "ti-chart-line",
+  // Payables
+  "aged-creditors": "ti-calendar-stats",
+  "cash-recon": "ti-clipboard-check",
+  // Sales
+  "agents": "ti-user-star",
+  "agent-products": "ti-tags",
+  "product-tracker": "ti-chart-dots-2",
+  // Inventory
+  "products": "ti-box",
+  "stock": "ti-stack-2",
+  "inventory-valuation": "ti-currency-pound",
+  "physical-count": "ti-clipboard-list",
+  // Accountant
   "trial-balance": "ti-scale",
   "general-ledger": "ti-book-2",
   "journal": "ti-list-details",
