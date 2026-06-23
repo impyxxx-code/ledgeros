@@ -5,6 +5,10 @@ const fmt = (n) => "£" + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?
 const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 export default async function handler(req, res) {
+  // Never let this GET endpoint be cached — a cached 200 would otherwise
+  // bypass the auth check below for any request matching the same cache key.
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+
   // Vercel Cron sends GET with this header automatically — reject anything else
   const CRON_SECRET = process.env.CRON_SECRET;
   if (CRON_SECRET) {
