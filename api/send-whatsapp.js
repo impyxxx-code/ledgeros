@@ -32,6 +32,22 @@ export default async function handler(req, res) {
   const normPhone = normalisePhone(to);
   if (!normPhone) return res.status(400).json({ error: 'Invalid phone number' });
 
+  // ── Restrict to known contacts only — prevents using this as an open relay
+  // to send arbitrary messages to arbitrary numbers via the business's WhatsApp ─
+  const ukLocal = '0' + normPhone.replace('+44', '');
+  try {
+    const contactRes = await fetch(
+      `${process.env.VITE_SUPABASE_URL}/rest/v1/contacts?or=(phone.eq.${encodeURIComponent(normPhone)},phone.eq.${encodeURIComponent(ukLocal)})&select=id&limit=1`,
+      { headers: { apikey: process.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${jwt}` } }
+    );
+    const contactRows = await contactRes.json();
+    if (!Array.isArray(contactRows) || contactRows.length === 0) {
+      return res.status(403).json({ error: 'Recipient must be an existing contact' });
+    }
+  } catch {
+    return res.status(500).json({ error: 'Could not verify recipient' });
+  }
+
   const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
   const AUTH_TOKEN  = process.env.TWILIO_AUTH_TOKEN;
   const FROM_NUMBER = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';

@@ -2,6 +2,21 @@
 // Receives WhatsApp messages from customers via Twilio
 // Parses order → matches products → creates draft invoice → replies to customer
 
+import crypto from 'crypto';
+
+// Validates the X-Twilio-Signature header per Twilio's documented algorithm:
+// HMAC-SHA1(authToken, fullUrl + sorted POST param key+value pairs), base64-encoded.
+// https://www.twilio.com/docs/usage/security#validating-requests
+function isValidTwilioRequest(url, params, signature, authToken) {
+  if (!signature || !authToken) return false;
+  let data = url;
+  Object.keys(params).sort().forEach(key => { data += key + params[key]; });
+  const expected = crypto.createHmac('sha1', authToken).update(Buffer.from(data, 'utf-8')).digest('base64');
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -10,6 +25,14 @@ export default async function handler(req, res) {
   const ACCOUNT_SID     = process.env.TWILIO_ACCOUNT_SID;
   const AUTH_TOKEN      = process.env.TWILIO_AUTH_TOKEN;
   const FROM_NUMBER     = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+
+  // ── Verify the request genuinely came from Twilio ─────────────────────────
+  const webhookUrl = process.env.TWILIO_WEBHOOK_URL || 'https://arkos.uk/api/whatsapp-webhook';
+  const signature  = req.headers['x-twilio-signature'];
+  if (!isValidTwilioRequest(webhookUrl, req.body || {}, signature, AUTH_TOKEN)) {
+    console.error('[whatsapp-webhook] Invalid Twilio signature — rejecting request');
+    return res.status(403).send('<Response></Response>');
+  }
 
   const body        = req.body || {};
   const from        = body.From   || '';   // e.g. "whatsapp:+447700900000"
