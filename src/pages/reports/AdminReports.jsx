@@ -233,8 +233,8 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
       {(() => {
         const groups = [
           { label:"Business Overview", key:"ovw", icon:"ti-chart-bar", color:"#2563eb", tabs:[["overview","Overview"],["monthly","Monthly"],["pl","P&L"],["balance","Balance Sheet"]] },
-          { label:"Receivables", key:"rec", icon:"ti-arrow-down-circle", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["collections","Collections",notChasedCount],["customers","Customers"],["cashflow","Cash Flow"]] },
-          { label:"Payables", key:"pay", icon:"ti-arrow-up-circle", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
+          { label:"Receivables", key:"rec", icon:"ti-cash-banknote", color:"#0891b2", tabs:[["aged-debtors","Aged Debtors",invoices.filter(i=>i.status==="overdue").length],["collections","Collections",notChasedCount],["customers","Customers"],["cashflow","Cash Flow"]] },
+          { label:"Payables", key:"pay", icon:"ti-truck-delivery", color:"#ea580c", tabs:[["aged-creditors","Aged Creditors"],["cash-recon","Cash Recon"]] },
           { label:"Sales", key:"sal", icon:"ti-trending-up", color:"#16a34a", tabs:[["agents","Agents"],["agent-products","Agent Products"],["product-tracker","Product Tracker"]] },
           { label:"Inventory", key:"inv", icon:"ti-package", color:"#7c3aed", tabs:[["products","Products"],["stock","Stock"],["inventory-valuation","Valuation"],["physical-count","Physical Count"]] },
           { label:"Accountant", key:"acc", icon:"ti-calculator", color:"#b45309", tabs:[["trial-balance","Trial Balance"],["general-ledger","General Ledger"],["journal","Journal"],["vat-summary","VAT Summary"],["vat-exceptions","VAT Exceptions",vatExceptions.length],["budget","Budget vs Actuals"],["custom","Custom Reports"]] },
@@ -248,7 +248,9 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
                 <button key={g.key}
                   className={`ar2-group${activeGroup.key===g.key ? " gr-"+g.key : ""}`}
                   onClick={() => { const firstTab = g.tabs[0][0]; setTab(firstTab); }}>
-                  <i className={"ti " + g.icon} style={{ fontSize: 15 }} aria-hidden="true" /> {g.label}
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 7, background: activeGroup.key===g.key ? g.color : "rgba(0,0,0,.06)" }}>
+                    <i className={"ti " + g.icon} style={{ fontSize: 15, color: activeGroup.key===g.key ? "#fff" : "var(--text3)" }} aria-hidden="true" />
+                  </span> {g.label}
                   {g.key==="rec" && invoices.filter(i=>i.status==="overdue").length > 0 &&
                     <span className="ar2-badge">{invoices.filter(i=>i.status==="overdue").length}</span>}
                 </button>
