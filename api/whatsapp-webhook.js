@@ -86,6 +86,8 @@ export default async function handler(req, res) {
     // prefer matching that against contacts over the sender's phone-matched
     // contact — orders are often sent from a shared/staff phone on behalf
     // of many different customers ─────────────────────────────────────────
+    let nameHintMatched = !nameHints.length; // true if no hint to verify, or a hint matched cleanly
+    let nameHintUnresolved = null;
     if (nameHints.length) {
       const allContactsRes = await fetch(
         `${SUPABASE_URL}/rest/v1/contacts?select=id,name&order=name.asc`,
@@ -94,14 +96,27 @@ export default async function handler(req, res) {
       const allContactsData = await allContactsRes.json();
       const allContacts     = Array.isArray(allContactsData) ? allContactsData : [];
 
+      // Same specificity guard as product matching: a short/generic contact
+      // name being a substring of the hint (or vice versa) shouldn't win
+      // just because it matches first — e.g. a contact named "LOCAL"
+      // shouldn't beat "PATEL LOCAL WAKEFIELD" for hint "PATEL LOCAL".
+      // Among all substring-matching candidates, prefer the longest contact
+      // name (most specific), and require a minimum length so a 2-3 letter
+      // coincidental match can't win on its own.
       for (const hint of nameHints) {
-        const h = hint.toLowerCase().trim();
-        const match = allContacts.find(c => {
-          const n = (c.name || '').toLowerCase().trim();
-          return n && (h.includes(n) || n.includes(h));
-        });
-        if (match) { customerName = match.name; break; }
+        const h = hint.toLowerCase().trim().replace(/\s+/g, ' ');
+        let bestMatch = null, bestLen = 0;
+        for (const c of allContacts) {
+          const n = (c.name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+          if (!n || n.length < 5) continue;
+          const isSubstring = h.includes(n) || n.includes(h);
+          if (!isSubstring) continue;
+          if (n.length > bestLen) { bestLen = n.length; bestMatch = c; }
+        }
+        if (bestMatch) { customerName = bestMatch.name; nameHintMatched = true; break; }
+        nameHintUnresolved = hint;
       }
+      if (!nameHintMatched && !nameHintUnresolved) nameHintUnresolved = nameHints[0];
     }
 
     for (const item of parsedItems) {
@@ -147,6 +162,7 @@ export default async function handler(req, res) {
     const notes = [
       `📱 WhatsApp order from ${rawPhone} (${profileName})`,
       `Original message: "${msgBody}"`,
+      !nameHintMatched && nameHintUnresolved ? `⚠️ Customer unconfirmed — message said "${nameHintUnresolved}" but this couldn't be confidently matched to a contact. Verify before sending.` : null,
       unmatched.length ? `⚠️ Unmatched items: ${unmatched.join(', ')}` : null,
     ].filter(Boolean).join('\n');
 
@@ -322,6 +338,15 @@ function matchProduct(query, products, aliases = []) {
   hit = products.find(p => p.name.toLowerCase().includes(q));
   if (hit) return hit;
 
+  // 2b. Same comparison, but with all whitespace stripped from both sides —
+  // catches shorthand like "6kPods" matching "HAYATI 6K PODS" (the customer
+  // dropped the space, not the meaning)
+  const qNoSpace = q.replace(/\s+/g, '');
+  if (qNoSpace.length >= 3) {
+    hit = products.find(p => p.name.toLowerCase().replace(/\s+/g, '').includes(qNoSpace));
+    if (hit) return hit;
+  }
+
   // 3. Query contains product shortname (after last colon — e.g. "VAPE:HAYATI 6K" → "hayati 6k")
   hit = products.find(p => {
     const short = p.name.toLowerCase().split(':').pop().trim();
@@ -329,15 +354,19 @@ function matchProduct(query, products, aliases = []) {
   });
   if (hit) return hit;
 
-  // 4. Token overlap (at least half the query words match product name words)
-  // Ignore short tokens (e.g. "&", "m", "r") to avoid spurious matches like "Adam" → "R & M"
+  // 4. Token overlap. Ignore short tokens (e.g. "&", "m", "r") to avoid
+  // spurious matches like "Adam" → "R & M". Require ALL query tokens to
+  // match, not just half — "Elux Nic" (nicotine salts) previously matched
+  // "Elux Zero" (zero-nicotine) on "elux" alone, the opposite product.
+  // Defaulting to unmatched when uncertain is safer than guessing wrong;
+  // an admin resolves it manually via Pending Unmatched Items.
   const qTokens = q.split(/\s+/).filter(t => t.length >= 3);
   if (qTokens.length === 0) return null;
   hit = products.find(p => {
     const pTokens = p.name.toLowerCase().split(/[\s:]+/).filter(t => t.length >= 3);
     if (pTokens.length === 0) return false;
     const matches = qTokens.filter(t => pTokens.some(pt => pt.includes(t) || t.includes(pt)));
-    return matches.length >= Math.ceil(qTokens.length / 2);
+    return matches.length === qTokens.length;
   });
   return hit || null;
 }
