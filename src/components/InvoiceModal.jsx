@@ -447,8 +447,8 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Invoice Actions</div>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 24 }}>Manage {invoice.invoice_number}</div>
 
-            {/* Edit Invoice */}
-            {onEdit && (
+            {/* Edit Invoice — admin only; managers can view all invoices but not edit them */}
+            {onEdit && profile?.role !== "manager" && (
               <div style={{ background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 <div>
                   <div style={{ fontWeight:600, marginBottom:2 }}>Edit Invoice</div>
