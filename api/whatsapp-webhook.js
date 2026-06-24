@@ -296,6 +296,30 @@ function parseOrder(text, products, aliases) {
     const { qty, name, hadQty } = extractQty(line);
 
     if (current) {
+      // A bold header is only a real "product header with flavour variants
+      // below" if those lines don't independently match a distinct product.
+      // If a line under the bold header matches its own product (e.g. the
+      // bold line was just the customer signing their shop name, followed by
+      // genuinely different products — not flavours of one item), treat it
+      // as its own line instead of silently merging it into the header.
+      const ownProduct = matchProduct(name, products, aliases);
+      if (ownProduct) {
+        items.push({ product: ownProduct, qty: qty || 1 });
+        current.sawDistinctMatch = true; // proves this group is a list of items, not one product + flavours
+        continue;
+      }
+      // Once we've seen at least one line in this group independently match
+      // its own product, later non-matching lines also stand on their own
+      // (so e.g. "Elux Nic" shows as its own unmatched item, not buried
+      // under a "PATEL LOCAL" label) — we now know this isn't a genuine
+      // "header + flavour variants" group. Otherwise (no distinct match
+      // seen yet, e.g. a typo'd product header like "Hayato 25k pods"
+      // followed by real flavours that don't match anything themselves),
+      // keep summing into the header so staff can fix it once via an alias.
+      if (current.sawDistinctMatch) {
+        items.push({ unmatchedName: name, qty: qty || 1 });
+        continue;
+      }
       current.qty += qty;
       continue;
     }
