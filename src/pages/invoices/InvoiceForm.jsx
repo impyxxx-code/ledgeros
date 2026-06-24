@@ -744,7 +744,14 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                 <button onClick={() => mobDec(i)} style={{ width:44, height:44, border:"1.5px solid var(--border)", borderRadius:10, background:"var(--bg)", fontSize:22, cursor:"pointer", color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>−</button>
-                <span key={`qty-${i}-${l.qty}`} className="qty-flash" style={{ width:64, height:44, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:700, fontFamily:"var(--mono)", color:"var(--text)" }}>{l.qty}</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={l.qty}
+                  onChange={e => { const v = e.target.value.replace(/[^\d]/g, ""); const nxt=[...lines]; nxt[i]={...nxt[i], qty: v===""?"":parseInt(v,10)}; setLines(nxt); }}
+                  onBlur={() => { if (!l.qty || l.qty < 1) { const nxt=[...lines]; nxt[i]={...nxt[i], qty:1}; setLines(nxt); } }}
+                  style={{ width:64, height:44, textAlign:"center", border:"1.5px solid var(--border)", borderRadius:10, fontSize:16, fontWeight:700, fontFamily:"var(--mono)", color:"var(--text)", outline:"none", background:"var(--white)" }}
+                />
                 <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--blue)", fontSize:22, cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>+</button>
               </div>
               <button onClick={() => mobRemoveLine(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
