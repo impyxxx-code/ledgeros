@@ -32,6 +32,26 @@ export function UserApproval({ token, profile }) {
       console.error("Approve error:", res);
     }
   };
+  const resetMfa = async (user) => {
+    if (!confirm(`Reset MFA for ${user.full_name || user.email}?\n\nThey'll be asked to set up a new authenticator app on their next login. Only do this if they've confirmed losing access to their device.`)) return;
+    try {
+      const r = await fetch("/api/reset-mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ user_id: user.id }),
+      });
+      const data = await r.json();
+      if (r.ok && data.success) {
+        toast.success(data.removed > 0 ? `MFA reset for ${user.full_name || user.email}` : "This user had no MFA set up");
+        logAudit(token, profile?.id, "mfa_reset", "user", user.id, `MFA reset for ${user.full_name || user.email} by ${profile?.full_name || "Admin"}`);
+      } else {
+        toast.error(data.error || "Failed to reset MFA");
+      }
+    } catch {
+      toast.error("Failed to reset MFA");
+    }
+  };
+
   const revoke = async (id) => {
     const user = users.find(u => u.id === id);
     const isPending = user && (user.approved === false || user.approved === null);
@@ -94,6 +114,7 @@ export function UserApproval({ token, profile }) {
                 <div style={{ display:"flex",alignItems:"center",gap:8 }}>
                   {!isMobile() && <span className="badge b-green">Active</span>}
                   <button className="btn bo bsm" onClick={async()=>{ if(!u.email){alert("No email for this user.");return;} await sb.resetPassword(u.email); toast.success("Reset email sent to "+u.email); }} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset Password</button>
+                  <button className="btn bo bsm" onClick={()=>resetMfa(u)} style={{ fontSize:11,flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Reset MFA</button>
                   <button className="btn bo bsm" onClick={()=>revoke(u.id)} style={{ fontSize:11,color:"var(--red)",borderColor:"#fecaca",flex:isMobile()?1:"none",minHeight:isMobile()?40:undefined }}>Revoke</button>
                 </div>
               </div>
