@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
 import { isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
@@ -171,6 +171,14 @@ export function Auth({ onAuth, sessionExpired }) {
     setMfaCode("");
     setMfaLoading(false);
   };
+
+  // Auto-submit the instant a valid 6-digit code is typed — no button press needed
+  useEffect(() => {
+    const code = mfaCode.replace(/\s/g, "");
+    if (code.length !== 6 || !/^\d+$/.test(code) || mfaLoading) return;
+    if (mfaStep === "verify") verifyMfa();
+    else if (mfaStep === "enroll") confirmEnrollment();
+  }, [mfaCode, mfaStep]);
 
   const mob = isMobile();
   const isSuccess = err.startsWith("✓");
