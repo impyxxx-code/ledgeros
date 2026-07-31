@@ -75,6 +75,7 @@ import { BulkPaymentModal } from "./pages/invoices/BulkPaymentModal.jsx";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
 @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -100,11 +101,11 @@ const CSS = `
   --border:#e5e9f0;
   --border2:#d0d7e2;
 
-  /* ── Brand ── */
-  --blue:#2563eb;
-  --blue-lt:#eff4ff;
-  --blue-dk:#1d4ed8;
-  --blue-mid:#dbeafe;
+  /* ── Brand (Modernist: accent shifted blue -> red) ── */
+  --blue:#dd2b0f;
+  --blue-lt:#fff2ef;
+  --blue-dk:#ae1800;
+  --blue-mid:#ffe0d9;
 
   /* ── Semantic ── */
   --green:#10b981;--green-lt:#ecfdf5;--green-dk:#065f46;
@@ -118,14 +119,14 @@ const CSS = `
   --sh:0 1px 3px rgba(13,17,23,.06),0 2px 12px rgba(13,17,23,.07);
   --sh2:0 4px 16px rgba(13,17,23,.12),0 1px 4px rgba(13,17,23,.06);
   --sh3:0 24px 64px rgba(13,17,23,.14),0 8px 24px rgba(13,17,23,.08);
-  --sh-blue:0 4px 14px rgba(37,99,235,.25);
+  --sh-blue:0 4px 14px rgba(221,43,15,.25);
 
   /* ── Type ── */
-  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --sans:'Archivo','Inter',system-ui,-apple-system,sans-serif;
   --mono:'Inter','SF Mono',monospace;
 
   /* ── Radius ── */
-  --r:8px;--rl:12px;--rxl:18px;--r2:6px;
+  --r:0px;--rl:0px;--rxl:0px;--r2:0px;
 
   /* ── Motion ── */
   --ease:cubic-bezier(.16,1,.3,1);
