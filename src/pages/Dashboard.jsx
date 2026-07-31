@@ -222,7 +222,6 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 8 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
-              Arkham Retail Ltd
               <span style={{ background: "rgba(22,163,74,.2)", color: "#86efac", fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20 }}>● Live</span>
             </div>
           </div>
@@ -273,7 +272,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
             <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", borderTop: "3px solid transparent" }}
               onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop="3px solid #dd2b0f"; }}
               onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 5 }}>{k.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.5)", letterSpacing: ".2px", marginBottom: 5 }}>{k.label}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: k.deltaColor, marginBottom: 6 }}>{k.delta}</div>
               <Spark dataKey={k.sparkKey} color={k.accent}/>
@@ -314,7 +313,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                 <PillIcon size={17} color={pill.color} strokeWidth={2}/>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "var(--text3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3, fontFamily: "'Archivo',system-ui,sans-serif" }}>{pill.label}</div>
+                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 600, letterSpacing: ".2px", marginBottom: 3, fontFamily: "'Archivo',system-ui,sans-serif" }}>{pill.label}</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: (pill.label === "Low Stock" || pill.label === "Cash Collected") ? pill.color : "var(--text)", letterSpacing: "-.01em", fontFamily: "'Archivo',system-ui,sans-serif", fontVariantNumeric: "tabular-nums" }}>{pill.val}</div>
               </div>
             </div>
