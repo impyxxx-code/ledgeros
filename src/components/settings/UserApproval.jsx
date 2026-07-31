@@ -106,7 +106,7 @@ export function UserApproval({ token, profile }) {
               <div key={u.id} style={{ display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?12:0,padding:"12px 0",borderBottom:"1px solid var(--border)" }}>
                 <div style={{ display:"flex",alignItems:"center",gap:12,justifyContent:"space-between" }}>
                   <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                    <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||"U")[0].toUpperCase()}</div>
+                    <div style={{ width:36,height:36,borderRadius:"50%",background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",flexShrink:0 }}>{(u.full_name||"U")[0].toUpperCase()}</div>
                     <div><div style={{ fontWeight:600,fontSize:14 }}>{u.full_name||"Unknown"}</div><div style={{ fontSize:12,color:"var(--text3)" }}>{u.email||"no email on file"} · {u.role||"agent"}</div></div>
                   </div>
                   {isMobile() && <span className="badge b-green">Active</span>}

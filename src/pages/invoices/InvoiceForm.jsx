@@ -672,7 +672,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
         </div>
         {f.customer ? (
           <div style={{ padding:"10px 14px 12px", display:"flex", alignItems:"center", gap:10, background:"#f0fdf4" }}>
-            <div style={{ width:36, height:36, borderRadius:10, background:"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff", flexShrink:0 }}>{f.customer?.[0]?.toUpperCase()}</div>
+            <div style={{ width:36, height:36, borderRadius:10, background:"#dd2b0f", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff", flexShrink:0 }}>{f.customer?.[0]?.toUpperCase()}</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{f.customer}</div>
               <div style={{ fontSize:10, color:"var(--green)", fontWeight:500 }}>✓ Selected</div>
@@ -690,7 +690,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
                 <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {[...mobCusts].sort((a,b) => { const la = invoices.filter(i=>i.customer===a.name).reduce((m,i)=>i.created_at>m?i.created_at:m,""); const lb = invoices.filter(i=>i.customer===b.name).reduce((m,i)=>i.created_at>m?i.created_at:m,""); return lb.localeCompare(la); }).slice(0, 4).map(c => (
                     <button key={c.id} onClick={() => setF({...f, customer: c.name})} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", background:"var(--bg)", cursor:"pointer", textAlign:"left", fontFamily:"var(--sans)" }}>
-                      <div style={{ width:28, height:28, borderRadius:7, background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][c.name?.charCodeAt(0)%5]||"#6366f1", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>{c.name?.[0]?.toUpperCase()}</div>
+                      <div style={{ width:28, height:28, borderRadius:7, background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][c.name?.charCodeAt(0)%5]||"#dd2b0f", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>{c.name?.[0]?.toUpperCase()}</div>
                       <span style={{ fontSize:12, fontWeight:500, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
                     </button>
                   ))}

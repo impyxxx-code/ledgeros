@@ -99,7 +99,7 @@ export function BankingPage({ token, userId, profile }) {
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:700,letterSpacing:"1.4px",textTransform:"uppercase",color:"#e15b47",marginBottom:6}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dd2b0f",animation:"pulse 2.4s ease-in-out infinite"}} />Banking & Cash</div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-1.2px"}}>Cash & <span style={{background:"linear-gradient(135deg,#a78bfa,#ff6a4d)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Reconciliation</span></div>
+            <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-1.2px"}}>Cash & <span style={{background:"linear-gradient(135deg,#ff6a4d,#dd2b0f)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Reconciliation</span></div>
             <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Detailed cash reconciliation for banking</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -183,7 +183,7 @@ export function BankingPage({ token, userId, profile }) {
                     {payments.map((p,i) => {
                       const d = (p.created_at||"").split("T")[0];
                       const agentName = p.recorded_by_name || "—";
-                      const agentCol = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"][agentName.charCodeAt(0)%5]||"#64748b";
+                      const agentCol = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][agentName.charCodeAt(0)%5]||"#64748b";
                       const isPartial = (p.notes||"").toLowerCase().includes("partial");
                       return (
                         <tr key={p.id||i} style={{borderBottom:"0.5px solid var(--border)"}}>
@@ -265,7 +265,7 @@ export function BankingPage({ token, userId, profile }) {
                         <tbody>
                           {rows.map((p,i) => {
                             const agentName = p.recorded_by_name || "—";
-                            const agentCol = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"][agentName.charCodeAt(0)%5]||"#64748b";
+                            const agentCol = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][agentName.charCodeAt(0)%5]||"#64748b";
                             const isPartial = (p.notes||"").toLowerCase().includes("partial");
                             return (
                               <tr key={p.id||i} style={{borderBottom:i<rows.length-1?"0.5px solid var(--border)":"none"}}>

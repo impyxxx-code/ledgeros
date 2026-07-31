@@ -278,7 +278,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                       const timeStr = d ? d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "";
                       const agentName = p.recorded_by_name || "—";
                       const agentInitial = agentName[0]?.toUpperCase() || "?";
-                      const agentColors = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#2563eb"];
+                      const agentColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"];
                       const agentCol = agentColors[agentName.charCodeAt(0)%5] || "#64748b";
                       return (
                         <tr key={p.id} style={{borderBottom: i<payments.length-1?"1px solid var(--border)":"none"}}>
@@ -556,7 +556,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
         {/* ── SIDEBAR (persistent across tabs) ── */}
         <div className="inv-side">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][invoice.customer?.charCodeAt(0) % 5] || "#6366f1", width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>{invoice.customer?.[0]?.toUpperCase()}</div>
+            <div className="c-av" style={{ background: ["#dd2b0f","#10b981","#f59e0b","#201e1d","#ef4444"][invoice.customer?.charCodeAt(0) % 5] || "#dd2b0f", width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>{invoice.customer?.[0]?.toUpperCase()}</div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{invoice.customer}</div>
               <div style={{ fontSize: 11, color: "var(--text3)" }}>{invoice.invoice_number}</div>

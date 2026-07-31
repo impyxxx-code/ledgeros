@@ -105,7 +105,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
       { label:"Outstanding", val:fmt(unpaid), accent:"#ef4444", onClick:()=>{setPendingFilter("overdue");setPage("invoices");} },
       { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
       { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
-      { label:"Today", val:fmt(todayRevenue), accent:"#7c3aed", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Today", val:fmt(todayRevenue), accent:"#57534e", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
       { label:"Invoices Today", val:String(todayCount), accent:"#0891b2", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
     ];
     return (
@@ -544,7 +544,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                   <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => setViewInvoice(inv)}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div className="c-av" style={{ background: ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
+                        <div className="c-av" style={{ background: ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][inv.customer?.charCodeAt(0) % 5] || "#dd2b0f", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)" }}>{fmtDate(inv.invoice_date)}</div>

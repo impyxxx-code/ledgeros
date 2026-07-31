@@ -97,7 +97,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
     setShowForm(false); setSaving(false);
   };
-  const avatarColors = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#2563eb","#ec4899"];
+  const avatarColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"];
   return (
     <div>
       {viewContact && (
@@ -105,7 +105,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
           <div className="modal contact-modal" style={{ maxWidth: 620, width: "100%" }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:44,height:44,borderRadius:"50%",background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
+                <div style={{ width:44,height:44,borderRadius:"50%",background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][viewContact.name?.charCodeAt(0)%5]||"#dd2b0f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
                 <div>
                   <div style={{ fontWeight:700,fontSize:16 }}>{viewContact.name}</div>
                   <div style={{ fontSize:12,color:"var(--text3)",marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
@@ -263,7 +263,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Contacts</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers & <span style={{ background: "linear-gradient(135deg,#a78bfa,#ff6a4d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Suppliers</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers & <span style={{ background: "linear-gradient(135deg,#ff6a4d,#dd2b0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Suppliers</span></div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {contacts.filter(c => c.type === "customer" || c.type === "both").length} customers
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -290,7 +290,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
             { label: "Customers", val: contacts.filter(c => c.type === "customer" || c.type === "both").length, sub: "click to view", color: tab==="customer"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all", tabSwitch: "customer" },
-            { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#c4b5fd":"rgba(255,255,255,.35)", accent: "#7c3aed", filter: "all", tabSwitch: "supplier" },
+            { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#57534e", filter: "all", tabSwitch: "supplier" },
             { label: "With Email", val: contacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
             { label: "No Email", val: contacts.filter(c => !c.email).length, sub: "missing contact info", color: contacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: contacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
           ].map((k, i) => {
@@ -386,7 +386,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
 
       {/* ── PREMIUM TABLE ROWS ── */}
       {(() => {
-        const avatarBg = (name) => ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f97316","#84cc16","#ec4899","#14b8a6"][name?.charCodeAt(0) % 10] || "#6366f1";
+        const avatarBg = (name) => ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e","#0f5c28","#ff6a4d","#7c6f64"][name?.charCodeAt(0) % 10] || "#dd2b0f";
         const custInvMap = {};
         (invoices||[]).forEach(inv => {
           if (!custInvMap[inv.customer]) custInvMap[inv.customer] = { count:0, revenue:0, outstanding:0 };
