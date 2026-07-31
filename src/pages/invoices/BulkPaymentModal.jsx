@@ -116,14 +116,14 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
   return (
     <ModalPortal>
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{alignItems:"center"}}>
-        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(99,102,241,.12)",overflow:"hidden",borderTop:"3px solid #818cf8"}}>
+        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(0,0,0,.10)",overflow:"hidden",borderTop:"3px solid #dd2b0f"}}>
 
           {/* Header */}
-          <div style={{background:"#0d1829",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+          <div style={{background:"#201e1d",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
             <div>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                 <div style={{width:28,height:28,borderRadius:8,background:"#2563eb22",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6a4d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>Bulk Payment</div>
               </div>
@@ -195,8 +195,8 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
                       <div className="empty-state-icon">
                         <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
                           <circle cx="32" cy="24" r="11" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
-                          <path d="M14 52c0-9 8-16 18-16s18 7 18 16" stroke="#a5b4fc" strokeWidth="2" fill="none" strokeLinecap="round"/>
-                          <path d="M24 24l16 0M32 16l0 16" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+                          <path d="M14 52c0-9 8-16 18-16s18 7 18 16" stroke="#ff6a4d" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                          <path d="M24 24l16 0M32 16l0 16" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
                         </svg>
                       </div>
                       <div className="empty-state-title" style={{fontSize:13}}>No customers with outstanding invoices</div>

@@ -101,7 +101,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
     const totalRevenue = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0);
     const recentInvoices = [...invoices].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
     const kpiTiles = [
-      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#2563eb", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#dd2b0f", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
       { label:"Outstanding", val:fmt(unpaid), accent:"#ef4444", onClick:()=>{setPendingFilter("overdue");setPage("invoices");} },
       { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
       { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
@@ -122,7 +122,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         }} />}
       <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
         <div style={{ background:"#201e1d", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"#e15b47", marginBottom:6 }}>{greeting}, {name}</div>
           <div style={{ fontSize:32, fontWeight:900, letterSpacing:"-1px", marginBottom:6 }}>{fmt(totalRevenue)}</div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,.55)" }}>
             {fmt(unpaid)} outstanding{overdueCount>0?` · ${overdueCount} overdue`:""}
@@ -350,7 +350,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         const ChartTooltip = ({ active, payload, label }) => {
           if (!active || !payload || !payload.length) return null;
           return (
-            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+            <div style={{background:"#201e1d",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
               <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
               {payload.map(p=>(
                 <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
@@ -435,7 +435,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
 
       {/* ── Monthly Comparison Widget (sales by product) ── */}
       {(() => {
-        const PROD_COLORS = ["#818cf8","#38bdf8","#34d399","#f59e0b","#94a3b8"];
+        const PROD_COLORS = ["#dd2b0f","#201e1d","#1a7f37","#f59e0b","#8a8580"];
         const months = Array.from({length:6},(_,i)=>new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1));
         const monthRows = months.map(d=>({ lbl: d.toLocaleDateString("en-GB",{month:"short"}), m: d.getMonth(), y: d.getFullYear(), products: {} }));
 
@@ -478,7 +478,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
           if (!active || !payload || !payload.length) return null;
           const total = payload.reduce((s,p)=>s+(p.value||0),0);
           return (
-            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+            <div style={{background:"#201e1d",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
               <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
               {payload.filter(p=>p.value>0).map(p=>(
                 <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
@@ -544,7 +544,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                   <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => setViewInvoice(inv)}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
+                        <div className="c-av" style={{ background: ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)" }}>{fmtDate(inv.invoice_date)}</div>
@@ -618,8 +618,8 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                 return {
                   key: inv.id,
                   Icon: isPaid ? CheckCircle2 : FileText,
-                  color: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : isPartial ? "var(--amber)" : "#818cf8",
-                  bg: isPaid ? "var(--green-lt)" : isOverdue ? "var(--red-lt)" : isPartial ? "var(--amber-lt)" : "rgba(129,140,248,.12)",
+                  color: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : isPartial ? "var(--amber)" : "#57534e",
+                  bg: isPaid ? "var(--green-lt)" : isOverdue ? "var(--red-lt)" : isPartial ? "var(--amber-lt)" : "rgba(32,30,29,.06)",
                   title: isPaid ? `Payment received ${methodIcon(inv.payment_method)}` : isOverdue ? "Invoice overdue" : isPartial ? "Partial payment" : "Invoice created",
                   sub: `${inv.customer} · ${inv.invoice_number}`,
                   amt: fmt(inv.amount),
@@ -680,7 +680,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                     <td><span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color: colors[i] || "var(--text3)" }}>{medals[i] || i + 1}</span></td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][i % 5]},${["#8b5cf6","#34d399","#fbbf24","#a78bfa","#f87171"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][i % 5]},${["#ff6a4d","#2ea04d","#fbbf24","#3a3735","#dd2b0f"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{agent.full_name || "Unknown"}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)", textTransform: "capitalize" }}>{agent.role}</div>

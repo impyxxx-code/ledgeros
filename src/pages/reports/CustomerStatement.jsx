@@ -80,21 +80,21 @@ export function CustomerStatement({ contacts, invoices, token }) {
     const html =
       "<!DOCTYPE html><html><head><title>Statement — " + selectedContact.name + "</title>" +
       "<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;padding:32px;color:#1e293b}" +
-      ".header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #0d1829}" +
-      ".co-name{font-size:22px;font-weight:700;color:#0d1829}.co-sub{font-size:11px;color:#64748b;margin-top:4px}" +
-      ".stmt-title{font-size:14px;font-weight:700;color:#0d1829;text-align:right}.stmt-date{font-size:11px;color:#64748b;margin-top:4px;text-align:right}" +
+      ".header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #201e1d}" +
+      ".co-name{font-size:22px;font-weight:700;color:#201e1d}.co-sub{font-size:11px;color:#64748b;margin-top:4px}" +
+      ".stmt-title{font-size:14px;font-weight:700;color:#201e1d;text-align:right}.stmt-date{font-size:11px;color:#64748b;margin-top:4px;text-align:right}" +
       ".customer-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin-bottom:24px}" +
-      ".customer-name{font-size:14px;font-weight:700;color:#0d1829}.customer-sub{font-size:11px;color:#64748b;margin-top:3px}" +
+      ".customer-name{font-size:14px;font-weight:700;color:#201e1d}.customer-sub{font-size:11px;color:#64748b;margin-top:3px}" +
       ".kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}" +
       ".kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px}" +
       ".kpi-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}" +
       ".kpi-val{font-size:18px;font-weight:700;font-family:monospace}" +
       "table{width:100%;border-collapse:collapse;margin-bottom:24px}" +
-      "th{background:#0d1829;color:#fff;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}" +
+      "th{background:#201e1d;color:#fff;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}" +
       "td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}" +
       "tr:last-child td{border-bottom:none}" +
       "tr:nth-child(even) td{background:#f8fafc}" +
-      ".footer{border-top:2px solid #0d1829;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end}" +
+      ".footer{border-top:2px solid #201e1d;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end}" +
       ".footer-note{font-size:11px;color:#64748b;max-width:300px}" +
       ".balance{text-align:right}.balance-label{font-size:11px;color:#64748b;margin-bottom:4px}" +
       ".balance-val{font-size:22px;font-weight:700;font-family:monospace;color:#dc2626}" +
@@ -120,11 +120,11 @@ export function CustomerStatement({ contacts, invoices, token }) {
   return (
     <div>
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Finance</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customer <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Statements</span></div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>View and share full account statements</div></div>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.10) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.06) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}><div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Finance</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customer <span style={{ background: "linear-gradient(135deg,#a78bfa,#ff6a4d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Statements</span></div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>View and share full account statements</div></div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
-          {[{label:"Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"active accounts",accent:"#2563eb"},{label:"With Balance",val:contacts.filter(c=>invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"outstanding balance",accent:"#d97706"},{label:"Fully Paid",val:contacts.filter(c=>!invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"clear accounts",accent:"#16a34a"},{label:"Total Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"across all",accent:"#dc2626"}].map((k,i)=>(
+          {[{label:"Customers",val:contacts.filter(c=>c.type==="customer"||c.type==="both").length,sub:"active accounts",accent:"#dd2b0f"},{label:"With Balance",val:contacts.filter(c=>invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"outstanding balance",accent:"#d97706"},{label:"Fully Paid",val:contacts.filter(c=>!invoices.some(i=>i.customer===c.name&&i.status!=="paid"&&i.status!=="draft")).length,sub:"clear accounts",accent:"#16a34a"},{label:"Total Outstanding",val:fmt(invoices.filter(i=>i.status!=="paid"&&i.status!=="draft").reduce((s,i)=>s+(parseFloat(i.amount)||0),0)),sub:"across all",accent:"#dc2626"}].map((k,i)=>(
             <div key={i} style={{ padding:"12px 18px", borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none", borderTop:"3px solid transparent", transition:"all .15s" }}
               onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
               onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>

@@ -106,7 +106,7 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
         />}
         <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
           <div style={{ background:"#201e1d", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"#e15b47", marginBottom:6 }}>{greeting}, {name}</div>
             <div style={{ display:"flex", gap:24 }}>
               <div>
                 <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-1px" }}>{todayInv.length}</div>
@@ -251,8 +251,8 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
               <div className="empty-state-icon">
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
                   <rect x="10" y="16" width="44" height="36" rx="6" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
-                  <path d="M10 24 L32 38 L54 24" stroke="#a5b4fc" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="48" cy="14" r="7" fill="#818cf8"/>
+                  <path d="M10 24 L32 38 L54 24" stroke="#ff6a4d" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="48" cy="14" r="7" fill="#dd2b0f"/>
                   <path d="M45 14h6M48 11v6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
