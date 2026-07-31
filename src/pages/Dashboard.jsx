@@ -211,17 +211,14 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         </div></ModalPortal>
       )}
 
-      {/* ── Header Option C — dark banner with embedded KPIs ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        {/* orb top-right */}
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
-        {/* orb bottom-left */}
-        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');"}</style>
+      {/* ── Modernist masthead — ink banner with embedded KPIs ── */}
+      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         {/* top row: greeting + quick actions */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Dashboard</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1px", marginBottom: 4 }}>{greeting}, <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{name}</span></div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: ".04em", color: "#e15b47", marginBottom: 8, fontFamily: "'Archivo',system-ui,sans-serif" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: "#dd2b0f" }} />Arkham Retail Ltd</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "-.02em", marginBottom: 4, fontFamily: "'Archivo',system-ui,sans-serif" }}>{greeting}, {name}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 8 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -230,16 +227,16 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            <button onClick={() => setPage("invoices")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("invoices")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice
             </button>
-            <button onClick={() => setPage("contacts")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("contacts")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer
             </button>
-            <button onClick={() => setPage("delivery-notes")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("delivery-notes")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery
             </button>
-            <button onClick={() => setPage("analytics")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button onClick={() => setPage("analytics")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics
             </button>
           </div>
@@ -255,25 +252,26 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
             const cash = monthInv.filter(i=>i.status==="paid"&&i.payment_method==="cash").reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
             return { revenue, collected, outstanding, cash };
           });
-          const Spark = ({ dataKey, color }) => (
-            <div className="spark">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkMonths} margin={{top:2,right:0,left:0,bottom:0}}>
-                  <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={1.5} fill={color} fillOpacity={0.12} dot={false} isAnimationActive={false}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          );
+          const Spark = ({ dataKey, color }) => {
+            const vals = sparkMonths.map(m => m[dataKey] || 0);
+            const max = Math.max(...vals, 1), min = Math.min(...vals, 0), n = vals.length, slot = 150 / n, bw = slot * 0.58;
+            const y = v => 30 - 2 - ((v - min) / ((max - min) || 1)) * (30 - 4);
+            return (
+              <svg width="100%" height={30} viewBox="0 0 150 30" preserveAspectRatio="none" style={{ display: "block", marginTop: 8 }}>
+                {vals.map((v, i) => { const yy = y(v); return <rect key={i} x={i * slot + (slot - bw) / 2} y={yy} width={bw} height={30 - yy} fill={color} />; })}
+              </svg>
+            );
+          };
           return (
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); }, accent: "#2563eb", sparkKey: "revenue" },
-            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); }, accent: "#ef4444", sparkKey: "outstanding" },
-            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e", sparkKey: "collected" },
-            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e", sparkKey: "cash" },
+            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); }, accent: "rgba(248,247,245,.5)", sparkKey: "revenue" },
+            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); }, accent: "#ff6a4d", sparkKey: "outstanding" },
+            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#7fd39b", sparkKey: "collected" },
+            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#7fd39b", sparkKey: "cash" },
           ].map((k, i) => (
             <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", borderTop: "3px solid transparent" }}
-              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop="3px solid #dd2b0f"; }}
               onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 5 }}>{k.label}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
