@@ -71,6 +71,9 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     }
     return true;
   });
+  // Contacts belonging to the active tab (customer/supplier) — filter counts
+  // are scoped to this so the chip/tile numbers match what a filter returns.
+  const tabContacts = contacts.filter(c => c.type === tab || c.type === "both");
   const sortedContacts = [...filtered].sort((a, b) => {
     const m = ctSort.dir === "asc" ? 1 : -1;
     if (ctSort.field === "name") return m * (a.name || "").localeCompare(b.name || "");
@@ -291,8 +294,8 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
           {[
             { label: "Customers", val: contacts.filter(c => c.type === "customer" || c.type === "both").length, sub: "click to view", color: tab==="customer"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all", tabSwitch: "customer" },
             { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#57534e", filter: "all", tabSwitch: "supplier" },
-            { label: "With Email", val: contacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
-            { label: "No Email", val: contacts.filter(c => !c.email).length, sub: "missing contact info", color: contacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: contacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
+            { label: "With Email", val: tabContacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
+            { label: "No Email", val: tabContacts.filter(c => !c.email).length, sub: "missing contact info", color: tabContacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: tabContacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
           ].map((k, i) => {
             const isActive = k.tabSwitch ? tab === k.tabSwitch : contactFilter === k.filter && k.filter !== "all";
             const isClickable = k.filter !== "all" || k.tabSwitch;
@@ -345,7 +348,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
             style={{ width:"100%", padding:"8px 12px 8px 32px", borderRadius:8, border:"1.5px solid var(--border)", fontSize:12, color:"var(--text)", outline:"none", background:"var(--bg)", fontFamily:"var(--sans)", transition:"border-color .15s" }} />
         </div>
         <div style={{ display:"flex", gap:5 }}>
-          {[["all","All",contacts.length],["has-email","Has Email",contacts.filter(c=>c.email).length],["no-email","No Email",contacts.filter(c=>!c.email).length],["has-phone","Has Phone",contacts.filter(c=>c.phone).length],["no-phone","No Phone",contacts.filter(c=>!c.phone).length]].map(([v,l,cnt]) => (
+          {[["all","All",tabContacts.length],["has-email","Has Email",tabContacts.filter(c=>c.email).length],["no-email","No Email",tabContacts.filter(c=>!c.email).length],["has-phone","Has Phone",tabContacts.filter(c=>c.phone).length],["no-phone","No Phone",tabContacts.filter(c=>!c.phone).length]].map(([v,l,cnt]) => (
             <div key={v} onClick={() => setContactFilter(v)}
               style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#dd2b0f":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#dd2b0f":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(221,43,15,.28)":"none", display:"flex", alignItems:"center", gap:5 }}>
               {l} <span style={{ fontWeight:800, fontSize:11, opacity:contactFilter===v?1:.6 }}>{cnt.toLocaleString()}</span>
