@@ -86,11 +86,11 @@ const CSS = `
   --white:#ffffff;
 
   /* ── Sidebar ── */
-  --sidebar:#060d1f;
-  --sidebar-border:rgba(255,255,255,.06);
+  --sidebar:#201e1d;
+  --sidebar-border:rgba(255,255,255,.08);
   --sidebar-hover:rgba(255,255,255,.05);
-  --sidebar-active:rgba(37,99,235,.18);
-  --sidebar-active-border:rgba(37,99,235,.35);
+  --sidebar-active:rgba(221,43,15,.20);
+  --sidebar-active-border:rgba(221,43,15,.45);
 
   /* ── Text ── */
   --text:#0d1117;
@@ -167,7 +167,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .sidebar::before{
   content:'';position:absolute;top:-100px;left:-100px;
   width:360px;height:360px;border-radius:50%;
-  background:radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%);
+  background:radial-gradient(circle,rgba(221,43,15,.10) 0%,transparent 70%);
   pointer-events:none;z-index:0;
 }
 .sidebar::after{
@@ -2005,7 +2005,7 @@ export default function App() {
           })()}
           {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
           {page === "dashboard" && (
-            <div className="dash-util-bar" style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
+            <div className="dash-util-bar" style={{background:"#201e1d",borderBottom:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
               {window.__utilityBtns}
             </div>
           )}
