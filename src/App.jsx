@@ -1504,6 +1504,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("ledgeros_dark") === "1");
   const toggleDark = () => { const n = !darkMode; setDarkMode(n); localStorage.setItem("ledgeros_dark", n?"1":"0"); document.documentElement.setAttribute("data-theme", n?"dark":"light"); };
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
@@ -1854,98 +1855,6 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
-        <aside className="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-inner">
-              <div className="logo-mark">
-                <img src={LOGO} alt="Arkham Retail" />
-              </div>
-              <div className="logo-wm">
-                <div className="logo-wm-row">
-                  <span className="logo-wm-l">Ledger</span><span className="logo-wm-os">OS</span>
-                </div>
-                <div className="logo-sub">Arkham Retail Ltd</div>
-              </div>
-            </div>
-            <div className="logo-live">
-              <div className="logo-live-dot" />
-              <span className="logo-live-txt">Live</span>
-            </div>
-          </div>
-          {/* ── FLAT 5-ITEM NAV ── */}
-          <div style={{padding:"8px 8px 4px",display:"flex",flexDirection:"column",gap:1}}>
-            {/* Dashboard */}
-            <div className={"nav-item "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>
-              {NAV_ICONS["dashboard"]}Dashboard
-            </div>
-
-            {/* Commerce — Invoices, Customers, Statements, Agent Sales, Delivery Notes, Credits */}
-            {(() => {
-              const commercePages = ["invoices","contacts","statement","agent-report","delivery-notes","credits"];
-              const isActive = commercePages.includes(page);
-              const overdueCount = invoices.filter(i=>i.status==="overdue").length;
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("invoices")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                  Commerce
-                  {overdueCount > 0 && <span className="nav-badge">{overdueCount}</span>}
-                </div>
-              );
-            })()}
-
-            {/* Operations — Inventory, Purchases, Stock In/Out, Delivery Notes, Import */}
-            {(() => {
-              const opsPages = ["inventory","purchases","stock-adj","import"];
-              const isActive = opsPages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("inventory")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                  Operations
-                </div>
-              );
-            })()}
-
-            {/* Finance — Banking, Reports, Analytics, Admin Reports */}
-            {(profile?.role === "admin" || profile?.role === "manager") && (() => {
-              const financePages = ["banking","reports","analytics","admin-reports"];
-              const isActive = financePages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("banking")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
-                  Finance
-                </div>
-              );
-            })()}
-
-            {/* Administration — Settings, Users */}
-            {(profile?.role === "admin" || profile?.role === "manager") && (() => {
-              const adminPages = ["settings"];
-              const isActive = adminPages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("settings")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  Administration
-                </div>
-              );
-            })()}
-          </div>
-          <div className="nav-bottom">
-            <div className="nav-bottom-divider" />
-            <div className="user-row">
-              <div className="user-av-wrap">
-                <div className="user-av">{initials}</div>
-                <div className="user-av-online" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="user-name">{profile?.full_name||auth.user.email}</div>
-                <div className="user-role-badge">{profile?.role||"agent"}</div>
-              </div>
-              <button className="signout-btn" onClick={signOut} title="Sign out">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              </button>
-            </div>
-          </div>
-        </aside>
         <div className="main">
           {/* ── UTILITY BUTTONS — injected into sub-nav or standalone bar ── */}
           {(() => {
@@ -2003,12 +1912,75 @@ export default function App() {
             );
             return null; // buttons injected via window.__utilityBtns
           })()}
-          {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
-          {page === "dashboard" && (
-            <div className="dash-util-bar" style={{background:"#201e1d",borderBottom:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
-              {window.__utilityBtns}
+          {/* ── TOP NAV (Modernist) ── */}
+          <header className="topnav">
+            <style>{`
+              .topnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:22px;height:56px;padding:0 20px;background:#f6f5f2;border-bottom:1px solid rgba(32,30,29,.10);flex-shrink:0}
+              .topnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer}
+              .topnav-mark{width:34px;height:34px;background:#201e1d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:-.5px;font-family:'Archivo',system-ui,sans-serif}
+              .topnav-wm{display:flex;flex-direction:column;line-height:1.08}
+              .topnav-wm-row{font-size:15px;font-weight:800;color:#201e1d;letter-spacing:-.4px;font-family:'Archivo',system-ui,sans-serif}
+              .topnav-wm-os{font-weight:300;color:#8a8580}
+              .topnav-wm-sub{font-size:9.5px;color:#8a8580;letter-spacing:.2px}
+              .topnav-live{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid rgba(32,30,29,.10);padding:3px 8px;margin-left:2px}
+              .topnav-live-dot{width:5px;height:5px;border-radius:50%;background:#dd2b0f}
+              .topnav-live-txt{font-size:9px;font-weight:700;color:#8a8580;letter-spacing:1px;text-transform:uppercase}
+              .topnav-nav{display:flex;align-items:center;gap:2px;flex:1}
+              .topnav-navitem{display:flex;align-items:center;gap:7px;padding:8px 12px;font-size:13.5px;font-weight:600;color:#3a3735;cursor:pointer;user-select:none;transition:color .12s,background .12s;white-space:nowrap}
+              .topnav-navitem:hover{color:#201e1d;background:rgba(32,30,29,.05)}
+              .topnav-navitem.active{color:#dd2b0f}
+              .topnav-navbadge{font-size:9px;font-weight:700;background:rgba(32,30,29,.08);color:#57534e;padding:1px 6px;border-radius:20px;min-width:16px;text-align:center}
+              .topnav-navitem.active .topnav-navbadge{background:rgba(221,43,15,.12);color:#dd2b0f}
+              .topnav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
+              .topnav .util-btns-bar{border-left:none!important;padding-left:0!important;margin-left:0!important}
+              .topnav .tb-btn{background:transparent;border-color:transparent;color:#57534e}
+              .topnav .tb-btn:hover{background:rgba(32,30,29,.06);border-color:transparent;color:#201e1d;box-shadow:none;transform:translateY(-1px)}
+              .topnav-av{width:32px;height:32px;background:#dd2b0f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;cursor:pointer;font-family:'Archivo',system-ui,sans-serif;border:none;flex-shrink:0}
+              @media(max-width:768px){.topnav-nav{display:none}}
+              @media(max-width:1050px){.topnav-wm,.topnav-live{display:none}}
+            `}</style>
+            <div className="topnav-brand" onClick={() => setPage("dashboard")}>
+              <div className="topnav-mark">AR</div>
+              <div className="topnav-wm">
+                <div className="topnav-wm-row">Ledger<span className="topnav-wm-os">OS</span></div>
+                <div className="topnav-wm-sub">Arkham Retail Ltd</div>
+              </div>
+              <span className="topnav-live"><span className="topnav-live-dot" /><span className="topnav-live-txt">Live</span></span>
             </div>
-          )}
+            <nav className="topnav-nav">
+              <div className={"topnav-navitem "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>Dashboard</div>
+              {(() => {
+                const commercePages = ["invoices","contacts","statement","agent-report","delivery-notes","credits"];
+                const overdueCount = invoices.filter(i=>i.status==="overdue").length;
+                return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
+              })()}
+              <div className={"topnav-navitem "+(["inventory","purchases","stock-adj","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
+              {(profile?.role==="admin"||profile?.role==="manager") && (
+                <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
+              )}
+              {(profile?.role==="admin"||profile?.role==="manager") && (
+                <div className={"topnav-navitem "+(page==="settings"?"active":"")} onClick={() => setPage("settings")}>Administration</div>
+              )}
+            </nav>
+            <div className="topnav-right">
+              {window.__utilityBtns}
+              <div style={{position:"relative"}}>
+                <button className="topnav-av" onClick={() => setShowUserMenu(v=>!v)} title={profile?.full_name||auth.user.email}>{(profile?.full_name||auth.user.email||"U").replace(/[^a-zA-Z]/g,"").slice(0,2).toUpperCase()||"U"}</button>
+                {showUserMenu && (
+                  <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:220,background:"var(--white)",border:"1px solid var(--border)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
+                    <div style={{padding:"12px 14px",borderBottom:"1px solid var(--border)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.full_name||auth.user.email}</div>
+                      <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginTop:3}}>{profile?.role||"agent"}</div>
+                    </div>
+                    <button onClick={() => { setShowUserMenu(false); signOut(); }} style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"11px 14px",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"var(--text)",fontFamily:"var(--sans)",textAlign:"left"}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafd"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
           {/* KEEP: hidden search state for Ctrl+K compatibility */}
           <div style={{display:"none"}}>
               <div className="search-wrap topbar-search" style={{ position: "relative" }}>
@@ -2119,16 +2091,15 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div className="subnav-bar" style={{ background:"#201e1d", borderBottom:"1px solid rgba(255,255,255,.10)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div className="subnav-bar" style={{ background:"#201e1d", borderBottom:"1px solid rgba(255,255,255,.10)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:56, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
-                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#a5b4fc":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #818cf8":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
-                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(129,140,248,.3)";}}}
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#ff6a4d":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #dd2b0f":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(221,43,15,.4)";}}}
                     onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.4)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
                     {tab.label}
                     {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(239,68,68,.2)", color:"#fca5a5", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(239,68,68,.3)" }}>{tab.badge}</span>}
                   </div>
                 ))}
-                {window.__utilityBtns}
               </div>
             );
           })()}
