@@ -284,20 +284,16 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         })()}
       </div>
 
-      {/* ── AI Insights strip ── */}
+      {/* ── Alerts — numbered Modernist rows ── */}
       {insights.length > 0 && (
-        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          {insights.map((insight, i) => {
-            const InsightIcon = insight.Icon;
-            return (
-              <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 12, background: "#0d1829", border: `1px solid ${insight.color}33`, borderLeft: `3px solid ${insight.color}`, borderRadius: "var(--rl)", padding: "12px 16px", cursor: "pointer", transition: "all .18s", boxShadow: `0 2px 12px ${insight.color}11` }} onMouseEnter={e => { e.currentTarget.style.background="#111c35"; e.currentTarget.style.boxShadow=`0 4px 20px ${insight.color}22`; }} onMouseLeave={e => { e.currentTarget.style.background="#0d1829"; e.currentTarget.style.boxShadow=`0 2px 12px ${insight.color}11`; }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: insight.color + "20", border: `1px solid ${insight.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <InsightIcon size={17} color={insight.color} strokeWidth={2}/>
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)", lineHeight: 1.5, fontWeight: 500 }}>{insight.text}</div>
-              </div>
-            );
-          })}
+        <div style={{ border: "2px solid var(--border)", marginBottom: 20 }}>
+          {insights.map((insight, i) => (
+            <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: i < insights.length - 1 ? "2px solid var(--border)" : "none", cursor: "pointer", color: i === 0 ? "#ae1800" : "var(--text)" }}>
+              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.4 }}>{insight.text}</div>
+              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13, color: "#ae1800", whiteSpace: "nowrap" }}>View →</div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -313,13 +309,13 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         ].map(pill => {
           const PillIcon = pill.Icon;
           return (
-            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderTop: "2px solid " + pill.color, borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "all .18s" }} onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.1)"; }} onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: pill.color + "15", border: "1px solid " + pill.color + "30", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div key={pill.label} onClick={pill.onClick} style={{ background: "#fff", border: "2px solid var(--border)", borderRadius: 0, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "transform .15s, box-shadow .15s" }} onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.08)"; }} onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
+              <div style={{ width: 36, height: 36, borderRadius: 0, background: pill.color + "15", border: "1px solid " + pill.color + "30", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <PillIcon size={17} color={pill.color} strokeWidth={2}/>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{pill.label}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-.3px" }}>{pill.val}</div>
+                <div style={{ fontSize: 10, color: "var(--text3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3, fontFamily: "'Archivo',system-ui,sans-serif" }}>{pill.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: (pill.label === "Low Stock" || pill.label === "Cash Collected") ? pill.color : "var(--text)", letterSpacing: "-.01em", fontFamily: "'Archivo',system-ui,sans-serif", fontVariantNumeric: "tabular-nums" }}>{pill.val}</div>
               </div>
             </div>
           );
@@ -375,7 +371,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
               </div>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#818cf8"}}/>Collected
+                  <div style={{width:10,height:10,borderRadius:2,background:"#1a7f37"}}/>Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
                   <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
@@ -397,16 +393,16 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                 <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
                   <defs>
                     <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#1a7f37" stopOpacity={0.28}/>
+                      <stop offset="95%" stopColor="#1a7f37" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="strokeCollected" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#4338ca"/>
-                      <stop offset="100%" stopColor="#a5b4fc"/>
+                      <stop offset="0%" stopColor="#0f5c28"/>
+                      <stop offset="100%" stopColor="#1a7f37"/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
@@ -421,7 +417,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
-                  <div style={{fontSize:18,fontWeight:700,color:"#818cf8"}}>{fmt(totalPaid6)}</div>
+                  <div style={{fontSize:18,fontWeight:800,color:"#0f5c28",fontFamily:"'Archivo',system-ui,sans-serif"}}>{fmt(totalPaid6)}</div>
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Pending</div>
