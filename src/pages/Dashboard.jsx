@@ -121,7 +121,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
           setEditInvoice(null);
         }} />}
       <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
-        <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
+        <div style={{ background:"#201e1d", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
           <div style={{ fontSize:32, fontWeight:900, letterSpacing:"-1px", marginBottom:6 }}>{fmt(totalRevenue)}</div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,.55)" }}>
