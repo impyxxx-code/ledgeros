@@ -215,7 +215,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   tr:nth-child(even) td{background:#fafbfd}
   .td-desc{font-weight:600;color:#0a0f1e}
   .td-unit{color:#94a3b8;font-size:11px;font-weight:500}
-  .td-qty{text-align:center;font-weight:800;font-size:16px;color:#2563eb}
+  .td-qty{text-align:center;font-weight:800;font-size:16px;color:#dd2b0f}
   .td-blank{text-align:center;color:#cbd5e1;font-size:18px}
 
   /* Signature */
@@ -237,7 +237,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
 
   /* Driver strip */
   .driver-strip{background:#f0f4ff;border:1px solid #c7d7fc;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
-  .driver-icon{width:34px;height:34px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .driver-icon{width:34px;height:34px;background:#dd2b0f;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .driver-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:2px}
   .driver-name{font-size:14px;font-weight:700;color:#1e40af}
 
@@ -488,13 +488,13 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
 
               {/* Print Invoice */}
-              <button onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
-                onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"}
+              <button onClick={printInvoice} style={{ border: "2px solid #dd2b0f", borderRadius: "var(--rl)", padding: "18px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", transition: "all .15s", fontFamily: "var(--sans)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(221,43,15,.10)"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
-                <div style={{ width: 42, height: 42, borderRadius: 11, background: "var(--blue)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "#dd2b0f", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
                   <span style={{ color: "#fff", fontSize: 20 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--blue)", marginBottom: 3 }}>Print Invoice</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#dd2b0f", marginBottom: 3 }}>Print Invoice</div>
                 <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5 }}>Download {savedInvoice.invoice_number} as a print-ready file</div>
               </button>
 
@@ -521,7 +521,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
                 {(savedInvoice.lines || []).map((l, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: i < (savedInvoice.lines.length - 1) ? "0.5px solid var(--border)" : "none" }}>
                     <span style={{ fontSize: 12, fontWeight: 500 }}>{l.description}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--blue)" }}>× {l.qty}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#dd2b0f" }}>× {l.qty}</span>
                   </div>
                 ))}
               </div>
@@ -571,12 +571,12 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              <button onClick={printInvoice} style={{ border: "2px solid var(--blue)", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
-                onMouseEnter={e => e.currentTarget.style.background = "var(--blue-lt)"}
+              <button onClick={printInvoice} style={{ border: "2px solid #dd2b0f", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(221,43,15,.10)"}
                 onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ color: "var(--blue)", fontSize: 20 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-                  <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>Print Invoice</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{savedInvoice.invoice_number}</div></div>
+                  <span style={{ color: "#dd2b0f", fontSize: 20 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+                  <div><div style={{ fontSize: 13, fontWeight: 700, color: "#dd2b0f" }}>Print Invoice</div><div style={{ fontSize: 11, color: "var(--text2)" }}>{savedInvoice.invoice_number}</div></div>
                 </div>
               </button>
               <button onClick={() => printDNFromForm(dnSaved)} style={{ border: "2px solid #0f172a", borderRadius: "var(--rl)", padding: "14px 16px", cursor: "pointer", background: "var(--white)", textAlign: "left", fontFamily: "var(--sans)", transition: "all .15s" }}
@@ -660,15 +660,15 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       </div>
       {/* Progress bar — sticky so it stays visible */}
       <div style={{ height:3, background:"rgba(0,0,0,.08)", display:"flex", gap:2, position:"sticky", top:98, zIndex:49 }}>
-        <div style={{ flex:1, height:3, background: f.customer ? "#2563eb" : "rgba(255,255,255,.15)", transition:"background .3s" }} />
-        <div style={{ flex:1, height:3, background: mobActiveLines.length > 0 ? "#2563eb" : "rgba(255,255,255,.1)", transition:"background .3s" }} />
+        <div style={{ flex:1, height:3, background: f.customer ? "#dd2b0f" : "rgba(255,255,255,.15)", transition:"background .3s" }} />
+        <div style={{ flex:1, height:3, background: mobActiveLines.length > 0 ? "#dd2b0f" : "rgba(255,255,255,.1)", transition:"background .3s" }} />
       </div>
 
       {/* ── CUSTOMER SECTION — with recent list ── */}
       <div style={{ background:"var(--white)", margin:"10px 12px 0", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden", scrollMarginTop:110 }}>
         <div style={{ padding:"10px 14px 0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Customer *</div>
-          {f.customer && <button onClick={() => setF({...f, customer:""})} style={{ background:"none", border:"none", fontSize:11, color:"var(--blue)", cursor:"pointer", fontWeight:600, padding:0 }}>Change</button>}
+          {f.customer && <button onClick={() => setF({...f, customer:""})} style={{ background:"none", border:"none", fontSize:11, color:"#dd2b0f", cursor:"pointer", fontWeight:600, padding:0 }}>Change</button>}
         </div>
         {f.customer ? (
           <div style={{ padding:"10px 14px 12px", display:"flex", alignItems:"center", gap:10, background:"#f0fdf4" }}>
@@ -709,7 +709,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             const d = new Date(); d.setDate(d.getDate()+days);
             const val = d.toISOString().split("T")[0];
             const active = f.due_date === val;
-            return <button key={days} type="button" onClick={() => setF({...f, due_date: val})} style={{ flex:1, padding:"7px 2px", borderRadius:7, border:`1px solid ${active?"var(--blue)":"var(--border)"}`, background:active?"var(--blue)":"var(--white)", color:active?"#fff":"var(--text2)", fontSize:11, fontWeight:active?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{label}</button>;
+            return <button key={days} type="button" onClick={() => setF({...f, due_date: val})} style={{ flex:1, padding:"7px 2px", borderRadius:7, border:`1px solid ${active?"#dd2b0f":"var(--border)"}`, background:active?"#dd2b0f":"var(--white)", color:active?"#fff":"var(--text2)", fontSize:11, fontWeight:active?600:400, cursor:"pointer", fontFamily:"var(--sans)" }}>{label}</button>;
           })}
         </div>
         {f.due_date && <div style={{ fontSize:11, color:"var(--text3)", marginTop:4 }}>Due: {new Date(f.due_date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>}
@@ -723,13 +723,13 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
                 <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{l.description}</div>
                 <div style={{ fontSize:12, color:"var(--text3)" }}>{fmt(parseFloat(l.unit_price)||0)} each · VAT {l.vat_rate}%</div>
               </div>
-              <div style={{ fontSize:15, fontWeight:700, color:"var(--blue)", marginLeft:12 }}>{fmt((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0))}</div>
+              <div style={{ fontSize:15, fontWeight:700, color:"#dd2b0f", marginLeft:12 }}>{fmt((parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0))}</div>
             </div>
             <div style={{ display:"flex", gap:8, marginBottom:10 }}>
               <div style={{ flex:1 }}>
                 <label style={{ fontSize:10, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".5px", display:"block", marginBottom:3 }}>Unit Price £</label>
                 <input type="number" step="0.01" min="0" value={l.unit_price} onChange={e => { const nxt=[...lines]; nxt[i]={...nxt[i],unit_price:e.target.value,custom_price_applied:false,price_amended:true}; setLines(nxt); }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:14, fontFamily:"var(--sans)", background:"var(--white)", color:"var(--text)" }} />
-                {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,display:"inline-block",marginTop:3 }}>★ Custom price</span>}
+                {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#dd2b0f",background:"#faf0ee",padding:"1px 6px",borderRadius:4,display:"inline-block",marginTop:3 }}>★ Custom price</span>}
                 {l.price_amended && !l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#d97706",background:"#fffbeb",padding:"1px 6px",borderRadius:4,display:"inline-block",marginTop:3 }}>✏️ Price amended</span>}
               </div>
               <div style={{ width:100 }}>
@@ -752,7 +752,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
                   onBlur={() => { if (!l.qty || l.qty < 1) { const nxt=[...lines]; nxt[i]={...nxt[i], qty:1}; setLines(nxt); } }}
                   style={{ width:64, height:44, textAlign:"center", border:"1.5px solid var(--border)", borderRadius:10, fontSize:16, fontWeight:700, fontFamily:"var(--mono)", color:"var(--text)", outline:"none", background:"var(--white)" }}
                 />
-                <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"1.5px solid var(--blue)", borderRadius:10, background:"var(--blue)", fontSize:22, cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>+</button>
+                <button onClick={() => mobInc(i)} style={{ width:44, height:44, border:"1.5px solid #dd2b0f", borderRadius:10, background:"#dd2b0f", fontSize:22, cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontWeight:300 }}>+</button>
               </div>
               <button onClick={() => mobRemoveLine(i)} style={{ background:"var(--red-lt)", border:"none", borderRadius:8, padding:"8px 14px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}>Remove</button>
             </div>
@@ -764,7 +764,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       <div style={{ margin:"8px 12px 0", background:"var(--white)", borderRadius:"var(--rl)", border:"1px solid var(--border)", overflow:"hidden" }}>
         <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom: mobActiveLines.length > 0 ? "1px solid var(--border)" : "none" }}>
           <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Products {mobActiveLines.length > 0 ? `(${mobActiveLines.length})` : ""}</div>
-          <button onClick={() => setMobPickerOpen(true)} style={{ display:"flex", alignItems:"center", gap:5, background:"var(--blue)", border:"none", borderRadius:7, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--sans)" }}>
+          <button onClick={() => setMobPickerOpen(true)} style={{ display:"flex", alignItems:"center", gap:5, background:"#dd2b0f", border:"none", borderRadius:7, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--sans)" }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product
           </button>
         </div>
@@ -800,7 +800,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             {!f.customer ? "👆 Select a customer to continue" : "👆 Add at least one product"}
           </div>
         )}
-        <button onClick={save} disabled={saving || !f.customer || !mobActiveLines.length} style={{ width:"100%", background:(!f.customer || !mobActiveLines.length) ? "var(--border2)" : "linear-gradient(135deg,#2563eb,#1d4ed8)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:(!f.customer || !mobActiveLines.length) ? "var(--text3)" : "#fff", fontSize:16, fontWeight:700, cursor:(!f.customer || !mobActiveLines.length) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:(!f.customer || !mobActiveLines.length) ? "none" : "0 4px 14px rgba(37,99,235,.35)" }}>
+        <button onClick={save} disabled={saving || !f.customer || !mobActiveLines.length} style={{ width:"100%", background:(!f.customer || !mobActiveLines.length) ? "var(--border2)" : "linear-gradient(135deg,#dd2b0f,#ae1800)", border:"none", borderRadius:"var(--rl)", padding:"16px", color:(!f.customer || !mobActiveLines.length) ? "var(--text3)" : "#fff", fontSize:16, fontWeight:700, cursor:(!f.customer || !mobActiveLines.length) ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:(!f.customer || !mobActiveLines.length) ? "none" : "0 4px 14px rgba(221,43,15,.35)" }}>
           <span>{saving ? "Creating..." : "Create Invoice"}</span>
           <span style={{ fontSize:18, fontWeight:800 }}>{fmt(total)}</span>
         </button>
@@ -815,7 +815,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
               <button onClick={() => setMobPickerOpen(false)} style={{ background:"var(--bg)", border:"none", borderRadius:"50%", width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div style={{ padding:"10px 16px" }}>
-              <input autoFocus value={mobPickerSearch} onChange={e => setMobPickerSearch(e.target.value)} placeholder="Search products..." style={{ width:"100%", padding:"12px 14px", borderRadius:"var(--rl)", border:"1.5px solid var(--blue)", fontSize:14, outline:"none", fontFamily:"var(--sans)", background:"var(--white)" }} />
+              <input autoFocus value={mobPickerSearch} onChange={e => setMobPickerSearch(e.target.value)} placeholder="Search products..." style={{ width:"100%", padding:"12px 14px", borderRadius:"var(--rl)", border:"1.5px solid #dd2b0f", fontSize:14, outline:"none", fontFamily:"var(--sans)", background:"var(--white)" }} />
             </div>
             {!mobPickerSearch && <div style={{ padding:"0 16px 6px", fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Recent Products</div>}
             <div style={{ overflowY:"auto", flex:1, padding:"0 12px 16px" }}>
@@ -823,14 +823,14 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
               {mobFiltered.map(p => {
                 const inBasket = lines.find(l => l.product_id === p.id);
                 return (
-                  <button key={p.id} onClick={() => mobAddProduct(p)} style={{ width:"100%", background: inBasket ? "var(--blue-lt)" : "var(--white)", border: inBasket ? "1.5px solid var(--blue)" : "1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", textAlign:"left", fontFamily:"var(--sans)" }}>
+                  <button key={p.id} onClick={() => mobAddProduct(p)} style={{ width:"100%", background: inBasket ? "rgba(221,43,15,.10)" : "var(--white)", border: inBasket ? "1.5px solid #dd2b0f" : "1px solid var(--border)", borderRadius:"var(--rl)", padding:"14px 16px", marginBottom:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", textAlign:"left", fontFamily:"var(--sans)" }}>
                     <div>
                       <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{p.name}</div>
                       <div style={{ fontSize:12, color:"var(--text3)" }}>{p.code ? `${p.code} · ` : ""}{fmt(p.sale_price||0)} · VAT {p.vat_rate ?? 20}% · Stock: {p.stock_qty}</div>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      {inBasket && <span style={{ fontSize:12, fontWeight:700, color:"var(--blue)", background:"var(--blue-lt)", padding:"3px 8px", borderRadius:20 }}>×{inBasket.qty}</span>}
-                      <div style={{ width:36, height:36, borderRadius:10, background: inBasket ? "var(--blue)" : "var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      {inBasket && <span style={{ fontSize:12, fontWeight:700, color:"#dd2b0f", background:"rgba(221,43,15,.10)", padding:"3px 8px", borderRadius:20 }}>×{inBasket.qty}</span>}
+                      <div style={{ width:36, height:36, borderRadius:10, background: inBasket ? "#dd2b0f" : "var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       </div>
                     </div>
@@ -859,7 +859,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
                 const d = new Date(); d.setDate(d.getDate()+days);
                 const val = d.toISOString().split("T")[0];
                 const active = f.due_date === val;
-                return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"5px 0",borderRadius:6,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
+                return <button key={days} type="button" onClick={()=>setF({...f,due_date:val})} style={{flex:1,padding:"5px 0",borderRadius:6,border:"1px solid "+(active?"#dd2b0f":"var(--border)"),background:active?"#dd2b0f":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
               })}
             </div>
             <input type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} style={{fontSize:13}} className={f.due_date && f.invoice_date && f.due_date < f.invoice_date ? "inp-error" : f.due_date ? "inp-valid" : ""} />
@@ -910,7 +910,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
             <input type="text" inputMode="numeric" className="il-input mono" value={String(l.qty ?? "")} onChange={e => updateLine(i, "qty", e.target.value)} />
             <div style={{ display:"flex",flexDirection:"column",gap:3 }}>
               <input type="text" inputMode="decimal" className="il-input mono" placeholder="0.00" value={String(l.unit_price ?? "")} onChange={e => setLines(prev => prev.map((ln, idx) => idx === i ? {...ln, unit_price: e.target.value, custom_price_applied: false, price_amended: true} : ln))} />
-              {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#2563eb",background:"#eff6ff",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
+              {l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#dd2b0f",background:"#faf0ee",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>★ Custom price</span>}
               {l.price_amended && !l.custom_price_applied && <span style={{ fontSize:10,fontWeight:600,color:"#d97706",background:"#fffbeb",padding:"1px 6px",borderRadius:4,alignSelf:"flex-start" }}>✏️ Price amended</span>}
             </div>
             <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select>
