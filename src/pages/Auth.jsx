@@ -19,6 +19,7 @@ const DIVIDER = "#c9c6c4";
 const SUCCESS = "#1a7f37", SUCCESS_BG = "#e6f4ea", SUCCESS_TX = "#0f5c28";
 const DANGER_BG = "#ffe0d9", DANGER_TX = "#7c1405";
 const HEAD = "'Archivo', system-ui, sans-serif";
+const BRAND_BG = "radial-gradient(130% 90% at 72% 40%, #33357e 0%, rgba(28,26,74,0) 55%), linear-gradient(158deg, #0b1030 0%, #16143f 50%, #0a1a3c 100%)";
 
 const AUTH_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');
@@ -323,15 +324,12 @@ export function Auth({ onAuth, sessionExpired }) {
 
         {/* ── LEFT / TOP BRAND PANEL (ink) ── */}
         <div className="m-brand-grid" style={mob
-          ? { background: INK, color: FG, padding: "28px 24px 32px", position: "relative", overflow: "hidden", flexShrink: 0 }
-          : { width: 460, minWidth: 460, background: INK, color: FG, padding: "44px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+          ? { background: BRAND_BG, color: FG, padding: "26px 24px 30px", position: "relative", overflow: "hidden", flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }
+          : { width: 460, minWidth: 460, background: BRAND_BG, color: FG, padding: "44px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
 
-          {/* wordmark + (mobile) live badge */}
+          {/* top: LedgerOS wordmark */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <img src={LOGO_BADGE} alt="Arkham Retail" style={{ width: 42, height: 42, objectFit: "contain", display: "block", flexShrink: 0 }} />
-              <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: 19, letterSpacing: "-.01em" }}>LedgerOS</div>
-            </div>
+            <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: 19, letterSpacing: "-.01em", color: "#fff" }}>Ledger<span style={{ fontWeight: 300, color: "rgba(255,255,255,.55)" }}>OS</span></div>
             {mob && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(127,211,155,.16)", color: "#7fd39b", fontSize: 10, fontWeight: 700, padding: "3px 9px", textTransform: "uppercase", letterSpacing: ".5px" }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#7fd39b" }} /> Live
@@ -339,25 +337,26 @@ export function Auth({ onAuth, sessionExpired }) {
             )}
           </div>
 
-          {/* hero */}
-          <div style={{ position: "relative", zIndex: 1, padding: mob ? "22px 0 0" : "40px 0" }}>
-            {/* Logo intentionally omitted for now — to revisit. */}
-            <div className="m-anim m-a1" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", color: N400, marginBottom: mob ? 14 : 22 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT }} />
-              Business Finance Platform
+          {/* centre: badge + ARKHAM RETAIL wordmark */}
+          <div style={{ position: "relative", zIndex: 1, flex: mob ? "none" : 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: mob ? "28px 0 12px" : "0" }}>
+            <img className="m-anim m-a1" src={LOGO_BADGE} alt="Arkham Retail" style={{ width: mob ? 118 : 160, height: mob ? 118 : 160, objectFit: "contain", display: "block", filter: "drop-shadow(0 10px 34px rgba(0,0,0,.5))" }} />
+            <div className="m-anim m-a2" style={{ display: "flex", alignItems: "center", gap: 13, marginTop: 20 }}>
+              <span style={{ width: 24, height: 1, background: "rgba(255,255,255,.22)" }} />
+              <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: 16, letterSpacing: ".26em", whiteSpace: "nowrap" }}>
+                <span style={{ color: "#fff" }}>ARKHAM</span> <span style={{ color: "#5bd68f" }}>RETAIL</span>
+              </div>
+              <span style={{ width: 24, height: 1, background: "rgba(255,255,255,.22)" }} />
             </div>
-            <h1 className="m-anim m-a2" style={{ fontFamily: HEAD, fontWeight: 800, fontSize: mob ? 28 : "clamp(34px, 4.4vw, 50px)", lineHeight: 1.03, letterSpacing: "-.02em", margin: 0 }}>
-              Run every invoice.<br />
-              Know every <span style={{ color: RED_HI }}>number.</span>
-            </h1>
-            {!mob && (
-              <p className="m-anim m-a3" style={{ fontSize: 14, color: "rgba(248,247,245,.6)", lineHeight: 1.7, maxWidth: 340, marginTop: 20 }}>
-                Everything your retail business needs. Invoicing, inventory, deliveries and real-time insights, connected in one platform.
-              </p>
-            )}
           </div>
 
-          {!mob && <div style={{ fontSize: 11, color: "rgba(248,247,245,.3)", position: "relative", zIndex: 1 }}>© 2026 Arkham Retail Ltd</div>}
+          {/* bottom: eyebrow + copyright */}
+          <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="m-anim m-a3" style={{ display: "inline-flex", alignItems: "center", gap: 9, fontSize: 11, fontWeight: 800, letterSpacing: ".15em", textTransform: "uppercase", color: "rgba(199,196,255,.78)" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8b7ff0" }} />
+              Business Finance Platform
+            </div>
+            {!mob && <div style={{ fontSize: 11, color: "rgba(255,255,255,.28)" }}>© 2026 Arkham Retail Ltd</div>}
+          </div>
         </div>
 
         {/* ── FORM PANEL ── */}
