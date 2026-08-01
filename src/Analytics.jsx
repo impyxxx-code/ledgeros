@@ -77,21 +77,21 @@ function buildRecentActivity(invoices, products) {
 
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--bg:#f4f6f9;--white:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#64748b;--text3:#94a3b8;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;--blue:#2563eb;--blue-bg:#eff6ff;--amber:#d97706;--amber-bg:#fffbeb;--purple:#7c3aed;--mono:'Courier New',monospace;--sh:0 1px 3px rgba(0,0,0,.08)}
+  :root{--bg:#f4f6f9;--white:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#64748b;--text3:#94a3b8;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;--blue:#dd2b0f;--blue-bg:#faf0ee;--amber:#d97706;--amber-bg:#fffbeb;--purple:#7c3aed;--mono:'Courier New',monospace;--sh:0 1px 3px rgba(0,0,0,.08)}
   *{box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;margin:0;padding:0}
   .tnav{background:#0d1829;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px;margin:0}
-  .tlogo{width:32px;height:32px;background:#1e1b4b;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tlogo{width:32px;height:32px;background:#201e1d;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .tname{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
   .tco{font-size:10px;color:rgba(255,255,255,.4)}
   .tbadge{margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.7)}
-  .tback{background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-left:8px}
+  .tback{background:linear-gradient(135deg,#dd2b0f,#ae1800);border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-left:8px}
   .page{padding:24px}
   .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
   .pt{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.4px}
   .ps{font-size:13px;color:var(--text2);margin-top:3px}
   .period-btns{display:flex;gap:6px}
   .pb{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer}
-  .pb.active{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:#2563eb}
+  .pb.active{background:linear-gradient(135deg,#dd2b0f,#ae1800);color:#fff;border-color:#dd2b0f}
   .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);margin-bottom:20px;overflow:hidden}
   .ch{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
   .ct{font-size:14px;font-weight:700;color:#0f172a}
@@ -123,7 +123,7 @@ const CSS = `
   .mono{font-family:var(--mono)}
   .tg{color:var(--green)}.tr-c{color:var(--red)}.tm{color:var(--text2)}
   .rank-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px}
-  .rank-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#2563eb,#1d4ed8)}
+  .rank-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#dd2b0f,#ae1800)}
   .activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)}
   .activity-item:last-child{border-bottom:none}
   .act-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -158,7 +158,7 @@ function SparkLine({ values, color }) {
     const y = h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
     return x + "," + y;
   }).join(" ");
-  return <svg width={w} height={h} viewBox={"0 0 " + w + " " + h} style={{ display: "block", marginTop: 8 }}><polyline points={pts} fill="none" stroke={color || "#2563eb"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width={w} height={h} viewBox={"0 0 " + w + " " + h} style={{ display: "block", marginTop: 8 }}><polyline points={pts} fill="none" stroke={color || "#dd2b0f"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 
 function BarChart({ data }) {
@@ -170,7 +170,7 @@ function BarChart({ data }) {
         {data.map((m, i) => (
           <div key={i} className="bar-group">
             <div className="bar-pair" style={{ alignItems: "flex-end", height: "100%", display: "flex" }}>
-              <div className="bar" style={{ height: ((m.revenue / max) * 140) + "px", background: "#2563eb", opacity: 0.85 }} data-val={fmt(m.revenue)} />
+              <div className="bar" style={{ height: ((m.revenue / max) * 140) + "px", background: "#dd2b0f", opacity: 0.85 }} data-val={fmt(m.revenue)} />
               {hasExp && <div className="bar" style={{ height: ((m.expenses / max) * 140) + "px", background: "#dc2626", opacity: 0.6 }} data-val={fmt(m.expenses)} />}
             </div>
             <div className="bar-lbl">{m.month}</div>
@@ -178,7 +178,7 @@ function BarChart({ data }) {
         ))}
       </div>
       <div className="chart-legend">
-        <div className="leg-item"><div className="leg-dot" style={{ background: "#2563eb" }} />Revenue</div>
+        <div className="leg-item"><div className="leg-dot" style={{ background: "#dd2b0f" }} />Revenue</div>
         {hasExp && <div className="leg-item"><div className="leg-dot" style={{ background: "#dc2626" }} />Expenses</div>}
       </div>
     </div>
@@ -187,7 +187,7 @@ function BarChart({ data }) {
 
 function DonutChart({ data, total }) {
   if (!data.length || !total) return <div className="empty">No sales data to show</div>;
-  const colors = ["#2563eb","#1e1b4b","#7c3aed","#d97706","#dc2626"];
+  const colors = ["#dd2b0f","#201e1d","#7c3aed","#d97706","#dc2626"];
   let cum = 0;
   const segs = data.map((d, i) => {
     const pct = d.value / total;
@@ -221,7 +221,7 @@ function DonutChart({ data, total }) {
 }
 
 const IcoPaid = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
-const IcoInv = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+const IcoInv = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
 const IcoWarn = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
 
 export default function Analytics({ invoices = [], products = [], contacts = [], expenses = [] }) {
@@ -277,14 +277,14 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
           </div>
           <div style={{display:"flex",gap:6}}>
             {[["3m","3M"],["6m","6M"],["12m","12M"]].map(([k,l]) => (
-              <button key={k} onClick={() => setPeriod(k)} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(period===k?"#2563eb":"rgba(255,255,255,.15)"),background:period===k?"#2563eb":"rgba(255,255,255,.07)",color:period===k?"#fff":"rgba(255,255,255,.7)",fontSize:12,fontWeight:500,cursor:"pointer"}}>{l}</button>
+              <button key={k} onClick={() => setPeriod(k)} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(period===k?"#dd2b0f":"rgba(255,255,255,.15)"),background:period===k?"#dd2b0f":"rgba(255,255,255,.07)",color:period===k?"#fff":"rgba(255,255,255,.7)",fontSize:12,fontWeight:500,cursor:"pointer"}}>{l}</button>
             ))}
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:"1px solid rgba(255,255,255,.08)"}}>
           {[
             {label:"Total Invoiced",val:fmt(totalRevenue),sub:revGrowth!==null?(revGrowth>=0?"+":"")+revGrowth+"% vs prev month":totalInvoices+" invoices",accent:"#16a34a"},
-            {label:"Collected",val:fmt(totalPaid),sub:totalRevenue>0?Math.round(totalPaid/totalRevenue*100)+"% collection rate":"0% collection rate",accent:"#2563eb"},
+            {label:"Collected",val:fmt(totalPaid),sub:totalRevenue>0?Math.round(totalPaid/totalRevenue*100)+"% collection rate":"0% collection rate",accent:"#dd2b0f"},
             {label:"Outstanding",val:fmt(totalOutstanding),sub:pInv.filter(i=>i.status==="overdue").length+" overdue invoices",accent:"#dc2626"},
             {label:"Customers",val:TOP_CUSTOMERS.length,sub:totalInvoices+" invoices · "+period,accent:"#57534e"},
           ].map((k,i)=>(
@@ -319,7 +319,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
                 <tbody>
                   {TOP_PRODUCTS.map((p, i) => (
                     <tr key={i}>
-                      <td><div style={{ width:24,height:24,borderRadius:"50%",background:i<3?"#1e1b4b":"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:i<3?"#fff":"#64748b" }}>{i+1}</div></td>
+                      <td><div style={{ width:24,height:24,borderRadius:"50%",background:i<3?"#201e1d":"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:i<3?"#fff":"#64748b" }}>{i+1}</div></td>
                       <td style={{ fontWeight:600 }}>{p.name}</td>
                       <td><div className="mono">{Math.round(p.units).toLocaleString()}</div><div className="rank-bar"><div className="rank-fill" style={{ width:((p.units/maxUnits)*100)+"%" }} /></div></td>
                       <td className="mono tg">{fmt(p.revenue)}</td>
@@ -342,7 +342,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
                   <tbody>
                     {TOP_CUSTOMERS.map((c, i) => (
                       <tr key={i}>
-                        <td><div style={{ display:"flex",alignItems:"center",gap:10 }}><div style={{ width:30,height:30,borderRadius:"50%",background:"#1e1b4b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0 }}>{c.name[0]}</div><div><div style={{ fontWeight:600,fontSize:13 }}>{c.name}</div><div style={{ fontSize:11,color:"var(--text3)" }}>{fmtDate(c.lastOrder)}</div></div></div></td>
+                        <td><div style={{ display:"flex",alignItems:"center",gap:10 }}><div style={{ width:30,height:30,borderRadius:"50%",background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0 }}>{c.name[0]}</div><div><div style={{ fontWeight:600,fontSize:13 }}>{c.name}</div><div style={{ fontSize:11,color:"var(--text3)" }}>{fmtDate(c.lastOrder)}</div></div></div></td>
                         <td className="mono" style={{ color:"var(--text2)" }}>{c.invoices}</td>
                         <td className="mono" style={{ fontWeight:700 }}>{fmt(c.total)}</td>
                         <td className="mono tg">{c.paid > 0 ? fmt(c.paid) : "—"}</td>
@@ -359,7 +359,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
             <div className="ch"><div className="ct">Recent Activity</div><div className="cs">Latest transactions</div></div>
             {RECENT.length === 0 ? <div className="empty">No recent activity</div> : RECENT.map((a, i) => (
               <div key={i} className="activity-item">
-                <div className="act-icon" style={{ background: a.type==="payment"?"#f0fdf4":a.type==="stock"?"#fffbeb":"#eff6ff" }}>
+                <div className="act-icon" style={{ background: a.type==="payment"?"#f0fdf4":a.type==="stock"?"#fffbeb":"#faf0ee" }}>
                   {a.type==="payment" ? <IcoPaid /> : a.type==="stock" ? <IcoWarn /> : <IcoInv />}
                 </div>
                 <div style={{ flex:1 }}>

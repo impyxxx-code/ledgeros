@@ -94,7 +94,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
         {/* Quick range buttons */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[["week","Last 7 Days"],["month","Last Month"],["quarter","Last Quarter"],["year","Last Year"],["all","All Time"]].map(([k,l]) => (
-            <button key={k} onClick={() => setRange(k)} style={{ padding: "5px 14px", borderRadius: 20, border: "1px solid " + (quickRange===k?"var(--blue)":"var(--border)"), background: quickRange===k?"var(--blue)":"var(--white)", color: quickRange===k?"#fff":"var(--text2)", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .12s" }}>{l}</button>
+            <button key={k} onClick={() => setRange(k)} style={{ padding: "5px 14px", borderRadius: 20, border: "1px solid " + (quickRange===k?"#dd2b0f":"var(--border)"), background: quickRange===k?"#dd2b0f":"var(--white)", color: quickRange===k?"#fff":"var(--text2)", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .12s" }}>{l}</button>
           ))}
         </div>
       </div>
@@ -103,7 +103,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
       <div className="g4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", marginBottom: 18 }}>
         <div className="kpi" style={{ marginBottom: 0 }}>
           <div className="kpi-label">Products Sold</div>
-          <div className="kpi-val" style={{ color: "var(--blue)" }}>{allProducts.length}</div>
+          <div className="kpi-val" style={{ color: "#dd2b0f" }}>{allProducts.length}</div>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>unique items</div>
         </div>
         <div className="kpi" style={{ marginBottom: 0 }}>
@@ -129,7 +129,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
           <div className="ch">
             <div><div className="ct">📦 {selected.description}</div><div className="cs">{fmtDate(dateFrom)} — {fmtDate(dateTo)}</div></div>
             <div style={{ display: "flex", gap: 24 }}>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>Units Sold</div><div style={{ fontSize: 22, fontWeight: 800, color: "var(--blue)" }}>{selected.totalQty}</div></div>
+              <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>Units Sold</div><div style={{ fontSize: 22, fontWeight: 800, color: "#dd2b0f" }}>{selected.totalQty}</div></div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>Revenue</div><div style={{ fontSize: 22, fontWeight: 800, color: "var(--green)" }}>{fmt(selected.totalValue)}</div></div>
             </div>
           </div>
@@ -142,10 +142,10 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--blue)" }}>{qty} units</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#dd2b0f" }}>{qty} units</span>
                   </div>
                   <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ width: Math.round((qty/selected.totalQty)*100)+"%", height: "100%", background: "var(--blue)", borderRadius: 3, transition: "width .5s var(--ease)" }} />
+                    <div style={{ width: Math.round((qty/selected.totalQty)*100)+"%", height: "100%", background: "#dd2b0f", borderRadius: 3, transition: "width .5s var(--ease)" }} />
                   </div>
                 </div>
                 <span style={{ fontSize: 12, color: "var(--text3)", minWidth: 36 }}>{Math.round((qty/selected.totalQty)*100)}%</span>
@@ -160,7 +160,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
                 {Object.entries(selected.dailySales).sort((a,b)=>a[0].localeCompare(b[0])).map(([day, qty]) => {
                   const maxDay = Math.max(...Object.values(selected.dailySales));
                   return (
-                    <div key={day} title={fmtDate(day) + ": " + qty + " units"} style={{ flex: 1, background: "var(--blue)", borderRadius: "2px 2px 0 0", height: Math.max(4, Math.round((qty/maxDay)*56))+"px", opacity: 0.75, cursor: "pointer", transition: "opacity .1s" }} onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=.75} />
+                    <div key={day} title={fmtDate(day) + ": " + qty + " units"} style={{ flex: 1, background: "#dd2b0f", borderRadius: "2px 2px 0 0", height: Math.max(4, Math.round((qty/maxDay)*56))+"px", opacity: 0.75, cursor: "pointer", transition: "opacity .1s" }} onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=.75} />
                   );
                 })}
               </div>
@@ -181,15 +181,15 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
             <thead><tr><th>#</th><th>Product / Description</th><th>Units Sold</th><th>Revenue</th><th className="hm">Invoices</th><th className="hm">Avg/Invoice</th><th className="hm">Top Agent</th></tr></thead>
             <tbody>
               {allProducts.map((p, i) => (
-                <tr key={p.description} style={{ cursor: "pointer", background: selectedProduct===p.description?"var(--blue-lt)":"transparent" }} onClick={() => setSelectedProduct(selectedProduct===p.description?"":p.description)}>
+                <tr key={p.description} style={{ cursor: "pointer", background: selectedProduct===p.description?"rgba(221,43,15,.10)":"transparent" }} onClick={() => setSelectedProduct(selectedProduct===p.description?"":p.description)}>
                   <td style={{ fontWeight: 700, color: "var(--text3)", fontSize: 12 }}>{i+1}</td>
                   <td>
                     <div style={{ fontWeight: 600 }}>{p.description}</div>
                     <div style={{ height: 4, background: "var(--border)", borderRadius: 2, marginTop: 5, overflow: "hidden", maxWidth: 120 }}>
-                      <div style={{ width: Math.round((p.totalQty/maxQty)*100)+"%", height: "100%", background: "var(--blue)", borderRadius: 2 }} />
+                      <div style={{ width: Math.round((p.totalQty/maxQty)*100)+"%", height: "100%", background: "#dd2b0f", borderRadius: 2 }} />
                     </div>
                   </td>
-                  <td><span className="mono" style={{ fontWeight: 800, color: "var(--blue)", fontSize: 15 }}>{p.totalQty}</span></td>
+                  <td><span className="mono" style={{ fontWeight: 800, color: "#dd2b0f", fontSize: 15 }}>{p.totalQty}</span></td>
                   <td className="mono" style={{ fontWeight: 700, color: "var(--green)" }}>{fmt(p.totalValue)}</td>
                   <td className="hm mono" style={{ color: "var(--text2)" }}>{p.invoiceCount}</td>
                   <td className="hm mono" style={{ color: "var(--text2)" }}>{fmt(p.invoiceCount>0?p.totalValue/p.invoiceCount:0)}</td>
