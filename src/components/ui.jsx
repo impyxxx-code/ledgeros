@@ -36,6 +36,69 @@ export function SkeletonTable({ rows = 5, cols = 4 }) {
 }
 
 // ┌────────────────────────────────────────────────────────────┐
+// │ MobileCardList + MobileCard                                │
+// │ Reusable table→card layout for mobile (< 768px). Pages     │
+// │ render these inside their own isMobile() branch, keeping    │
+// │ the desktop <table> untouched. Standardises the card look   │
+// │ across Inventory / Banking / Purchases / etc.              │
+// └────────────────────────────────────────────────────────────┘
+export function MobileCardList({ children, isEmpty, empty }) {
+  if (isEmpty) return empty || null;
+  return <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>{children}</div>;
+}
+
+// MobileCard — one record as a tappable card.
+//   title      main label (bold, ellipsised)
+//   subtitle   secondary line under the title
+//   value      right-aligned figure (mono/tabular)
+//   valueSub   small line under the value
+//   badge      status pill node, right column
+//   accent     left border colour (e.g. red for low stock)
+//   rows       [{ label, value, mono }] detail grid (2-col)
+//   footer     arbitrary node (steppers, action buttons)
+//   onClick    makes the whole card a button
+export function MobileCard({ title, subtitle, value, valueSub, badge, accent, rows, footer, onClick }) {
+  const clickable = typeof onClick === "function";
+  const interact = clickable
+    ? { role: "button", tabIndex: 0, onClick, onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } }
+    : {};
+  return (
+    <div {...interact} style={{
+      background: "var(--white)", border: "1px solid var(--border)",
+      borderLeft: accent ? `3px solid ${accent}` : "1px solid var(--border)",
+      borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)",
+      cursor: clickable ? "pointer" : "default",
+      display: "flex", flexDirection: "column", gap: (rows?.length || footer) ? 12 : 0, minHeight: 64,
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+          {subtitle != null && <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</div>}
+        </div>
+        {(value != null || badge) && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+            {value != null && <span style={{ fontWeight: 800, fontSize: 16, fontFamily: "var(--mono)" }}>{value}</span>}
+            {valueSub != null && <span style={{ fontSize: 11, color: "var(--text3)" }}>{valueSub}</span>}
+            {badge}
+          </div>
+        )}
+      </div>
+      {rows && rows.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 12px" }}>
+          {rows.map((r, i) => (
+            <div key={i} style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 2 }}>{r.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...(r.mono ? { fontFamily: "var(--mono)" } : {}) }}>{r.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {footer && <div onClick={clickable ? (e) => e.stopPropagation() : undefined}>{footer}</div>}
+    </div>
+  );
+}
+
+// ┌────────────────────────────────────────────────────────────┐
 // │ EmptyState                                                 │
 // │ Empty state UI with icon and message                       │
 // └────────────────────────────────────────────────────────────┘
