@@ -43,14 +43,17 @@ drop policy if exists "profiles_write"            on public.profiles;
 drop policy if exists "profiles_insert"           on public.profiles;
 -- keep existing profiles_read (SELECT true) for name/role display
 
+drop policy if exists profiles_insert_self on public.profiles;
 create policy profiles_insert_self on public.profiles
   for insert to authenticated
   with check (id = auth.uid() and coalesce(role,'agent') = 'agent');
 
+drop policy if exists profiles_update_self on public.profiles;
 create policy profiles_update_self on public.profiles
   for update to authenticated
   using (id = auth.uid());               -- role/approved blocked by the trigger
 
+drop policy if exists profiles_admin_manage on public.profiles;
 create policy profiles_admin_manage on public.profiles
   for all to authenticated
   using (public.auth_role() in ('admin','manager'))
@@ -60,6 +63,7 @@ create policy profiles_admin_manage on public.profiles
 -- 3) P0 — audit_log: append-only, staff-read, no update/delete ----------------
 drop policy if exists "authenticated_all_audit_log" on public.audit_log;
 -- keep existing "Allow insert authenticated" (INSERT) so events can be written
+drop policy if exists audit_read_staff on public.audit_log;
 create policy audit_read_staff on public.audit_log
   for select to authenticated using (public.auth_role() in ('admin','manager'));
 
@@ -68,6 +72,7 @@ create policy audit_read_staff on public.audit_log
 revoke all privileges on all tables in schema public from anon;
 
 drop policy if exists "Lines visible with entries" on public.journal_lines;
+drop policy if exists journal_lines_read on public.journal_lines;
 create policy journal_lines_read on public.journal_lines
   for select to authenticated using (true);
 
