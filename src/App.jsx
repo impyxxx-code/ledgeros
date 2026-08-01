@@ -41,7 +41,7 @@ import { ModalPortal, SkeletonTable, EmptyState } from "./components/ui.jsx";
 import { SearchDropdown } from "./components/SearchDropdown.jsx";
 import { CommandPalette } from "./components/CommandPalette.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "./lib/constants.js";
-import LOGO_NEW from "./assets/logo-ar-new.png";
+import LOGO_BADGE from "./assets/logo-ar-badge.png";
 import { OnboardingChecklist } from "./components/OnboardingChecklist.jsx";
 import { AIAssistant } from "./components/AIAssistant.jsx";
 import { Purchases } from "./pages/Purchases.jsx";
@@ -75,6 +75,7 @@ import { BulkPaymentModal } from "./pages/invoices/BulkPaymentModal.jsx";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
 @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -85,11 +86,11 @@ const CSS = `
   --white:#ffffff;
 
   /* ── Sidebar ── */
-  --sidebar:#060d1f;
-  --sidebar-border:rgba(255,255,255,.06);
+  --sidebar:#201e1d;
+  --sidebar-border:rgba(255,255,255,.08);
   --sidebar-hover:rgba(255,255,255,.05);
-  --sidebar-active:rgba(37,99,235,.18);
-  --sidebar-active-border:rgba(37,99,235,.35);
+  --sidebar-active:rgba(221,43,15,.20);
+  --sidebar-active-border:rgba(221,43,15,.45);
 
   /* ── Text ── */
   --text:#0d1117;
@@ -100,11 +101,11 @@ const CSS = `
   --border:#e5e9f0;
   --border2:#d0d7e2;
 
-  /* ── Brand ── */
-  --blue:#2563eb;
-  --blue-lt:#eff4ff;
-  --blue-dk:#1d4ed8;
-  --blue-mid:#dbeafe;
+  /* ── Brand (Modernist: accent shifted blue -> red) ── */
+  --blue:#dd2b0f;
+  --blue-lt:#fff2ef;
+  --blue-dk:#ae1800;
+  --blue-mid:#ffe0d9;
 
   /* ── Semantic ── */
   --green:#10b981;--green-lt:#ecfdf5;--green-dk:#065f46;
@@ -118,14 +119,14 @@ const CSS = `
   --sh:0 1px 3px rgba(13,17,23,.06),0 2px 12px rgba(13,17,23,.07);
   --sh2:0 4px 16px rgba(13,17,23,.12),0 1px 4px rgba(13,17,23,.06);
   --sh3:0 24px 64px rgba(13,17,23,.14),0 8px 24px rgba(13,17,23,.08);
-  --sh-blue:0 4px 14px rgba(37,99,235,.25);
+  --sh-blue:0 4px 14px rgba(221,43,15,.25);
 
   /* ── Type ── */
-  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --sans:'Archivo','Inter',system-ui,-apple-system,sans-serif;
   --mono:'Inter','SF Mono',monospace;
 
   /* ── Radius ── */
-  --r:8px;--rl:12px;--rxl:18px;--r2:6px;
+  --r:0px;--rl:0px;--rxl:0px;--r2:0px;
 
   /* ── Motion ── */
   --ease:cubic-bezier(.16,1,.3,1);
@@ -166,7 +167,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .sidebar::before{
   content:'';position:absolute;top:-100px;left:-100px;
   width:360px;height:360px;border-radius:50%;
-  background:radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%);
+  background:radial-gradient(circle,rgba(221,43,15,.10) 0%,transparent 70%);
   pointer-events:none;z-index:0;
 }
 .sidebar::after{
@@ -269,7 +270,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .user-av-wrap{position:relative;flex-shrink:0}
 .user-av{
   width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  background:linear-gradient(135deg,#dd2b0f,#ae1800);
   display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:700;color:#fff;
 }
@@ -286,7 +287,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .user-role-badge{
   display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.4px;
   text-transform:uppercase;padding:1px 6px;border-radius:3px;
-  background:rgba(37,99,235,.15);color:#93c5fd;margin-top:2px;
+  background:rgba(221,43,15,.15);color:#ff6a4d;margin-top:2px;
 }
 .signout-btn{
   margin-left:auto;background:none;border:none;
@@ -325,9 +326,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   box-sizing:border-box;
 }
 .search-input:focus{
-  border-color:rgba(37,99,235,.5);
+  border-color:rgba(221,43,15,.5);
   background:rgba(255,255,255,.08);
-  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  box-shadow:0 0 0 3px rgba(221,43,15,.12);
 }
 .search-wrap:has(.search-input:focus) i,.search-wrap:has(.search-input:focus)>svg{color:#818cf8;transform:translateY(-50%) scale(1.15) rotate(-10deg)}
 .search-input::placeholder{color:rgba(255,255,255,.25)}
@@ -492,7 +493,7 @@ tr:hover td{background:#f8fafd}
 
 /* ── Avatar ── */
 .c-av{
-  width:30px;height:30px;border-radius:50%;
+  width:30px;height:30px;border-radius:0;
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
 }
@@ -508,7 +509,7 @@ tr:hover td{background:#f8fafd}
 .b-green{background:var(--green-lt);color:var(--green-dk)}.b-green::before{background:var(--green)}
 .b-red{background:var(--red-lt);color:var(--red-dk)}.b-red::before{background:var(--red)}
 .b-amber{background:var(--amber-lt);color:var(--amber-dk)}.b-amber::before{background:var(--amber)}
-.b-blue{background:var(--blue-lt);color:#1e40af}.b-blue::before{background:var(--blue)}
+.b-blue{background:var(--blue-lt);color:#ae1800}.b-blue::before{background:var(--blue)}
 .b-purple{background:var(--purple-lt);color:var(--purple-dk)}.b-purple::before{background:var(--purple)}
 .b-gray{background:#f1f5f9;color:var(--text2)}.b-gray::before{background:var(--text3)}
 .b-orange{background:var(--orange-lt);color:var(--orange-dk)}.b-orange::before{background:var(--orange)}
@@ -558,8 +559,8 @@ tr:hover td{background:#f8fafd}
 
 /* 1 · PRIMARY — Shine Glint */
 .bp{
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
-  box-shadow:0 2px 8px rgba(37,99,235,.28);
+  background:linear-gradient(135deg,#dd2b0f,#ae1800);color:#fff;
+  box-shadow:0 2px 8px rgba(221,43,15,.28);
 }
 .bp::after{
   content:"";position:absolute;inset:0;
@@ -568,7 +569,7 @@ tr:hover td{background:#f8fafd}
   transition:none;pointer-events:none;border-radius:inherit;
 }
 .bp{transition:all .25s cubic-bezier(.34,1.56,.64,1)}
-.bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 8px 24px rgba(37,99,235,.45);transform:translateY(-3px) scale(1.04)}
+.bp:hover{background:linear-gradient(135deg,#ae1800,#8a1400);box-shadow:0 8px 24px rgba(221,43,15,.4);transform:translateY(-3px) scale(1.04)}
 .bp:hover::after{animation:btn-glint .55s ease forwards}
 .bp:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
 .bp:disabled::after{display:none}
@@ -581,7 +582,7 @@ tr:hover td{background:#f8fafd}
 }
 .bo:hover{
   border-color:var(--blue);color:var(--blue);background:var(--blue-lt);
-  box-shadow:0 4px 12px rgba(37,99,235,.10);
+  box-shadow:0 4px 12px rgba(221,43,15,.10);
   transform:translateY(-1px);
 }
 
@@ -652,7 +653,7 @@ tr:hover td{background:#f8fafd}
 }
 .fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{
   border-color:var(--blue);
-  box-shadow:0 0 0 4px rgba(37,99,235,.16);
+  box-shadow:0 0 0 4px rgba(221,43,15,.16);
   transform:translateY(-1px);
 }
 .fgrp input::placeholder,.fgrp textarea::placeholder{color:var(--text3)}
@@ -789,17 +790,17 @@ tr:hover td{background:#f8fafd}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
 .inv-table tbody tr{transition:background .12s,transform .18s var(--ease),box-shadow .18s var(--ease);cursor:pointer}
-.inv-table tbody tr:hover td{background:rgba(37,99,235,.05)!important}
-.inv-table tbody tr:hover{transform:scale(1.008);box-shadow:0 4px 16px rgba(37,99,235,.12);position:relative;z-index:1}
+.inv-table tbody tr:hover td{background:rgba(221,43,15,.05)!important}
+.inv-table tbody tr:hover{transform:scale(1.008);box-shadow:0 4px 16px rgba(221,43,15,.12);position:relative;z-index:1}
 .inventory-table{width:100%;border-collapse:collapse}
 .inventory-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 .inventory-table td{padding:10px 14px;font-size:13px;border-bottom:0.5px solid var(--border)}
 .inventory-table tbody tr{transition:background .12s;cursor:default}
-.inventory-table tbody tr:hover td{background:rgba(37,99,235,.03)!important}
+.inventory-table tbody tr:hover td{background:rgba(221,43,15,.03)!important}
 .inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
-.inv-tot-row.inv-tot-grand{border-top:2px solid #e2e8f0;margin-top:8px;padding:10px 10px 6px;border-radius:6px;background:#eff6ff;font-size:13px;font-weight:600}
+.inv-tot-row.inv-tot-grand{border-top:2px solid #e2e8f0;margin-top:8px;padding:10px 10px 6px;border-radius:6px;background:#faf8f6;font-size:13px;font-weight:600}
 .inv-balance-box{background:#1e1b4b;border-radius:9px;padding:11px 14px;margin-top:16px;display:flex;justify-content:space-between;align-items:center}
 .inv-balance-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .inv-balance-val{color:#fff;font-size:17px;font-weight:800}
@@ -830,7 +831,7 @@ tr:hover td{background:#f8fafd}
   font-family:var(--sans);outline:none;width:100%;
   transition:border .12s,box-shadow .12s;
 }
-.il-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.il-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(221,43,15,.1)}
 
 .ib{
   background:none;border:none;color:var(--text3);cursor:pointer;
@@ -932,9 +933,9 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .mob-nav-fab-slot{justify-content:flex-start;padding-top:0}
 .mob-nav-fab{
   width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#6366f1,#818cf8);
+  background:linear-gradient(135deg,#dd2b0f,#ae1800);
   display:flex;align-items:center;justify-content:center;color:#fff;
-  box-shadow:0 4px 14px rgba(99,102,241,.4);
+  box-shadow:0 4px 14px rgba(221,43,15,.4);
   transform:translateY(-14px);
 }
 
@@ -1261,7 +1262,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   }
   .mob-customer-search input:focus{
     border-color:var(--blue)!important;
-    box-shadow:0 0 0 3px rgba(37,99,235,.15)!important;
+    box-shadow:0 0 0 3px rgba(221,43,15,.15)!important;
   }
 }
 
@@ -1377,7 +1378,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .45s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(0,0,0,.06)}
 .toast.success{background:#fff;color:#166534;border-left:3px solid var(--green)}
 .toast.error{background:#fff;color:#991b1b;border-left:3px solid var(--red)}
-.toast.info{background:#fff;color:#1e40af;border-left:3px solid var(--blue)}
+.toast.info{background:#fff;color:#ae1800;border-left:3px solid var(--blue)}
 .toast.warn{background:#fff;color:#92400e;border-left:3px solid var(--amber)}
 .toast i{transition:transform .3s var(--ease)}
 .toast.success i{animation:toastIconPop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
@@ -1476,7 +1477,7 @@ class ErrorBoundary extends React.Component {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div style={{ fontSize:20,fontWeight:600 }}>Something went wrong</div>
           <div style={{ fontSize:14,color:"#666",maxWidth:400,textAlign:"center" }}>{this.state.error?.message || "An unexpected error occurred."}</div>
-          <button style={{ padding:"10px 20px",background:"#2563eb",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
+          <button style={{ padding:"10px 20px",background:"#dd2b0f",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
         </div>
       );
     }
@@ -1503,6 +1504,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("ledgeros_dark") === "1");
   const toggleDark = () => { const n = !darkMode; setDarkMode(n); localStorage.setItem("ledgeros_dark", n?"1":"0"); document.documentElement.setAttribute("data-theme", n?"dark":"light"); };
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
@@ -1853,98 +1855,6 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div className={"app" + (darkMode ? " dark-mode" : "")}>
-        <aside className="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-inner">
-              <div className="logo-mark">
-                <img src={LOGO} alt="Arkham Retail" />
-              </div>
-              <div className="logo-wm">
-                <div className="logo-wm-row">
-                  <span className="logo-wm-l">Ledger</span><span className="logo-wm-os">OS</span>
-                </div>
-                <div className="logo-sub">Arkham Retail Ltd</div>
-              </div>
-            </div>
-            <div className="logo-live">
-              <div className="logo-live-dot" />
-              <span className="logo-live-txt">Live</span>
-            </div>
-          </div>
-          {/* ── FLAT 5-ITEM NAV ── */}
-          <div style={{padding:"8px 8px 4px",display:"flex",flexDirection:"column",gap:1}}>
-            {/* Dashboard */}
-            <div className={"nav-item "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>
-              {NAV_ICONS["dashboard"]}Dashboard
-            </div>
-
-            {/* Commerce — Invoices, Customers, Statements, Agent Sales, Delivery Notes, Credits */}
-            {(() => {
-              const commercePages = ["invoices","contacts","statement","agent-report","delivery-notes","credits"];
-              const isActive = commercePages.includes(page);
-              const overdueCount = invoices.filter(i=>i.status==="overdue").length;
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("invoices")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                  Commerce
-                  {overdueCount > 0 && <span className="nav-badge">{overdueCount}</span>}
-                </div>
-              );
-            })()}
-
-            {/* Operations — Inventory, Purchases, Stock In/Out, Delivery Notes, Import */}
-            {(() => {
-              const opsPages = ["inventory","purchases","stock-adj","import"];
-              const isActive = opsPages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("inventory")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                  Operations
-                </div>
-              );
-            })()}
-
-            {/* Finance — Banking, Reports, Analytics, Admin Reports */}
-            {(profile?.role === "admin" || profile?.role === "manager") && (() => {
-              const financePages = ["banking","reports","analytics","admin-reports"];
-              const isActive = financePages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("banking")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
-                  Finance
-                </div>
-              );
-            })()}
-
-            {/* Administration — Settings, Users */}
-            {(profile?.role === "admin" || profile?.role === "manager") && (() => {
-              const adminPages = ["settings"];
-              const isActive = adminPages.includes(page);
-              return (
-                <div className={"nav-item "+(isActive?"active":"")} onClick={() => setPage("settings")}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  Administration
-                </div>
-              );
-            })()}
-          </div>
-          <div className="nav-bottom">
-            <div className="nav-bottom-divider" />
-            <div className="user-row">
-              <div className="user-av-wrap">
-                <div className="user-av">{initials}</div>
-                <div className="user-av-online" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="user-name">{profile?.full_name||auth.user.email}</div>
-                <div className="user-role-badge">{profile?.role||"agent"}</div>
-              </div>
-              <button className="signout-btn" onClick={signOut} title="Sign out">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              </button>
-            </div>
-          </div>
-        </aside>
         <div className="main">
           {/* ── UTILITY BUTTONS — injected into sub-nav or standalone bar ── */}
           {(() => {
@@ -2002,12 +1912,76 @@ export default function App() {
             );
             return null; // buttons injected via window.__utilityBtns
           })()}
-          {/* ── Standalone utility bar for Dashboard (no sub-nav) ── */}
-          {page === "dashboard" && (
-            <div className="dash-util-bar" style={{background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)",borderBottom:"1px solid rgba(99,102,241,.15)",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px",height:42,position:"sticky",top:0,zIndex:40,flexShrink:0}}>
-              {window.__utilityBtns}
+          {/* ── TOP NAV (Modernist) ── */}
+          <header className="topnav">
+            <style>{`
+              .topnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:22px;height:56px;padding:0 20px;background:#f6f5f2;border-bottom:1px solid rgba(32,30,29,.10);flex-shrink:0}
+              .topnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer}
+              .topnav-mark{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+              .topnav-mark img{width:100%;height:100%;object-fit:contain;display:block}
+              .topnav-wm{display:flex;flex-direction:column;line-height:1.08}
+              .topnav-wm-row{font-size:15px;font-weight:800;color:#201e1d;letter-spacing:-.4px;font-family:'Archivo',system-ui,sans-serif}
+              .topnav-wm-os{font-weight:300;color:#8a8580}
+              .topnav-wm-sub{font-size:9.5px;color:#8a8580;letter-spacing:.2px}
+              .topnav-live{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid rgba(32,30,29,.10);padding:3px 8px;margin-left:2px}
+              .topnav-live-dot{width:5px;height:5px;border-radius:50%;background:#dd2b0f}
+              .topnav-live-txt{font-size:9px;font-weight:700;color:#8a8580;letter-spacing:1px;text-transform:uppercase}
+              .topnav-nav{display:flex;align-items:center;gap:2px;flex:1}
+              .topnav-navitem{display:flex;align-items:center;gap:7px;padding:8px 12px;font-size:13.5px;font-weight:600;color:#3a3735;cursor:pointer;user-select:none;transition:color .12s,background .12s;white-space:nowrap}
+              .topnav-navitem:hover{color:#201e1d;background:rgba(32,30,29,.05)}
+              .topnav-navitem.active{color:#dd2b0f}
+              .topnav-navbadge{font-size:9px;font-weight:700;background:rgba(32,30,29,.08);color:#57534e;padding:1px 6px;border-radius:20px;min-width:16px;text-align:center}
+              .topnav-navitem.active .topnav-navbadge{background:rgba(221,43,15,.12);color:#dd2b0f}
+              .topnav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
+              .topnav .util-btns-bar{border-left:none!important;padding-left:0!important;margin-left:0!important}
+              .topnav .tb-btn{background:transparent;border-color:transparent;color:#57534e}
+              .topnav .tb-btn:hover{background:rgba(32,30,29,.06);border-color:transparent;color:#201e1d;box-shadow:none;transform:translateY(-1px)}
+              .topnav-av{width:32px;height:32px;background:#dd2b0f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;cursor:pointer;font-family:'Archivo',system-ui,sans-serif;border:none;flex-shrink:0}
+              @media(max-width:768px){.topnav-nav{display:none}}
+              @media(max-width:1050px){.topnav-wm,.topnav-live{display:none}}
+            `}</style>
+            <div className="topnav-brand" onClick={() => setPage("dashboard")}>
+              <div className="topnav-mark"><img src={LOGO_BADGE} alt="Arkham Retail" /></div>
+              <div className="topnav-wm">
+                <div className="topnav-wm-row">Ledger<span className="topnav-wm-os">OS</span></div>
+                <div className="topnav-wm-sub">Arkham Retail Ltd</div>
+              </div>
+              <span className="topnav-live"><span className="topnav-live-dot" /><span className="topnav-live-txt">Live</span></span>
             </div>
-          )}
+            <nav className="topnav-nav">
+              <div className={"topnav-navitem "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>Dashboard</div>
+              {(() => {
+                const commercePages = ["invoices","contacts","statement","agent-report","delivery-notes","credits"];
+                const overdueCount = invoices.filter(i=>i.status==="overdue").length;
+                return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
+              })()}
+              <div className={"topnav-navitem "+(["inventory","purchases","stock-adj","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
+              {(profile?.role==="admin"||profile?.role==="manager") && (
+                <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
+              )}
+              {(profile?.role==="admin"||profile?.role==="manager") && (
+                <div className={"topnav-navitem "+(page==="settings"?"active":"")} onClick={() => setPage("settings")}>Administration</div>
+              )}
+            </nav>
+            <div className="topnav-right">
+              {window.__utilityBtns}
+              <div style={{position:"relative"}}>
+                <button className="topnav-av" onClick={() => setShowUserMenu(v=>!v)} title={profile?.full_name||auth.user.email}>{(profile?.full_name||auth.user.email||"U").replace(/[^a-zA-Z]/g,"").slice(0,2).toUpperCase()||"U"}</button>
+                {showUserMenu && (
+                  <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:220,background:"var(--white)",border:"1px solid var(--border)",boxShadow:"var(--sh3)",zIndex:300,overflow:"hidden",animation:"scaleIn .15s var(--ease) both",transformOrigin:"top right"}}>
+                    <div style={{padding:"12px 14px",borderBottom:"1px solid var(--border)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.full_name||auth.user.email}</div>
+                      <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginTop:3}}>{profile?.role||"agent"}</div>
+                    </div>
+                    <button onClick={() => { setShowUserMenu(false); signOut(); }} style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"11px 14px",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"var(--text)",fontFamily:"var(--sans)",textAlign:"left"}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafd"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
           {/* KEEP: hidden search state for Ctrl+K compatibility */}
           <div style={{display:"none"}}>
               <div className="search-wrap topbar-search" style={{ position: "relative" }}>
@@ -2072,7 +2046,7 @@ export default function App() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
               </button>
               {/* AI Assistant */}
-              <button className="tb-btn" onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} title="AI Assistant" style={{ background: showAI ? "linear-gradient(135deg,#1d4ed8,#7c3aed)" : undefined, color: showAI ? "#fff" : undefined, borderColor: showAI ? "transparent" : undefined, boxShadow: showAI ? "0 2px 8px rgba(99,102,241,.35)" : undefined }}>
+              <button className="tb-btn" onMouseEnter={() => setShowAI(true)} onClick={() => setShowAI(v => !v)} title="AI Assistant" style={{ background: showAI ? "#201e1d" : undefined, color: showAI ? "#fff" : undefined, borderColor: showAI ? "transparent" : undefined, boxShadow: showAI ? "0 2px 8px rgba(0,0,0,.2)" : undefined }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
               </button>
             </div>
@@ -2118,16 +2092,15 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div className="subnav-bar" style={{ background:"linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%)", borderBottom:"1px solid rgba(99,102,241,.15)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:0, zIndex:40, flexShrink:0 }}>
+              <div className="subnav-bar" style={{ background:"#fff", borderBottom:"1px solid rgba(32,30,29,.10)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:56, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
-                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#a5b4fc":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #818cf8":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
-                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(129,140,248,.3)";}}}
-                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.4)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?700:500, color:page===tab.id?"#dd2b0f":"#57534e", borderBottom:page===tab.id?"2px solid #dd2b0f":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="#201e1d";e.currentTarget.style.borderBottom="2px solid rgba(221,43,15,.35)";}}}
+                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="#57534e";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
                     {tab.label}
-                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(239,68,68,.2)", color:"#fca5a5", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(239,68,68,.3)" }}>{tab.badge}</span>}
+                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(221,43,15,.12)", color:"#ae1800", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(221,43,15,.25)" }}>{tab.badge}</span>}
                   </div>
                 ))}
-                {window.__utilityBtns}
               </div>
             );
           })()}
@@ -2191,9 +2164,9 @@ export default function App() {
         )}
         {showInstallBanner && isMobile() && (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, padding: "12px 16px 20px", background: "#060d1f", borderTop: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 -4px 24px rgba(0,0,0,.4)" }}>
-            <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0, borderRadius: 9 }}><rect width="32" height="32" rx="7" fill="#1e1b4b"/><rect x="9" y="7" width="4" height="18" rx="2" fill="#ffffff"/><rect x="9" y="21" width="14" height="4" rx="2" fill="#ffffff"/><rect x="18" y="7" width="4" height="9" rx="2" fill="#60a5fa"/></svg>
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0, borderRadius: 9 }}><rect width="32" height="32" rx="7" fill="#201e1d"/><rect x="9" y="7" width="4" height="18" rx="2" fill="#ffffff"/><rect x="9" y="21" width="14" height="4" rx="2" fill="#ffffff"/><rect x="18" y="7" width="4" height="9" rx="2" fill="#ff6a4d"/></svg>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 2 }}>Add LedgerOS to your home screen</div><div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", lineHeight: 1.4 }}>Get instant access — works offline too</div></div>
-            <button onClick={handleInstall} style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--sans)", whiteSpace: "nowrap", flexShrink: 0 }}>Add</button>
+            <button onClick={handleInstall} style={{ background: "linear-gradient(135deg,#dd2b0f,#ae1800)", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--sans)", whiteSpace: "nowrap", flexShrink: 0 }}>Add</button>
             <button onClick={() => setShowInstallBanner(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", cursor: "pointer", padding: 4, flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         )}
@@ -2297,10 +2270,10 @@ export default function App() {
             <div style={{ position:"absolute", bottom:"calc(64px + env(safe-area-inset-bottom))", left:0, right:0, padding:"0 16px 16px" }} onClick={e => e.stopPropagation()}>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
                 {[
-                  { label:"New Invoice", color:"#6366f1", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
+                  { label:"New Invoice", color:"#dd2b0f", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
                   { label:"Record Payment", color:"#16a34a", action:() => { setPage("invoices"); setPendingFilter("pending"); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
                   { label:"New Customer", color:"#f59e0b", action:() => { setPage("contacts"); setTriggerNewContact(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> },
-                  { label:"Delivery Note", color:"#7c3aed", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+                  { label:"Delivery Note", color:"#201e1d", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
                 ].map(a => (
                   <div key={a.label} role="button" tabIndex={0} onClick={() => { a.action(); setShowFabMenu(false); }} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){a.action();setShowFabMenu(false);}}}
                     style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"16px 14px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, boxShadow:"0 4px 20px rgba(0,0,0,.15)", cursor:"pointer", minHeight:80 }}>
@@ -2324,23 +2297,23 @@ export default function App() {
               </div>
               {/* Agent: access level info box */}
               {profile?.role!=="admin" && (
-                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#eff6ff", border:"1px solid #bfdbfe", display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#faf8f6", border:"1px solid #e7e2dc", display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#1e40af" }}>Your Access Level: Agent</div>
-                    <div style={{ fontSize:11, color:"#3b82f6", marginTop:2 }}>You can manage your own invoices, customers and delivery notes. Admin-only sections (inventory, banking, reports) aren't shown.</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#201e1d" }}>Your Access Level: Agent</div>
+                    <div style={{ fontSize:11, color:"#57534e", marginTop:2 }}>You can manage your own invoices, customers, deliveries and stock. Admin-only sections (banking, reports, settings) aren't shown.</div>
                   </div>
                 </div>
               )}
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
-                { label:"Sales", color:"#2563eb", items:["statement","agent-report","analytics"] },
-                { label:"Operations", color:"#7c3aed", items:["inventory","purchases","stock-adj","delivery-notes","import"] },
-                { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
-                { label:"Settings", color:"#64748b", items:["settings"] },
+                { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
+                { label:"Operations", color:"#201e1d", items:["inventory","purchases","stock-adj","import"] },
+                { label:"Finance", color:"#16a34a", items:["banking","admin-reports","analytics"] },
+                { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
-                { label:"My Tools", color:"#16a34a", items:["delivery-notes","agent-report"] },
-                { label:"Account", color:"#64748b", items:["settings"] },
+                { label:"My Tools", color:"#dd2b0f", items:["delivery-notes","agent-report"] },
+                { label:"Account", color:"#8a8580", items:["settings"] },
               ]).map(group => {
                 const visItems = NAV.filter(n =>
                   group.items.includes(n.id) &&

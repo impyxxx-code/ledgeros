@@ -71,6 +71,9 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     }
     return true;
   });
+  // Contacts belonging to the active tab (customer/supplier) — filter counts
+  // are scoped to this so the chip/tile numbers match what a filter returns.
+  const tabContacts = contacts.filter(c => c.type === tab || c.type === "both");
   const sortedContacts = [...filtered].sort((a, b) => {
     const m = ctSort.dir === "asc" ? 1 : -1;
     if (ctSort.field === "name") return m * (a.name || "").localeCompare(b.name || "");
@@ -97,7 +100,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
     setShowForm(false); setSaving(false);
   };
-  const avatarColors = ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#2563eb","#ec4899"];
+  const avatarColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"];
   return (
     <div>
       {viewContact && (
@@ -105,7 +108,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
           <div className="modal contact-modal" style={{ maxWidth: 620, width: "100%" }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:44,height:44,borderRadius:"50%",background:["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][viewContact.name?.charCodeAt(0)%5]||"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
+                <div style={{ width:44,height:44,borderRadius:0,background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][viewContact.name?.charCodeAt(0)%5]||"#dd2b0f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
                 <div>
                   <div style={{ fontWeight:700,fontSize:16 }}>{viewContact.name}</div>
                   <div style={{ fontSize:12,color:"var(--text3)",marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
@@ -250,20 +253,20 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         <div style={{ display:"flex", gap:6 }}>
           {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
             <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
-              style={{ flex:1, textAlign:"center", padding:"8px 14px", fontSize:13, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#818cf8":"rgba(255,255,255,.07)", borderRadius:8, cursor:"pointer" }}>
+              style={{ flex:1, textAlign:"center", padding:"8px 14px", fontSize:13, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#dd2b0f":"rgba(255,255,255,.07)", borderRadius:8, cursor:"pointer" }}>
               {l} <span style={{ fontSize:10, fontWeight:700, opacity:.8 }}>{contacts.filter(c=>c.type===k||c.type==="both").length}</span>
             </div>
           ))}
         </div>
       </div>
       ) : (
-      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
+      <div className="page-hero" style={{ margin: "-26px -28px 0 -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.10) 0%,transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.06) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Contacts</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers & <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Suppliers</span></div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Contacts</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers &amp; Suppliers</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {contacts.filter(c => c.type === "customer" || c.type === "both").length} customers
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -277,10 +280,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
               {contactSearch && <button onClick={() => setContactSearch("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", padding: 0 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>}
             </div>
             <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => setContactView("grid")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "grid" ? "#818cf8" : "rgba(255,255,255,.15)"), background: contactView === "grid" ? "#818cf8" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-              <button onClick={() => setContactView("list")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "list" ? "#818cf8" : "rgba(255,255,255,.15)"), background: contactView === "list" ? "#818cf8" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button onClick={() => setContactView("grid")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "grid" ? "#dd2b0f" : "rgba(255,255,255,.15)"), background: contactView === "grid" ? "#dd2b0f" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+              <button onClick={() => setContactView("list")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "list" ? "#dd2b0f" : "rgba(255,255,255,.15)"), background: contactView === "list" ? "#dd2b0f" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
             </div>
-            <button onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #818cf8", background: "#818cf8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
               Add {tab === "customer" ? "Customer" : "Supplier"}
             </button>
@@ -289,10 +292,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         {/* Stats strip */}
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Customers", val: contacts.filter(c => c.type === "customer" || c.type === "both").length, sub: "click to view", color: tab==="customer"?"#60a5fa":"rgba(255,255,255,.35)", accent: "#2563eb", filter: "all", tabSwitch: "customer" },
-            { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#c4b5fd":"rgba(255,255,255,.35)", accent: "#7c3aed", filter: "all", tabSwitch: "supplier" },
-            { label: "With Email", val: contacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
-            { label: "No Email", val: contacts.filter(c => !c.email).length, sub: "missing contact info", color: contacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: contacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
+            { label: "Customers", val: contacts.filter(c => c.type === "customer" || c.type === "both").length, sub: "click to view", color: tab==="customer"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all", tabSwitch: "customer" },
+            { label: "Suppliers", val: contacts.filter(c => c.type === "supplier" || c.type === "both").length, sub: "click to view", color: tab==="supplier"?"#ff6a4d":"rgba(255,255,255,.35)", accent: "#57534e", filter: "all", tabSwitch: "supplier" },
+            { label: "With Email", val: tabContacts.filter(c => c.email).length, sub: "can receive reminders", color: "#86efac", accent: "#16a34a", filter: "has-email" },
+            { label: "No Email", val: tabContacts.filter(c => !c.email).length, sub: "missing contact info", color: tabContacts.filter(c=>!c.email).length > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", accent: tabContacts.filter(c=>!c.email).length > 0 ? "#dc2626" : "#64748b", filter: "no-email" },
           ].map((k, i) => {
             const isActive = k.tabSwitch ? tab === k.tabSwitch : contactFilter === k.filter && k.filter !== "all";
             const isClickable = k.filter !== "all" || k.tabSwitch;
@@ -317,20 +320,20 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
       )}
       {!isMobile() && <>
       {/* ── TABS + UTILITY BAR ── */}
-      <div style={{ background:"#0d1829", borderBottom:"1px solid rgba(99,102,241,.18)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 36px", margin:"0 -28px", marginTop:0 }}>
+      <div style={{ background:"#201e1d", borderBottom:"1px solid rgba(255,255,255,.10)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"5px 36px", margin:"0 -28px", marginTop:0 }}>
         <div style={{ display:"flex", gap:3 }}>
           {[["customer","Customers"],["supplier","Suppliers"]].map(([k,l]) => (
             <div key={k} onClick={() => { setTab(k); setContactSearch(""); setContactFilter("all"); }}
-              style={{ padding:"6px 14px", fontSize:12, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#818cf8":"transparent", borderRadius:7, cursor:"pointer", display:"flex", alignItems:"center", gap:5, transition:"all .15s", boxShadow:tab===k?"0 2px 8px rgba(129,140,248,.35)":"none" }}>
+              style={{ padding:"6px 14px", fontSize:12, fontWeight:tab===k?700:500, color:tab===k?"#fff":"rgba(255,255,255,.45)", background:tab===k?"#dd2b0f":"transparent", borderRadius:7, cursor:"pointer", display:"flex", alignItems:"center", gap:5, transition:"all .15s", boxShadow:tab===k?"0 2px 8px rgba(221,43,15,.30)":"none" }}>
               {l} <span style={{ fontSize:10, fontWeight:700, background:tab===k?"rgba(255,255,255,.2)":"rgba(255,255,255,.08)", padding:"1px 6px", borderRadius:10, color:tab===k?"#fff":"rgba(255,255,255,.4)" }}>{contacts.filter(c=>c.type===k||c.type==="both").length}</span>
             </div>
           ))}
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:4 }}>
           {contactFilter !== "all" && (
-            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"rgba(129,140,248,.15)", color:"#a5b4fc", border:"1px solid rgba(129,140,248,.3)", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"rgba(221,43,15,.14)", color:"#ff6a4d", border:"1px solid rgba(221,43,15,.28)", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
               {contactFilter === "has-email" ? "Has email" : contactFilter === "no-email" ? "No email" : contactFilter === "has-phone" ? "Has phone" : "No phone"}
-              <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#a5b4fc", fontSize:14, lineHeight:1, padding:0 }}>×</button>
+              <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#ff6a4d", fontSize:14, lineHeight:1, padding:0 }}>×</button>
             </span>
           )}
           <span style={{ fontSize:11, color:"rgba(255,255,255,.35)" }}>{filtered.length}{contactSearch ? ` of ${contacts.filter(c=>c.type===tab||c.type==="both").length}` : ""} result{filtered.length!==1?"s":""}</span>
@@ -345,9 +348,9 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
             style={{ width:"100%", padding:"8px 12px 8px 32px", borderRadius:8, border:"1.5px solid var(--border)", fontSize:12, color:"var(--text)", outline:"none", background:"var(--bg)", fontFamily:"var(--sans)", transition:"border-color .15s" }} />
         </div>
         <div style={{ display:"flex", gap:5 }}>
-          {[["all","All",contacts.length],["has-email","Has Email",contacts.filter(c=>c.email).length],["no-email","No Email",contacts.filter(c=>!c.email).length],["has-phone","Has Phone",contacts.filter(c=>c.phone).length],["no-phone","No Phone",contacts.filter(c=>!c.phone).length]].map(([v,l,cnt]) => (
+          {[["all","All",tabContacts.length],["has-email","Has Email",tabContacts.filter(c=>c.email).length],["no-email","No Email",tabContacts.filter(c=>!c.email).length],["has-phone","Has Phone",tabContacts.filter(c=>c.phone).length],["no-phone","No Phone",tabContacts.filter(c=>!c.phone).length]].map(([v,l,cnt]) => (
             <div key={v} onClick={() => setContactFilter(v)}
-              style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#818cf8":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#818cf8":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(129,140,248,.3)":"none", display:"flex", alignItems:"center", gap:5 }}>
+              style={{ padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:contactFilter===v?700:500, cursor:"pointer", background:contactFilter===v?"#dd2b0f":"var(--bg)", color:contactFilter===v?"#fff":"#64748b", border:"1.5px solid "+(contactFilter===v?"#dd2b0f":"var(--border)"), transition:"all .12s", boxShadow:contactFilter===v?"0 2px 8px rgba(221,43,15,.28)":"none", display:"flex", alignItems:"center", gap:5 }}>
               {l} <span style={{ fontWeight:800, fontSize:11, opacity:contactFilter===v?1:.6 }}>{cnt.toLocaleString()}</span>
             </div>
           ))}
@@ -386,7 +389,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
 
       {/* ── PREMIUM TABLE ROWS ── */}
       {(() => {
-        const avatarBg = (name) => ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f97316","#84cc16","#ec4899","#14b8a6"][name?.charCodeAt(0) % 10] || "#6366f1";
+        const avatarBg = (name) => ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e","#0f5c28","#ff6a4d","#7c6f64"][name?.charCodeAt(0) % 10] || "#dd2b0f";
         const custInvMap = {};
         (invoices||[]).forEach(inv => {
           if (!custInvMap[inv.customer]) custInvMap[inv.customer] = { count:0, revenue:0, outstanding:0 };
@@ -459,7 +462,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                 return (
                   <div key={c.id} className="ct-list-row" onClick={() => setViewContact(c)}
                     style={{ display:"grid", gridTemplateColumns:"2fr 1.2fr 0.8fr 85px 0.85fr 0.75fr 90px", gap:0, background:"var(--white)", borderRadius:11, border:"1.5px solid var(--border)", padding:"12px", alignItems:"center", cursor:"pointer", transition:"box-shadow .15s, border-color .15s" }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #818cf8"; e.currentTarget.style.borderColor="#818cf8"; }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow="0 0 0 2px #dd2b0f"; e.currentTarget.style.borderColor="#dd2b0f"; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow=""; e.currentTarget.style.borderColor="var(--border)"; }}>
 
                     {/* Customer */}
@@ -537,7 +540,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                       ].map(({icon,label,action},idx) => (
                         <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}
                           style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color:"#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}
-                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#818cf8"; e.currentTarget.style.color="#818cf8"; e.currentTarget.style.background="rgba(129,140,248,.08)"; }}
+                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#dd2b0f"; e.currentTarget.style.color="#dd2b0f"; e.currentTarget.style.background="rgba(221,43,15,.08)"; }}
                           onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="#64748b"; e.currentTarget.style.background="var(--white)"; }}>
                           {icon}
                         </button>

@@ -91,22 +91,22 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
 
   // ── AI Insights ──
   const insights = [
-    overdueCount > 0 && { Icon: AlertCircle, color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
-    lowStock.length > 0 && { Icon: Package, color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon` },
-    pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
-    paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
+    overdueCount > 0 && { Icon: AlertCircle, color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now`, cta: "Chase", action: drillOutstanding },
+    lowStock.length > 0 && { Icon: Package, color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon`, cta: "Reorder", action: drillLowStock },
+    pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment`, cta: "Review", action: drillOutstanding },
+    paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period`, cta: "View", action: drillOutstanding },
   ].filter(Boolean).slice(0, 3);
 
   if (isMobile()) {
     const totalRevenue = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0);
     const recentInvoices = [...invoices].sort((a,b)=>new Date(b.created_at||b.invoice_date)-new Date(a.created_at||a.invoice_date)).slice(0,5);
     const kpiTiles = [
-      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#2563eb", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Total Revenue", val:fmt(totalRevenue), accent:"#dd2b0f", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
       { label:"Outstanding", val:fmt(unpaid), accent:"#ef4444", onClick:()=>{setPendingFilter("overdue");setPage("invoices");} },
       { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
       { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
-      { label:"Today", val:fmt(todayRevenue), accent:"#7c3aed", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
-      { label:"Invoices Today", val:String(todayCount), accent:"#0891b2", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Today", val:fmt(todayRevenue), accent:"#57534e", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Invoices Today", val:String(todayCount), accent:"#201e1d", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
     ];
     return (
       <>
@@ -121,8 +121,8 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
           setEditInvoice(null);
         }} />}
       <div style={{ display:"flex", flexDirection:"column", gap:18, paddingBottom:8 }}>
-        <div style={{ background:"linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"rgba(165,180,252,.8)", marginBottom:6 }}>{greeting}, {name}</div>
+        <div style={{ background:"#201e1d", borderRadius:"var(--rl)", padding:"20px 18px", color:"#fff" }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", color:"#e15b47", marginBottom:6 }}>{greeting}, {name}</div>
           <div style={{ fontSize:32, fontWeight:900, letterSpacing:"-1px", marginBottom:6 }}>{fmt(totalRevenue)}</div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,.55)" }}>
             {fmt(unpaid)} outstanding{overdueCount>0?` · ${overdueCount} overdue`:""}
@@ -211,35 +211,31 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         </div></ModalPortal>
       )}
 
-      {/* ── Header Option C — dark banner with embedded KPIs ── */}
-      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#0d1829 100%)", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
-        {/* orb top-right */}
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.22) 0%,transparent 65%)", pointerEvents: "none" }} />
-        {/* orb bottom-left */}
-        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 65%)", pointerEvents: "none" }} />
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');"}</style>
+      {/* ── Modernist masthead — ink banner with embedded KPIs ── */}
+      <div className="page-hero" style={{ margin: "-26px -28px 24px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         {/* top row: greeting + quick actions */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(165,180,252,.8)", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#818cf8", animation: "pulse 2.4s ease-in-out infinite" }} />Dashboard</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1px", marginBottom: 4 }}>{greeting}, <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{name}</span></div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: ".04em", color: "#e15b47", marginBottom: 8, fontFamily: "'Archivo',system-ui,sans-serif" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: "#dd2b0f" }} />Arkham Retail Ltd</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "-.02em", marginBottom: 4, fontFamily: "'Archivo',system-ui,sans-serif" }}>{greeting}, {name}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 8 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
-              Arkham Retail Ltd
               <span style={{ background: "rgba(22,163,74,.2)", color: "#86efac", fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20 }}>● Live</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            <button onClick={() => setPage("invoices")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("invoices")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice
             </button>
-            <button onClick={() => setPage("contacts")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("contacts")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer
             </button>
-            <button onClick={() => setPage("delivery-notes")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.07)", color: "rgba(255,255,255,.85)", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+            <button onClick={() => setPage("delivery-notes")} className="bfrost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery
             </button>
-            <button onClick={() => setPage("analytics")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button onClick={() => setPage("analytics")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics
             </button>
           </div>
@@ -255,27 +251,28 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
             const cash = monthInv.filter(i=>i.status==="paid"&&i.payment_method==="cash").reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
             return { revenue, collected, outstanding, cash };
           });
-          const Spark = ({ dataKey, color }) => (
-            <div className="spark">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkMonths} margin={{top:2,right:0,left:0,bottom:0}}>
-                  <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={1.5} fill={color} fillOpacity={0.12} dot={false} isAnimationActive={false}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          );
+          const Spark = ({ dataKey, color }) => {
+            const vals = sparkMonths.map(m => m[dataKey] || 0);
+            const max = Math.max(...vals, 1), min = Math.min(...vals, 0), n = vals.length, slot = 150 / n, bw = slot * 0.58;
+            const y = v => 30 - 2 - ((v - min) / ((max - min) || 1)) * (30 - 4);
+            return (
+              <svg width="100%" height={30} viewBox="0 0 150 30" preserveAspectRatio="none" style={{ display: "block", marginTop: 8 }}>
+                {vals.map((v, i) => { const yy = y(v); return <rect key={i} x={i * slot + (slot - bw) / 2} y={yy} width={bw} height={30 - yy} fill={color} />; })}
+              </svg>
+            );
+          };
           return (
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); }, accent: "#2563eb", sparkKey: "revenue" },
-            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); }, accent: "#ef4444", sparkKey: "outstanding" },
-            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e", sparkKey: "collected" },
-            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#22c55e", sparkKey: "cash" },
+            { label: "Total Revenue", val: fmt(invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0)), delta: revTrend !== null ? `${revTrend >= 0 ? "+" : ""}${revTrend}% vs last month` : `${invoices.filter(i=>i.status!=="draft").length} invoices`, deltaColor: revTrend !== null && revTrend >= 0 ? "#86efac" : "#fca5a5", onClick: () => { setPendingFilter("all"); setPage("invoices"); }, accent: "rgba(248,247,245,.5)", sparkKey: "revenue" },
+            { label: "Outstanding", val: fmt(unpaid), delta: `${overdueCount} overdue · ${pendingCount} pending`, deltaColor: overdueCount > 0 ? "#fca5a5" : "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("overdue"); setPage("invoices"); }, accent: "#ff6a4d", sparkKey: "outstanding" },
+            { label: "Collected", val: fmt(paid), delta: (() => { const tot = invoices.filter(i=>i.status!=="draft").reduce((s,i)=>s+parseFloat(i.amount||0),0); return tot > 0 ? `${Math.round(paid/tot*100)}% collection rate` : "0% collection rate"; })(), deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#7fd39b", sparkKey: "collected" },
+            { label: "Cash Collected", val: fmt(cashCollected), delta: `${invoices.filter(i=>i.status==="paid"&&i.payment_method==="cash").length} cash payments`, deltaColor: "rgba(255,255,255,.35)", onClick: () => { setPendingFilter("paid"); setPage("invoices"); }, accent: "#7fd39b", sparkKey: "cash" },
           ].map((k, i) => (
             <div key={i} onClick={k.onClick} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none", cursor: "pointer", transition: "all .15s", borderTop: "3px solid transparent" }}
-              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop=`3px solid ${k.accent}`; }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.borderTop="3px solid #dd2b0f"; }}
               onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderTop="3px solid transparent"; }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 5 }}>{k.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.5)", letterSpacing: ".2px", marginBottom: 5 }}>{k.label}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 3 }}>{k.val}</div>
               <div style={{ fontSize: 11, color: k.deltaColor, marginBottom: 6 }}>{k.delta}</div>
               <Spark dataKey={k.sparkKey} color={k.accent}/>
@@ -286,20 +283,16 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         })()}
       </div>
 
-      {/* ── AI Insights strip ── */}
+      {/* ── Alerts — numbered Modernist rows ── */}
       {insights.length > 0 && (
-        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          {insights.map((insight, i) => {
-            const InsightIcon = insight.Icon;
-            return (
-              <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ flex: 1, minWidth: 220, display: "flex", alignItems: "center", gap: 12, background: "#0d1829", border: `1px solid ${insight.color}33`, borderLeft: `3px solid ${insight.color}`, borderRadius: "var(--rl)", padding: "12px 16px", cursor: "pointer", transition: "all .18s", boxShadow: `0 2px 12px ${insight.color}11` }} onMouseEnter={e => { e.currentTarget.style.background="#111c35"; e.currentTarget.style.boxShadow=`0 4px 20px ${insight.color}22`; }} onMouseLeave={e => { e.currentTarget.style.background="#0d1829"; e.currentTarget.style.boxShadow=`0 2px 12px ${insight.color}11`; }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: insight.color + "20", border: `1px solid ${insight.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <InsightIcon size={17} color={insight.color} strokeWidth={2}/>
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)", lineHeight: 1.5, fontWeight: 500 }}>{insight.text}</div>
-              </div>
-            );
-          })}
+        <div style={{ border: "2px solid var(--border)", marginBottom: 20 }}>
+          {insights.map((insight, i) => (
+            <div key={i} onClick={() => (insight.action || drillOutstanding)()} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: i < insights.length - 1 ? "2px solid var(--border)" : "none", cursor: "pointer", color: i === 0 ? "#ae1800" : "var(--text)" }}>
+              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.4 }}>{insight.text}</div>
+              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13, color: "#ae1800", whiteSpace: "nowrap" }}>{insight.cta} →</div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -315,13 +308,13 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         ].map(pill => {
           const PillIcon = pill.Icon;
           return (
-            <div key={pill.label} onClick={pill.onClick} style={{ background: "var(--white)", border: "1px solid var(--border)", borderTop: "2px solid " + pill.color, borderRadius: "var(--rl)", padding: "14px 16px", boxShadow: "var(--sh)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "all .18s" }} onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.1)"; }} onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="var(--sh)"; }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: pill.color + "15", border: "1px solid " + pill.color + "30", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div key={pill.label} onClick={pill.onClick} style={{ background: "#fff", border: "2px solid var(--border)", borderRadius: 0, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "transform .15s, box-shadow .15s" }} onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.08)"; }} onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
+              <div style={{ width: 36, height: 36, borderRadius: 0, background: pill.color + "15", border: "1px solid " + pill.color + "30", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <PillIcon size={17} color={pill.color} strokeWidth={2}/>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginBottom: 2 }}>{pill.label}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-.3px" }}>{pill.val}</div>
+                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 600, letterSpacing: ".2px", marginBottom: 3, fontFamily: "'Archivo',system-ui,sans-serif" }}>{pill.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: (pill.label === "Low Stock" || pill.label === "Cash Collected") ? pill.color : "var(--text)", letterSpacing: "-.01em", fontFamily: "'Archivo',system-ui,sans-serif", fontVariantNumeric: "tabular-nums" }}>{pill.val}</div>
               </div>
             </div>
           );
@@ -356,7 +349,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
         const ChartTooltip = ({ active, payload, label }) => {
           if (!active || !payload || !payload.length) return null;
           return (
-            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+            <div style={{background:"#201e1d",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
               <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
               {payload.map(p=>(
                 <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
@@ -377,7 +370,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
               </div>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:"#818cf8"}}/>Collected
+                  <div style={{width:10,height:10,borderRadius:2,background:"#1a7f37"}}/>Collected
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--text2)"}}>
                   <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Pending
@@ -399,16 +392,16 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                 <AreaChart data={months} margin={{top:10,right:10,left:0,bottom:0}}>
                   <defs>
                     <linearGradient id="gradCollected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#1a7f37" stopOpacity={0.28}/>
+                      <stop offset="95%" stopColor="#1a7f37" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="gradPending" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="strokeCollected" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#4338ca"/>
-                      <stop offset="100%" stopColor="#a5b4fc"/>
+                      <stop offset="0%" stopColor="#0f5c28"/>
+                      <stop offset="100%" stopColor="#1a7f37"/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
@@ -423,7 +416,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Collected</div>
-                  <div style={{fontSize:18,fontWeight:700,color:"#818cf8"}}>{fmt(totalPaid6)}</div>
+                  <div style={{fontSize:18,fontWeight:800,color:"#0f5c28",fontFamily:"'Archivo',system-ui,sans-serif"}}>{fmt(totalPaid6)}</div>
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>6-Month Pending</div>
@@ -441,7 +434,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
 
       {/* ── Monthly Comparison Widget (sales by product) ── */}
       {(() => {
-        const PROD_COLORS = ["#818cf8","#38bdf8","#34d399","#f59e0b","#94a3b8"];
+        const PROD_COLORS = ["#dd2b0f","#201e1d","#1a7f37","#f59e0b","#8a8580"];
         const months = Array.from({length:6},(_,i)=>new Date(new Date().getFullYear(), new Date().getMonth()-5+i, 1));
         const monthRows = months.map(d=>({ lbl: d.toLocaleDateString("en-GB",{month:"short"}), m: d.getMonth(), y: d.getFullYear(), products: {} }));
 
@@ -484,7 +477,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
           if (!active || !payload || !payload.length) return null;
           const total = payload.reduce((s,p)=>s+(p.value||0),0);
           return (
-            <div style={{background:"#0d1829",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
+            <div style={{background:"#201e1d",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"10px 14px",fontSize:12}}>
               <div style={{color:"rgba(255,255,255,.5)",marginBottom:6,fontWeight:600}}>{label}</div>
               {payload.filter(p=>p.value>0).map(p=>(
                 <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
@@ -550,7 +543,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                   <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => setViewInvoice(inv)}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div className="c-av" style={{ background: ["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][inv.customer?.charCodeAt(0) % 5] || "#6366f1", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
+                        <div className="c-av" style={{ background: ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][inv.customer?.charCodeAt(0) % 5] || "#dd2b0f", width: 28, height: 28, fontSize: 11 }}>{inv.customer?.[0]?.toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)" }}>{fmtDate(inv.invoice_date)}</div>
@@ -624,8 +617,8 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                 return {
                   key: inv.id,
                   Icon: isPaid ? CheckCircle2 : FileText,
-                  color: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : isPartial ? "var(--amber)" : "#818cf8",
-                  bg: isPaid ? "var(--green-lt)" : isOverdue ? "var(--red-lt)" : isPartial ? "var(--amber-lt)" : "rgba(129,140,248,.12)",
+                  color: isPaid ? "var(--green)" : isOverdue ? "var(--red)" : isPartial ? "var(--amber)" : "#57534e",
+                  bg: isPaid ? "var(--green-lt)" : isOverdue ? "var(--red-lt)" : isPartial ? "var(--amber-lt)" : "rgba(32,30,29,.06)",
                   title: isPaid ? `Payment received ${methodIcon(inv.payment_method)}` : isOverdue ? "Invoice overdue" : isPartial ? "Partial payment" : "Invoice created",
                   sub: `${inv.customer} · ${inv.invoice_number}`,
                   amt: fmt(inv.amount),
@@ -686,7 +679,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                     <td><span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color: colors[i] || "var(--text3)" }}>{medals[i] || i + 1}</span></td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${["#6366f1","#10b981","#f59e0b","#8b5cf6","#ef4444"][i % 5]},${["#8b5cf6","#34d399","#fbbf24","#a78bfa","#f87171"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
+                        <div style={{ width: 32, height: 32, borderRadius:0, background: `linear-gradient(135deg,${["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][i % 5]},${["#ff6a4d","#2ea04d","#fbbf24","#3a3735","#dd2b0f"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{agent.full_name || "Unknown"}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)", textTransform: "capitalize" }}>{agent.role}</div>

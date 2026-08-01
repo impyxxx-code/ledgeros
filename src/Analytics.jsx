@@ -286,7 +286,7 @@ export default function Analytics({ invoices = [], products = [], contacts = [],
             {label:"Total Invoiced",val:fmt(totalRevenue),sub:revGrowth!==null?(revGrowth>=0?"+":"")+revGrowth+"% vs prev month":totalInvoices+" invoices",accent:"#16a34a"},
             {label:"Collected",val:fmt(totalPaid),sub:totalRevenue>0?Math.round(totalPaid/totalRevenue*100)+"% collection rate":"0% collection rate",accent:"#2563eb"},
             {label:"Outstanding",val:fmt(totalOutstanding),sub:pInv.filter(i=>i.status==="overdue").length+" overdue invoices",accent:"#dc2626"},
-            {label:"Customers",val:TOP_CUSTOMERS.length,sub:totalInvoices+" invoices · "+period,accent:"#7c3aed"},
+            {label:"Customers",val:TOP_CUSTOMERS.length,sub:totalInvoices+" invoices · "+period,accent:"#57534e"},
           ].map((k,i)=>(
             <div key={i} style={{padding:"12px 18px",borderRight:i<3?"1px solid rgba(255,255,255,.08)":"none",borderTop:`3px solid ${k.accent}`}}>
               <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:4}}>{k.label}</div>
