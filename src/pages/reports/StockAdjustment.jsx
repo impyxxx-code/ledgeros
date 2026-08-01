@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { sb } from "../../lib/supabase.js";
-import { fmt, DEFAULT_REORDER } from "../../lib/utils.js";
+import { fmt, DEFAULT_REORDER, isMobile } from "../../lib/utils.js";
 import { logAudit } from "../../lib/audit.js";
+import { MobileCard } from "../../components/ui.jsx";
 
 // ── STOCK ADJUSTMENT ──────────────────────────────────────────────────────────
 
@@ -9,7 +10,7 @@ import { logAudit } from "../../lib/audit.js";
 // │ StockAdjustment                                            │
 // │ Adjust stock quantities                                    │
 // └────────────────────────────────────────────────────────────┘
-export function StockAdjustment({ products, setProducts, token }) {
+export function StockAdjustment({ products, setProducts, token, userId }) {
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(null);
   const [adjustments, setAdjustments] = useState({});
@@ -47,6 +48,48 @@ export function StockAdjustment({ products, setProducts, token }) {
         <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--border)" }}>
           <input style={{ width: "100%", background: "var(--bg)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 14px", fontSize: 13, fontFamily: "var(--sans)", outline: "none" }} placeholder="🔍  Search products by name, SKU or category..." value={query} onChange={e => setQuery(e.target.value)} />
         </div>
+        {isMobile() ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:10, padding:12 }}>
+            {filtered.length === 0 && <div style={{ padding:"24px", textAlign:"center", color:"var(--text3)", fontSize:13 }}>No products found</div>}
+            {filtered.slice(0, 30).map(p => {
+              const adj = adjustments[p.id] || "";
+              const delta = parseInt(adj) || 0;
+              const newQty = Math.max(0, (p.stock_qty || 0) + delta);
+              const isLow = p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
+              const stepBtn = { width:44, height:44, borderRadius:"var(--rl)", border:"1px solid var(--border2)", background:"var(--white)", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, color:"var(--text2)" };
+              return (
+                <MobileCard
+                  key={p.id}
+                  title={p.name}
+                  subtitle={`${p.code || "—"}${p.category ? " · " + p.category : ""}`}
+                  value={String(p.stock_qty || 0)}
+                  valueSub={delta !== 0 ? `→ ${newQty}` : (isLow ? "low stock" : undefined)}
+                  accent={isLow ? "#ef4444" : undefined}
+                  footer={
+                    <div style={{ display:"flex", flexDirection:"column", gap:10, borderTop:"1px solid var(--border)", paddingTop:12 }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12 }}>
+                        <button style={stepBtn} onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) - 1) }))}>−</button>
+                        <input type="text" inputMode="numeric" value={adj} placeholder="0" onChange={e => setAdjustments(prev => ({ ...prev, [p.id]: e.target.value.replace(/[^\d-]/g, "") }))} style={{ width:70, height:44, textAlign:"center", border:"1px solid var(--border2)", borderRadius:"var(--rl)", fontSize:16, fontWeight:700, fontFamily:"var(--mono)", outline:"none" }} />
+                        <button style={stepBtn} onClick={() => setAdjustments(prev => ({ ...prev, [p.id]: String((parseInt(prev[p.id] || 0)) + 1) }))}>+</button>
+                      </div>
+                      <select value={reasons[p.id] || ""} onChange={e => setReasons(prev => ({ ...prev, [p.id]: e.target.value }))} style={{ width:"100%", minHeight:44, border:"1px solid var(--border2)", borderRadius:"var(--rl)", padding:"0 12px", fontSize:13, outline:"none", background:"var(--white)", fontFamily:"var(--sans)" }}>
+                        <option value="">Select reason...</option>
+                        <option value="stock_received">Stock Received</option>
+                        <option value="sold">Sold</option>
+                        <option value="damaged">Damaged</option>
+                        <option value="returned">Returned</option>
+                        <option value="count_adjustment">Count Adjustment</option>
+                      </select>
+                      {success === p.id
+                        ? <div style={{ textAlign:"center", color:"var(--green)", fontSize:14, fontWeight:600, padding:"10px" }}>✓ Updated</div>
+                        : <button className="btn bp" style={{ width:"100%", minHeight:44 }} disabled={!adj || delta === 0 || saving === p.id} onClick={() => adjust(p, delta, reasons[p.id])}>{saving === p.id ? "Saving..." : `Update stock ${delta > 0 ? "+" : ""}${delta || ""}`}</button>}
+                    </div>
+                  }
+                />
+              );
+            })}
+          </div>
+        ) : (
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="sa-table" style={{minWidth:420}}><thead><tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Adjust By</th><th>Reason</th><th>Action</th></tr></thead><tbody>
           {filtered.slice(0, 30).map(p => {
             const adj = adjustments[p.id] || "";
@@ -65,6 +108,7 @@ export function StockAdjustment({ products, setProducts, token }) {
           })}
           {filtered.length === 0 && <tr><td colSpan={6} className="empty">No products found</td></tr>}
         </tbody></table></div>
+        )}
       </div>
     </div>
   );

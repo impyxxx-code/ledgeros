@@ -41,7 +41,7 @@ export function OverpaymentModal({ inv, overpayment, outstandingInvoices, token,
   return (
     <ModalPortal>
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{alignItems:"center"}}>
-        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(99,102,241,.12)",overflow:"hidden",borderTop:"3px solid #818cf8"}}>
+        <div style={{background:"var(--white)",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(221,43,15,.12)",overflow:"hidden",borderTop:"3px solid #dd2b0f"}}>
           {/* Header */}
           <div style={{background:"#0d1829",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
             <div>
@@ -92,11 +92,11 @@ export function OverpaymentModal({ inv, overpayment, outstandingInvoices, token,
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
                       {outstandingInvoices.length > 0 && (
                         <button onClick={()=>setMode("allocate")} style={{padding:"14px 16px",borderRadius:10,border:"1px solid var(--border)",background:"var(--white)",cursor:"pointer",textAlign:"left",transition:"border-color .15s"}}
-                          onMouseEnter={e=>e.currentTarget.style.borderColor="var(--blue)"}
+                          onMouseEnter={e=>e.currentTarget.style.borderColor="#dd2b0f"}
                           onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
                           <div style={{display:"flex",alignItems:"center",gap:10}}>
-                            <div style={{width:32,height:32,borderRadius:8,background:"var(--blue-lt)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            <div style={{width:32,height:32,borderRadius:8,background:"rgba(221,43,15,.10)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                             </div>
                             <div>
                               <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:2}}>Allocate to outstanding invoice</div>
@@ -129,7 +129,7 @@ export function OverpaymentModal({ inv, overpayment, outstandingInvoices, token,
                         const apply = Math.min(overpayment, owed);
                         const sel = selectedInv?.id === oi.id;
                         return (
-                          <div key={oi.id} onClick={()=>setSelectedInv(oi)} style={{padding:"12px 14px",borderRadius:8,border:`1.5px solid ${sel?"var(--blue)":"var(--border)"}`,background:sel?"var(--blue-lt)":"var(--white)",cursor:"pointer"}}>
+                          <div key={oi.id} onClick={()=>setSelectedInv(oi)} style={{padding:"12px 14px",borderRadius:8,border:`1.5px solid ${sel?"#dd2b0f":"var(--border)"}`,background:sel?"rgba(221,43,15,.10)":"var(--white)",cursor:"pointer"}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                               <div>
                                 <span style={{fontFamily:"var(--mono)",fontWeight:600,color:"var(--blue)",fontSize:13}}>{oi.invoice_number}</span>

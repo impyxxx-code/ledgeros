@@ -90,7 +90,7 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
                     const d=new Date(); d.setDate(d.getDate()+days);
                     const val=d.toISOString().split("T")[0];
                     const active=dueDate===val;
-                    return <button key={days} type="button" onClick={()=>setDueDate(val)} style={{flex:1,padding:"5px 0",borderRadius:5,border:"1px solid "+(active?"var(--blue)":"var(--border)"),background:active?"var(--blue)":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
+                    return <button key={days} type="button" onClick={()=>setDueDate(val)} style={{flex:1,padding:"5px 0",borderRadius:5,border:"1px solid "+(active?"#dd2b0f":"var(--border)"),background:active?"#dd2b0f":"var(--white)",color:active?"#fff":"var(--text2)",fontSize:11,fontWeight:active?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{label}</button>;
                   })}
                 </div>
                 <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} />

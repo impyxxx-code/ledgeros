@@ -148,7 +148,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
 
   // Timeline events derived from invoice data
   const timeline = [
-    { icon: "ti-file-plus", color: "var(--blue)", bg: "var(--blue-lt)", label: "Created", date: invoice.created_at || invoice.invoice_date, desc: `Invoice ${invoice.invoice_number} created · ${fmt(invoice.amount)}` },
+    { icon: "ti-file-plus", color: "#dd2b0f", bg: "rgba(221,43,15,.10)", label: "Created", date: invoice.created_at || invoice.invoice_date, desc: `Invoice ${invoice.invoice_number} created · ${fmt(invoice.amount)}` },
     ...payments.map((p, idx) => {
       const runningTotal = payments.slice(0, idx + 1).reduce((s, x) => s + parseFloat(x.amount || 0), 0);
       const remaining = Math.max(0, parseFloat(invoice.amount || 0) - runningTotal);
@@ -156,8 +156,8 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
       const isFinal = remaining <= 0;
       return {
         icon: isFinal ? "ti-circle-check" : "ti-credit-card",
-        color: isFinal ? "var(--green)" : "#2563eb",
-        bg: isFinal ? "var(--green-lt)" : "var(--blue-lt)",
+        color: isFinal ? "var(--green)" : "#dd2b0f",
+        bg: isFinal ? "var(--green-lt)" : "rgba(221,43,15,.10)",
         label: isFinal ? "Paid in Full" : "Partial Payment",
         date: p.created_at || p.payment_date,
         desc: `${fmt(p.amount)} received ${methodIcon} ${p.method}${p.recorded_by_name ? " · by " + p.recorded_by_name : ""}`,
@@ -181,7 +181,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
       <div className="modal" style={{ maxWidth: 980 }}>
         <div className="modal-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, background: "var(--blue-lt)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--blue)", fontSize: 17 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span></div>
+            <div style={{ width: 34, height: 34, background: "rgba(221,43,15,.10)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "#dd2b0f", fontSize: 17 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span></div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontWeight: 700, fontSize: 14 }}>{invoice.invoice_number}</span>
@@ -217,7 +217,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
             {(invoice.status === "partial" || invoice.status === "paid") && (
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
                 {[
-                  { label:"Invoice Total", val:fmt(invoice.amount), accent:"#2563eb" },
+                  { label:"Invoice Total", val:fmt(invoice.amount), accent:"#dd2b0f" },
                   { label:"Amount Paid", val:fmt(invoice.amount_paid||0), accent:"#16a34a" },
                   { label:"Balance Owing", val:fmt(Math.max(0,(invoice.balance||invoice.amount))), accent:invoice.balance>0?"#dc2626":"#16a34a" },
                 ].map((k,i) => (
@@ -235,7 +235,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                   <span>{Math.round((invoice.amount_paid/invoice.amount)*100)}% collected</span>
                 </div>
                 <div style={{height:6,background:"var(--border)",borderRadius:4,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:Math.min(100,Math.round((invoice.amount_paid/invoice.amount)*100))+"%",background:invoice.status==="paid"?"#16a34a":"#2563eb",borderRadius:4,transition:"width .4s"}} />
+                  <div style={{height:"100%",width:Math.min(100,Math.round((invoice.amount_paid/invoice.amount)*100))+"%",background:invoice.status==="paid"?"#16a34a":"#dd2b0f",borderRadius:4,transition:"width .4s"}} />
                 </div>
               </div>
             )}
@@ -332,7 +332,8 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                 <div><div className="inv-meta-lbl">Terms</div><div className="inv-meta-val">Due on receipt</div></div>
               </div>
             </div>
-            <table className="inv-table">
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", marginBottom: 22 }}>
+            <table className="inv-table" style={{ marginBottom: 0 }}>
               <thead><tr><th style={{ width: "40%" }}>Description</th><th>VAT</th><th style={{ textAlign: "right" }}>Qty</th><th style={{ textAlign: "right" }}>Rate</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
               <tbody>
                 {lines.map((l, i) => (
@@ -346,6 +347,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="inv-totals-box">
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>Subtotal</span><span className="mono">{fmt(subtotal)}</span></div>
               <div className="inv-tot-row"><span style={{ color: "#64748b" }}>VAT Total</span><span className="mono">{fmt(vatTotal)}</span></div>
@@ -449,7 +451,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
 
             {/* Edit Invoice — admin only; managers can view all invoices but not edit them */}
             {onEdit && profile?.role !== "manager" && (
-              <div style={{ background:"#f0f4ff", border:"1px solid #c7d7fc", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ background:"#faf0ee", border:"1px solid #f3c9c1", borderRadius:"var(--rl)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 <div>
                   <div style={{ fontWeight:600, marginBottom:2 }}>Edit Invoice</div>
                   <div style={{ fontSize:12, color:"var(--text3)" }}>Modify customer, amounts or line items</div>
@@ -463,8 +465,8 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>Print & Share</div>
               <div className="inv-action-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 {[
-                  { label: "Print Invoice", color: "var(--blue)", bg: "var(--blue-lt)", onClick: handlePrint,
-                    svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> },
+                  { label: "Print Invoice", color: "#dd2b0f", bg: "rgba(221,43,15,.10)", onClick: handlePrint,
+                    svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dd2b0f" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> },
                   { label: "Email Invoice", color: "var(--purple)", bg: "var(--purple-lt)", onClick: handleEmail,
                     svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
                   { label: "WhatsApp", color: "#25D366", bg: "#f0fdf4", onClick: () => savedPhone ? sendWhatsApp(savedPhone) : setShowWaInput(true),
@@ -495,7 +497,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 10 }}>Update Status</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {[["pending","b-amber","ti-clock"],["paid","b-green","ti-circle-check"],["overdue","b-red","ti-alert-circle"],["draft","b-gray","ti-file"],["cancelled","b-gray","ti-ban"]].map(([s, cls, icon]) => (
-                  <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} style={{ padding: "6px 14px", borderRadius: 20, border: "1px solid var(--border2)", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, background: invoice.status === s ? "var(--blue)" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text2)", display: "flex", alignItems: "center", gap: 5, transition: "all .12s" }}>
+                  <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} style={{ padding: "6px 14px", borderRadius: 20, border: "1px solid var(--border2)", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, background: invoice.status === s ? "#dd2b0f" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text2)", display: "flex", alignItems: "center", gap: 5, transition: "all .12s" }}>
                     <i className={"ti " + icon} style={{ fontSize: 12 }} />{s.charAt(0).toUpperCase() + s.slice(1)}
                   </button>
                 ))}
@@ -574,7 +576,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                 ["draft","b-gray",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>],
                 ["cancelled","b-gray",<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>],
               ].map(([s, cls, icon]) => (
-                <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} title={s.charAt(0).toUpperCase() + s.slice(1)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: invoice.status === s ? "var(--blue)" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text3)", transition: "all .12s" }}>
+                <button key={s} onClick={() => onStatusChange && onStatusChange(invoice.id, s)} title={s.charAt(0).toUpperCase() + s.slice(1)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: invoice.status === s ? "#dd2b0f" : "var(--white)", color: invoice.status === s ? "#fff" : "var(--text3)", transition: "all .12s" }}>
                   {icon}
                 </button>
               ))}

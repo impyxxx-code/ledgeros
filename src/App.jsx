@@ -967,6 +967,8 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   .modal-body{flex-direction:column}
   .inv-side{width:100%;border-left:none;border-top:1px solid var(--border);padding:14px 0 0}
   .inv-side-actions{display:none!important}
+  .inv-doc{padding:16px}
+  .inv-table th,.inv-table td{padding:6px 8px;font-size:11px}
   td{padding:9px 10px;font-size:12px;word-break:break-word}
   th{padding:8px 10px;font-size:10px}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -2165,7 +2167,7 @@ export default function App() {
                 {page==="import"&&<CsvImport contacts={contacts} setContacts={setContacts} products={products} setProducts={setProducts} invoices={invoices} setInvoices={setInvoices} token={auth.token} userId={auth.user.id} />}
                 {page==="statement"&&<CustomerStatement contacts={contacts} invoices={invoices} token={auth.token} />}
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} setPage={setPage} setPendingFilter={setPendingFilter} token={auth.token} userId={auth.user.id} profile={profile} />}
-                {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} />}
+                {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}

@@ -26,7 +26,7 @@ export function OnboardingChecklist({ onClose, invoices, contacts, products, set
 
         {/* Progress bar */}
         <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", marginBottom: 24 }}>
-          <div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg,var(--blue),#7c3aed)", borderRadius: 3, transition: "width .5s var(--ease)" }} />
+          <div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg,#dd2b0f,#ae1800)", borderRadius: 3, transition: "width .5s var(--ease)" }} />
         </div>
 
         {/* Steps */}

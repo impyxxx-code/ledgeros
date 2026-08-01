@@ -122,7 +122,7 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
           <div style={{background:"#201e1d",padding:"20px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
             <div>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                <div style={{width:28,height:28,borderRadius:8,background:"#2563eb22",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{width:28,height:28,borderRadius:8,background:"#dd2b0f22",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6a4d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>Bulk Payment</div>
@@ -180,7 +180,7 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
                     const count = invoices.filter(i => i.customer===c && (i.status==="pending"||i.status==="overdue"||i.status==="partial")).length;
                     return (
                       <div key={c} onClick={()=>setCustomer(c)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderRadius:8,border:"1px solid var(--border)",cursor:"pointer",background:"var(--white)"}}
-                        onMouseEnter={e=>e.currentTarget.style.borderColor="var(--blue)"}
+                        onMouseEnter={e=>e.currentTarget.style.borderColor="#dd2b0f"}
                         onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
                         <div>
                           <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{c}</div>
@@ -194,7 +194,7 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
                     <div className="empty-state" style={{padding:"32px 16px"}}>
                       <div className="empty-state-icon">
                         <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-                          <circle cx="32" cy="24" r="11" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
+                          <circle cx="32" cy="24" r="11" fill="rgba(221,43,15,.10)" stroke="#f0c9c0" strokeWidth="1.5"/>
                           <path d="M14 52c0-9 8-16 18-16s18 7 18 16" stroke="#ff6a4d" strokeWidth="2" fill="none" strokeLinecap="round"/>
                           <path d="M24 24l16 0M32 16l0 16" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
                         </svg>
@@ -233,7 +233,7 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
                   <label style={{fontSize:11,fontWeight:600,color:"var(--text3)",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:".5px"}}>Payment method</label>
                   <div style={{display:"flex",gap:8}}>
                     {[["cash","💵 Cash"],["bank","🏦 Bank"],["card","💳 Card"]].map(([v,l]) => (
-                      <button key={v} type="button" onClick={()=>setMethod(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid "+(method===v?"var(--blue)":"var(--border)"),background:method===v?"var(--blue)":"var(--white)",color:method===v?"#fff":"var(--text2)",fontSize:12,fontWeight:method===v?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{l}</button>
+                      <button key={v} type="button" onClick={()=>setMethod(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid "+(method===v?"#dd2b0f":"var(--border)"),background:method===v?"#dd2b0f":"var(--white)",color:method===v?"#fff":"var(--text2)",fontSize:12,fontWeight:method===v?600:400,cursor:"pointer",fontFamily:"var(--sans)"}}>{l}</button>
                     ))}
                   </div>
                 </div>
