@@ -86,7 +86,7 @@ export function MobileCard({ title, subtitle, value, valueSub, badge, accent, ro
       {rows && rows.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 12px" }}>
           {rows.map((r, i) => (
-            <div key={i} style={{ minWidth: 0 }}>
+            <div key={i} style={{ minWidth: 0, ...(r.wide ? { gridColumn: "1 / -1" } : {}) }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 2 }}>{r.label}</div>
               <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...(r.mono ? { fontFamily: "var(--mono)" } : {}) }}>{r.value}</div>
             </div>
