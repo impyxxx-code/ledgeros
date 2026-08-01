@@ -3,7 +3,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
 import { fmtDate, today, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { COMPANY, LOGO } from "../lib/constants.js";
-import { EmptyState } from "../components/ui.jsx";
+import { EmptyState, MobileCard } from "../components/ui.jsx";
 
 export function DeliveryNotes({ contacts, products, token, userId }) {
   const [dns, setDNs] = useState([]);
@@ -216,12 +216,12 @@ export function DeliveryNotes({ contacts, products, token, userId }) {
   return (
     <div>
       {isMobile() ? (
-        <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#0f172a", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+        <div style={{ margin: "-12px -12px 12px", padding: "16px 16px 12px", background: "#201e1d", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Delivery Notes</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop:2 }}>{dns.length} total · {dns.filter(d=>d.status==="pending").length} pending</div>
           </div>
-          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink:0 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New</button>
+          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink:0, minHeight:44 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New</button>
         </div>
       ) : (
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -327,7 +327,48 @@ export function DeliveryNotes({ contacts, products, token, userId }) {
         </div>
       )}
 
-      {/* Table */}
+      {/* List — cards on mobile, table on desktop */}
+      {isMobile() ? (
+        (() => {
+          const shown = dns.filter(d => dnFilter === "all" || d.status === dnFilter);
+          if (shown.length === 0) return <EmptyState icon="delivery" title="No delivery notes yet" sub="Create a delivery note after generating an invoice" />;
+          const statusMeta = { pending:["b-amber","⏳ Pending"], in_transit:["b-blue","🚚 In Transit"], delivered:["b-green","✅ Delivered"], failed:["b-red","❌ Failed"] };
+          const actBtn = { flex:1, minHeight:44, display:"flex", alignItems:"center", justifyContent:"center", gap:6, border:"1px solid var(--border)", background:"var(--white)", borderRadius:"var(--rl)", fontSize:12, fontWeight:600, cursor:"pointer", color:"var(--text2)" };
+          return (
+            <div style={{ display:"flex", flexDirection:"column", gap:10, padding:12 }}>
+              {shown.map(dn => {
+                const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
+                const [cls] = statusMeta[dn.status || "pending"] || statusMeta.pending;
+                return (
+                  <MobileCard
+                    key={dn.id}
+                    title={dn.customer_name}
+                    subtitle={`${dn.dn_number} · ${fmtDate(dn.delivery_date)}`}
+                    badge={<span className={"badge " + cls}>{(dn.status || "pending").replace("_", " ")}</span>}
+                    rows={[{ label:"Driver", value:dn.driver || "—" }, { label:"Items", value:`${dnLines.length} item${dnLines.length !== 1 ? "s" : ""}` }]}
+                    footer={
+                      <div style={{ display:"flex", flexDirection:"column", gap:8, borderTop:"1px solid var(--border)", paddingTop:12 }}>
+                        <select value={dn.status || "pending"} onChange={e => updateStatus(dn.id, e.target.value)}
+                          style={{ width:"100%", minHeight:44, background:"var(--white)", border:"1px solid var(--border)", borderRadius:"var(--rl)", padding:"0 10px", fontSize:13, outline:"none", cursor:"pointer", fontFamily:"var(--sans)" }}>
+                          <option value="pending">⏳ Pending</option>
+                          <option value="in_transit">🚚 In Transit</option>
+                          <option value="delivered">✅ Delivered</option>
+                          <option value="failed">❌ Failed</option>
+                        </select>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button style={actBtn} onClick={() => printDN(dn)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</button>
+                          <button style={actBtn} onClick={() => sendEmail(dn)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
+                          <button style={{ ...actBtn, color:"#1a7f37", borderColor:"#bbf7d0" }} onClick={() => sendWhatsApp(dn)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>
+                        </div>
+                      </div>
+                    }
+                  />
+                );
+              })}
+            </div>
+          );
+        })()
+      ) : (
       <div className="card">
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="dn-list-table" style={{minWidth:420}}>
           <thead><tr><th>DN #</th><th>Customer</th><th className="hm">Date</th><th className="hm">Driver</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
@@ -366,6 +407,7 @@ export function DeliveryNotes({ contacts, products, token, userId }) {
           </tbody>
         </table></div>
       </div>
+      )}
     </div>
   );
 }
