@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
-import { SkeletonTable } from "../components/ui.jsx";
-import { fmt, escHtml } from "../lib/utils.js";
+import { SkeletonTable, MobileCard } from "../components/ui.jsx";
+import { fmt, escHtml, isMobile } from "../lib/utils.js";
 
 export function BankingPage({ token, userId, profile }) {
   const [payments, setPayments] = useState([]);
@@ -164,7 +164,8 @@ export function BankingPage({ token, userId, profile }) {
         </div>
       ) : (
         <>
-          {/* Transaction detail table */}
+          {/* Transaction detail table — desktop only; on mobile the daily sheet below lists every payment as cards */}
+          {!isMobile() && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
               <div>
@@ -215,6 +216,7 @@ export function BankingPage({ token, userId, profile }) {
               </div>
             </div>
           </div>
+          )}
 
           {/* Daily banking sheet */}
           <div>
@@ -233,8 +235,8 @@ export function BankingPage({ token, userId, profile }) {
                 return (
                   <div key={d} style={{borderBottom:di<dates.length-1?"1px solid var(--border)":"none"}}>
                     {/* Day header */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"var(--bg)"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{display:"flex",flexDirection:isMobile()?"column":"row",alignItems:isMobile()?"stretch":"center",justifyContent:"space-between",gap:isMobile()?10:0,padding:"12px 16px",background:"var(--bg)"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                         <div style={{width:8,height:8,borderRadius:"50%",background:isBanked?"#16a34a":"#f59e0b",flexShrink:0}} />
                         <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{fmtDay(d)}</div>
                         <span style={{padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:500,background:isBanked?"#dcfce7":"#fef3c7",color:isBanked?"#15803d":"#92400e"}}>
@@ -242,20 +244,41 @@ export function BankingPage({ token, userId, profile }) {
                         </span>
                         <span style={{fontSize:11,color:"var(--text3)"}}>{rows.length} payment{rows.length!==1?"s":""}</span>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:isMobile()?"space-between":"flex-end",gap:10}}>
                         <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:14,color:"var(--text)"}}>{fmt(dayTotal)}</span>
                         {!isBanked ? (
-                          <button onClick={()=>{saveBanked({...bankedDates,[d]:true});}} style={{padding:"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>
+                          <button onClick={()=>{saveBanked({...bankedDates,[d]:true});}} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:isMobile()?13:11,cursor:"pointer",fontWeight:600,minHeight:isMobile()?44:"auto"}}>
                             Mark banked
                           </button>
                         ) : (
-                          <button onClick={()=>{const nb={...bankedDates};delete nb[d];saveBanked(nb);}} style={{padding:"4px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",fontSize:11,cursor:"pointer"}}>
+                          <button onClick={()=>{const nb={...bankedDates};delete nb[d];saveBanked(nb);}} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",fontSize:isMobile()?13:11,cursor:"pointer",minHeight:isMobile()?44:"auto"}}>
                             Unmark
                           </button>
                         )}
                       </div>
                     </div>
                     {/* Transaction rows */}
+                    {isMobile() ? (
+                    <div style={{display:"flex",flexDirection:"column",gap:10,padding:12}}>
+                      {rows.map((p,i) => {
+                        const agentName = p.recorded_by_name || "—";
+                        const isPartial = (p.notes||"").toLowerCase().includes("partial");
+                        const detail = [{label:"Agent",value:agentName.split(" ")[0]}];
+                        if (p.notes) detail.push({label:"Notes",value:p.notes});
+                        return (
+                          <MobileCard
+                            key={p.id||i}
+                            title={p.customer||"—"}
+                            subtitle={`${p.invoice_number||"—"} · ${fmtTime(p.created_at)}`}
+                            value={fmt(p.amount||0)}
+                            valueSub={isPartial?"partial":undefined}
+                            badge={methodBadge(p.method)}
+                            rows={detail}
+                          />
+                        );
+                      })}
+                    </div>
+                    ) : (
                     <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
                       <table className="bk-table" style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:600}}>
                         <thead>
@@ -290,8 +313,9 @@ export function BankingPage({ token, userId, profile }) {
                         </tbody>
                       </table>
                     </div>
+                    )}
                     {/* Day footer — total + deposit ref */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"var(--bg)",borderTop:"1px solid var(--border)"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",padding:"10px 16px",background:"var(--bg)",borderTop:"1px solid var(--border)"}}>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
                         <span style={{fontSize:11,color:"var(--text3)"}}>Deposit slip ref:</span>
                         {editingRef === d ? (

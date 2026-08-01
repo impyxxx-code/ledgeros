@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList, PieChart, Pie, Cell, BarChart } from "recharts";
 import { sb } from "../lib/supabase.js";
-import { fmt, DEFAULT_REORDER } from "../lib/utils.js";
+import { fmt, DEFAULT_REORDER, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
+import { MobileCardList, MobileCard, EmptyState } from "../components/ui.jsx";
 
 export function Inventory({ products, setProducts, token, userId, profile }) {
   const [showForm, setShowForm] = useState(false);
@@ -161,6 +162,38 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
 
       {showForm && (profile?.role === "admin" || profile?.role === "manager") && <div className="card" style={{ marginBottom: 20 }}><div className="ch"><div className="ct">New Product</div></div><div className="fg3"><div className="fgrp"><label>Code</label><input value={f.code} onChange={e => setF({...f,code:e.target.value})} placeholder="SKU001" /></div><div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({...f,name:e.target.value})} placeholder="Product name" /></div><div className="fgrp"><label>Category</label><input value={f.category} onChange={e => setF({...f,category:e.target.value})} placeholder="e.g. Vapes, Pods..." /></div><div className="fgrp"><label>Unit</label><select value={f.unit} onChange={e => setF({...f,unit:e.target.value})}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div><div className="fgrp"><label>Cost Price (£)</label><input type="number" value={f.cost_price} onChange={e => setF({...f,cost_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>Sale Price (£)</label><input type="number" value={f.sale_price} onChange={e => setF({...f,sale_price:e.target.value})} placeholder="0.00" /></div><div className="fgrp"><label>VAT Rate</label><select value={f.vat_rate} onChange={e => setF({...f,vat_rate:e.target.value})}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div><div className="fgrp"><label>Stock Qty</label><input type="number" value={f.stock_qty} onChange={e => setF({...f,stock_qty:e.target.value})} placeholder="0" /></div><div className="fgrp"><label>Reorder Level</label><input type="number" value={f.reorder_level} onChange={e => setF({...f,reorder_level:e.target.value})} placeholder="0" /></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Product"}</button></div></div>}
 
+      {isMobile() ? (
+        <MobileCardList isEmpty={filtered.length === 0} empty={<EmptyState icon="product" title={invSearch ? "No products found" : "No products yet"} sub={invSearch ? `Nothing matches "${invSearch}"` : "Add your first product to get started"} />}>
+          {filtered.map(p => {
+            const canEdit = profile?.role === "admin" || profile?.role === "manager";
+            const isOut = (p.stock_qty || 0) === 0;
+            const isLow = p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
+            const isRunning = p.stock_qty <= (p.reorder_level || DEFAULT_REORDER) * 2;
+            const stepBtn = { width: 44, height: 44, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "var(--text2)", lineHeight: 1, flexShrink: 0 };
+            return (
+              <MobileCard
+                key={p.id}
+                title={p.name}
+                subtitle={`${p.code || "—"}${p.category ? " · " + p.category : ""}`}
+                value={fmt(p.sale_price)}
+                valueSub={`VAT ${p.vat_rate}%`}
+                accent={isOut ? "#ef4444" : isLow ? "#f59e0b" : undefined}
+                badge={<span className={"badge " + (isLow ? "b-red" : isRunning ? "b-amber" : "b-green")}>{isLow ? "Low Stock" : isRunning ? "Running Low" : "In Stock"}</span>}
+                footer={
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {canEdit && <button aria-label="Decrease stock" onClick={() => updateStock(p, (p.stock_qty || 0) - 1)} disabled={updatingId === p.id} style={stepBtn}>−</button>}
+                      <span className="mono" style={{ fontWeight: 700, fontSize: 17, minWidth: 44, textAlign: "center" }}>{p.stock_qty || 0}<span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginLeft: 3, fontFamily: "var(--sans)" }}>{p.unit}</span></span>
+                      {canEdit && <button aria-label="Increase stock" onClick={() => updateStock(p, (p.stock_qty || 0) + 1)} disabled={updatingId === p.id} style={stepBtn}>+</button>}
+                    </div>
+                  </div>
+                }
+              />
+            );
+          })}
+        </MobileCardList>
+      ) : (
       <div className="card">
         <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{invSearch ? `${filtered.length} of ${products.length}` : filtered.length} product{filtered.length!==1?"s":""}</div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
@@ -213,6 +246,7 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }

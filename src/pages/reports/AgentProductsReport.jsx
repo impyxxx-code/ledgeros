@@ -78,7 +78,7 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
                 <tr key={p.description}>
                   <td style={{fontWeight:700,color:"var(--text3)",fontSize:12}}>{i+1}</td>
                   <td style={{fontWeight:600}}>{p.description}</td>
-                  <td className="mono" style={{fontWeight:700,color:"var(--blue)",fontSize:14}}>{p.totalQty}</td>
+                  <td className="mono" style={{fontWeight:700,color:"#dd2b0f",fontSize:14}}>{p.totalQty}</td>
                   <td className="mono" style={{fontWeight:700,color:"var(--green)"}}>{fmt(p.totalValue)}</td>
                   <td className="hm" style={{fontSize:11,color:"var(--text2)"}}>{Object.entries(p.agents).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,q])=>`${n.split(" ")[0]} (${q})`).join(", ")}</td>
                 </tr>
@@ -121,8 +121,8 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
                       <td style={{fontWeight:600}}>{p.description}</td>
                       <td>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span className="mono" style={{fontWeight:700,color:"var(--blue)",fontSize:14,minWidth:30}}>{p.totalQty}</span>
-                          <div style={{height:6,width:Math.max(12,Math.round((p.totalQty/maxQty)*80))+"px",background:"var(--blue)",borderRadius:3,opacity: 0.35}} />
+                          <span className="mono" style={{fontWeight:700,color:"#dd2b0f",fontSize:14,minWidth:30}}>{p.totalQty}</span>
+                          <div style={{height:6,width:Math.max(12,Math.round((p.totalQty/maxQty)*80))+"px",background:"#dd2b0f",borderRadius:3,opacity: 0.35}} />
                         </div>
                       </td>
                       <td className="mono" style={{fontWeight:700,color:"var(--green)"}}>{fmt(p.totalValue)}</td>
@@ -133,7 +133,7 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
                 })}
                 <tr style={{background:"#f8fafd"}}>
                   <td colSpan={2} style={{fontWeight:700,fontSize:13}}>TOTAL</td>
-                  <td className="mono" style={{fontWeight:700,color:"var(--blue)"}}>{productLines.reduce((s,p)=>s+p.totalQty,0)}</td>
+                  <td className="mono" style={{fontWeight:700,color:"#dd2b0f"}}>{productLines.reduce((s,p)=>s+p.totalQty,0)}</td>
                   <td className="mono" style={{fontWeight:700,color:"var(--green)"}}>{fmt(productLines.reduce((s,p)=>s+p.totalValue,0))}</td>
                   <td className="hm mono" style={{fontWeight:600}}>{totalInvoices}</td>
                   <td className="hm mono" style={{fontWeight:600}}>{fmt(totalInvoices > 0 ? totalSales/totalInvoices : 0)}</td>

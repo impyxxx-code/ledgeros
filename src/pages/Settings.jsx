@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { COMPANY } from "../lib/constants.js";
+import { isMobile } from "../lib/utils.js";
 import { ChangePasswordForm } from "../components/settings/ChangePasswordForm.jsx";
 import { UserApproval } from "../components/settings/UserApproval.jsx";
 import { ProductAliases } from "../components/settings/ProductAliases.jsx";
@@ -34,16 +35,16 @@ export function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, on
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 3, borderTop: "1px solid rgba(255,255,255,.10)", padding: "5px 0", margin: "0", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 3, borderTop: "1px solid rgba(255,255,255,.10)", padding: "5px 0", margin: "0", flexWrap: isMobile() ? "nowrap" : "wrap", overflowX: isMobile() ? "auto" : "visible", WebkitOverflowScrolling: "touch", position: "relative", zIndex: 1 }}>
           {[["company","Company"],["appearance","Appearance"],["account","Account"],["users","Users"],["aliases","WhatsApp Aliases"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setActiveTab(k)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: activeTab===k ? "#dd2b0f" : "transparent", color: activeTab===k ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: activeTab===k ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .15s", boxShadow: activeTab===k ? "0 2px 8px rgba(221,43,15,.30)" : "none" }}>{l}</button>
+            <button key={k} onClick={()=>setActiveTab(k)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: activeTab===k ? "#dd2b0f" : "transparent", color: activeTab===k ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: activeTab===k ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", transition: "all .15s", boxShadow: activeTab===k ? "0 2px 8px rgba(221,43,15,.30)" : "none", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
           ))}
         </div>
       </div>
       {activeTab==="company" && (
         <div className="card" style={{ padding:24 }}>
           <div className="ct" style={{ marginBottom:20 }}>Company Information</div>
-          <div className="settings-info-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+          <div className="settings-info-grid" style={{ display:"grid",gridTemplateColumns:isMobile()?"1fr":"1fr 1fr",gap:16 }}>
             {[{label:"Company Name",val:"Arkham Retail Ltd"},{label:"VAT Number",val:"GB462229106"},{label:"Address",val:"2 Fieldhead Street, Fieldhead Business Centre"},{label:"City",val:"Bradford, West Yorkshire BD7 1LW"},{label:"Phone",val:"07801 567209 / 07851 983151"},{label:"Email",val:"ARKHAMRETAIL@GMAIL.COM"},{label:"Bank",val:"Tide Bank"},{label:"Sort Code / Account",val:"04-06-05 / 23058246"}].map(f=>(
               <div key={f.label}><div style={{ fontSize:11,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:5 }}>{f.label}</div><div style={{ fontSize:14,fontWeight:600,color:"var(--text)",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--r)",padding:"10px 14px" }}>{f.val}</div></div>
             ))}
@@ -55,7 +56,7 @@ export function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, on
           <div className="ct" style={{ marginBottom:20 }}>Appearance</div>
           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 0",borderBottom:"1px solid var(--border)" }}>
             <div><div style={{ fontWeight:600,marginBottom:3 }}>Dark Mode</div><div style={{ fontSize:12,color:"var(--text3)" }}>Switch between light and dark theme</div></div>
-            <div onClick={toggleDark} style={{ width:48,height:26,borderRadius:13,background:darkMode?"var(--blue)":"var(--border)",cursor:"pointer",position:"relative",transition:"background .2s" }}>
+            <div onClick={toggleDark} style={{ width:48,height:26,borderRadius:13,background:darkMode?"#1a7f37":"var(--border)",cursor:"pointer",position:"relative",transition:"background .2s" }}>
               <div style={{ position:"absolute",top:3,left:darkMode?22:3,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)" }} />
             </div>
           </div>

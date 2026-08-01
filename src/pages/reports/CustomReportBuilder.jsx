@@ -291,7 +291,7 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {saved.map(r => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)" }}>
-                <button onClick={() => loadReport(r)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--blue)", fontFamily: "var(--sans)" }}>{r.name}</button>
+                <button onClick={() => loadReport(r)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#dd2b0f", fontFamily: "var(--sans)" }}>{r.name}</button>
                 <span style={{ fontSize: 10, color: "var(--text3)" }}>({SOURCES[r.config?.source]?.label || r.config?.source})</span>
                 <button onClick={() => deleteReport(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--red)", fontSize: 13, padding: 0 }}>×</button>
               </div>
@@ -303,14 +303,14 @@ export function CustomReportBuilder({ invoices, products, contacts, allProfiles,
       <div className="card" style={{ marginBottom: 16, padding: 20 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
           {Object.entries(SOURCES).map(([key, s]) => (
-            <button key={key} onClick={() => switchSource(key)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid " + (source === key ? "var(--blue)" : "var(--border)"), background: source === key ? "var(--blue)" : "var(--white)", color: source === key ? "#fff" : "var(--text2)", fontSize: 12, fontWeight: source === key ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)" }}>{s.label}</button>
+            <button key={key} onClick={() => switchSource(key)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid " + (source === key ? "#dd2b0f" : "var(--border)"), background: source === key ? "#dd2b0f" : "var(--white)", color: source === key ? "#fff" : "var(--text2)", fontSize: 12, fontWeight: source === key ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)" }}>{s.label}</button>
           ))}
         </div>
 
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 8 }}>Fields to show</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
           {meta.fields.map(f => (
-            <label key={f.key} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: selectedFields.includes(f.key) ? "var(--blue-lt)" : "var(--bg)", border: "1px solid " + (selectedFields.includes(f.key) ? "var(--blue)" : "var(--border)"), fontSize: 12, cursor: "pointer" }}>
+            <label key={f.key} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: selectedFields.includes(f.key) ? "rgba(221,43,15,.10)" : "var(--bg)", border: "1px solid " + (selectedFields.includes(f.key) ? "#dd2b0f" : "var(--border)"), fontSize: 12, cursor: "pointer" }}>
               <input type="checkbox" checked={selectedFields.includes(f.key)} onChange={() => toggleField(f.key)} style={{ margin: 0 }} />
               {f.label}
             </label>
