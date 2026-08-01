@@ -79,42 +79,26 @@ create policy journal_lines_read on public.journal_lines
 revoke truncate, references, trigger on all tables in schema public from authenticated;
 
 
--- 5) P1 — restrict destructive DELETE to admin/manager ------------------------
---    Each table below currently has a permissive ALL/DELETE `true` policy that
---    lets any agent delete. Drop those, then add an admin/manager-only DELETE.
---    Review the exact policy names against Query 1b before running each block.
---
--- invoices:
--- drop policy if exists "Authenticated users only" on public.invoices;   -- ALL true
--- drop policy if exists "authenticated_delete_invoices" on public.invoices;
--- create policy invoices_delete_admin on public.invoices
---   for delete to authenticated using (public.auth_role() in ('admin','manager'));
---   -- NOTE: dropping "Authenticated users only" (ALL) also removes its
---   -- select/insert/update grant, which is covered by the remaining
---   -- authenticated_select/insert/update_invoices policies — verify they exist.
---
--- invoice_payments:
--- drop policy if exists "authenticated_delete_invoice_payments" on public.invoice_payments;
--- create policy inv_pay_delete_admin on public.invoice_payments
---   for delete to authenticated using (public.auth_role() in ('admin','manager'));
---
--- credit_notes / customer_prices: same pattern (drop ALL-true / delete-true,
--- add admin/manager-only delete).
+-- 5) P1 — restrict destructive DELETE to ADMIN ONLY (decided 1 Aug 2026) ------
+--    Agents/managers keep full read/create/edit; only admins can DELETE the two
+--    financial-integrity tables. Idempotent — safe to re-run.
+-- invoices
+drop policy if exists "Authenticated users only" on public.invoices;   -- was ALL true (redundant; S/I/U covered separately)
+drop policy if exists "authenticated_delete_invoices" on public.invoices;
+drop policy if exists invoices_delete_admin on public.invoices;
+create policy invoices_delete_admin on public.invoices
+  for delete to authenticated using (public.auth_role() = 'admin');
+-- invoice_payments
+drop policy if exists "authenticated_delete_invoice_payments" on public.invoice_payments;
+drop policy if exists inv_pay_delete_admin on public.invoice_payments;
+create policy inv_pay_delete_admin on public.invoice_payments
+  for delete to authenticated using (public.auth_role() = 'admin');
+-- (credit_notes already has NO delete policy => deletes denied; nothing to do.)
 
 
--- 6) P2 (OPTIONAL — business decision) ---------------------------------------
---    If agents should see/edit only THEIR OWN invoices & contacts (the app's
---    AgentDashboard already assumes this), replace the `true` SELECT/UPDATE
---    policies with owner-or-staff checks. Leave commented until you decide.
---
--- drop policy if exists "Authenticated users only" on public.invoices;
--- drop policy if exists "authenticated_select_invoices" on public.invoices;
--- drop policy if exists "authenticated_update_invoices" on public.invoices;
--- create policy invoices_select on public.invoices for select to authenticated
---   using (created_by = auth.uid() or public.auth_role() in ('admin','manager'));
--- create policy invoices_update on public.invoices for update to authenticated
---   using (created_by = auth.uid() or public.auth_role() in ('admin','manager'));
--- -- (repeat for contacts, etc.)
+-- 6) P2 — agent record visibility --------------------------------------------
+--    DECISION (1 Aug 2026): agents SEE ALL invoices. Current policies already
+--    allow all authenticated users to read invoices, so NO CHANGE is required.
 
 
 -- 7) Verify — re-run PART 1 of SECURITY_RLS_AUDIT.sql. No policy on a business
