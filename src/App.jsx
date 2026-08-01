@@ -1488,6 +1488,31 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const [printOverlayHTML, setPrintOverlayHTML] = useState(null);
   const [printOverlayTitle, setPrintOverlayTitle] = useState(null);
+  const printIframeRef = useRef(null);
+
+  // Scale the print preview to fit the screen width (A4 docs overflow phones).
+  // Uses `zoom` (reflows) for screen only; reset to full size before printing.
+  const fitPrintPreview = () => {
+    const f = printIframeRef.current; if (!f) return;
+    try {
+      const doc = f.contentDocument; if (!doc || !doc.documentElement) return;
+      doc.documentElement.style.zoom = "";
+      const vw = f.clientWidth;
+      const cw = doc.documentElement.scrollWidth;
+      if (cw > vw + 4) doc.documentElement.style.zoom = String(Math.max(0.3, vw / cw));
+    } catch (_) { /* cross-origin guard */ }
+  };
+  const doPrintOverlay = () => {
+    const f = printIframeRef.current; if (!f) return;
+    try {
+      const doc = f.contentDocument;
+      const prevZoom = doc && doc.documentElement ? doc.documentElement.style.zoom : "";
+      if (doc && doc.documentElement) doc.documentElement.style.zoom = ""; // full size for the print output
+      if (printOverlayTitle) document.title = printOverlayTitle;
+      window.addEventListener("afterprint", () => { document.title = "LedgerOS"; if (doc && doc.documentElement) doc.documentElement.style.zoom = prevZoom; fitPrintPreview(); }, { once: true });
+      f.contentWindow.print();
+    } catch (_) { /* noop */ }
+  };
   const [auth, setAuth] = useState(null);
   const [authRestoring, setAuthRestoring] = useState(() => !!localStorage.getItem('ledgeros_rt'));
   const [page, setPage] = useState("dashboard");
@@ -2371,19 +2396,38 @@ export default function App() {
               <div style={{fontSize:15,fontWeight:700,color:'#fff',letterSpacing:'-0.3px'}}>LedgerOS</div>
               <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:1}}>Arkham Retail Ltd</div>
             </div>
-            <button
-              onClick={() => { document.title = "LedgerOS"; setPrintOverlayHTML(null); setPrintOverlayTitle(null); }}
-              style={{width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.3)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,cursor:'pointer',lineHeight:1,fontFamily:'sans-serif',flexShrink:0}}
-              title="Close"
-            >&#x2715;</button>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+              <button
+                onClick={doPrintOverlay}
+                style={{height:38,padding:'0 16px',background:'#dd2b0f',border:'none',borderRadius:9,display:'flex',alignItems:'center',gap:7,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'var(--sans)'}}
+                title="Print / Save PDF"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print
+              </button>
+              <button
+                onClick={() => { document.title = "LedgerOS"; setPrintOverlayHTML(null); setPrintOverlayTitle(null); }}
+                style={{width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.3)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,cursor:'pointer',lineHeight:1,fontFamily:'sans-serif',flexShrink:0}}
+                title="Close"
+              >&#x2715;</button>
+            </div>
           </div>
           <iframe
+            ref={printIframeRef}
             srcDoc={printOverlayHTML}
             onLoad={e => {
               try {
-                if (printOverlayTitle) document.title = printOverlayTitle;
-                window.addEventListener('afterprint', () => { document.title = "LedgerOS"; }, { once: true });
-                e.target.contentWindow.print();
+                const mobile = window.innerWidth < 768;
+                if (mobile) {
+                  // Phones: fit the A4 page to the screen and let the user review,
+                  // then print via the header button (auto-print sheet over a
+                  // cut-off doc is a poor experience).
+                  fitPrintPreview();
+                } else {
+                  if (printOverlayTitle) document.title = printOverlayTitle;
+                  window.addEventListener('afterprint', () => { document.title = "LedgerOS"; }, { once: true });
+                  e.target.contentWindow.print();
+                }
               } catch(_) {}
             }}
             style={{flex:1,border:'none',background:'#fff',width:'100%'}}
