@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { SkeletonTable } from "../components/ui.jsx";
+import { fmt } from "../lib/utils.js";
 
 export function BankingPage({ token, userId, profile }) {
   const [payments, setPayments] = useState([]);
@@ -123,10 +124,10 @@ export function BankingPage({ token, userId, profile }) {
         {/* KPI row */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,borderTop:"1px solid rgba(255,255,255,0.08)",margin:"0 -24px"}}>
           {[
-            {label:"Total collected",val:"£"+total.toFixed(2),sub:payments.length+" payments",col:"#dd2b0f"},
-            {label:"Cash",val:"£"+(byMethod.cash||0).toFixed(2),sub:payments.filter(p=>p.method==="cash").length+" payments",col:"#22c55e"},
-            {label:"Bank transfer",val:"£"+(byMethod.bank||0).toFixed(2),sub:payments.filter(p=>p.method==="bank").length+" payments",col:"#ff6a4d"},
-            {label:"Unbanked cash",val:"£"+unbanked.toFixed(2),sub:"Awaiting deposit",col:"#f59e0b"},
+            {label:"Total collected",val:fmt(total),sub:payments.length+" payments",col:"#dd2b0f"},
+            {label:"Cash",val:fmt(byMethod.cash||0),sub:payments.filter(p=>p.method==="cash").length+" payments",col:"#22c55e"},
+            {label:"Bank transfer",val:fmt(byMethod.bank||0),sub:payments.filter(p=>p.method==="bank").length+" payments",col:"#ff6a4d"},
+            {label:"Unbanked cash",val:fmt(unbanked),sub:"Awaiting deposit",col:"#f59e0b"},
           ].map((k,i) => (
             <div key={i} style={{padding:"16px 20px 14px",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none",borderTop:"3px solid "+k.col}}>
               <div style={{fontSize:10,fontWeight:700,color:"#8aa0b8",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
@@ -143,7 +144,7 @@ export function BankingPage({ token, userId, profile }) {
               const amt = byMethod[m]||0; const cnt = payments.filter(p=>p.method===m).length;
               if (!cnt) return null;
               return <span key={m} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 10px",borderRadius:20,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:11,color:"rgba(255,255,255,.7)"}}>
-                {icon} <span style={{fontWeight:600,color:col,fontFamily:"var(--mono)"}}>£{amt.toFixed(2)}</span> <span style={{color:"rgba(255,255,255,.35)"}}>{cnt}×</span>
+                {icon} <span style={{fontWeight:600,color:col,fontFamily:"var(--mono)"}}>{fmt(amt)}</span> <span style={{color:"rgba(255,255,255,.35)"}}>{cnt}×</span>
               </span>;
             })}
           </div>
@@ -191,7 +192,7 @@ export function BankingPage({ token, userId, profile }) {
                           <td style={{padding:"9px 12px",color:"var(--text3)",whiteSpace:"nowrap"}}>{fmtTime(p.created_at)}</td>
                           <td style={{padding:"9px 12px"}}><span style={{fontFamily:"var(--mono)",color:"var(--blue)",fontWeight:600,fontSize:12}}>{p.invoice_number||"—"}</span></td>
                           <td style={{padding:"9px 12px",color:"var(--text)",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.customer||"—"}</td>
-                          <td style={{padding:"9px 12px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>£{parseFloat(p.amount||0).toFixed(2)}</span></td>
+                          <td style={{padding:"9px 12px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>{fmt(p.amount||0)}</span></td>
                           <td style={{padding:"9px 12px"}}>{methodBadge(p.method)}</td>
                           <td style={{padding:"9px 12px"}}>
                             <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
@@ -208,7 +209,7 @@ export function BankingPage({ token, userId, profile }) {
               </div>
               <div style={{padding:"10px 14px",background:"var(--bg)",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",fontSize:12}}>
                 <span style={{color:"var(--text3)"}}>{payments.length} transactions</span>
-                <span style={{fontFamily:"var(--mono)",fontWeight:600}}>£{total.toFixed(2)} total</span>
+                <span style={{fontFamily:"var(--mono)",fontWeight:600}}>{fmt(total)} total</span>
               </div>
             </div>
           </div>
@@ -240,7 +241,7 @@ export function BankingPage({ token, userId, profile }) {
                         <span style={{fontSize:11,color:"var(--text3)"}}>{rows.length} payment{rows.length!==1?"s":""}</span>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:14,color:"var(--text)"}}>£{dayTotal.toFixed(2)}</span>
+                        <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:14,color:"var(--text)"}}>{fmt(dayTotal)}</span>
                         {!isBanked ? (
                           <button onClick={()=>{saveBanked({...bankedDates,[d]:true});}} style={{padding:"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>
                             Mark banked
@@ -272,7 +273,7 @@ export function BankingPage({ token, userId, profile }) {
                                 <td style={{padding:"9px 14px",color:"var(--text3)",whiteSpace:"nowrap"}}>{fmtTime(p.created_at)}</td>
                                 <td style={{padding:"9px 14px"}}><span style={{fontFamily:"var(--mono)",color:"var(--blue)",fontWeight:600,fontSize:12}}>{p.invoice_number||"—"}</span></td>
                                 <td style={{padding:"9px 14px",color:"var(--text)",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.customer||"—"}</td>
-                                <td style={{padding:"9px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>£{parseFloat(p.amount||0).toFixed(2)}</span></td>
+                                <td style={{padding:"9px 14px"}}><span style={{fontFamily:"var(--mono)",fontWeight:600,color:isPartial?"#d97706":"#16a34a"}}>{fmt(p.amount||0)}</span></td>
                                 <td style={{padding:"9px 14px"}}>{methodBadge(p.method)}</td>
                                 <td style={{padding:"9px 14px"}}>
                                   <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
@@ -307,7 +308,7 @@ export function BankingPage({ token, userId, profile }) {
                         )}
                       </div>
                       <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:13,color:isBanked?"#16a34a":"#d97706"}}>
-                        £{dayTotal.toFixed(2)} {isBanked?"✓ banked":"— unbanked"}
+                        {fmt(dayTotal)} {isBanked?"✓ banked":"— unbanked"}
                       </span>
                     </div>
                   </div>
