@@ -1,7 +1,5 @@
 import { useState, useRef } from "react";
-
-const SUPABASE_URL = "https://szcogfyrhlrsxnwepnea.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y29nZnlyaGxyc3hud2VwbmVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODY1MzEsImV4cCI6MjA5NDA2MjUzMX0.oU60PfFsb0QHmn1qKasNKIxS8G30xhiMDxAPtMQTNT4";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./lib/supabase.js";
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 const CSS = `

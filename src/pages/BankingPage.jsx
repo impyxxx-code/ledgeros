@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { SkeletonTable } from "../components/ui.jsx";
-import { fmt } from "../lib/utils.js";
+import { fmt, escHtml } from "../lib/utils.js";
 
 export function BankingPage({ token, userId, profile }) {
   const [payments, setPayments] = useState([]);
@@ -68,7 +68,9 @@ export function BankingPage({ token, userId, profile }) {
       const d = (p.created_at||"").split("T")[0];
       rows.push([d, fmtTime(p.created_at), p.invoice_number||"", p.customer||"", parseFloat(p.amount||0).toFixed(2), p.method||"", p.recorded_by_name||"", p.notes||"", depositRefs[d]||""]);
     });
-    const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+    // Guard against CSV formula injection (cells starting with = + - @ etc.)
+    const csvCell = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g,'""') + '"'; };
+    const csv = rows.map(r=>r.map(csvCell).join(",")).join("\n");
     const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`banking-recon-${new Date().toISOString().split("T")[0]}.csv`; a.click();
   };
 
@@ -82,9 +84,9 @@ export function BankingPage({ token, userId, profile }) {
       const dayTotal = rows.reduce((s,p)=>s+parseFloat(p.amount||0),0);
       const ref = depositRefs[d] || "";
       const banked = bankedDates[d];
-      html += "<div class='day-hdr'>" + fmtDay(d) + " - £" + dayTotal.toFixed(2) + " " + (banked ? "BANKED" + (ref ? " Ref: " + ref : "") : "NOT YET BANKED") + "</div>";
+      html += "<div class='day-hdr'>" + fmtDay(d) + " - £" + dayTotal.toFixed(2) + " " + (banked ? "BANKED" + (ref ? " Ref: " + escHtml(ref) : "") : "NOT YET BANKED") + "</div>";
       html += `<table><thead><tr><th>Time</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Method</th><th>Agent</th><th>Notes</th></tr></thead><tbody>`;
-      rows.forEach(p => { html += "<tr><td>" + fmtTime(p.created_at) + "</td><td>" + (p.invoice_number||"") + "</td><td>" + (p.customer||"") + "</td><td style='text-align:right'>&pound;" + parseFloat(p.amount||0).toFixed(2) + "</td><td>" + (p.method||"") + "</td><td>" + (p.recorded_by_name||"") + "</td><td>" + (p.notes||"") + "</td></tr>"; });
+      rows.forEach(p => { html += "<tr><td>" + fmtTime(p.created_at) + "</td><td>" + escHtml(p.invoice_number||"") + "</td><td>" + escHtml(p.customer||"") + "</td><td style='text-align:right'>&pound;" + parseFloat(p.amount||0).toFixed(2) + "</td><td>" + escHtml(p.method||"") + "</td><td>" + escHtml(p.recorded_by_name||"") + "</td><td>" + escHtml(p.notes||"") + "</td></tr>"; });
       html += "<tr><td colspan='3' style='text-align:right;font-weight:bold;background:#f8fafc'>Day total</td><td class='total'>&pound;" + dayTotal.toFixed(2) + "</td><td colspan='3'></td></tr></tbody></table>";
     });
     html += "<p style='margin-top:20px;border-top:1px solid #e2e8f0;padding-top:10px;color:#64748b'>Total collected: &pound;" + total.toFixed(2) + " across " + payments.length + " payments</p></body></html>";
