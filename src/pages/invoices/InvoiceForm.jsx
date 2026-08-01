@@ -681,7 +681,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
         ) : (
           <div style={{ padding:"8px 14px 12px" }}>
             <div className="mob-customer-search" style={{ position:"relative" }}>
-          <SearchDropdown placeholder="🔍  Search customers..." items={mobCusts} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />
+          <SearchDropdown placeholder="Search customers..." items={mobCusts} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />
         </div>
             {/* Recent customers — quick tap */}
             {mobCusts.length > 0 && (

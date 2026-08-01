@@ -287,7 +287,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .user-role-badge{
   display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.4px;
   text-transform:uppercase;padding:1px 6px;border-radius:3px;
-  background:rgba(37,99,235,.15);color:#93c5fd;margin-top:2px;
+  background:rgba(221,43,15,.15);color:#ff6a4d;margin-top:2px;
 }
 .signout-btn{
   margin-left:auto;background:none;border:none;
@@ -326,9 +326,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
   box-sizing:border-box;
 }
 .search-input:focus{
-  border-color:rgba(37,99,235,.5);
+  border-color:rgba(221,43,15,.5);
   background:rgba(255,255,255,.08);
-  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  box-shadow:0 0 0 3px rgba(221,43,15,.12);
 }
 .search-wrap:has(.search-input:focus) i,.search-wrap:has(.search-input:focus)>svg{color:#818cf8;transform:translateY(-50%) scale(1.15) rotate(-10deg)}
 .search-input::placeholder{color:rgba(255,255,255,.25)}
@@ -509,7 +509,7 @@ tr:hover td{background:#f8fafd}
 .b-green{background:var(--green-lt);color:var(--green-dk)}.b-green::before{background:var(--green)}
 .b-red{background:var(--red-lt);color:var(--red-dk)}.b-red::before{background:var(--red)}
 .b-amber{background:var(--amber-lt);color:var(--amber-dk)}.b-amber::before{background:var(--amber)}
-.b-blue{background:var(--blue-lt);color:#1e40af}.b-blue::before{background:var(--blue)}
+.b-blue{background:var(--blue-lt);color:#ae1800}.b-blue::before{background:var(--blue)}
 .b-purple{background:var(--purple-lt);color:var(--purple-dk)}.b-purple::before{background:var(--purple)}
 .b-gray{background:#f1f5f9;color:var(--text2)}.b-gray::before{background:var(--text3)}
 .b-orange{background:var(--orange-lt);color:var(--orange-dk)}.b-orange::before{background:var(--orange)}
@@ -559,8 +559,8 @@ tr:hover td{background:#f8fafd}
 
 /* 1 · PRIMARY — Shine Glint */
 .bp{
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
-  box-shadow:0 2px 8px rgba(37,99,235,.28);
+  background:linear-gradient(135deg,#dd2b0f,#ae1800);color:#fff;
+  box-shadow:0 2px 8px rgba(221,43,15,.28);
 }
 .bp::after{
   content:"";position:absolute;inset:0;
@@ -569,7 +569,7 @@ tr:hover td{background:#f8fafd}
   transition:none;pointer-events:none;border-radius:inherit;
 }
 .bp{transition:all .25s cubic-bezier(.34,1.56,.64,1)}
-.bp:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);box-shadow:0 8px 24px rgba(37,99,235,.45);transform:translateY(-3px) scale(1.04)}
+.bp:hover{background:linear-gradient(135deg,#ae1800,#8a1400);box-shadow:0 8px 24px rgba(221,43,15,.4);transform:translateY(-3px) scale(1.04)}
 .bp:hover::after{animation:btn-glint .55s ease forwards}
 .bp:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
 .bp:disabled::after{display:none}
@@ -582,7 +582,7 @@ tr:hover td{background:#f8fafd}
 }
 .bo:hover{
   border-color:var(--blue);color:var(--blue);background:var(--blue-lt);
-  box-shadow:0 4px 12px rgba(37,99,235,.10);
+  box-shadow:0 4px 12px rgba(221,43,15,.10);
   transform:translateY(-1px);
 }
 
@@ -653,7 +653,7 @@ tr:hover td{background:#f8fafd}
 }
 .fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{
   border-color:var(--blue);
-  box-shadow:0 0 0 4px rgba(37,99,235,.16);
+  box-shadow:0 0 0 4px rgba(221,43,15,.16);
   transform:translateY(-1px);
 }
 .fgrp input::placeholder,.fgrp textarea::placeholder{color:var(--text3)}
@@ -790,17 +790,17 @@ tr:hover td{background:#f8fafd}
 .inv-table tr:last-child td{border-bottom:none}
 .inv-table tr:nth-child(even) td{background:#f8fafc}
 .inv-table tbody tr{transition:background .12s,transform .18s var(--ease),box-shadow .18s var(--ease);cursor:pointer}
-.inv-table tbody tr:hover td{background:rgba(37,99,235,.05)!important}
-.inv-table tbody tr:hover{transform:scale(1.008);box-shadow:0 4px 16px rgba(37,99,235,.12);position:relative;z-index:1}
+.inv-table tbody tr:hover td{background:rgba(221,43,15,.05)!important}
+.inv-table tbody tr:hover{transform:scale(1.008);box-shadow:0 4px 16px rgba(221,43,15,.12);position:relative;z-index:1}
 .inventory-table{width:100%;border-collapse:collapse}
 .inventory-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 .inventory-table td{padding:10px 14px;font-size:13px;border-bottom:0.5px solid var(--border)}
 .inventory-table tbody tr{transition:background .12s;cursor:default}
-.inventory-table tbody tr:hover td{background:rgba(37,99,235,.03)!important}
+.inventory-table tbody tr:hover td{background:rgba(221,43,15,.03)!important}
 .inv-thead th{position:sticky;top:54px;z-index:49;background:var(--white);box-shadow:inset 0 -1px 0 var(--border)}
 .inv-totals-box{width:280px;margin-left:auto;margin-bottom:24px;background:#ffffff;padding:8px 0}
 .inv-tot-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#0f172a}
-.inv-tot-row.inv-tot-grand{border-top:2px solid #e2e8f0;margin-top:8px;padding:10px 10px 6px;border-radius:6px;background:#eff6ff;font-size:13px;font-weight:600}
+.inv-tot-row.inv-tot-grand{border-top:2px solid #e2e8f0;margin-top:8px;padding:10px 10px 6px;border-radius:6px;background:#faf8f6;font-size:13px;font-weight:600}
 .inv-balance-box{background:#1e1b4b;border-radius:9px;padding:11px 14px;margin-top:16px;display:flex;justify-content:space-between;align-items:center}
 .inv-balance-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .inv-balance-val{color:#fff;font-size:17px;font-weight:800}
@@ -831,7 +831,7 @@ tr:hover td{background:#f8fafd}
   font-family:var(--sans);outline:none;width:100%;
   transition:border .12s,box-shadow .12s;
 }
-.il-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.il-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(221,43,15,.1)}
 
 .ib{
   background:none;border:none;color:var(--text3);cursor:pointer;
@@ -1262,7 +1262,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
   }
   .mob-customer-search input:focus{
     border-color:var(--blue)!important;
-    box-shadow:0 0 0 3px rgba(37,99,235,.15)!important;
+    box-shadow:0 0 0 3px rgba(221,43,15,.15)!important;
   }
 }
 
@@ -1378,7 +1378,7 @@ padding-bottom:env(safe-area-inset-bottom,0px)}
 .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:13px;font-family:var(--sans);font-weight:500;min-width:280px;max-width:400px;pointer-events:all;animation:slideInRight .45s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(0,0,0,.06)}
 .toast.success{background:#fff;color:#166534;border-left:3px solid var(--green)}
 .toast.error{background:#fff;color:#991b1b;border-left:3px solid var(--red)}
-.toast.info{background:#fff;color:#1e40af;border-left:3px solid var(--blue)}
+.toast.info{background:#fff;color:#ae1800;border-left:3px solid var(--blue)}
 .toast.warn{background:#fff;color:#92400e;border-left:3px solid var(--amber)}
 .toast i{transition:transform .3s var(--ease)}
 .toast.success i{animation:toastIconPop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
@@ -1477,7 +1477,7 @@ class ErrorBoundary extends React.Component {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div style={{ fontSize:20,fontWeight:600 }}>Something went wrong</div>
           <div style={{ fontSize:14,color:"#666",maxWidth:400,textAlign:"center" }}>{this.state.error?.message || "An unexpected error occurred."}</div>
-          <button style={{ padding:"10px 20px",background:"#2563eb",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
+          <button style={{ padding:"10px 20px",background:"#dd2b0f",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:14 }} onClick={() => this.setState({ hasError:false, error:null })}>Try Again</button>
         </div>
       );
     }
@@ -2163,9 +2163,9 @@ export default function App() {
         )}
         {showInstallBanner && isMobile() && (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, padding: "12px 16px 20px", background: "#060d1f", borderTop: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 -4px 24px rgba(0,0,0,.4)" }}>
-            <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0, borderRadius: 9 }}><rect width="32" height="32" rx="7" fill="#1e1b4b"/><rect x="9" y="7" width="4" height="18" rx="2" fill="#ffffff"/><rect x="9" y="21" width="14" height="4" rx="2" fill="#ffffff"/><rect x="18" y="7" width="4" height="9" rx="2" fill="#60a5fa"/></svg>
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0, borderRadius: 9 }}><rect width="32" height="32" rx="7" fill="#201e1d"/><rect x="9" y="7" width="4" height="18" rx="2" fill="#ffffff"/><rect x="9" y="21" width="14" height="4" rx="2" fill="#ffffff"/><rect x="18" y="7" width="4" height="9" rx="2" fill="#ff6a4d"/></svg>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 2 }}>Add LedgerOS to your home screen</div><div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", lineHeight: 1.4 }}>Get instant access — works offline too</div></div>
-            <button onClick={handleInstall} style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--sans)", whiteSpace: "nowrap", flexShrink: 0 }}>Add</button>
+            <button onClick={handleInstall} style={{ background: "linear-gradient(135deg,#dd2b0f,#ae1800)", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--sans)", whiteSpace: "nowrap", flexShrink: 0 }}>Add</button>
             <button onClick={() => setShowInstallBanner(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", cursor: "pointer", padding: 4, flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         )}
@@ -2272,7 +2272,7 @@ export default function App() {
                   { label:"New Invoice", color:"#dd2b0f", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
                   { label:"Record Payment", color:"#16a34a", action:() => { setPage("invoices"); setPendingFilter("pending"); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
                   { label:"New Customer", color:"#f59e0b", action:() => { setPage("contacts"); setTriggerNewContact(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> },
-                  { label:"Delivery Note", color:"#7c3aed", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+                  { label:"Delivery Note", color:"#201e1d", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
                 ].map(a => (
                   <div key={a.label} role="button" tabIndex={0} onClick={() => { a.action(); setShowFabMenu(false); }} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){a.action();setShowFabMenu(false);}}}
                     style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"16px 14px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, boxShadow:"0 4px 20px rgba(0,0,0,.15)", cursor:"pointer", minHeight:80 }}>
@@ -2296,23 +2296,23 @@ export default function App() {
               </div>
               {/* Agent: access level info box */}
               {profile?.role!=="admin" && (
-                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#eff6ff", border:"1px solid #bfdbfe", display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <div style={{ margin:"4px 12px 12px", padding:"12px 14px", borderRadius:12, background:"#faf8f6", border:"1px solid #e7e2dc", display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dd2b0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#1e40af" }}>Your Access Level: Agent</div>
-                    <div style={{ fontSize:11, color:"#3b82f6", marginTop:2 }}>You can manage your own invoices, customers and delivery notes. Admin-only sections (inventory, banking, reports) aren't shown.</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#201e1d" }}>Your Access Level: Agent</div>
+                    <div style={{ fontSize:11, color:"#57534e", marginTop:2 }}>You can manage your own invoices, customers, deliveries and stock. Admin-only sections (banking, reports, settings) aren't shown.</div>
                   </div>
                 </div>
               )}
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
-                { label:"Sales", color:"#2563eb", items:["statement","agent-report","analytics"] },
-                { label:"Operations", color:"#7c3aed", items:["inventory","purchases","stock-adj","delivery-notes","import"] },
-                { label:"Finance", color:"#16a34a", items:["admin-reports","banking","credits"] },
-                { label:"Settings", color:"#64748b", items:["settings"] },
+                { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
+                { label:"Operations", color:"#201e1d", items:["inventory","purchases","stock-adj","import"] },
+                { label:"Finance", color:"#16a34a", items:["banking","admin-reports","analytics"] },
+                { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
-                { label:"My Tools", color:"#16a34a", items:["delivery-notes","agent-report"] },
-                { label:"Account", color:"#64748b", items:["settings"] },
+                { label:"My Tools", color:"#dd2b0f", items:["delivery-notes","agent-report"] },
+                { label:"Account", color:"#8a8580", items:["settings"] },
               ]).map(group => {
                 const visItems = NAV.filter(n =>
                   group.items.includes(n.id) &&

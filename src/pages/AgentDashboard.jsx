@@ -128,7 +128,7 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
                   <div style={{ fontSize:12, color:"var(--text2)" }}>{days} day{days!==1?"s":""} overdue{myOverdueInv.length>1?` · +${myOverdueInv.length-1} more`:""}</div>
                 </div>
                 {phone && <a href={waLink(phone, `Hi ${top.customer}, this is a reminder that ${fmt(top.balance||top.amount)} (${top.invoice_number}) is overdue with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                  style={{ flexShrink:0, padding:"8px 14px", borderRadius:8, background:"var(--red)", color:"#fff", fontSize:12, fontWeight:700, textDecoration:"none", minHeight:36, display:"flex", alignItems:"center" }}>Chase</a>}
+                  style={{ flexShrink:0, padding:"8px 16px", borderRadius:8, background:"var(--red)", color:"#fff", fontSize:12, fontWeight:700, textDecoration:"none", minHeight:44, display:"flex", alignItems:"center" }}>Chase</a>}
               </div>
             );
           })()}
@@ -149,9 +149,9 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
                         <span className={"badge "+(inv.status==="overdue"?"b-red":"b-amber")}>{inv.status}</span>
                         {phone && <div style={{ display:"flex", gap:8 }}>
-                          <a href={`tel:${phone}`} onClick={e=>e.stopPropagation()} style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text2)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                          <a href={`tel:${phone}`} onClick={e=>e.stopPropagation()} style={{ width:44, height:44, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text2)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
                           <a href={waLink(phone, `Hi ${inv.customer}, this is a reminder that ${fmt(inv.status==="partial"?(inv.balance||0):inv.amount)} (${inv.invoice_number}) is ${inv.status} with Arkham Retail Ltd. Please arrange payment at your earliest convenience. Thank you.`)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                            style={{ width:36, height:36, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"#16a34a" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                            style={{ width:44, height:44, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color:"#16a34a" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
                         </div>}
                       </div>
                     </div>
@@ -194,18 +194,31 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
         onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
         onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — £${amt.toFixed(2)} received via ${method}. Remaining: £${newBal.toFixed(2)}`)}
       />}
-      <div className="welcome-row">
-        <div><div className="welcome-h">{greeting}, {name} 👋</div><div className="welcome-sub"><span className="trend-pill">Your personal dashboard</span></div></div>
-        <div className="quick-actions">
-          <div className="qa-btn" onClick={() => setPage("invoices")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice</div>
-          <div className="qa-btn" onClick={() => setPage("contacts")}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer</div>
+      <div style={{ margin: "-26px -28px 20px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+          <div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: ".04em", color: "#e15b47", marginBottom: 8, fontFamily: "'Archivo',system-ui,sans-serif" }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: "#dd2b0f" }} />Your Dashboard</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "-.02em", fontFamily: "'Archivo',system-ui,sans-serif" }}>{greeting}, {name}</div>
+          </div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <button onClick={() => setPage("invoices")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(248,247,245,.9)", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Invoice</button>
+            <button onClick={() => setPage("contacts")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 0, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 800, fontFamily: "'Archivo',system-ui,sans-serif", cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Add Customer</button>
+          </div>
         </div>
-      </div>
-      <div className="kgrid">
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--blue-lt)" }}><span style={{ color: "var(--blue)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--blue-lt)", color: "#1e40af" }}>{myInv.length} total</span></div><div className="kpi-val">{myInv.length}</div><div className="kpi-label">My Invoices</div></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--green-lt)" }}><span style={{ color: "var(--green)" }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--green-lt)", color: "var(--green-dk)" }}>Paid</span></div><div className="kpi-val" style={{ color: "var(--green)" }}>{fmt(myPaid)}</div><div className="kpi-label">Total Sales</div></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--amber-lt)" }}><span style={{ color: "var(--amber)" }}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--amber-lt)", color: "var(--amber-dk)" }}>Pending</span></div><div className="kpi-val" style={{ color: "var(--amber)" }}>{fmt(myPending)}</div><div className="kpi-label">Awaiting Payment</div></div>
-        <div className="kpi"><div className="kpi-top"><div className="kpi-icon" style={{ background: "var(--purple-lt)" }}><span style={{ color: "var(--purple)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span></div><span className="kpi-badge" style={{ background: "var(--purple-lt)", color: "var(--purple-dk)" }}>{myCusts.length}</span></div><div className="kpi-val" style={{ color: "var(--purple)" }}>{myCusts.length}</div><div className="kpi-label">My Customers</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+          {[
+            { label: "My Invoices", val: String(myInv.length), sub: myInv.length + " total", color: "#f8f7f5" },
+            { label: "Total Sales", val: fmt(myPaid), sub: "paid", color: "#7fd39b" },
+            { label: "Awaiting Payment", val: fmt(myPending), sub: "pending", color: "#ffb020" },
+            { label: "My Customers", val: String(myCusts.length), sub: "customers", color: "#f8f7f5" },
+          ].map((k, i) => (
+            <div key={i} style={{ padding: "16px 18px", borderRight: i < 3 ? "1px solid rgba(255,255,255,.08)" : "none" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.5)", letterSpacing: ".2px", marginBottom: 6 }}>{k.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: k.color, letterSpacing: "-1px", fontFamily: "'Archivo',system-ui,sans-serif", fontVariantNumeric: "tabular-nums" }}>{k.val}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop: 2 }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
       </div>
       {myOverdue > 0 && <div style={{ background: "var(--red-lt)", border: "0.5px solid #fca5a5", borderRadius: "var(--rl)", padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div style={{ fontWeight: 600, color: "var(--red-dk)", marginBottom: 2 }}>Overdue invoices: {fmt(myOverdue)}</div><div style={{ fontSize: 12, color: "var(--red-dk)", opacity: 0.7 }}>Please follow up with your customers</div></div></div>}
       <div className="card">
@@ -250,7 +263,7 @@ export function AgentDashboard({ invoices, setInvoices, contacts, setContacts, p
             <div className="empty-state">
               <div className="empty-state-icon">
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                  <rect x="10" y="16" width="44" height="36" rx="6" fill="var(--blue-lt)" stroke="#c7d2fe" strokeWidth="1.5"/>
+                  <rect x="10" y="16" width="44" height="36" rx="6" fill="var(--blue-lt)" stroke="#f0c9c0" strokeWidth="1.5"/>
                   <path d="M10 24 L32 38 L54 24" stroke="#ff6a4d" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="48" cy="14" r="7" fill="#dd2b0f"/>
                   <path d="M45 14h6M48 11v6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>

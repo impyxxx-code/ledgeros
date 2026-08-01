@@ -106,7 +106,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
       { label:"Collected", val:fmt(paid), accent:"#22c55e", onClick:()=>{setPendingFilter("paid");setPage("invoices");} },
       { label:"Pending", val:String(pendingCount), accent:"#f59e0b", onClick:()=>{setPendingFilter("pending");setPage("invoices");} },
       { label:"Today", val:fmt(todayRevenue), accent:"#57534e", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
-      { label:"Invoices Today", val:String(todayCount), accent:"#0891b2", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
+      { label:"Invoices Today", val:String(todayCount), accent:"#201e1d", onClick:()=>{setPendingFilter("all");setPage("invoices");} },
     ];
     return (
       <>
