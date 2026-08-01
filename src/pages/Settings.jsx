@@ -65,7 +65,7 @@ export function Settings({ auth, profile, darkMode: darkModeProp, toggleDark, on
         <div className="card" style={{ padding:24 }}>
           <div className="ct" style={{ marginBottom:20 }}>Account</div>
           <div style={{ display:"flex",alignItems:"center",gap:16,padding:"16px 0",borderBottom:"1px solid var(--border)" }}>
-            <div style={{ width:56,height:56,borderRadius:"50%",background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
+            <div style={{ width:56,height:56,borderRadius:0,background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff" }}>{auth?.user?.email?.[0]?.toUpperCase()}</div>
             <div><div style={{ fontWeight:700,fontSize:16 }}>{auth?.user?.email}</div><div style={{ fontSize:12,color:"var(--text3)",marginTop:3 }}>Administrator</div></div>
           </div>
           <div style={{ marginTop:20,paddingTop:20,borderTop:"1px solid var(--border)" }}>

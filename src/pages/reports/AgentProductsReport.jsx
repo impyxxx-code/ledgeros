@@ -98,7 +98,7 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
         <div key={agent.id} className="card" style={{marginBottom:18}}>
           <div className="ch">
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{width:40,height:40,borderRadius:"50%",background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>{(agent.full_name||"U")[0].toUpperCase()}</div>
+              <div style={{width:40,height:40,borderRadius:0,background:"#201e1d",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>{(agent.full_name||"U")[0].toUpperCase()}</div>
               <div>
                 <div className="ct">{agent.full_name||"Unknown Agent"}</div>
                 <div className="cs">{totalInvoices} invoice{totalInvoices!==1?"s":""} · {productLines.length} product{productLines.length!==1?"s":""} sold</div>

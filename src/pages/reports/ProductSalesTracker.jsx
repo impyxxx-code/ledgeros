@@ -138,7 +138,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Sales by Agent</div>
             {Object.entries(selected.agentBreakdown).sort((a,b)=>b[1]-a[1]).map(([name, qty]) => (
               <div key={name} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#201e1d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{name[0]?.toUpperCase()}</div>
+                <div style={{ width: 28, height: 28, borderRadius:0, background: "#201e1d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{name[0]?.toUpperCase()}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{name}</span>

@@ -108,7 +108,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
           <div className="modal contact-modal" style={{ maxWidth: 620, width: "100%" }}>
             <div className="modal-header">
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:44,height:44,borderRadius:"50%",background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][viewContact.name?.charCodeAt(0)%5]||"#dd2b0f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
+                <div style={{ width:44,height:44,borderRadius:0,background:["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][viewContact.name?.charCodeAt(0)%5]||"#dd2b0f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:"#fff" }}>{viewContact.name?.[0]?.toUpperCase()}</div>
                 <div>
                   <div style={{ fontWeight:700,fontSize:16 }}>{viewContact.name}</div>
                   <div style={{ fontSize:12,color:"var(--text3)",marginTop:2 }}>{viewContact.type||"customer"} · {viewContact.city||"No location"}</div>
@@ -266,7 +266,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Contacts</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers & <span style={{ background: "linear-gradient(135deg,#ff6a4d,#dd2b0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Suppliers</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Customers &amp; Suppliers</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {contacts.filter(c => c.type === "customer" || c.type === "both").length} customers
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />

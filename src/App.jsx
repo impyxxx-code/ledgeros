@@ -493,7 +493,7 @@ tr:hover td{background:#f8fafd}
 
 /* ── Avatar ── */
 .c-av{
-  width:30px;height:30px;border-radius:50%;
+  width:30px;height:30px;border-radius:0;
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
 }
@@ -2091,13 +2091,13 @@ export default function App() {
             const visibleTabs = section.tabs.filter(t => !t.adminOnly || isAdmin);
             if (visibleTabs.length < 2) return null;
             return (
-              <div className="subnav-bar" style={{ background:"#201e1d", borderBottom:"1px solid rgba(255,255,255,.10)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:56, zIndex:40, flexShrink:0 }}>
+              <div className="subnav-bar" style={{ background:"#fff", borderBottom:"1px solid rgba(32,30,29,.10)", display:"flex", alignItems:"center", padding:"0 20px", position:"sticky", top:56, zIndex:40, flexShrink:0 }}>
                 {visibleTabs.map(tab => (
-                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?600:400, color:page===tab.id?"#ff6a4d":"rgba(255,255,255,.4)", borderBottom:page===tab.id?"2px solid #dd2b0f":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
-                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.borderBottom="2px solid rgba(221,43,15,.4)";}}}
-                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="rgba(255,255,255,.4)";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
+                  <div key={tab.id} onClick={() => setPage(tab.id)} style={{ padding:"0 14px", height:42, display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:page===tab.id?700:500, color:page===tab.id?"#dd2b0f":"#57534e", borderBottom:page===tab.id?"2px solid #dd2b0f":"2px solid transparent", cursor:"pointer", whiteSpace:"nowrap", transition:"color .12s,border-color .12s" }}
+                    onMouseEnter={e=>{if(page!==tab.id){e.currentTarget.style.color="#201e1d";e.currentTarget.style.borderBottom="2px solid rgba(221,43,15,.35)";}}}
+                    onMouseLeave={e=>{if(page!==tab.id){e.currentTarget.style.color="#57534e";e.currentTarget.style.borderBottom="2px solid transparent";}}}>
                     {tab.label}
-                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(239,68,68,.2)", color:"#fca5a5", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(239,68,68,.3)" }}>{tab.badge}</span>}
+                    {tab.badge && <span style={{ fontSize:9, fontWeight:700, background:"rgba(221,43,15,.12)", color:"#ae1800", padding:"1px 5px", borderRadius:20, border:"1px solid rgba(221,43,15,.25)" }}>{tab.badge}</span>}
                   </div>
                 ))}
               </div>

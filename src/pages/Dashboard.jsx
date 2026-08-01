@@ -91,10 +91,10 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
 
   // ── AI Insights ──
   const insights = [
-    overdueCount > 0 && { Icon: AlertCircle, color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now` },
-    lowStock.length > 0 && { Icon: Package, color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon` },
-    pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment` },
-    paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period` },
+    overdueCount > 0 && { Icon: AlertCircle, color: "var(--red)", bg: "var(--red-lt)", text: `${overdueCount} overdue invoice${overdueCount > 1 ? "s" : ""} totalling ${fmt(overdue)} — chase now`, cta: "Chase", action: drillOutstanding },
+    lowStock.length > 0 && { Icon: Package, color: "var(--amber)", bg: "var(--amber-lt)", text: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low on stock — reorder soon`, cta: "Reorder", action: drillLowStock },
+    pendingCount > 0 && { Icon: Clock, color: "var(--blue)", bg: "var(--blue-lt)", text: `${pendingCount} pending invoice${pendingCount > 1 ? "s" : ""} worth ${fmt(unpaid - overdue)} awaiting payment`, cta: "Review", action: drillOutstanding },
+    paidCount > 0 && { Icon: TrendingUp, color: "var(--green)", bg: "var(--green-lt)", text: `Average invoice value is ${fmt(avgInvoice)} — top performer this period`, cta: "View", action: drillOutstanding },
   ].filter(Boolean).slice(0, 3);
 
   if (isMobile()) {
@@ -287,10 +287,10 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
       {insights.length > 0 && (
         <div style={{ border: "2px solid var(--border)", marginBottom: 20 }}>
           {insights.map((insight, i) => (
-            <div key={i} onClick={() => i === 0 ? drillOutstanding() : i === 1 ? drillLowStock() : drillOutstanding()} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: i < insights.length - 1 ? "2px solid var(--border)" : "none", cursor: "pointer", color: i === 0 ? "#ae1800" : "var(--text)" }}>
+            <div key={i} onClick={() => (insight.action || drillOutstanding)()} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: i < insights.length - 1 ? "2px solid var(--border)" : "none", cursor: "pointer", color: i === 0 ? "#ae1800" : "var(--text)" }}>
               <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13 }}>{String(i + 1).padStart(2, "0")}</div>
               <div style={{ fontSize: 14, lineHeight: 1.4 }}>{insight.text}</div>
-              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13, color: "#ae1800", whiteSpace: "nowrap" }}>View →</div>
+              <div style={{ fontFamily: "'Archivo',system-ui,sans-serif", fontWeight: 800, fontSize: 13, color: "#ae1800", whiteSpace: "nowrap" }}>{insight.cta} →</div>
             </div>
           ))}
         </div>
@@ -679,7 +679,7 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
                     <td><span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color: colors[i] || "var(--text3)" }}>{medals[i] || i + 1}</span></td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][i % 5]},${["#ff6a4d","#2ea04d","#fbbf24","#3a3735","#dd2b0f"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
+                        <div style={{ width: 32, height: 32, borderRadius:0, background: `linear-gradient(135deg,${["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800"][i % 5]},${["#ff6a4d","#2ea04d","#fbbf24","#3a3735","#dd2b0f"][i % 5]})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{(agent.full_name || "U")[0].toUpperCase()}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{agent.full_name || "Unknown"}</div>
                           <div style={{ fontSize: 11, color: "var(--text3)", textTransform: "capitalize" }}>{agent.role}</div>

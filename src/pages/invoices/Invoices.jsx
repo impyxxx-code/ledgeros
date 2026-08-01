@@ -329,7 +329,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 1 }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Invoice Management</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Invoices & <span style={{ background: "linear-gradient(135deg,#ff6a4d,#dd2b0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Payments</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Invoices</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {invoices.length} total
               <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "inline-block" }} />
@@ -592,7 +592,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
                 const aname=agent?.full_name||"—";
                 const col=["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"][aname.charCodeAt(0)%7]||"#64748b";
                 return <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)",fontWeight:500}}>
-                  <div style={{width:16,height:16,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{aname[0]?.toUpperCase()||"?"}</div>
+                  <div style={{width:16,height:16,borderRadius:0,background:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{aname[0]?.toUpperCase()||"?"}</div>
                   {aname.split(" ")[0]}
                 </div>;
               })()}</td>

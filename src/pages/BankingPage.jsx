@@ -99,8 +99,8 @@ export function BankingPage({ token, userId, profile }) {
         <div style={{position:"absolute",bottom:-60,left:-40,width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(221,43,15,.06) 0%,transparent 65%)",pointerEvents:"none"}} />
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
           <div>
-            <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:700,letterSpacing:"1.4px",textTransform:"uppercase",color:"#e15b47",marginBottom:6}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dd2b0f",animation:"pulse 2.4s ease-in-out infinite"}} />Banking & Cash</div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-1.2px"}}>Cash & <span style={{background:"linear-gradient(135deg,#ff6a4d,#dd2b0f)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Reconciliation</span></div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:700,letterSpacing:"1.4px",textTransform:"uppercase",color:"#e15b47",marginBottom:6}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dd2b0f",animation:"pulse 2.4s ease-in-out infinite"}} />Banking</div>
+            <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-1.2px"}}>Banking &amp; Cash</div>
             <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Detailed cash reconciliation for banking</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -196,7 +196,7 @@ export function BankingPage({ token, userId, profile }) {
                           <td style={{padding:"9px 12px"}}>{methodBadge(p.method)}</td>
                           <td style={{padding:"9px 12px"}}>
                             <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
+                              <div style={{width:16,height:16,borderRadius:0,background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
                               {agentName.split(" ")[0]}
                             </div>
                           </td>
@@ -277,7 +277,7 @@ export function BankingPage({ token, userId, profile }) {
                                 <td style={{padding:"9px 14px"}}>{methodBadge(p.method)}</td>
                                 <td style={{padding:"9px 14px"}}>
                                   <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",borderRadius:20,background:"var(--bg)",fontSize:11,color:"var(--text2)"}}>
-                                    <div style={{width:16,height:16,borderRadius:"50%",background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
+                                    <div style={{width:16,height:16,borderRadius:0,background:agentCol,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{agentName[0]?.toUpperCase()||"?"}</div>
                                     {agentName.split(" ")[0]}
                                   </div>
                                 </td>
