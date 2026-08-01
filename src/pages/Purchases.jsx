@@ -3,11 +3,11 @@ import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, today, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { postPurchaseJournal } from "../lib/journal.js";
-import { EmptyState, MobileCard } from "../components/ui.jsx";
+import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
 
-export function Purchases({ contacts, setContacts, products, accounts = [], token, userId }) {
+export function Purchases({ contacts, setContacts, products, setProducts, accounts = [], token, userId }) {
   const [pos, setPOs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,6 +40,62 @@ export function Purchases({ contacts, setContacts, products, accounts = [], toke
     setShowForm(false); setSaving(false);
   };
   const updateStatus = async (id, status) => { await sb.patch(token,"purchase_orders",id,{status}); setPOs(prev => prev.map(p => p.id===id?{...p,status}:p)); };
+
+  // ── Goods receipt ─────────────────────────────────────────────────────────
+  const [receivePO, setReceivePO] = useState(null);
+  const [receiveLines, setReceiveLines] = useState([]);
+  const [receiveInputs, setReceiveInputs] = useState({}); // lineId -> qty receiving now
+  const [loadingLines, setLoadingLines] = useState(false);
+  const [receiving, setReceiving] = useState(false);
+
+  const openReceive = async (po) => {
+    setReceivePO(po);
+    setLoadingLines(true);
+    const rows = await sb.get(token, "purchase_order_lines", `po_id=eq.${po.id}`);
+    const ls = Array.isArray(rows) ? rows : [];
+    setReceiveLines(ls);
+    const init = {};
+    ls.forEach(l => { init[l.id] = String(Math.max(0, (parseFloat(l.qty) || 0) - (parseFloat(l.qty_received) || 0))); });
+    setReceiveInputs(init);
+    setLoadingLines(false);
+  };
+  const closeReceive = () => { setReceivePO(null); setReceiveLines([]); setReceiveInputs({}); };
+
+  const confirmReceive = async () => {
+    if (!receivePO) return;
+    setReceiving(true);
+    const localStock = {};          // product_id -> running stock (handles a product on >1 line)
+    const summary = [];
+    let allComplete = true;
+    for (const l of receiveLines) {
+      const ordered = parseFloat(l.qty) || 0;
+      const already = parseFloat(l.qty_received) || 0;
+      const now = Math.max(0, Math.min(parseInt(receiveInputs[l.id]) || 0, ordered - already)); // never over-receive
+      if (now > 0 && l.product_id) {
+        const prod = products.find(p => p.id === l.product_id);
+        if (prod) {
+          const base = localStock[l.product_id] != null ? localStock[l.product_id] : (parseFloat(prod.stock_qty) || 0);
+          const newQty = base + now;
+          localStock[l.product_id] = newQty;
+          await sb.patch(token, "products", l.product_id, { stock_qty: newQty });
+          setProducts && setProducts(prev => prev.map(p => p.id === l.product_id ? { ...p, stock_qty: newQty } : p));
+        }
+        await sb.patch(token, "purchase_order_lines", l.id, { qty_received: already + now });
+        summary.push(`${l.product_name || "item"} +${now}`);
+      }
+      if (already + now < ordered) allComplete = false;
+    }
+    const newStatus = allComplete ? "received" : "partial";
+    await sb.patch(token, "purchase_orders", receivePO.id, { status: newStatus, received_date: today() });
+    setPOs(prev => prev.map(p => p.id === receivePO.id ? { ...p, status: newStatus, received_date: today() } : p));
+    if (summary.length) logAudit(token, userId, "stock_received", "purchase_order", receivePO.id, `${receivePO.po_number} goods received: ${summary.join(", ")}`);
+    setReceiving(false);
+    closeReceive();
+    toast.success(summary.length === 0 ? "Nothing to receive" : newStatus === "received" ? "PO fully received — stock updated" : "Partial receipt recorded — stock updated");
+  };
+
+  const statusBadgeCls = (s) => s === "received" ? "b-green" : s === "partial" ? "b-amber" : s === "sent" ? "b-blue" : s === "cancelled" ? "b-red" : "b-gray";
+
   return (
     <div>
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
@@ -71,11 +127,11 @@ export function Purchases({ contacts, setContacts, products, accounts = [], toke
                 title={po.supplier_name}
                 subtitle={`${po.po_number} · ${fmtDate(po.order_date)}`}
                 value={fmt(po.total)}
-                badge={<span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span>}
-                footer={(po.status==="draft"||po.status==="sent") ? (
+                badge={<span className={"badge "+statusBadgeCls(po.status)}>{po.status}</span>}
+                footer={(po.status==="draft"||po.status==="sent"||po.status==="partial") ? (
                   <div style={{ borderTop:"1px solid var(--border)", paddingTop:12 }}>
                     {po.status==="draft" && <button className="btn bo" style={{ width:"100%", minHeight:44 }} onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}
-                    {po.status==="sent" && <button className="btn bp" style={{ width:"100%", minHeight:44 }} onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}
+                    {(po.status==="sent"||po.status==="partial") && <button className="btn bp" style={{ width:"100%", minHeight:44 }} onClick={() => openReceive(po)}>{po.status==="partial"?"Receive remaining":"Receive stock"}</button>}
                   </div>
                 ) : undefined}
               />
@@ -84,9 +140,73 @@ export function Purchases({ contacts, setContacts, products, accounts = [], toke
         )
       ) : (
       <div className="card"><div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table style={{minWidth:420}}><thead><tr><th>PO #</th><th>Supplier</th><th className="hm">Order Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+(po.status==="received"?"b-green":po.status==="sent"?"b-blue":po.status==="cancelled"?"b-red":"b-gray")}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{po.status==="sent"&&<button className="btn bp bsm" onClick={() => updateStatus(po.id,"received")}>Mark Received</button>}</td></tr>)}
+        {pos.map(po => <tr key={po.id}><td className="mono" style={{color:"var(--blue)",fontSize:12}}>{po.po_number}</td><td style={{fontWeight:500}}>{po.supplier_name}</td><td className="hm tm" style={{fontSize:12}}>{fmtDate(po.order_date)}</td><td className="mono" style={{fontWeight:600}}>{fmt(po.total)}</td><td><span className={"badge "+statusBadgeCls(po.status)}>{po.status}</span></td><td>{po.status==="draft"&&<button className="btn bo bsm" onClick={() => updateStatus(po.id,"sent")}>Mark Sent</button>}{(po.status==="sent"||po.status==="partial")&&<button className="btn bp bsm" onClick={() => openReceive(po)}>{po.status==="partial"?"Receive remaining":"Receive stock"}</button>}</td></tr>)}
         {pos.length===0&&<tr><td colSpan={6}><EmptyState icon="report" title="No purchase orders yet" sub="Create your first purchase order to start ordering from suppliers" action={() => setShowForm(true)} actionLabel="New PO" /></td></tr>}
       </tbody></table></div></div>
+      )}
+
+      {receivePO && (
+        <ModalPortal>
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !receiving && closeReceive()} style={{ alignItems: "center" }}>
+            <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 8px 40px rgba(0,0,0,.10)", overflow: "hidden", borderTop: "3px solid #16a34a", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+              <div style={{ background: "#201e1d", padding: "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "#16a34a22", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Receive Stock</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8aa0b8" }}>{receivePO.po_number} · {receivePO.supplier_name}</div>
+                </div>
+                <button onClick={() => !receiving && closeReceive()} style={{ background: "none", border: "none", color: "#8aa0b8", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
+
+              <div style={{ padding: "16px 22px", overflowY: "auto", flex: 1 }}>
+                {loadingLines ? (
+                  <div style={{ padding: "24px", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>Loading lines…</div>
+                ) : receiveLines.length === 0 ? (
+                  <div style={{ padding: "24px", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>This PO has no line items with products to receive.</div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: "var(--text2)" }}>Enter the quantity received for each item. Stock updates on confirm.</div>
+                      <button className="btn bo bsm" onClick={() => { const all = {}; receiveLines.forEach(l => { all[l.id] = String(Math.max(0, (parseFloat(l.qty) || 0) - (parseFloat(l.qty_received) || 0))); }); setReceiveInputs(all); }}>All outstanding</button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {receiveLines.map(l => {
+                        const ordered = parseFloat(l.qty) || 0;
+                        const already = parseFloat(l.qty_received) || 0;
+                        const outstanding = Math.max(0, ordered - already);
+                        return (
+                          <div key={l.id} style={{ border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "12px 14px", background: outstanding === 0 ? "var(--bg)" : "var(--white)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.product_name || "—"}</div>
+                                <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>Ordered {ordered} · Received {already} · <strong style={{ color: outstanding > 0 ? "#d97706" : "#16a34a" }}>{outstanding > 0 ? `${outstanding} outstanding` : "complete"}</strong></div>
+                              </div>
+                              {outstanding === 0 ? (
+                                <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600, whiteSpace: "nowrap" }}>✓ Done</span>
+                              ) : (
+                                <input type="text" inputMode="numeric" value={receiveInputs[l.id] ?? ""} onChange={e => { const v = e.target.value.replace(/[^\d]/g, ""); setReceiveInputs(prev => ({ ...prev, [l.id]: v })); }}
+                                  style={{ width: 72, height: 40, textAlign: "center", border: "1px solid var(--border2)", borderRadius: "var(--rl)", fontSize: 15, fontWeight: 700, fontFamily: "var(--mono)", outline: "none", flexShrink: 0 }} />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: 10, padding: "14px 22px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
+                <button className="btn bo" style={{ flex: 1, minHeight: 44 }} disabled={receiving} onClick={closeReceive}>Cancel</button>
+                <button className="btn bp" style={{ flex: 2, minHeight: 44, background: "#16a34a", borderColor: "#16a34a" }} disabled={receiving || loadingLines || receiveLines.length === 0} onClick={confirmReceive}>{receiving ? "Receiving…" : "Confirm receipt"}</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );
