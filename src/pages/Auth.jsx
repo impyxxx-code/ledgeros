@@ -3,7 +3,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
 import { isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { LOGO } from "../lib/constants.js";
-import LOGO_NEW from "../assets/logo-ar-new.png";
+import LOGO_BADGE from "../assets/logo-ar-badge.png";
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 // Modernist redesign. All auth logic (Supabase sign-in/up, MFA enrol/verify,
@@ -328,7 +328,10 @@ export function Auth({ onAuth, sessionExpired }) {
 
           {/* wordmark + (mobile) live badge */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: 19, letterSpacing: "-.01em" }}>LedgerOS</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+              <img src={LOGO_BADGE} alt="Arkham Retail" style={{ width: 42, height: 42, objectFit: "contain", display: "block", flexShrink: 0 }} />
+              <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: 19, letterSpacing: "-.01em" }}>LedgerOS</div>
+            </div>
             {mob && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(127,211,155,.16)", color: "#7fd39b", fontSize: 10, fontWeight: 700, padding: "3px 9px", textTransform: "uppercase", letterSpacing: ".5px" }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#7fd39b" }} /> Live

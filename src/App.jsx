@@ -41,7 +41,7 @@ import { ModalPortal, SkeletonTable, EmptyState } from "./components/ui.jsx";
 import { SearchDropdown } from "./components/SearchDropdown.jsx";
 import { CommandPalette } from "./components/CommandPalette.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "./lib/constants.js";
-import LOGO_NEW from "./assets/logo-ar-new.png";
+import LOGO_BADGE from "./assets/logo-ar-badge.png";
 import { OnboardingChecklist } from "./components/OnboardingChecklist.jsx";
 import { AIAssistant } from "./components/AIAssistant.jsx";
 import { Purchases } from "./pages/Purchases.jsx";
@@ -1917,7 +1917,8 @@ export default function App() {
             <style>{`
               .topnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:22px;height:56px;padding:0 20px;background:#f6f5f2;border-bottom:1px solid rgba(32,30,29,.10);flex-shrink:0}
               .topnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer}
-              .topnav-mark{width:34px;height:34px;background:#201e1d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:-.5px;font-family:'Archivo',system-ui,sans-serif}
+              .topnav-mark{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+              .topnav-mark img{width:100%;height:100%;object-fit:contain;display:block}
               .topnav-wm{display:flex;flex-direction:column;line-height:1.08}
               .topnav-wm-row{font-size:15px;font-weight:800;color:#201e1d;letter-spacing:-.4px;font-family:'Archivo',system-ui,sans-serif}
               .topnav-wm-os{font-weight:300;color:#8a8580}
@@ -1940,7 +1941,7 @@ export default function App() {
               @media(max-width:1050px){.topnav-wm,.topnav-live{display:none}}
             `}</style>
             <div className="topnav-brand" onClick={() => setPage("dashboard")}>
-              <div className="topnav-mark">AR</div>
+              <div className="topnav-mark"><img src={LOGO_BADGE} alt="Arkham Retail" /></div>
               <div className="topnav-wm">
                 <div className="topnav-wm-row">Ledger<span className="topnav-wm-os">OS</span></div>
                 <div className="topnav-wm-sub">Arkham Retail Ltd</div>
