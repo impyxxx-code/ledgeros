@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
-import { fmt, fmtDate, today, isMobile } from "../lib/utils.js";
+import { fmt, fmtDate, today, isMobile, escHtml } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { postSupplierBillJournal, postSupplierPaymentJournal } from "../lib/journal.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
@@ -8,8 +8,9 @@ import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
 
 // ── SUPPLIER BILLS / ACCOUNTS PAYABLE ───────────────────────────────────────
-export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], token, userId, profile }) {
+export function SupplierBills({ contacts, setContacts, accounts = [], token, userId, profile }) {
   const [bills, setBills] = useState([]);
+  const [pos, setPos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -19,15 +20,16 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
   const [payMethod, setPayMethod] = useState("bank");
   const [payDate, setPayDate] = useState(today());
   const [paying, setPaying] = useState(false);
+  const [stmtSupplier, setStmtSupplier] = useState("");
   const [f, setF] = useState({ supplier_id: "", bill_number: "", bill_date: today(), due_date: "", subtotal: "", vat: "", notes: "", po_id: "" });
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    sb.get(token, "supplier_bills", "order=bill_date.desc")
-      .then(d => setBills(Array.isArray(d) ? d : []))
-      .catch(() => setBills([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      sb.get(token, "supplier_bills", "order=bill_date.desc").then(d => setBills(Array.isArray(d) ? d : [])).catch(() => setBills([])),
+      sb.get(token, "purchase_orders", "order=created_at.desc").then(d => setPos(Array.isArray(d) ? d : [])).catch(() => setPos([])),
+    ]).finally(() => setLoading(false));
   }, [token]);
 
   const suppliers = contacts.filter(c => c.type === "supplier" || c.type === "both");
@@ -96,6 +98,46 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
     toast.success(newStatus === "paid" ? "Bill settled" : "Payment recorded");
   };
 
+  // ── 3-way match (PO ↔ goods receipt ↔ bill) ───────────────────────────────
+  // Compares the linked PO's ordered total against the bill total, and whether
+  // the PO's goods were actually received. Returns null when there's no PO link.
+  const matchStatus = (bill) => {
+    if (!bill.po_id) return null;
+    const po = pos.find(p => p.id === bill.po_id);
+    if (!po) return { level: "warn", label: "PO not found", po: null };
+    const poTotal = parseFloat(po.total) || 0;
+    const billTotal = parseFloat(bill.total) || 0;
+    const diff = billTotal - poTotal;
+    const received = po.status === "received" || po.status === "partial";
+    if (Math.abs(diff) > 0.01) return { level: "warn", label: `${diff > 0 ? "+" : "−"}${fmt(Math.abs(diff))} vs ${po.po_number}`, po };
+    if (!received) return { level: "warn", label: `${po.po_number} not received`, po };
+    return { level: "ok", label: `Matches ${po.po_number}`, po };
+  };
+
+  // ── Supplier statement (printable) ────────────────────────────────────────
+  const printStatement = async () => {
+    if (!stmtSupplier) { toast.error("Pick a supplier for the statement"); return; }
+    const supBills = bills.filter(b => b.supplier_name === stmtSupplier).sort((a, b) => new Date(a.bill_date) - new Date(b.bill_date));
+    if (supBills.length === 0) { toast.error("No bills for that supplier"); return; }
+    let pays = [];
+    try {
+      const ids = supBills.map(b => `"${b.id}"`).join(",");
+      const rows = await sb.get(token, "supplier_bill_payments", `bill_id=in.(${ids})&order=payment_date.asc`);
+      if (Array.isArray(rows)) pays = rows;
+    } catch (_) { /* payments are best-effort */ }
+    // Build a chronological ledger: bill = charge (debit), payment = credit
+    const events = [];
+    supBills.forEach(b => events.push({ date: b.bill_date, ref: b.bill_number || "—", desc: "Bill", charge: parseFloat(b.total) || 0, credit: 0 }));
+    pays.forEach(p => { const b = supBills.find(x => x.id === p.bill_id); events.push({ date: p.payment_date, ref: b?.bill_number || "—", desc: `Payment (${p.method || "—"})`, charge: 0, credit: parseFloat(p.amount) || 0 }); });
+    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+    let run = 0;
+    const totalOwedSup = supBills.reduce((s, b) => s + (parseFloat(b.balance) || 0), 0);
+    const rowsHtml = events.map(e => { run += e.charge - e.credit; return `<tr><td>${fmtDate(e.date)}</td><td>${escHtml(e.ref)}</td><td>${e.desc}</td><td style="text-align:right">${e.charge ? fmt(e.charge) : ""}</td><td style="text-align:right">${e.credit ? "−" + fmt(e.credit) : ""}</td><td style="text-align:right;font-weight:600">${fmt(run)}</td></tr>`; }).join("");
+    const html = `<!DOCTYPE html><html><head><title>Statement — ${escHtml(stmtSupplier)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;padding:30mm 20mm 20mm;color:#0f172a}.accent-bar{height:5px;background:linear-gradient(90deg,#201e1d 0%,#dd2b0f 100%);margin:-30mm -20mm 20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:.5px solid #e2e8f0;padding-bottom:16px;margin-bottom:18px}.t{font-size:26px;font-weight:900;color:#201e1d;letter-spacing:-1px}.sub{font-size:11px;color:#64748b;margin-top:2px}.owed{background:#201e1d;color:#fff;border-radius:8px;padding:10px 16px;text-align:right}.owed .l{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.5)}.owed .v{font-size:20px;font-weight:800}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f1f5f9;padding:7px 9px;font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;text-align:left}td{padding:7px 9px;border-bottom:.5px solid #f1f5f9;font-size:11px}tfoot td{border-top:1px solid #e2e8f0;font-weight:700}</style></head><body><div class="accent-bar"></div><div class="hdr"><div><div class="t">Supplier Statement</div><div class="sub">${escHtml(stmtSupplier)} · as at ${fmtDate(today())}</div></div><div class="owed"><div class="l">Balance Owed</div><div class="v">${fmt(totalOwedSup)}</div></div></div><table><thead><tr><th>Date</th><th>Ref</th><th>Detail</th><th style="text-align:right">Charge</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th></tr></thead><tbody>${rowsHtml}</tbody><tfoot><tr><td colspan="5" style="text-align:right">Balance owed</td><td style="text-align:right">${fmt(totalOwedSup)}</td></tr></tfoot></table></body></html>`;
+    if (window.__ledgerosPrint) window.__ledgerosPrint(html);
+    else { const w = window.open("", "_blank"); w.document.write(html); w.document.close(); }
+  };
+
   // KPIs / aging
   const openBills = bills.filter(b => b.status !== "paid");
   const totalOwed = openBills.reduce((s, b) => s + (parseFloat(b.balance) || 0), 0);
@@ -124,7 +166,15 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Supplier Bills</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>What you owe suppliers · accounts payable</div>
           </div>
-          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 14px" : "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Bill</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <select value={stmtSupplier} onChange={e => setStmtSupplier(e.target.value)} title="Supplier statement"
+              style={{ height: isMobile() ? 44 : 32, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.15)", borderRadius: 8, color: "rgba(255,255,255,.85)", fontSize: 12, padding: "0 10px", outline: "none", fontFamily: "var(--sans)", maxWidth: 170 }}>
+              <option value="" style={{ color: "#000" }}>Statement for…</option>
+              {[...new Set(bills.map(b => b.supplier_name).filter(Boolean))].sort().map(n => <option key={n} value={n} style={{ color: "#000" }}>{n}</option>)}
+            </select>
+            <button onClick={printStatement} disabled={!stmtSupplier} title="Print supplier statement" style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 12px" : "7px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.18)", background: "rgba(255,255,255,.07)", color: stmtSupplier ? "#fff" : "rgba(255,255,255,.35)", fontSize: 12, fontWeight: 600, cursor: stmtSupplier ? "pointer" : "not-allowed", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Statement</button>
+            <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 14px" : "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Bill</button>
+          </div>
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[
@@ -175,6 +225,19 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
             <div className="fgrp"><label>Linked PO (optional)</label><select value={f.po_id} onChange={e => setF({ ...f, po_id: e.target.value })}><option value="">None</option>{pos.filter(p => !f.supplier_id || p.supplier_name === suppliers.find(s => s.id === f.supplier_id)?.name).map(p => <option key={p.id} value={p.id}>{p.po_number} — {fmt(p.total)}</option>)}</select></div>
             <div className="fgrp full"><label>Notes</label><input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Any notes..." /></div>
           </div>
+          {f.po_id && (() => {
+            const po = pos.find(p => p.id === f.po_id);
+            if (!po) return null;
+            const diff = total - (parseFloat(po.total) || 0);
+            const received = po.status === "received" || po.status === "partial";
+            const ok = Math.abs(diff) <= 0.01 && received;
+            return (
+              <div style={{ padding: "10px 18px", background: ok ? "#f0fdf4" : "#fffbeb", borderTop: "0.5px solid var(--border)", display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                <span style={{ fontWeight: 700, color: ok ? "#15803d" : "#92400e" }}>{ok ? "✓ 3-way match" : "⚠ Check match"}</span>
+                <span style={{ color: "var(--text2)" }}>{po.po_number}: ordered <strong className="mono">{fmt(po.total)}</strong> · goods <strong>{received ? po.status : "not received"}</strong>{Math.abs(diff) > 0.01 && <> · bill is <strong style={{ color: "#dc2626" }}>{diff > 0 ? "+" : "−"}{fmt(Math.abs(diff))}</strong> vs PO</>}</span>
+              </div>
+            );
+          })()}
           <div style={{ padding: "10px 18px", background: "#fafbfc", borderTop: "0.5px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 13 }}>
             <span style={{ color: "var(--text2)" }}>Net: <strong className="mono">{fmt(subtotal)}</strong></span>
             <span style={{ color: "var(--text2)" }}>VAT: <strong className="mono">{fmt(vat)}</strong></span>
@@ -198,7 +261,7 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
                 value={fmt(b.status === "partial" ? b.balance : b.total)}
                 valueSub={b.status === "partial" ? "balance" : undefined}
                 badge={<span className={"badge " + statusCls(b)}>{statusLbl(b)}</span>}
-                rows={[{ label: "Due", value: b.due_date ? fmtDate(b.due_date) + (isOverdue(b) ? ` · ${daysOverdue(b)}d` : "") : "—" }, { label: "Total", value: fmt(b.total), mono: true }]}
+                rows={(() => { const m = matchStatus(b); const base = [{ label: "Due", value: b.due_date ? fmtDate(b.due_date) + (isOverdue(b) ? ` · ${daysOverdue(b)}d` : "") : "—" }, { label: "Total", value: fmt(b.total), mono: true }]; if (m) base.push({ label: "PO Match", value: (m.level === "ok" ? "✓ " : "⚠ ") + m.label, wide: true }); return base; })()}
                 footer={b.status !== "paid" ? (
                   <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                     <button className="btn bp" style={{ width: "100%", minHeight: 44 }} onClick={() => openPay(b)}>Record Payment</button>
@@ -216,7 +279,7 @@ export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], 
               {loading ? <tr><td colSpan={8} className="empty">Loading…</td></tr>
                 : shown.map(b => (
                   <tr key={b.id}>
-                    <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{b.bill_number || "—"}</td>
+                    <td className="mono" style={{ color: "var(--blue)", fontSize: 12 }}>{b.bill_number || "—"}{(() => { const m = matchStatus(b); return m ? <div style={{ fontFamily: "var(--sans)", fontSize: 10, fontWeight: 600, marginTop: 3, color: m.level === "ok" ? "#16a34a" : "#d97706" }}>{m.level === "ok" ? "✓ " : "⚠ "}{m.label}</div> : null; })()}</td>
                     <td style={{ fontWeight: 500 }}>{b.supplier_name}</td>
                     <td className="hm tm" style={{ fontSize: 12 }}>{fmtDate(b.bill_date)}</td>
                     <td style={{ fontSize: 12, color: isOverdue(b) ? "var(--red)" : "var(--text2)" }}>{b.due_date ? fmtDate(b.due_date) : "—"}{isOverdue(b) && <span style={{ fontSize: 10, fontWeight: 700, marginLeft: 5 }}>{daysOverdue(b)}d</span>}</td>
