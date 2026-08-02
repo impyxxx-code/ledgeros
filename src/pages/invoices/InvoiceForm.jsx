@@ -26,6 +26,8 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const [dnAddress, setDnAddress] = useState("");
   const [dnNotes, setDnNotes] = useState("");
   const [localContacts, setLocalContacts] = useState(contacts);
+  const [creditOverride, setCreditOverride] = useState(false);
+  useEffect(() => { setCreditOverride(false); }, [f.customer]);
 
   const quickAddCustomer = async (name) => {
     const data = await sb.post(token, "contacts", { name, type: "customer", created_by: userId });
@@ -52,9 +54,26 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const vatTotal = lines.reduce((s, l) => s + ((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0) * ((parseFloat(l.vat_rate) || 0) / 100)), 0);
   const total = subtotal + vatTotal;
 
+  // ── Credit control — soft gate on new sales ──
+  const selCust = localContacts.find(c => c.name === f.customer);
+  const creditLimit = parseFloat(selCust?.credit_limit || 0);
+  const onHold = !!selCust?.credit_hold;
+  const custOpenBalance = invoices
+    .filter(i => i.customer === f.customer && i.status !== "paid" && i.status !== "draft")
+    .reduce((s, i) => { const b = parseFloat(i.balance); return s + (b > 0 ? b : parseFloat(i.amount || 0)); }, 0);
+  const projectedBalance = custOpenBalance + total;
+  const overLimit = creditLimit > 0 && projectedBalance > creditLimit && f.status !== "draft";
+  const creditBlocked = onHold || overLimit;
+
   const save = async () => {
     setSubmitted(true);
     if (!f.customer) return;
+    if (creditBlocked && !creditOverride) {
+      toast.error(onHold
+        ? `${f.customer} is on credit hold — tick “Authorise & override” to proceed.`
+        : `This invoice puts ${f.customer} over their ${fmt(creditLimit)} credit limit — tick “Authorise & override” to proceed.`);
+      return;
+    }
     const amendedLines = lines.filter(l => l.price_amended && l.description);
     setSaving(true);
     // Safety net — if anything hangs >15s on mobile network, reset button
@@ -80,7 +99,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       if (inv && inv[0]) {
         const fullInv = { ...inv[0], lines };
         onSave(fullInv);
-        logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}`);
+        logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}${creditBlocked && creditOverride ? ` ⚠️ CREDIT OVERRIDE (${onHold ? "on hold" : "over limit"})` : ""}`);
         if (f.status !== "draft") postInvoiceJournal(token, accounts, { invoice_id: inv[0].id, invoice_number, amount: total, date: f.invoice_date });
         // Pre-fill DN fields from customer contact
         const cust = contacts.find(c => c.name === f.customer);
@@ -701,6 +720,26 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
         )}
       </div>
 
+      {/* ── CREDIT CONTROL WARNING ── */}
+      {f.customer && creditBlocked && (
+        <div style={{ margin:"8px 12px 0", borderRadius:"var(--rl)", border:"1px solid #fca5a5", background:"#fff5f5", padding:"12px 14px" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+            <div style={{ fontSize:18, lineHeight:1, flexShrink:0 }}>⚠️</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#991b1b", marginBottom:3 }}>{onHold ? "Customer is on credit hold" : "Over credit limit"}</div>
+              <div style={{ fontSize:12, color:"#7f1d1d", lineHeight:1.5 }}>
+                {onHold && <>New sales to <strong>{f.customer}</strong> have been placed on hold. </>}
+                {overLimit && <>Outstanding {fmt(custOpenBalance)} + this invoice {fmt(total)} = <strong>{fmt(projectedBalance)}</strong>, over the {fmt(creditLimit)} limit. </>}
+              </div>
+              <label style={{ display:"flex", alignItems:"center", gap:8, marginTop:8, cursor:"pointer" }}>
+                <input type="checkbox" checked={creditOverride} onChange={e => setCreditOverride(e.target.checked)} style={{ width:16, height:16, cursor:"pointer", accentColor:"#dd2b0f" }} />
+                <span style={{ fontSize:12, fontWeight:600, color:"#991b1b" }}>Authorise &amp; override to proceed</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── DUE DATE — visible by default, not hidden ── */}
       <div style={{ background:"var(--white)", margin:"8px 12px 0", borderRadius:"var(--rl)", border:"1px solid var(--border)", padding:"10px 14px 12px" }}>
         <div style={{ fontSize:10, fontWeight:700, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>Due Date</div>
@@ -849,6 +888,22 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
         <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
+        {f.customer && creditBlocked && (
+          <div style={{ gridColumn: "1 / -1", borderRadius: "var(--r)", border: "1px solid #fca5a5", background: "#fff5f5", padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 3 }}>{onHold ? "Customer is on credit hold" : "Over credit limit"}</div>
+              <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5 }}>
+                {onHold && <>New sales to <strong>{f.customer}</strong> have been placed on hold. </>}
+                {overLimit && <>Outstanding {fmt(custOpenBalance)} + this invoice {fmt(total)} = <strong>{fmt(projectedBalance)}</strong>, over the {fmt(creditLimit)} limit. </>}
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, cursor: "pointer" }}>
+                <input type="checkbox" checked={creditOverride} onChange={e => setCreditOverride(e.target.checked)} style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#dd2b0f" }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#991b1b" }}>Authorise &amp; override to proceed</span>
+              </label>
+            </div>
+          </div>
+        )}
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp">

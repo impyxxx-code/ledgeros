@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, isMobile } from "../lib/utils.js";
 import { COMPANY, toast } from "../lib/constants.js";
@@ -29,14 +29,33 @@ const BUCKETS = [
   { key: "b3", label: "60+ days", min: 61, max: Infinity, color: "#dc2626" },
 ];
 const bucketOf = (days) => BUCKETS.find(b => days >= b.min && days <= b.max) || BUCKETS[0];
+const OUTCOMES = { promise_to_pay: "Promise to pay", no_answer: "No answer", left_message: "Left message", dispute: "Dispute", paid: "Paid", other: "Other" };
 
-export function CreditControl({ contacts, invoices, token, userId }) {
+export function CreditControl({ contacts, invoices, token, userId, profile }) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("overdue");   // overdue | all
   const [expanded, setExpanded] = useState(null); // customer name
   const [sending, setSending] = useState(null);   // customer name currently sending
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [notes, setNotes] = useState([]);          // collection log rows
+  const [logFor, setLogFor] = useState(null);      // debtor being logged
+  const [logForm, setLogForm] = useState({ outcome: "promise_to_pay", note: "", promise_date: "", promise_amount: "" });
+  const [savingLog, setSavingLog] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    sb.get(token, "collection_notes", "order=created_at.desc&limit=500")
+      .then(d => setNotes(Array.isArray(d) ? d : []))
+      .catch(() => setNotes([]));
+  }, [token]);
+
+  const notesByCust = useMemo(() => {
+    const m = new Map();
+    for (const n of notes) { if (!m.has(n.customer_name)) m.set(n.customer_name, []); m.get(n.customer_name).push(n); }
+    return m;
+  }, [notes]);
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
 
   // Build per-customer aged debt from open invoices.
   const debtors = useMemo(() => {
@@ -60,7 +79,11 @@ export function CreditControl({ contacts, invoices, token, userId }) {
         if (l._overdue) { overdueTotal += l._bal; oldest = Math.max(oldest, l._days); }
       }
       lines.sort((a, b) => b._days - a._days);
-      out.push({ name, contact, lines, buckets, total, overdueTotal, oldest, overdueCount: lines.filter(l => l._overdue).length });
+      const creditLimit = parseFloat(contact?.credit_limit || 0);
+      const onHold = !!contact?.credit_hold;
+      const overLimit = creditLimit > 0 && total > creditLimit;
+      const utilisation = creditLimit > 0 ? total / creditLimit : null;
+      out.push({ name, contact, lines, buckets, total, overdueTotal, oldest, overdueCount: lines.filter(l => l._overdue).length, creditLimit, onHold, overLimit, utilisation });
     }
     // Priority: most overdue money first, then oldest, then biggest balance.
     out.sort((a, b) => b.overdueTotal - a.overdueTotal || b.oldest - a.oldest || b.total - a.total);
@@ -68,11 +91,13 @@ export function CreditControl({ contacts, invoices, token, userId }) {
   }, [invoices, contacts]);
 
   const totals = useMemo(() => {
-    const t = { receivable: 0, overdue: 0, current: 0, b1: 0, b2: 0, b3: 0, custOverdue: 0 };
+    const t = { receivable: 0, overdue: 0, current: 0, b1: 0, b2: 0, b3: 0, custOverdue: 0, onHold: 0, overLimit: 0 };
     for (const d of debtors) {
       t.receivable += d.total; t.overdue += d.overdueTotal;
       t.current += d.buckets.current; t.b1 += d.buckets.b1; t.b2 += d.buckets.b2; t.b3 += d.buckets.b3;
       if (d.overdueTotal > 0) t.custOverdue++;
+      if (d.onHold) t.onHold++;
+      if (d.overLimit) t.overLimit++;
     }
     // DSO — trailing 365-day credit sales (exclude drafts).
     const yearAgo = Date.now() - 365 * DAY;
@@ -141,6 +166,38 @@ export function CreditControl({ contacts, invoices, token, userId }) {
     setConfirmBulk(false);
   };
 
+  // Per-customer collection state derived from the log.
+  const custNotes = (name) => notesByCust.get(name) || [];
+  const openPromise = (name) => custNotes(name).find(n => n.promise_date);   // latest note carrying a promise
+  const promiseBroken = (name) => { const p = openPromise(name); return p && new Date(p.promise_date) < startOfToday; };
+
+  const saveLog = async () => {
+    const d = logFor;
+    if (!d) return;
+    setSavingLog(true);
+    const row = {
+      contact_id: d.contact?.id || null,
+      customer_name: d.name,
+      note: logForm.note || null,
+      outcome: logForm.outcome,
+      promise_date: logForm.promise_date || null,
+      promise_amount: logForm.promise_amount ? parseFloat(logForm.promise_amount) : null,
+      created_by: userId || null,
+      created_by_name: profile?.name || profile?.full_name || null,
+    };
+    const res = await sb.post(token, "collection_notes", row);
+    if (res && res[0]) {
+      setNotes(prev => [res[0], ...prev]);
+      toast.success("Contact logged");
+      logAudit(token, userId, "collection_logged", "contact", d.contact?.id || null, `Collection note for ${d.name}: ${OUTCOMES[logForm.outcome] || logForm.outcome}${logForm.promise_date ? ` — promised ${fmtDate(logForm.promise_date)}` : ""}`);
+    } else toast.error("Failed to save note");
+    setSavingLog(false);
+    setLogFor(null);
+    setLogForm({ outcome: "promise_to_pay", note: "", promise_date: "", promise_amount: "" });
+  };
+
+  const brokenCount = debtors.filter(d => promiseBroken(d.name)).length;
+
   const bucketPill = (amount, color) => amount > 0
     ? <span className="mono" style={{ fontWeight: 700, color }}>{fmt(amount)}</span>
     : <span style={{ color: "var(--text3)" }}>—</span>;
@@ -196,6 +253,13 @@ export function CreditControl({ contacts, invoices, token, userId }) {
               <button key={k} className={"btn bsm " + (mode === k ? "bp" : "bg2")} onClick={() => setMode(k)}>{l}</button>
             ))}
           </div>
+          {(totals.onHold > 0 || totals.overLimit > 0) && (
+            <div style={{ fontSize: 12, display: "flex", gap: 10, alignItems: "center" }}>
+              {totals.onHold > 0 && <span style={{ color: "#991b1b", fontWeight: 600 }}>{totals.onHold} on hold</span>}
+              {totals.overLimit > 0 && <span style={{ color: "#9a3412", fontWeight: 600 }}>{totals.overLimit} over limit</span>}
+            </div>
+          )}
+          {brokenCount > 0 && <div style={{ fontSize: 12, color: "#991b1b", fontWeight: 600 }}>{brokenCount} broken promise{brokenCount !== 1 ? "s" : ""}</div>}
           <button className="btn bp bsm" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }} disabled={chasableCount === 0} onClick={() => setConfirmBulk(true)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Chase all overdue ({chasableCount})
@@ -209,7 +273,7 @@ export function CreditControl({ contacts, invoices, token, userId }) {
               <MobileCard
                 key={d.name}
                 title={d.name}
-                subtitle={d.contact?.email || d.contact?.phone || "no contact details"}
+                subtitle={(d.onHold ? "⛔ On hold · " : d.overLimit ? "⚠ Over limit · " : "") + (d.contact?.email || d.contact?.phone || "no contact details")}
                 value={fmt(d.total)}
                 valueSub={d.overdueTotal > 0 ? `${fmt(d.overdueTotal)} overdue` : "on terms"}
                 accent={d.oldest > 60 ? "#dc2626" : d.oldest > 30 ? "#ea580c" : d.overdueTotal > 0 ? "#f59e0b" : "#16a34a"}
@@ -224,6 +288,7 @@ export function CreditControl({ contacts, invoices, token, userId }) {
                   <div style={{ display: "flex", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
                     <button className="btn bp bsm" style={{ flex: 1, minHeight: 40 }} disabled={!d.contact?.email || d.overdueTotal <= 0 || sending === d.name} onClick={() => chase(d)}>{sending === d.name ? "Sending..." : "Chase"}</button>
                     <button className="btn bwa bsm" style={{ minHeight: 40 }} onClick={() => whatsapp(d)}>WhatsApp</button>
+                    <button className="btn bg2 bsm" style={{ minHeight: 40 }} onClick={() => setLogFor(d)}>Log</button>
                   </div>
                 }
               />
@@ -243,11 +308,19 @@ export function CreditControl({ contacts, invoices, token, userId }) {
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: 10, color: "var(--text3)", transform: expanded === d.name ? "rotate(90deg)" : "none", transition: "transform .15s", display: "inline-block" }}>▶</span>
                           <div>
-                            <div style={{ fontWeight: 500 }}>{d.name}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 500 }}>{d.name}</span>
+                              {d.onHold && <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>ON HOLD</span>}
+                              {d.overLimit && <span className="badge" style={{ background: "#ffedd5", color: "#9a3412" }}>OVER LIMIT</span>}
+                              {openPromise(d.name) && (promiseBroken(d.name)
+                                ? <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>PROMISE BROKEN</span>
+                                : <span className="badge" style={{ background: "#dcfce7", color: "#166534" }}>PROMISE {fmtDate(openPromise(d.name).promise_date)}</span>)}
+                            </div>
                             <div style={{ fontSize: 11, color: "var(--text3)", display: "flex", gap: 6, alignItems: "center" }}>
                               {d.contact?.email ? <span title={d.contact.email}>✉</span> : <span style={{ color: "#dc2626" }} title="No email on file">✉✕</span>}
                               {d.contact?.phone && <span title={d.contact.phone}>☎</span>}
                               <span>{d.overdueCount > 0 ? `${d.overdueCount} overdue` : `${d.lines.length} open`}</span>
+                              {d.creditLimit > 0 && <span title="Balance vs credit limit">· {Math.round(d.utilisation * 100)}% of {fmt(d.creditLimit)}</span>}
                             </div>
                           </div>
                         </div>
@@ -262,6 +335,7 @@ export function CreditControl({ contacts, invoices, token, userId }) {
                         <div style={{ display: "inline-flex", gap: 6 }}>
                           <button className="btn bp bsm" disabled={!d.contact?.email || d.overdueTotal <= 0 || sending === d.name} onClick={() => chase(d)}>{sending === d.name ? "..." : "Chase"}</button>
                           <button className="btn bwa bsm" onClick={() => whatsapp(d)} title="WhatsApp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+                          <button className="btn bg2 bsm" onClick={() => setLogFor(d)} title="Log a call / note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button>
                         </div>
                       </td>
                     </tr>
@@ -283,6 +357,26 @@ export function CreditControl({ contacts, invoices, token, userId }) {
                               ))}
                             </tbody>
                           </table>
+                          {/* Collection log */}
+                          <div style={{ padding: "10px 20px 14px 34px", borderTop: "0.5px solid var(--border)" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".6px" }}>Collection log</div>
+                              <button className="btn bg2 bsm" onClick={() => setLogFor(d)}>+ Log contact</button>
+                            </div>
+                            {custNotes(d.name).length === 0
+                              ? <div style={{ fontSize: 12, color: "var(--text3)" }}>No contact logged yet.</div>
+                              : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                  {custNotes(d.name).slice(0, 6).map(n => (
+                                    <div key={n.id} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: 12 }}>
+                                      <span style={{ color: "var(--text3)", flexShrink: 0, width: 78 }}>{fmtDate(n.created_at)}</span>
+                                      <span style={{ fontWeight: 600, flexShrink: 0 }}>{OUTCOMES[n.outcome] || n.outcome}</span>
+                                      {n.promise_date && <span className="badge" style={{ background: new Date(n.promise_date) < startOfToday ? "#fee2e2" : "#dcfce7", color: new Date(n.promise_date) < startOfToday ? "#991b1b" : "#166534" }}>{n.promise_amount ? fmt(n.promise_amount) + " " : ""}by {fmtDate(n.promise_date)}</span>}
+                                      {n.note && <span style={{ color: "var(--text2)" }}>{n.note}</span>}
+                                      {n.created_by_name && <span style={{ color: "var(--text3)", marginLeft: "auto", flexShrink: 0 }}>— {n.created_by_name}</span>}
+                                    </div>
+                                  ))}
+                                </div>}
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -308,6 +402,45 @@ export function CreditControl({ contacts, invoices, token, userId }) {
             <div style={{ padding: "14px 20px", borderTop: "0.5px solid var(--border)", display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button className="btn bg2" disabled={bulkRunning} onClick={() => setConfirmBulk(false)}>Cancel</button>
               <button className="btn bp" disabled={bulkRunning} onClick={runBulk}>{bulkRunning ? "Sending..." : `Send ${chasableCount} chase email${chasableCount !== 1 ? "s" : ""}`}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {logFor && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(10,14,26,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => !savingLog && setLogFor(null)}>
+          <div className="card" style={{ maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "18px 20px", borderBottom: "0.5px solid var(--border)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-.3px" }}>Log contact — {logFor.name}</div>
+              <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 3 }}>Record a chase call, promise to pay or note. Owes {fmt(logFor.total)}{logFor.overdueTotal > 0 ? ` (${fmt(logFor.overdueTotal)} overdue)` : ""}.</div>
+            </div>
+            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 5 }}>Outcome</label>
+                <select value={logForm.outcome} onChange={e => setLogForm(v => ({ ...v, outcome: e.target.value }))} style={{ width: "100%", minHeight: 42, border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "0 12px", fontSize: 13, outline: "none", background: "var(--white)", fontFamily: "var(--sans)" }}>
+                  {Object.entries(OUTCOMES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select>
+              </div>
+              {logForm.outcome === "promise_to_pay" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 5 }}>Promised by</label>
+                    <input type="date" value={logForm.promise_date} onChange={e => setLogForm(v => ({ ...v, promise_date: e.target.value }))} style={{ width: "100%", minHeight: 42, border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "0 12px", fontSize: 13, outline: "none", fontFamily: "var(--sans)" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 5 }}>Amount (£)</label>
+                    <input type="number" min="0" step="0.01" value={logForm.promise_amount} onChange={e => setLogForm(v => ({ ...v, promise_amount: e.target.value }))} placeholder="optional" style={{ width: "100%", minHeight: 42, border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "0 12px", fontSize: 13, outline: "none", fontFamily: "var(--mono)" }} />
+                  </div>
+                </div>
+              )}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 5 }}>Note</label>
+                <textarea value={logForm.note} onChange={e => setLogForm(v => ({ ...v, note: e.target.value }))} rows={3} placeholder="What was said…" style={{ width: "100%", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "10px 12px", fontSize: 13, outline: "none", fontFamily: "var(--sans)", resize: "vertical" }} />
+              </div>
+            </div>
+            <div style={{ padding: "14px 20px", borderTop: "0.5px solid var(--border)", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn bg2" disabled={savingLog} onClick={() => setLogFor(null)}>Cancel</button>
+              <button className="btn bp" disabled={savingLog || (!logForm.note && logForm.outcome !== "promise_to_pay")} onClick={saveLog}>{savingLog ? "Saving..." : "Save note"}</button>
             </div>
           </div>
         </div>
