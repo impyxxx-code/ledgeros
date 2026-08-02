@@ -888,6 +888,22 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
         <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
+        {f.customer && creditBlocked && (
+          <div style={{ gridColumn: "1 / -1", borderRadius: "var(--r)", border: "1px solid #fca5a5", background: "#fff5f5", padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 3 }}>{onHold ? "Customer is on credit hold" : "Over credit limit"}</div>
+              <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5 }}>
+                {onHold && <>New sales to <strong>{f.customer}</strong> have been placed on hold. </>}
+                {overLimit && <>Outstanding {fmt(custOpenBalance)} + this invoice {fmt(total)} = <strong>{fmt(projectedBalance)}</strong>, over the {fmt(creditLimit)} limit. </>}
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, cursor: "pointer" }}>
+                <input type="checkbox" checked={creditOverride} onChange={e => setCreditOverride(e.target.checked)} style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#dd2b0f" }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#991b1b" }}>Authorise &amp; override to proceed</span>
+              </label>
+            </div>
+          </div>
+        )}
         <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="draft">Draft</option><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
         <div className="fgrp"><label>Invoice Date</label><input type="date" value={f.invoice_date} onChange={e => setF({ ...f, invoice_date: e.target.value })} /></div>
         <div className="fgrp">
