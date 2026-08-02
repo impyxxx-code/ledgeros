@@ -45,6 +45,7 @@ import LOGO_BADGE from "./assets/logo-ar-badge.png";
 import { OnboardingChecklist } from "./components/OnboardingChecklist.jsx";
 import { AIAssistant } from "./components/AIAssistant.jsx";
 import { Purchases } from "./pages/Purchases.jsx";
+import { SupplierBills } from "./pages/SupplierBills.jsx";
 import { CreditNotes } from "./pages/CreditNotes.jsx";
 import { Inventory } from "./pages/Inventory.jsx";
 import { DeliveryNotes } from "./pages/DeliveryNotes.jsx";
@@ -1397,6 +1398,7 @@ const NAV_ICONS = {
   "inventory":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>,
   "purchases":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
   "credits":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  "bills":          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/></svg>,
   "reports":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
   "analytics":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
   "admin-reports":  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="12" y1="17" x2="8" y2="17"/></svg>,
@@ -1424,6 +1426,7 @@ const NAV_GROUPS = [
     items: [
       { id: "inventory",      label: "Inventory" },
       { id: "purchases",      label: "Purchases", adminOnly: true },
+      { id: "bills",          label: "Bills", adminOnly: true },
       { id: "stock-adj",      label: "Stock In/Out", adminOnly: true },
       { id: "delivery-notes", label: "Delivery Notes" },
       { id: "import",         label: "Import", adminOnly: true },
@@ -1445,6 +1448,7 @@ const NAV = [
   { id: "contacts", label: "Customers" },
   { id: "inventory", label: "Inventory" },
   { id: "purchases", label: "Purchases", adminOnly: true },
+  { id: "bills", label: "Bills", adminOnly: true },
   { id: "credits", label: "Credits", adminOnly: true },
   { id: "reports", label: "P&L", adminOnly: true },
   { id: "analytics", label: "Analytics", adminOnly: true },
@@ -1982,7 +1986,7 @@ export default function App() {
                 const overdueCount = invoices.filter(i=>i.status==="overdue").length;
                 return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
               })()}
-              <div className={"topnav-navitem "+(["inventory","purchases","stock-adj","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
+              <div className={"topnav-navitem "+(["inventory","purchases","bills","stock-adj","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
               {(profile?.role==="admin"||profile?.role==="manager") && (
                 <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
               )}
@@ -2095,10 +2099,11 @@ export default function App() {
                 ]
               },
               operations: {
-                pages: ["inventory","purchases","stock-adj","import"],
+                pages: ["inventory","purchases","bills","stock-adj","import"],
                 tabs: [
                   { id:"inventory", label:"Inventory" },
                   { id:"purchases", label:"Purchases",  adminOnly:true },
+                  { id:"bills",     label:"Bills",      adminOnly:true },
                   { id:"stock-adj", label:"Stock In/Out",adminOnly:true },
                   { id:"import",    label:"Import",     adminOnly:true },
                 ]
@@ -2161,6 +2166,7 @@ export default function App() {
                 {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} setContacts={setContacts} products={products} setProducts={setProducts} accounts={accounts} token={auth.token} userId={auth.user.id} />}
+                {page==="bills"&&<SupplierBills contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="credits"&&<CreditNotes contacts={contacts} invoices={invoices} setInvoices={setInvoices} profile={profile} token={auth.token} userId={auth.user.id} />}
                 {page==="reports"&&<Reports accounts={accounts} />}
                 {page==="analytics"&&<div style={{margin:"-26px -28px",overflow:"hidden"}}><Analytics invoices={invoices} products={products} contacts={contacts} /></div>}
@@ -2335,7 +2341,7 @@ export default function App() {
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
                 { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
-                { label:"Operations", color:"#201e1d", items:["inventory","purchases","stock-adj","import"] },
+                { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","import"] },
                 { label:"Finance", color:"#16a34a", items:["banking","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
@@ -2360,7 +2366,7 @@ export default function App() {
                               "statement":     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
                               "agent-report":  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
                               "purchases":     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
-                              "stock-adj":     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+                              "bills":         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/></svg>,
                               "delivery-notes":<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
                               "import":        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
                               "admin-reports": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
