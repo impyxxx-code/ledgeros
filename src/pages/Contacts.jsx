@@ -58,7 +58,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     await fetch(`${SUPABASE_URL}/rest/v1/customer_prices?id=eq.${id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
     setCustomerPrices(prev => prev.filter(p => p.id !== id));
   };
-  const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
+  const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "", credit_limit: "", credit_hold: false });
   const filtered = contacts.filter(c => {
     if (c.type !== tab && c.type !== "both") return false;
     if (contactFilter === "no-email" && c.email) return false;
@@ -83,9 +83,11 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
   });
   const save = async () => {
     if (!f.name) return; setSaving(true);
+    // Coerce credit fields so the numeric/boolean columns accept them.
+    const payload = { ...f, credit_limit: parseFloat(f.credit_limit) || 0, credit_hold: !!f.credit_hold };
     if (editingContact) {
       // Update existing contact
-      const { id, created_by, created_at, ...updateData } = f;
+      const { id, created_by, created_at, ...updateData } = payload;
       const data = await sb.patch(token, "contacts", editingContact.id, updateData);
       if (data) {
         setContacts(prev => prev.map(c => c.id === editingContact.id ? { ...c, ...updateData } : c));
@@ -94,10 +96,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
       setEditingContact(null);
     } else {
       // Create new contact
-      const data = await sb.post(token, "contacts", { ...f, created_by: userId });
+      const data = await sb.post(token, "contacts", { ...payload, created_by: userId });
       if (data[0]) { setContacts(prev => [data[0], ...prev]); logAudit(token, userId, "contact_created", "contact", data[0].id, `${f.type} contact created: ${f.name}${f.email ? ' · ' + f.email : ''}`); }
     }
-    setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "" });
+    setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "", credit_limit: "", credit_hold: false });
     setShowForm(false); setSaving(false);
   };
   const avatarColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"];
@@ -379,9 +381,11 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
             <div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div>
             <div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div>
             <div className="fgrp"><label>VAT Number</label><input value={f.vat_number} onChange={e => setF({ ...f, vat_number: e.target.value })} placeholder="GB123456789" /></div>
+            {f.type !== "supplier" && <div className="fgrp"><label>Credit Limit (£)</label><input type="number" min="0" step="0.01" value={f.credit_limit} onChange={e => setF({ ...f, credit_limit: e.target.value })} placeholder="0 = no limit" /></div>}
+            {f.type !== "supplier" && <div className="fgrp"><label>Credit Hold</label><div style={{ display:"flex", alignItems:"center", gap:8, paddingTop:6 }}><input id="cc_hold" type="checkbox" checked={!!f.credit_hold} onChange={e => setF({ ...f, credit_hold: e.target.checked })} style={{ width:16, height:16, cursor:"pointer", accentColor:"#dd2b0f" }} /><label htmlFor="cc_hold" style={{ margin:0, fontWeight:400, fontSize:13, cursor:"pointer", textTransform:"none", letterSpacing:0 }}>Warn on new sales / over limit</label></div></div>}
           </div>
           <div className="ff">
-            <button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type:"customer", name:"", email:"", phone:"", address:"", city:"", postcode:"", vat_number:"", notes:"" }); }}>Cancel</button>
+            <button className="btn bo" onClick={() => { setShowForm(false); setEditingContact(null); setF({ type:"customer", name:"", email:"", phone:"", address:"", city:"", postcode:"", vat_number:"", notes:"", credit_limit:"", credit_hold:false }); }}>Cancel</button>
             <button className="btn bp" onClick={save} disabled={saving}>{saving ? "Saving..." : editingContact ? "Update Contact" : "Save Contact"}</button>
           </div>
         </div>
@@ -535,7 +539,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                     <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
                       {[
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, label:"View", action:() => setViewContact(c) },
-                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label:"Edit", action:(e) => { e.stopPropagation(); setEditingContact(c); setF({type:c.type||"customer",name:c.name||"",email:c.email||"",phone:c.phone||"",address:c.address||"",city:c.city||"",postcode:c.postcode||"",vat_number:c.vat_number||"",notes:c.notes||""}); setShowForm(true); } },
+                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label:"Edit", action:(e) => { e.stopPropagation(); setEditingContact(c); setF({type:c.type||"customer",name:c.name||"",email:c.email||"",phone:c.phone||"",address:c.address||"",city:c.city||"",postcode:c.postcode||"",vat_number:c.vat_number||"",notes:c.notes||"",credit_limit:c.credit_limit!=null?String(c.credit_limit):"",credit_hold:!!c.credit_hold}); setShowForm(true); } },
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label:"Email", action:(e) => { e.stopPropagation(); if(c.email) window.open(`mailto:${c.email}`); } }
                       ].map(({icon,label,action},idx) => (
                         <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}

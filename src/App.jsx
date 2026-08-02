@@ -2189,7 +2189,7 @@ export default function App() {
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
-                {page==="credit-control"&&<CreditControl contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} />}
+                {page==="credit-control"&&<CreditControl contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} profile={profile} />}
               </>
             )}
           </div>
