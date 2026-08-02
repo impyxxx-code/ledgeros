@@ -60,8 +60,11 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     setCustomerPrices(prev => prev.filter(p => p.id !== id));
   };
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "", credit_limit: "", credit_hold: false });
+  const archivedCount = contacts.filter(c => c.active === false && (c.type === tab || c.type === "both")).length;
   const filtered = contacts.filter(c => {
     if (c.type !== tab && c.type !== "both") return false;
+    if (contactFilter === "archived") return c.active === false;   // archived view shows only inactive
+    if (c.active === false) return false;                           // every other view hides archived
     if (contactFilter === "no-email" && c.email) return false;
     if (contactFilter === "has-email" && !c.email) return false;
     if (contactFilter === "no-phone" && c.phone) return false;
@@ -104,22 +107,19 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     setShowForm(false); setSaving(false);
   };
 
-  // ── Delete a contact (admin only; blocked if they have any invoices) ──
-  const [deletingId, setDeletingId] = useState(null);
-  const contactInUse = (c) => invoices.some(i => i.customer === c.name);
-  const deleteContact = async (c) => {
-    if (contactInUse(c)) { toast.warn(`"${c.name}" has invoices on record, so they can't be deleted. (History would be lost.)`); return; }
-    if (!window.confirm(`Delete "${c.name}"?\n\nThis permanently removes the ${c.type || "contact"} and their credit-control notes. This cannot be undone.`)) return;
-    setDeletingId(c.id);
-    const ok = await sb.del(token, "contacts", c.id);
-    if (ok) {
-      setContacts(prev => prev.filter(x => x.id !== c.id));
-      logAudit(token, userId, "contact_deleted", "contact", c.id, `Contact deleted: ${c.name}${c.email ? " · " + c.email : ""}`);
-      toast.success(`"${c.name}" deleted`);
+  // ── Archive / reactivate a contact (admin only; history is always kept) ──
+  const [archivingId, setArchivingId] = useState(null);
+  const setContactActive = async (c, active) => {
+    setArchivingId(c.id);
+    const res = await sb.patch(token, "contacts", c.id, { active });
+    if (res) {
+      setContacts(prev => prev.map(x => x.id === c.id ? { ...x, active } : x));
+      logAudit(token, userId, active ? "contact_reactivated" : "contact_archived", "contact", c.id, `Contact ${active ? "reactivated" : "archived"}: ${c.name}${c.email ? " · " + c.email : ""}`);
+      toast.success(active ? `"${c.name}" reactivated` : `"${c.name}" archived — hidden from active lists`);
     } else {
-      toast.error(`Couldn't delete "${c.name}" — they may be linked to purchase orders, bills or price lists.`);
+      toast.error(`Couldn't update "${c.name}". Please try again.`);
     }
-    setDeletingId(null);
+    setArchivingId(null);
   };
 
   const avatarColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"];
@@ -354,9 +354,12 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
         <div style={{ display:"flex", alignItems:"center", gap:8, paddingRight:4 }}>
           {contactFilter !== "all" && (
             <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"rgba(221,43,15,.14)", color:"#ff6a4d", border:"1px solid rgba(221,43,15,.28)", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500 }}>
-              {contactFilter === "has-email" ? "Has email" : contactFilter === "no-email" ? "No email" : contactFilter === "has-phone" ? "Has phone" : "No phone"}
+              {contactFilter === "has-email" ? "Has email" : contactFilter === "no-email" ? "No email" : contactFilter === "has-phone" ? "Has phone" : contactFilter === "archived" ? "Archived" : "No phone"}
               <button onClick={() => setContactFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#ff6a4d", fontSize:14, lineHeight:1, padding:0 }}>×</button>
             </span>
+          )}
+          {profile?.role === "admin" && archivedCount > 0 && contactFilter !== "archived" && (
+            <button onClick={() => setContactFilter("archived")} style={{ background:"rgba(255,255,255,.07)", color:"rgba(255,255,255,.6)", border:"1px solid rgba(255,255,255,.15)", borderRadius:20, padding:"4px 10px", fontSize:11, fontWeight:500, cursor:"pointer", fontFamily:"var(--sans)" }}>Archived ({archivedCount})</button>
           )}
           <span style={{ fontSize:11, color:"rgba(255,255,255,.35)" }}>{filtered.length}{contactSearch ? ` of ${contacts.filter(c=>c.type===tab||c.type==="both").length}` : ""} result{filtered.length!==1?"s":""}</span>
         </div>
@@ -561,7 +564,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, label:"View", action:() => setViewContact(c) },
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label:"Edit", action:(e) => { e.stopPropagation(); setEditingContact(c); setF({type:c.type||"customer",name:c.name||"",email:c.email||"",phone:c.phone||"",address:c.address||"",city:c.city||"",postcode:c.postcode||"",vat_number:c.vat_number||"",notes:c.notes||"",credit_limit:c.credit_limit!=null?String(c.credit_limit):"",credit_hold:!!c.credit_hold}); setShowForm(true); } },
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label:"Email", action:(e) => { e.stopPropagation(); if(c.email) window.open(`mailto:${c.email}`); } },
-                        ...(profile?.role === "admin" ? [{ icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>, label:"Delete", danger:true, action:(e) => { e.stopPropagation(); deleteContact(c); } }] : [])
+                        ...(profile?.role === "admin" ? [ c.active === false
+                          ? { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>, label:"Reactivate", action:(e) => { e.stopPropagation(); setContactActive(c, true); } }
+                          : { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>, label:"Archive", danger:true, action:(e) => { e.stopPropagation(); setContactActive(c, false); } }
+                        ] : [])
                       ].map(({icon,label,action,danger},idx) => (
                         <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}
                           style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color: danger ? "#dc2626" : "#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}

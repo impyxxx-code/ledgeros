@@ -36,30 +36,19 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
     setUpdatingId(null);
   };
 
-  // ── Delete a product (admin only; blocked if it appears on any invoice) ──
-  const [deletingId, setDeletingId] = useState(null);
-  const productInUse = (p) => {
-    try {
-      return invoices.some(inv => {
-        let lines = inv.lines;
-        if (typeof lines === "string") { try { lines = JSON.parse(lines); } catch { lines = []; } }
-        return Array.isArray(lines) && lines.some(l => l.product_id === p.id);
-      });
-    } catch { return false; }
-  };
-  const deleteProduct = async (p) => {
-    if (productInUse(p)) { toast.warn(`"${p.name}" appears on existing invoices, so it can't be deleted. Set its stock to 0 instead.`); return; }
-    if (!window.confirm(`Delete "${p.name}"?\n\nThis permanently removes the product and its stock history. This cannot be undone.`)) return;
-    setDeletingId(p.id);
-    const ok = await sb.del(token, "products", p.id);
-    if (ok) {
-      setProducts(prev => prev.filter(x => x.id !== p.id));
-      logAudit(token, userId, "product_deleted", "product", p.id, `Product deleted: ${p.name}${p.code ? " (" + p.code + ")" : ""}`);
-      toast.success(`"${p.name}" deleted`);
+  // ── Archive / reactivate a product (admin only; history is always kept) ──
+  const [archivingId, setArchivingId] = useState(null);
+  const setProductActive = async (p, active) => {
+    setArchivingId(p.id);
+    const res = await sb.patch(token, "products", p.id, { active });
+    if (res) {
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, active } : x));
+      logAudit(token, userId, active ? "product_reactivated" : "product_archived", "product", p.id, `Product ${active ? "reactivated" : "archived"}: ${p.name}${p.code ? " (" + p.code + ")" : ""}`);
+      toast.success(active ? `"${p.name}" reactivated` : `"${p.name}" archived — hidden from active lists`);
     } else {
-      toast.error(`Couldn't delete "${p.name}" — it may be linked to purchase orders or price lists.`);
+      toast.error(`Couldn't update "${p.name}". Please try again.`);
     }
-    setDeletingId(null);
+    setArchivingId(null);
   };
 
   // ── Per-product stock movement history ──
@@ -72,9 +61,14 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
     setHistory(m); setHistoryLoading(false);
   };
 
-  const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
-  const outOfStock = products.filter(p => (p.stock_qty || 0) === 0);
+  const activeProducts = products.filter(p => p.active !== false);
+  const archivedCount = products.filter(p => p.active === false).length;
+  const lowStock = activeProducts.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
+  const outOfStock = activeProducts.filter(p => (p.stock_qty || 0) === 0);
   const filtered = products.filter(p => {
+    const isActive = p.active !== false;
+    if (stockFilter === "archived") return !isActive;   // archived view shows only inactive
+    if (!isActive) return false;                          // every other view hides archived
     if (stockFilter === "low") return p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
     if (stockFilter === "out") return (p.stock_qty || 0) === 0;
     return true;
@@ -112,7 +106,7 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all" },
+            { label: "Products", val: activeProducts.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all" },
             { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a", filter: "low" },
             { label: "Stock Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price, 0)), sub: "at cost price", color: "rgba(255,255,255,.35)", accent: "#57534e" },
             { label: "Retail Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price, 0)), sub: "at sale price", color: "#86efac", accent: "#16a34a" },
@@ -134,8 +128,8 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
 
       {/* Stock filter tabs */}
       <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#201e1d", borderBottom: "1px solid rgba(255,255,255,.10)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
-        {[["all", "All Products", products.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length]].map(([v, l, cnt]) => (
-          <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : "#dd2b0f") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
+        {[["all", "All Products", activeProducts.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length], ...(archivedCount > 0 ? [["archived", "Archived", archivedCount]] : [])].map(([v, l, cnt]) => (
+          <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : v === "archived" ? "#8a8580" : "#dd2b0f") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
             {l} <span style={{ background: stockFilter === v ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: stockFilter === v ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
           </button>
         ))}
@@ -223,7 +217,9 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
                 footer={
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {profile?.role === "admin" && <button onClick={() => deleteProduct(p)} disabled={deletingId === p.id} aria-label="Delete product" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#dc2626", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>}
+                      {profile?.role === "admin" && (p.active === false
+                        ? <button onClick={() => setProductActive(p, true)} disabled={archivingId === p.id} aria-label="Reactivate product" style={{ height: 40, padding: "0 14px", borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#16a34a", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--sans)", flexShrink: 0 }}>Reactivate</button>
+                        : <button onClick={() => setProductActive(p, false)} disabled={archivingId === p.id} aria-label="Archive product" title="Archive (make inactive)" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#8a8580", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>)}
                       <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -282,7 +278,9 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
                       )}
                     </td>
                     <td><span className={"badge "+(p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td>
-                    {profile?.role === "admin" && <td style={{textAlign:"right"}}><button onClick={() => deleteProduct(p)} disabled={deletingId===p.id} title="Delete product" aria-label="Delete product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#dc2626",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#fee2e2";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></td>}
+                    {profile?.role === "admin" && (p.active === false
+                      ? <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, true)} disabled={archivingId===p.id} title="Reactivate product" aria-label="Reactivate product" style={{ padding:"4px 10px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#16a34a",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"var(--sans)" }}>Reactivate</button></td>
+                      : <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, false)} disabled={archivingId===p.id} title="Archive (make inactive)" aria-label="Archive product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#8a8580",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#f5f5f4";e.currentTarget.style.color="#dc2626";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.color="#8a8580";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button></td>)}
                   </tr>
                 );
               })}
