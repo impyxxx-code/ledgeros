@@ -4,9 +4,10 @@ import { sb } from "../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement, getStockMovements } from "../lib/stock.js";
+import { toast } from "../lib/constants.js";
 import { MobileCardList, MobileCard, EmptyState, ModalPortal } from "../components/ui.jsx";
 
-export function Inventory({ products, setProducts, token, userId, profile }) {
+export function Inventory({ products, setProducts, invoices = [], token, userId, profile }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [invSearch, setInvSearch] = useState("");
@@ -33,6 +34,32 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
     if (delta !== 0) logStockMovement(token, { product: p, delta, balance_after: qty, reason: "manual", ref_type: "manual", note: "Inventory edit", userId, userName: profile?.full_name });
     setEditingQty(prev => { const n = {...prev}; delete n[p.id]; return n; });
     setUpdatingId(null);
+  };
+
+  // ── Delete a product (admin only; blocked if it appears on any invoice) ──
+  const [deletingId, setDeletingId] = useState(null);
+  const productInUse = (p) => {
+    try {
+      return invoices.some(inv => {
+        let lines = inv.lines;
+        if (typeof lines === "string") { try { lines = JSON.parse(lines); } catch { lines = []; } }
+        return Array.isArray(lines) && lines.some(l => l.product_id === p.id);
+      });
+    } catch { return false; }
+  };
+  const deleteProduct = async (p) => {
+    if (productInUse(p)) { toast.warn(`"${p.name}" appears on existing invoices, so it can't be deleted. Set its stock to 0 instead.`); return; }
+    if (!window.confirm(`Delete "${p.name}"?\n\nThis permanently removes the product and its stock history. This cannot be undone.`)) return;
+    setDeletingId(p.id);
+    const ok = await sb.del(token, "products", p.id);
+    if (ok) {
+      setProducts(prev => prev.filter(x => x.id !== p.id));
+      logAudit(token, userId, "product_deleted", "product", p.id, `Product deleted: ${p.name}${p.code ? " (" + p.code + ")" : ""}`);
+      toast.success(`"${p.name}" deleted`);
+    } else {
+      toast.error(`Couldn't delete "${p.name}" — it may be linked to purchase orders or price lists.`);
+    }
+    setDeletingId(null);
   };
 
   // ── Per-product stock movement history ──
@@ -195,7 +222,10 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
                 badge={<span className={"badge " + (isLow ? "b-red" : isRunning ? "b-amber" : "b-green")}>{isLow ? "Low Stock" : isRunning ? "Running Low" : "In Stock"}</span>}
                 footer={
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {profile?.role === "admin" && <button onClick={() => deleteProduct(p)} disabled={deletingId === p.id} aria-label="Delete product" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#dc2626", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>}
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       {canEdit && <button aria-label="Decrease stock" onClick={() => updateStock(p, (p.stock_qty || 0) - 1)} disabled={updatingId === p.id} style={stepBtn}>−</button>}
                       <span className="mono" style={{ fontWeight: 700, fontSize: 17, minWidth: 44, textAlign: "center" }}>{p.stock_qty || 0}<span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginLeft: 3, fontFamily: "var(--sans)" }}>{p.unit}</span></span>
@@ -212,7 +242,7 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
         <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{invSearch ? `${filtered.length} of ${products.length}` : filtered.length} product{filtered.length!==1?"s":""}</div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
           <table className="inventory-table" style={{minWidth:480}}>
-            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
+            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th>{profile?.role === "admin" && <th></th>}</tr></thead>
             <tbody>
               {filtered.map(p => {
                 const isEditing = editingQty[p.id] !== undefined;
@@ -252,10 +282,11 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
                       )}
                     </td>
                     <td><span className={"badge "+(p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td>
+                    {profile?.role === "admin" && <td style={{textAlign:"right"}}><button onClick={() => deleteProduct(p)} disabled={deletingId===p.id} title="Delete product" aria-label="Delete product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#dc2626",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#fee2e2";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></td>}
                   </tr>
                 );
               })}
-              {filtered.length===0&&<tr><td colSpan={8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
+              {filtered.length===0&&<tr><td colSpan={profile?.role === "admin" ? 9 : 8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
             </tbody>
           </table>
         </div>

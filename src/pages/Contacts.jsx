@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
 import { fmt, fmtDate, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
+import { toast } from "../lib/constants.js";
 import { ModalPortal, EmptyState } from "../components/ui.jsx";
 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
@@ -102,6 +103,25 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     setF({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "", credit_limit: "", credit_hold: false });
     setShowForm(false); setSaving(false);
   };
+
+  // ── Delete a contact (admin only; blocked if they have any invoices) ──
+  const [deletingId, setDeletingId] = useState(null);
+  const contactInUse = (c) => invoices.some(i => i.customer === c.name);
+  const deleteContact = async (c) => {
+    if (contactInUse(c)) { toast.warn(`"${c.name}" has invoices on record, so they can't be deleted. (History would be lost.)`); return; }
+    if (!window.confirm(`Delete "${c.name}"?\n\nThis permanently removes the ${c.type || "contact"} and their credit-control notes. This cannot be undone.`)) return;
+    setDeletingId(c.id);
+    const ok = await sb.del(token, "contacts", c.id);
+    if (ok) {
+      setContacts(prev => prev.filter(x => x.id !== c.id));
+      logAudit(token, userId, "contact_deleted", "contact", c.id, `Contact deleted: ${c.name}${c.email ? " · " + c.email : ""}`);
+      toast.success(`"${c.name}" deleted`);
+    } else {
+      toast.error(`Couldn't delete "${c.name}" — they may be linked to purchase orders, bills or price lists.`);
+    }
+    setDeletingId(null);
+  };
+
   const avatarColors = ["#dd2b0f","#1a7f37","#f59e0b","#201e1d","#ae1800","#8a8580","#57534e"];
   return (
     <div>
@@ -540,12 +560,13 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                       {[
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, label:"View", action:() => setViewContact(c) },
                         { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label:"Edit", action:(e) => { e.stopPropagation(); setEditingContact(c); setF({type:c.type||"customer",name:c.name||"",email:c.email||"",phone:c.phone||"",address:c.address||"",city:c.city||"",postcode:c.postcode||"",vat_number:c.vat_number||"",notes:c.notes||"",credit_limit:c.credit_limit!=null?String(c.credit_limit):"",credit_hold:!!c.credit_hold}); setShowForm(true); } },
-                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label:"Email", action:(e) => { e.stopPropagation(); if(c.email) window.open(`mailto:${c.email}`); } }
-                      ].map(({icon,label,action},idx) => (
+                        { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label:"Email", action:(e) => { e.stopPropagation(); if(c.email) window.open(`mailto:${c.email}`); } },
+                        ...(profile?.role === "admin" ? [{ icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>, label:"Delete", danger:true, action:(e) => { e.stopPropagation(); deleteContact(c); } }] : [])
+                      ].map(({icon,label,action,danger},idx) => (
                         <button key={idx} title={label} onClick={(e) => { e.stopPropagation(); action(e); }}
-                          style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color:"#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}
-                          onMouseEnter={e=>{ e.currentTarget.style.borderColor="#dd2b0f"; e.currentTarget.style.color="#dd2b0f"; e.currentTarget.style.background="rgba(221,43,15,.08)"; }}
-                          onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="#64748b"; e.currentTarget.style.background="var(--white)"; }}>
+                          style={{ width:26, height:26, borderRadius:7, border:"1.5px solid var(--border)", background:"var(--white)", color: danger ? "#dc2626" : "#64748b", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .12s" }}
+                          onMouseEnter={e=>{ const col = danger ? "#dc2626" : "#dd2b0f"; e.currentTarget.style.borderColor=col; e.currentTarget.style.color=col; e.currentTarget.style.background = danger ? "rgba(220,38,38,.08)" : "rgba(221,43,15,.08)"; }}
+                          onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color = danger ? "#dc2626" : "#64748b"; e.currentTarget.style.background="var(--white)"; }}>
                           {icon}
                         </button>
                       ))}
