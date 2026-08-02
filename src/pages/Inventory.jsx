@@ -3,7 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { sb } from "../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
-import { MobileCardList, MobileCard, EmptyState } from "../components/ui.jsx";
+import { logStockMovement, getStockMovements } from "../lib/stock.js";
+import { MobileCardList, MobileCard, EmptyState, ModalPortal } from "../components/ui.jsx";
 
 export function Inventory({ products, setProducts, token, userId, profile }) {
   const [showForm, setShowForm] = useState(false);
@@ -17,19 +18,31 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
   const save = async () => {
     if (!f.name) return; setSaving(true);
     const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price)||0, sale_price: parseFloat(f.sale_price)||0, vat_rate: parseFloat(f.vat_rate)||20, stock_qty: parseFloat(f.stock_qty)||0, reorder_level: parseFloat(f.reorder_level)||0, created_by: userId });
-    if (data[0]) { setProducts(prev => [data[0], ...prev]); logAudit(token, userId, "product_created", "product", data[0].id, `Product added: ${f.name} · Sale £${parseFloat(f.sale_price)||0} · Stock: ${parseFloat(f.stock_qty)||0}`); }
+    if (data[0]) { setProducts(prev => [data[0], ...prev]); logAudit(token, userId, "product_created", "product", data[0].id, `Product added: ${f.name} · Sale £${parseFloat(f.sale_price)||0} · Stock: ${parseFloat(f.stock_qty)||0}`); const openQty = parseFloat(f.stock_qty) || 0; if (openQty > 0) logStockMovement(token, { product: data[0], delta: openQty, balance_after: openQty, reason: "opening", ref_type: "product", note: "Opening balance", userId, userName: profile?.full_name }); }
     setF({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
     setShowForm(false); setSaving(false);
   };
 
   const updateStock = async (p, newQty) => {
     const qty = Math.max(0, parseInt(newQty) || 0);
+    const delta = qty - (parseFloat(p.stock_qty) || 0);
     setUpdatingId(p.id);
     await sb.patch(token, "products", p.id, { stock_qty: qty });
     setProducts(prev => prev.map(x => x.id === p.id ? { ...x, stock_qty: qty } : x));
     logAudit(token, userId, "stock_adjusted", "product", p.id, `${p.name} stock updated: ${p.stock_qty} → ${qty} ${p.unit||"units"}`);
+    if (delta !== 0) logStockMovement(token, { product: p, delta, balance_after: qty, reason: "manual", ref_type: "manual", note: "Inventory edit", userId, userName: profile?.full_name });
     setEditingQty(prev => { const n = {...prev}; delete n[p.id]; return n; });
     setUpdatingId(null);
+  };
+
+  // ── Per-product stock movement history ──
+  const [historyProduct, setHistoryProduct] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const openHistory = async (p) => {
+    setHistoryProduct(p); setHistoryLoading(true); setHistory([]);
+    const m = await getStockMovements(token, p.id);
+    setHistory(m); setHistoryLoading(false);
   };
 
   const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
@@ -173,8 +186,9 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
             return (
               <MobileCard
                 key={p.id}
+                onClick={() => openHistory(p)}
                 title={p.name}
-                subtitle={`${p.code || "—"}${p.category ? " · " + p.category : ""}`}
+                subtitle={`${p.code || "—"}${p.category ? " · " + p.category : ""} · tap for history`}
                 value={fmt(p.sale_price)}
                 valueSub={`VAT ${p.vat_rate}%`}
                 accent={isOut ? "#ef4444" : isLow ? "#f59e0b" : undefined}
@@ -208,7 +222,7 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
                 return (
                   <tr key={p.id} style={isOut ? { background: "rgba(239,68,68,.04)", borderLeft: "3px solid #ef4444" } : isLow ? { background: "rgba(245,158,11,.04)", borderLeft: "3px solid #f59e0b" } : {}}>
                     <td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td>
-                    <td style={{fontWeight:500}}>{p.name}</td>
+                    <td style={{fontWeight:500}}><span style={{display:"inline-flex",alignItems:"center",gap:7}}>{p.name}<button onClick={() => openHistory(p)} title="Stock history" style={{border:"none",background:"none",cursor:"pointer",color:"var(--text3)",display:"inline-flex",padding:2}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></button></span></td>
                     <td className="tm">{p.category||"—"}</td>
                     <td className="mono hm">{fmt(p.cost_price)}</td>
                     <td className="mono">{fmt(p.sale_price)}</td>
@@ -246,6 +260,44 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
           </table>
         </div>
       </div>
+      )}
+
+      {historyProduct && (
+        <ModalPortal>
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setHistoryProduct(null)} style={{ alignItems: "center" }}>
+            <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 8px 40px rgba(0,0,0,.12)", overflow: "hidden", borderTop: "3px solid #dd2b0f", display: "flex", flexDirection: "column", maxHeight: "85vh" }}>
+              <div style={{ background: "#201e1d", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{historyProduct.name}</div>
+                  <div style={{ fontSize: 12, color: "#8aa0b8", marginTop: 2 }}>Stock history · currently {historyProduct.stock_qty || 0} {historyProduct.unit || "units"}</div>
+                </div>
+                <button onClick={() => setHistoryProduct(null)} style={{ background: "none", border: "none", color: "#8aa0b8", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                {historyLoading ? (
+                  <div style={{ padding: 28, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>Loading…</div>
+                ) : history.length === 0 ? (
+                  <div style={{ padding: 28, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No recorded movements yet.<br />Changes from now on will appear here.</div>
+                ) : (
+                  history.map(m => {
+                    const up = (parseFloat(m.delta) || 0) > 0;
+                    const d = m.created_at ? new Date(m.created_at) : null;
+                    return (
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "var(--rl)", background: up ? "#f0fdf4" : "#fef2f2", color: up ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0, fontFamily: "var(--mono)" }}>{up ? "+" : "−"}{Math.abs(parseFloat(m.delta) || 0)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{m.reason || "manual"}{m.note ? ` · ${m.note}` : ""}</div>
+                          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}{m.created_by_name ? ` · ${m.created_by_name}` : ""}{m.ref_id ? ` · ${m.ref_id}` : ""}</div>
+                        </div>
+                        {m.balance_after != null && <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)", color: "var(--text2)", flexShrink: 0 }}>→ {parseFloat(m.balance_after)}</div>}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );

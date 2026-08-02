@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { sb } from "../../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../../lib/utils.js";
 import { logAudit } from "../../lib/audit.js";
+import { logStockMovement } from "../../lib/stock.js";
 import { MobileCard } from "../../components/ui.jsx";
 
 // ── STOCK ADJUSTMENT ──────────────────────────────────────────────────────────
@@ -22,6 +23,8 @@ export function StockAdjustment({ products, setProducts, token, userId }) {
     setSaving(product.id);
     await sb.patch(token, "products", product.id, { stock_qty: newQty });
     logAudit(token, userId, "stock_adjusted", "product", product.id, `${product.name} stock ${reason}: ${product.stock_qty} → ${newQty} ${product.unit||"units"}`);
+    const applied = newQty - (parseFloat(product.stock_qty) || 0);
+    if (applied !== 0) logStockMovement(token, { product, delta: applied, balance_after: newQty, reason: reason || "adjustment", ref_type: "stock_adjustment", note: reason || null, userId });
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_qty: newQty } : p));
     setAdjustments(prev => ({ ...prev, [product.id]: "" }));
     setSuccess(product.id);
