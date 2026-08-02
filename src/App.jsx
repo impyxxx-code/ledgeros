@@ -59,6 +59,7 @@ import { Dashboard } from "./pages/Dashboard.jsx";
 import { Reports } from "./pages/reports/Reports.jsx";
 import { CustomerStatement } from "./pages/reports/CustomerStatement.jsx";
 import { StockAdjustment } from "./pages/reports/StockAdjustment.jsx";
+import { StockTake } from "./pages/reports/StockTake.jsx";
 import { AgentReport } from "./pages/reports/AgentReport.jsx";
 import { ProductSalesTracker } from "./pages/reports/ProductSalesTracker.jsx";
 import { AgentProductsReport } from "./pages/reports/AgentProductsReport.jsx";
@@ -1404,6 +1405,7 @@ const NAV_ICONS = {
   "admin-reports":  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="12" y1="17" x2="8" y2="17"/></svg>,
   "statement":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
   "stock-adj":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  "stock-take":     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
   "agent-report":   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="21" x2="23" y2="19"/><line x1="19" y1="21" x2="19" y2="17"/><line x1="15" y1="21" x2="15" y2="15"/></svg>,
   "import":         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
   "delivery-notes": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
@@ -1428,6 +1430,7 @@ const NAV_GROUPS = [
       { id: "purchases",      label: "Purchases", adminOnly: true },
       { id: "bills",          label: "Bills", adminOnly: true },
       { id: "stock-adj",      label: "Stock In/Out", adminOnly: true },
+      { id: "stock-take",     label: "Stock Take", adminOnly: true },
       { id: "delivery-notes", label: "Delivery Notes" },
       { id: "import",         label: "Import", adminOnly: true },
     ]
@@ -1455,6 +1458,7 @@ const NAV = [
   { id: "admin-reports", label: "Reports", adminOnly: true },
   { id: "statement", label: "Statements", adminOnly: true },
   { id: "stock-adj", label: "Stock In/Out", adminOnly: true },
+  { id: "stock-take", label: "Stock Take", adminOnly: true },
   { id: "agent-report", label: "Agent Sales", adminOnly: true },
   { id: "banking", label: "Banking", adminOnly: true },
   { id: "import", label: "Import", adminOnly: true },
@@ -1986,7 +1990,7 @@ export default function App() {
                 const overdueCount = invoices.filter(i=>i.status==="overdue").length;
                 return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
               })()}
-              <div className={"topnav-navitem "+(["inventory","purchases","bills","stock-adj","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
+              <div className={"topnav-navitem "+(["inventory","purchases","bills","stock-adj","stock-take","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
               {(profile?.role==="admin"||profile?.role==="manager") && (
                 <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
               )}
@@ -2099,12 +2103,13 @@ export default function App() {
                 ]
               },
               operations: {
-                pages: ["inventory","purchases","bills","stock-adj","import"],
+                pages: ["inventory","purchases","bills","stock-adj","stock-take","import"],
                 tabs: [
                   { id:"inventory", label:"Inventory" },
                   { id:"purchases", label:"Purchases",  adminOnly:true },
                   { id:"bills",     label:"Bills",      adminOnly:true },
                   { id:"stock-adj", label:"Stock In/Out",adminOnly:true },
+                  { id:"stock-take",label:"Stock Take", adminOnly:true },
                   { id:"import",    label:"Import",     adminOnly:true },
                 ]
               },
@@ -2174,6 +2179,7 @@ export default function App() {
                 {page==="statement"&&<CustomerStatement contacts={contacts} invoices={invoices} token={auth.token} />}
                 {page==="admin-reports"&&<AdminReports invoices={invoices} products={products} contacts={contacts} accounts={accounts} allProfiles={allProfiles} setPage={setPage} setPendingFilter={setPendingFilter} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
+                {page==="stock-take"&&<StockTake products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
                 {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}
@@ -2341,7 +2347,7 @@ export default function App() {
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
                 { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
-                { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","import"] },
+                { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","stock-take","import"] },
                 { label:"Finance", color:"#16a34a", items:["banking","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
