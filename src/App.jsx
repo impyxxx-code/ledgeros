@@ -51,6 +51,7 @@ import { Inventory } from "./pages/Inventory.jsx";
 import { DeliveryNotes } from "./pages/DeliveryNotes.jsx";
 import { BankingPage } from "./pages/BankingPage.jsx";
 import { CreditControl } from "./pages/CreditControl.jsx";
+import { VATReturn } from "./pages/reports/VATReturn.jsx";
 import { Settings } from "./pages/Settings.jsx";
 import { InvoiceModal } from "./components/InvoiceModal.jsx";
 import { AgentDashboard } from "./pages/AgentDashboard.jsx";
@@ -1413,6 +1414,7 @@ const NAV_ICONS = {
   "settings":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
   "banking":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
   "credit-control": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  "vat-return":     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><line x1="7" y1="8" x2="12" y2="8"/></svg>,
 };
 
 const NAV_GROUPS = [
@@ -1443,6 +1445,7 @@ const NAV_GROUPS = [
       { id: "admin-reports",  label: "Reports", adminOnly: true },
       { id: "banking",        label: "Banking", adminOnly: true },
       { id: "credit-control", label: "Credit Control", adminOnly: true },
+      { id: "vat-return",     label: "VAT Return", adminOnly: true },
       { id: "credits",        label: "Credits", adminOnly: true },
     ]
   },
@@ -1465,6 +1468,7 @@ const NAV = [
   { id: "agent-report", label: "Agent Sales", adminOnly: true },
   { id: "banking", label: "Banking", adminOnly: true },
   { id: "credit-control", label: "Credit Control", adminOnly: true },
+  { id: "vat-return", label: "VAT Return", adminOnly: true },
   { id: "import", label: "Import", adminOnly: true },
   { id: "delivery-notes", label: "Delivery Notes" },
   { id: "settings", label: "Settings", adminOnly: true },
@@ -1996,7 +2000,7 @@ export default function App() {
               })()}
               <div className={"topnav-navitem "+(["inventory","purchases","bills","stock-adj","stock-take","import"].includes(page)?"active":"")} onClick={() => setPage("inventory")}>Operations</div>
               {(profile?.role==="admin"||profile?.role==="manager") && (
-                <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports","credit-control"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
+                <div className={"topnav-navitem "+(["banking","reports","analytics","admin-reports","credit-control","vat-return"].includes(page)?"active":"")} onClick={() => setPage("banking")}>Finance</div>
               )}
               {(profile?.role==="admin"||profile?.role==="manager") && (
                 <div className={"topnav-navitem "+(page==="settings"?"active":"")} onClick={() => setPage("settings")}>Administration</div>
@@ -2118,10 +2122,11 @@ export default function App() {
                 ]
               },
               finance: {
-                pages: ["banking","admin-reports","analytics","reports","credit-control"],
+                pages: ["banking","admin-reports","analytics","reports","credit-control","vat-return"],
                 tabs: [
                   { id:"banking",        label:"Banking",        adminOnly:true },
                   { id:"credit-control", label:"Credit Control", adminOnly:true },
+                  { id:"vat-return",     label:"VAT Return",     adminOnly:true },
                   { id:"admin-reports",  label:"Reports",        adminOnly:true },
                   { id:"analytics",      label:"Analytics",      adminOnly:true },
                   { id:"reports",        label:"P&L",            adminOnly:true },
@@ -2190,6 +2195,7 @@ export default function App() {
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="credit-control"&&<CreditControl contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} profile={profile} />}
+                {page==="vat-return"&&<VATReturn invoices={invoices} token={auth.token} />}
               </>
             )}
           </div>
@@ -2354,7 +2360,7 @@ export default function App() {
               {(profile?.role==="admin" ? [
                 { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
                 { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","stock-take","import"] },
-                { label:"Finance", color:"#16a34a", items:["banking","credit-control","admin-reports","analytics"] },
+                { label:"Finance", color:"#16a34a", items:["banking","credit-control","vat-return","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
                 { label:"My Tools", color:"#dd2b0f", items:["delivery-notes","agent-report"] },
