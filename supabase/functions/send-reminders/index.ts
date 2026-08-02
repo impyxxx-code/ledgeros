@@ -34,7 +34,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
     headers: { "Authorization": `Bearer ${SENDGRID_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       personalizations: [{ to: [{ email: to }] }],
-      from: { email: "ARKHAMRETAIL@GMAIL.COM", name: COMPANY.name },
+      from: { email: "noreply@arkos.uk", name: COMPANY.name },   // must match the verified SendGrid sender used by api/send-email.js
       subject,
       content: [{ type: "text/html", value: html }],
     }),
