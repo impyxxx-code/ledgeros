@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, today, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
+import { logStockMovement } from "../lib/stock.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
@@ -78,6 +79,7 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
           localStock[l.product_id] = newQty;
           await sb.patch(token, "products", l.product_id, { stock_qty: newQty });
           setProducts && setProducts(prev => prev.map(p => p.id === l.product_id ? { ...p, stock_qty: newQty } : p));
+          logStockMovement(token, { product: prod, delta: now, balance_after: newQty, reason: "receipt", ref_type: "purchase_order", ref_id: receivePO.po_number, note: `Goods receipt`, userId });
         }
         await sb.patch(token, "purchase_order_lines", l.id, { qty_received: already + now });
         summary.push(`${l.product_name || "item"} +${now}`);
