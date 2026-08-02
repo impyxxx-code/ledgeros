@@ -2208,7 +2208,7 @@ export default function App() {
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="credit-control"&&<CreditControl contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="vat-return"&&<VATReturn invoices={invoices} token={auth.token} />}
-                {page==="bank-recon"&&<BankReconciliation token={auth.token} />}
+                {page==="bank-recon"&&<BankReconciliation token={auth.token} userId={auth.user.id} />}
               </>
             )}
           </div>

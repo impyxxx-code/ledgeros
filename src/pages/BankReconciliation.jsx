@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, isMobile } from "../lib/utils.js";
 import { toast } from "../lib/constants.js";
+import { logAudit } from "../lib/audit.js";
 
 // ── BANK RECONCILIATION ───────────────────────────────────────────────────────
 // Import a bank statement (CSV), auto-match rows against recorded payments
@@ -49,13 +50,15 @@ const guessRole = (h) => {
   return "";
 };
 
-export function BankReconciliation({ token }) {
+export function BankReconciliation({ token, userId }) {
   const [raw, setRaw] = useState("");
   const [rows, setRows] = useState([]);        // parsed statement rows (arrays)
   const [header, setHeader] = useState([]);
   const [map, setMap] = useState({ date: -1, desc: -1, amount: -1, in: -1, out: -1 });
   const [payIn, setPayIn] = useState([]);      // invoice_payments
   const [payOut, setPayOut] = useState([]);    // supplier_bill_payments
+  const [reconciled, setReconciled] = useState(() => new Set()); // "in:<id>" / "out:<id>" already reconciled
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("matched"); // matched | stmt | books
 
@@ -63,11 +66,13 @@ export function BankReconciliation({ token }) {
     if (!token) return;
     setLoading(true);
     Promise.all([
-      sb.get(token, "invoice_payments", "select=invoice_number,customer,amount,method,payment_date,created_at,notes&order=payment_date.desc&limit=3000").catch(() => []),
-      sb.get(token, "supplier_bill_payments", "select=supplier_name,amount,method,payment_date,notes&order=payment_date.desc&limit=3000").catch(() => []),
-    ]).then(([pi, po]) => {
+      sb.get(token, "invoice_payments", "select=id,invoice_number,customer,amount,method,payment_date,created_at,notes&order=payment_date.desc&limit=3000").catch(() => []),
+      sb.get(token, "supplier_bill_payments", "select=id,supplier_name,amount,method,payment_date,notes&order=payment_date.desc&limit=3000").catch(() => []),
+      sb.get(token, "bank_reconciliations", "select=payment_kind,payment_id&limit=10000").catch(() => []),
+    ]).then(([pi, po, br]) => {
       setPayIn(Array.isArray(pi) ? pi : []);
       setPayOut(Array.isArray(po) ? po : []);
+      setReconciled(new Set((Array.isArray(br) ? br : []).map(r => `${r.payment_kind}:${r.payment_id}`)));
     }).finally(() => setLoading(false));
   }, [token]);
 
@@ -106,8 +111,11 @@ export function BankReconciliation({ token }) {
   // Greedy auto-match: each statement line claims the closest unused payment of
   // the right direction within amount tolerance, preferring date + description.
   const recon = useMemo(() => {
-    const inPool = payIn.map(p => ({ ...p, _d: p.payment_date || (p.created_at || "").slice(0, 10), _amt: parseFloat(p.amount) || 0, _used: false }));
-    const outPool = payOut.map(p => ({ ...p, _d: p.payment_date || (p.created_at || "").slice(0, 10), _amt: parseFloat(p.amount) || 0, _used: false }));
+    const key = (kind, p) => `${kind}:${p.id}`;
+    const inPool = payIn.map(p => ({ ...p, _d: p.payment_date || (p.created_at || "").slice(0, 10), _amt: parseFloat(p.amount) || 0, _used: false, _kind: "in", _reconciled: reconciled.has(key("in", p)) }));
+    const outPool = payOut.map(p => ({ ...p, _d: p.payment_date || (p.created_at || "").slice(0, 10), _amt: parseFloat(p.amount) || 0, _used: false, _kind: "out", _reconciled: reconciled.has(key("out", p)) }));
+    // Match against ALL payments (incl. already-reconciled) so a re-imported
+    // statement line still lands on its payment rather than reading as unmatched.
     const results = txns.map(t => {
       const dir = t.amount >= 0 ? "in" : "out";
       const pool = dir === "in" ? inPool : outPool;
@@ -123,20 +131,51 @@ export function BankReconciliation({ token }) {
         if (ref.trim() && desc && ref.split(/\s+/).some(w => w.length > 2 && desc.includes(w))) score += 10;
         if (score > bestScore) { bestScore = score; best = p; }
       }
-      if (best) { best._used = true; return { t, match: best, dir }; }
-      return { t, match: null, dir };
+      if (best) { best._used = true; return { t, match: best, dir, reconciled: best._reconciled }; }
+      return { t, match: null, dir, reconciled: false };
     });
-    const booksOnly = [...inPool, ...outPool].filter(p => !p._used);
+    // In-books-only excludes already-reconciled payments — they're done, not noise.
+    const booksOnly = [...inPool, ...outPool].filter(p => !p._used && !p._reconciled);
     return { results, booksOnly };
-  }, [txns, payIn, payOut]);
+  }, [txns, payIn, payOut, reconciled]);
 
   const matched = recon.results.filter(r => r.match);
+  const toReconcile = matched.filter(r => !r.reconciled);   // freshly matched, confirmable
+  const alreadyDone = matched.filter(r => r.reconciled);    // matched + persisted earlier
   const stmtOnly = recon.results.filter(r => !r.match);
   const totalIn = txns.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const totalOut = txns.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const matchedPct = txns.length ? Math.round((matched.length / txns.length) * 100) : 0;
 
   const reset = () => { setRaw(""); setRows([]); setHeader([]); setMap({ date: -1, desc: -1, amount: -1, in: -1, out: -1 }); };
+
+  // Label for the statement being reconciled — its date span, else today.
+  const stmtRef = useMemo(() => {
+    const ds = txns.map(t => t.date).filter(Boolean).sort((a, b) => a - b);
+    return ds.length ? `${fmtDate(ds[0].toISOString())} – ${fmtDate(ds[ds.length - 1].toISOString())}` : `Statement ${fmtDate(new Date().toISOString())}`;
+  }, [txns]);
+
+  // Persist the freshly-matched payments so they stay reconciled across sessions.
+  const confirmReconciliation = async () => {
+    if (!toReconcile.length || saving) return;
+    setSaving(true);
+    const payload = toReconcile.map(({ match, dir }) => ({
+      payment_kind: dir,
+      payment_id: match.id,
+      statement_ref: stmtRef,
+      amount: match._amt,
+      reconciled_by: userId || null,
+    }));
+    const res = await sb.post(token, "bank_reconciliations", payload);
+    if (Array.isArray(res) && res.length) {
+      setReconciled(prev => { const n = new Set(prev); payload.forEach(r => n.add(`${r.payment_kind}:${r.payment_id}`)); return n; });
+      logAudit(token, userId, "bank_reconciled", "bank_reconciliation", null, `Reconciled ${payload.length} payment(s) · statement ${stmtRef}`);
+      toast.success(`${payload.length} payment${payload.length !== 1 ? "s" : ""} marked reconciled`);
+    } else {
+      toast.error("Couldn't save — has BANK_RECON_PERSIST.sql been run in Supabase?");
+    }
+    setSaving(false);
+  };
 
   const mapSelect = (role, label) => (
     <div>
@@ -160,7 +199,7 @@ export function BankReconciliation({ token }) {
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[
             { label: "Statement lines", val: String(txns.length), sub: raw ? "imported" : "none yet", accent: "#dd2b0f" },
-            { label: "Matched", val: `${matched.length}/${txns.length}`, sub: `${matchedPct}% reconciled`, accent: matchedPct === 100 && txns.length ? "#16a34a" : "#f59e0b" },
+            { label: "Matched", val: `${matched.length}/${txns.length}`, sub: alreadyDone.length ? `${alreadyDone.length} saved · ${matchedPct}% matched` : `${matchedPct}% matched`, accent: matchedPct === 100 && txns.length ? "#16a34a" : "#f59e0b" },
             { label: "Money in", val: fmt(totalIn), sub: "credits", accent: "#16a34a" },
             { label: "Money out", val: fmt(totalOut), sub: "debits", accent: "#dc2626" },
           ].map((k, i) => (
@@ -207,10 +246,20 @@ export function BankReconciliation({ token }) {
 
           {/* View tabs */}
           <div className="card">
-            <div style={{ padding: "10px 16px", borderBottom: "0.5px solid var(--border)", display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {[["matched", `Matched (${matched.length})`, "#16a34a"], ["stmt", `On statement only (${stmtOnly.length})`, "#dc2626"], ["books", `In books only (${recon.booksOnly.length})`, "#f59e0b"]].map(([k, l, c]) => (
-                <button key={k} className={"btn bsm " + (view === k ? "bp" : "bg2")} onClick={() => setView(k)} style={view === k ? { background: c, borderColor: c } : {}}>{l}</button>
-              ))}
+            <div style={{ padding: "10px 16px", borderBottom: "0.5px solid var(--border)", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[["matched", `Matched (${matched.length})`, "#16a34a"], ["stmt", `On statement only (${stmtOnly.length})`, "#dc2626"], ["books", `In books only (${recon.booksOnly.length})`, "#f59e0b"]].map(([k, l, c]) => (
+                  <button key={k} className={"btn bsm " + (view === k ? "bp" : "bg2")} onClick={() => setView(k)} style={view === k ? { background: c, borderColor: c } : {}}>{l}</button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {alreadyDone.length > 0 && <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>{alreadyDone.length} already reconciled</span>}
+                <button className="btn bp bsm" disabled={!toReconcile.length || saving} onClick={confirmReconciliation}
+                  style={{ background: toReconcile.length && !saving ? "#16a34a" : undefined, borderColor: toReconcile.length && !saving ? "#16a34a" : undefined }}
+                  title="Persist these matches so they stay reconciled across sessions">
+                  {saving ? "Saving…" : `Mark ${toReconcile.length} reconciled`}
+                </button>
+              </div>
             </div>
 
             <div className="tw" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
@@ -218,12 +267,12 @@ export function BankReconciliation({ token }) {
                 <table style={{ minWidth: 640 }}>
                   <thead><tr><th>Date</th><th>Statement description</th><th style={{ textAlign: "right" }}>Amount</th><th>Matched to</th></tr></thead>
                   <tbody>
-                    {matched.map(({ t, match, dir }) => (
+                    {matched.map(({ t, match, dir, reconciled: isRec }) => (
                       <tr key={t.idx}>
                         <td style={{ fontSize: 12, color: "var(--text2)" }}>{t.date ? fmtDate(t.date.toISOString()) : t.dateStr || "—"}</td>
                         <td style={{ fontSize: 12 }}>{t.desc || "—"}</td>
                         <td className="mono" style={{ textAlign: "right", fontWeight: 700, color: dir === "in" ? "#16a34a" : "#dc2626" }}>{dir === "in" ? "+" : "−"}{fmt(Math.abs(t.amount))}</td>
-                        <td style={{ fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span className="badge b-green">✓</span>{dir === "in" ? `${match.invoice_number || "Payment"} · ${match.customer || ""}` : `${match.supplier_name || "Supplier payment"}`} <span style={{ color: "var(--text3)" }}>({match.method || "—"}, {fmtDate(match._d)})</span></span></td>
+                        <td style={{ fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span className="badge b-green">✓</span>{dir === "in" ? `${match.invoice_number || "Payment"} · ${match.customer || ""}` : `${match.supplier_name || "Supplier payment"}`} <span style={{ color: "var(--text3)" }}>({match.method || "—"}, {fmtDate(match._d)})</span>{isRec && <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "rgba(22,163,74,.1)", padding: "1px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: ".4px" }}>Reconciled</span>}</span></td>
                       </tr>
                     ))}
                     {!matched.length && <tr><td colSpan={4} className="empty">No matches yet — check the column mapping above.</td></tr>}
@@ -264,7 +313,7 @@ export function BankReconciliation({ token }) {
               )}
             </div>
             <div style={{ padding: "12px 20px", borderTop: "0.5px solid var(--border)", fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>
-              Auto-matched by amount (±1p) and date (±{DATE_WINDOW} days), preferring lines whose description mentions the invoice number, customer or supplier. <strong>On statement only</strong> = money moved through the bank with no recorded payment (record it, or it's a transfer/charge). <strong>In books only</strong> = a recorded payment not seen on this statement (e.g. cash not yet banked, or a different period). This is a review tool — nothing is saved.
+              Auto-matched by amount (±1p) and date (±{DATE_WINDOW} days), preferring lines whose description mentions the invoice number, customer or supplier. <strong>On statement only</strong> = money moved through the bank with no recorded payment (record it, or it's a transfer/charge). <strong>In books only</strong> = a recorded payment not seen on this statement (e.g. cash not yet banked, or a different period). Use <strong>Mark reconciled</strong> to save confirmed matches — reconciled payments persist across sessions and won't reappear as noise.
             </div>
           </div>
         </>
