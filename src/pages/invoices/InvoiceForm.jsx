@@ -14,8 +14,8 @@ import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 // │ InvoiceForm                                                │
 // │ Create new invoice form with line items and VAT            │
 // └────────────────────────────────────────────────────────────┘
-export function InvoiceForm({ contacts, products, accounts = [], token, userId, onSave, onClose, invoices = [] }) {
-  const [f, setF] = useState({ customer: "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
+export function InvoiceForm({ contacts, products, accounts = [], token, userId, onSave, onClose, invoices = [], initialCustomer = "" }) {
+  const [f, setF] = useState({ customer: initialCustomer || "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -888,7 +888,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
     <div className="card">
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
-        <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
+        <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} value={f.customer} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
         {f.customer && creditBlocked && (
           <div style={{ gridColumn: "1 / -1", borderRadius: "var(--r)", border: "1px solid #fca5a5", background: "#fff5f5", padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
             <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</div>

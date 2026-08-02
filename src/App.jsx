@@ -57,6 +57,7 @@ import { Settings } from "./pages/Settings.jsx";
 import { InvoiceModal } from "./components/InvoiceModal.jsx";
 import { AgentDashboard } from "./pages/AgentDashboard.jsx";
 import { Contacts } from "./pages/Contacts.jsx";
+import { CustomerHub } from "./pages/CustomerHub.jsx";
 import { OverpaymentModal } from "./components/OverpaymentModal.jsx";
 import { Dashboard } from "./pages/Dashboard.jsx";
 import { Reports } from "./pages/reports/Reports.jsx";
@@ -1399,6 +1400,7 @@ const NAV_ICONS = {
   "dashboard":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   "invoices":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
   "contacts":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  "customer-hub":   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>,
   "inventory":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>,
   "purchases":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
   "credits":        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
@@ -1425,6 +1427,7 @@ const NAV_GROUPS = [
     items: [
       { id: "invoices",     label: "Invoices" },
       { id: "contacts",     label: "Customers" },
+      { id: "customer-hub", label: "Customer Hub", adminOnly: true },
       { id: "statement",    label: "Statements", adminOnly: true },
       { id: "agent-report", label: "Agent Sales", adminOnly: true },
     ]
@@ -1458,6 +1461,7 @@ const NAV = [
   { id: "dashboard", label: "Dashboard" },
   { id: "invoices", label: "Invoices" },
   { id: "contacts", label: "Customers" },
+  { id: "customer-hub", label: "Customer Hub", adminOnly: true },
   { id: "inventory", label: "Inventory" },
   { id: "purchases", label: "Purchases", adminOnly: true },
   { id: "bills", label: "Bills", adminOnly: true },
@@ -1540,6 +1544,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [pendingInvoiceView, setPendingInvoiceView] = useState(null);
+  const [pendingCustomer, setPendingCustomer] = useState(null);
   const [pendingFilter, setPendingFilter] = useState(null);
   const [triggerNewInvoice, setTriggerNewInvoice] = useState(0);
   const [triggerNewContact, setTriggerNewContact] = useState(0);
@@ -1998,7 +2003,7 @@ export default function App() {
             <nav className="topnav-nav">
               <div className={"topnav-navitem "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>Dashboard</div>
               {(() => {
-                const commercePages = ["invoices","contacts","statement","agent-report","delivery-notes","credits"];
+                const commercePages = ["invoices","contacts","customer-hub","statement","agent-report","delivery-notes","credits"];
                 const overdueCount = invoices.filter(i=>i.status==="overdue").length;
                 return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
               })()}
@@ -2104,10 +2109,11 @@ export default function App() {
             const overdueCount = invoices.filter(i=>i.status==="overdue").length;
             const sections = {
               commerce: {
-                pages: ["invoices","contacts","statement","agent-report","delivery-notes","credits"],
+                pages: ["invoices","contacts","customer-hub","statement","agent-report","delivery-notes","credits"],
                 tabs: [
                   { id:"invoices",       label:"Invoices",       badge: overdueCount > 0 ? overdueCount : null },
                   { id:"contacts",       label:"Customers" },
+                  { id:"customer-hub",   label:"Customer Hub", adminOnly:true },
                   { id:"statement",      label:"Statements",     adminOnly:true },
                   { id:"agent-report",   label:"Agent Sales",    adminOnly:true },
                   { id:"delivery-notes", label:"Delivery Notes" },
@@ -2183,7 +2189,8 @@ export default function App() {
               <>
                 {page==="dashboard"&&<Dashboard accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} allProfiles={allProfiles} token={auth.token} userId={auth.user.id} />}
                 {page==="invoices"&&<Invoices invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} products={products} accounts={accounts} token={auth.token} userId={auth.user.id} profile={profile} allProfiles={allProfiles||[]} pendingInvoiceView={pendingInvoiceView} onClearPending={() => setPendingInvoiceView(null)} pendingFilter={pendingFilter} onClearFilter={() => setPendingFilter(null)} triggerNewInvoice={triggerNewInvoice} onTriggerHandled={() => setTriggerNewInvoice(0)} />}
-                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} />}
+                {page==="contacts"&&<Contacts contacts={contacts} setContacts={setContacts} token={auth.token} userId={auth.user.id} invoices={invoices} products={products} profile={profile} triggerNewContact={triggerNewContact} onTriggerContactHandled={() => setTriggerNewContact(0)} onOpenCustomer={(c) => { setPendingCustomer(c.id); setPage("customer-hub"); }} />}
+                {page==="customer-hub"&&<CustomerHub contacts={contacts} setContacts={setContacts} invoices={invoices} setInvoices={setInvoices} products={products} accounts={accounts} token={auth.token} userId={auth.user.id} profile={profile} pendingCustomer={pendingCustomer} onClearPending={() => setPendingCustomer(null)} />}
                 {page==="inventory"&&<Inventory products={products} setProducts={setProducts} invoices={invoices} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="purchases"&&<Purchases contacts={contacts} setContacts={setContacts} products={products} setProducts={setProducts} accounts={accounts} token={auth.token} userId={auth.user.id} />}
                 {page==="bills"&&<SupplierBills contacts={contacts} setContacts={setContacts} accounts={accounts} token={auth.token} userId={auth.user.id} profile={profile} />}
@@ -2364,7 +2371,7 @@ export default function App() {
               )}
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
-                { label:"Commerce", color:"#dd2b0f", items:["statement","agent-report","credits","delivery-notes"] },
+                { label:"Commerce", color:"#dd2b0f", items:["customer-hub","statement","agent-report","credits","delivery-notes"] },
                 { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","stock-take","import"] },
                 { label:"Finance", color:"#16a34a", items:["banking","credit-control","vat-return","bank-recon","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
