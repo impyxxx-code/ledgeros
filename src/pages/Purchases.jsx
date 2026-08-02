@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
-import { fmt, fmtDate, today, isMobile } from "../lib/utils.js";
+import { fmt, fmtDate, today, isMobile, DEFAULT_REORDER } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement } from "../lib/stock.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
@@ -40,6 +40,44 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
     setShowForm(false); setSaving(false);
   };
   const updateStatus = async (id, status) => { await sb.patch(token,"purchase_orders",id,{status}); setPOs(prev => prev.map(p => p.id===id?{...p,status}:p)); };
+
+  // ── Reorder automation ────────────────────────────────────────────────────
+  const [showReorder, setShowReorder] = useState(false);
+  const [reorderSel, setReorderSel] = useState({});      // productId -> selected
+  const [reorderQty, setReorderQty] = useState({});      // productId -> qty
+  const [reorderSupplier, setReorderSupplier] = useState("");
+  const [reorderSaving, setReorderSaving] = useState(false);
+
+  const lowStock = products.filter(p => (parseFloat(p.stock_qty) || 0) <= (p.reorder_level || DEFAULT_REORDER));
+  const suggestedQty = (p) => Math.max(1, Math.ceil((p.reorder_level || DEFAULT_REORDER) * 2 - (parseFloat(p.stock_qty) || 0)));
+
+  const openReorder = () => {
+    const sel = {}, qty = {};
+    lowStock.forEach(p => { sel[p.id] = true; qty[p.id] = String(suggestedQty(p)); });
+    setReorderSel(sel); setReorderQty(qty); setReorderSupplier(""); setShowReorder(true);
+  };
+  const reorderTotal = lowStock.filter(p => reorderSel[p.id]).reduce((s, p) => s + (parseInt(reorderQty[p.id]) || 0) * (parseFloat(p.cost_price) || 0), 0);
+
+  const createReorderPO = async () => {
+    const items = lowStock.filter(p => reorderSel[p.id] && (parseInt(reorderQty[p.id]) || 0) > 0);
+    if (!reorderSupplier) { toast.error("Pick a supplier for the order"); return; }
+    if (items.length === 0) { toast.error("Select at least one product"); return; }
+    setReorderSaving(true);
+    const sup = suppliers.find(s => s.id === reorderSupplier);
+    const num = `PO-${String(pos.length + 1).padStart(3, "0")}`;
+    const poTotal = items.reduce((s, p) => s + (parseInt(reorderQty[p.id]) || 0) * (parseFloat(p.cost_price) || 0), 0);
+    const po = await sb.post(token, "purchase_orders", { supplier_id: reorderSupplier, supplier_name: sup?.name, order_date: today(), notes: "Auto-generated from low-stock reorder", po_number: num, total: poTotal, created_by: userId });
+    if (po?.[0]) {
+      for (const p of items) {
+        const q = parseInt(reorderQty[p.id]) || 0;
+        await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: p.id, product_name: p.name, qty: q, unit_cost: parseFloat(p.cost_price) || 0, vat_rate: parseFloat(p.vat_rate) || 0, total: q * (parseFloat(p.cost_price) || 0) });
+      }
+      setPOs(prev => [po[0], ...prev]);
+      logAudit(token, userId, "purchase_created", "purchase_order", po[0].id, `${num} auto-reorder for ${sup?.name} — ${items.length} item(s), £${poTotal.toFixed(2)}`);
+      toast.success(`${num} created — ${items.length} item${items.length !== 1 ? "s" : ""}`);
+    } else toast.error("Failed to create PO");
+    setReorderSaving(false); setShowReorder(false);
+  };
 
   // ── Goods receipt ─────────────────────────────────────────────────────────
   const [receivePO, setReceivePO] = useState(null);
@@ -104,7 +142,15 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.06) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, position: "relative", zIndex: 1 }}>
           <div><div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: "#e15b47", marginBottom: 6 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dd2b0f", animation: "pulse 2.4s ease-in-out infinite" }} />Purchasing</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-1.2px", marginBottom: 3 }}>Purchase <span style={{ background: "linear-gradient(135deg,#ff6a4d,#dd2b0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Orders</span></div><div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Order stock from your suppliers</div></div>
-          <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 14px" : "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {lowStock.length > 0 && (
+              <button onClick={openReorder} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 14px" : "7px 14px", borderRadius: 8, border: "1px solid #f59e0b", background: "rgba(245,158,11,.15)", color: "#fbbf24", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+                Reorder <span style={{ background: "#f59e0b", color: "#201e1d", borderRadius: 10, padding: "0 6px", fontSize: 10, fontWeight: 800 }}>{lowStock.length}</span>
+              </button>
+            )}
+            <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile() ? "10px 14px" : "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: isMobile() ? 44 : "auto", flexShrink: 0 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New PO</button>
+          </div>
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           {[{label:"Total POs",val:pos.length,sub:"all orders",accent:"#dd2b0f"},{label:"Pending",val:pos.filter(p=>p.status==="pending").length,sub:"awaiting delivery",accent:"#d97706"},{label:"Received",val:pos.filter(p=>p.status==="received").length,sub:"completed",accent:"#16a34a"},{label:"Total Value",val:fmt(pos.reduce((s,p)=>s+(parseFloat(p.total)||0),0)),sub:"all orders",accent:"#57534e"}].map((k,i)=>(
@@ -116,6 +162,43 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
           ))}
         </div>
       </div>
+
+      {showReorder && (
+        <div className="card" style={{ marginBottom: 20, borderTop: "3px solid #f59e0b" }}>
+          <div className="ch" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div><div className="ct">Suggested Reorder</div><div className="cs">{lowStock.length} product{lowStock.length !== 1 ? "s" : ""} at or below reorder level · suggested to 2× reorder level</div></div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ minWidth: 200 }}><SearchDropdown placeholder="Order from supplier..." items={suppliers} value={suppliers.find(s => s.id === reorderSupplier)?.name || ""} onSelect={s => setReorderSupplier(s.id)} onCreateNew={quickAddSupplier} createLabel="supplier" /></div>
+              <button className="btn bo bsm" onClick={() => setShowReorder(false)}>Close</button>
+            </div>
+          </div>
+          <div className="tw" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ minWidth: 560 }}>
+              <thead><tr><th style={{ width: 36 }}></th><th>Product</th><th>In Stock</th><th>Reorder At</th><th>Order Qty</th><th>Est. Cost</th></tr></thead>
+              <tbody>
+                {lowStock.map(p => {
+                  const q = parseInt(reorderQty[p.id]) || 0;
+                  return (
+                    <tr key={p.id} style={{ opacity: reorderSel[p.id] ? 1 : 0.5 }}>
+                      <td><input type="checkbox" checked={!!reorderSel[p.id]} onChange={e => setReorderSel(prev => ({ ...prev, [p.id]: e.target.checked }))} style={{ width: 18, height: 18, cursor: "pointer" }} /></td>
+                      <td style={{ fontWeight: 500 }}>{p.name}<div style={{ fontSize: 11, color: "var(--text3)" }}>{p.code || ""}</div></td>
+                      <td className="mono" style={{ color: (parseFloat(p.stock_qty) || 0) === 0 ? "var(--red)" : "#d97706", fontWeight: 600 }}>{p.stock_qty || 0} {p.unit || ""}</td>
+                      <td className="mono tm">{p.reorder_level || DEFAULT_REORDER}</td>
+                      <td><input type="number" value={reorderQty[p.id] ?? ""} onChange={e => setReorderQty(prev => ({ ...prev, [p.id]: e.target.value }))} style={{ width: 70, padding: "6px 8px", border: "1px solid var(--border2)", borderRadius: 6, fontSize: 13, fontFamily: "var(--mono)", outline: "none", textAlign: "center" }} /></td>
+                      <td className="mono">{fmt(q * (parseFloat(p.cost_price) || 0))}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="ff" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 13 }}>Order total (excl VAT): <strong className="mono">{fmt(reorderTotal)}</strong></div>
+            <button className="btn bp" onClick={createReorderPO} disabled={reorderSaving}>{reorderSaving ? "Creating…" : "Create Purchase Order"}</button>
+          </div>
+        </div>
+      )}
+
       {showForm && <div className="card" style={{marginBottom:20}}><div className="ch"><div className="ct">New Purchase Order</div></div><div className="fg"><div className="fgrp"><label>Supplier *</label><SearchDropdown placeholder="Search suppliers..." items={suppliers} value={suppliers.find(s=>s.id===f.supplier_id)?.name || ""} onSelect={s => setF({...f,supplier_id:s.id})} onCreateNew={quickAddSupplier} createLabel="supplier" /></div><div className="fgrp"><label>Order Date</label><input type="date" value={f.order_date} onChange={e => setF({...f,order_date:e.target.value})} /></div><div className="fgrp"><label>Expected Delivery</label><input type="date" value={f.expected_date} onChange={e => setF({...f,expected_date:e.target.value})} /></div><div className="fgrp"><label>Notes</label><input value={f.notes} onChange={e => setF({...f,notes:e.target.value})} placeholder="Any notes..." /></div></div><div style={{borderTop:"0.5px solid var(--border)"}}><div className="po-line" style={{background:"#fafbfc"}}>{["Product","Qty","Unit Cost","VAT %","Total",""].map(h => <span key={h} style={{fontSize:11,fontWeight:600,color:"var(--text3)",textTransform:"uppercase"}}>{h}</span>)}</div>{lines.map((l,i) => <div key={i} className="po-line"><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.product_id} onChange={e => updateLine(i,"product_id",e.target.value)}><option value="">Select product...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0" value={l.qty} onChange={e => updateLine(i,"qty",e.target.value)} /><input type="number" style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} placeholder="0.00" value={l.unit_cost} onChange={e => updateLine(i,"unit_cost",e.target.value)} /><select style={{background:"var(--white)",border:"0.5px solid var(--border2)",borderRadius:6,padding:"7px 10px",fontSize:12,outline:"none",width:"100%"}} value={l.vat_rate} onChange={e => updateLine(i,"vat_rate",e.target.value)}><option value="20">20%</option><option value="5">5%</option><option value="0">0%</option></select><span className="mono" style={{fontSize:12,fontWeight:600}}>{fmt(lineTotal(l))}</span><button className="ib" onClick={() => lines.length>1&&setLines(lines.filter((_,j) => j!==i))}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>)}<div style={{padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafbfc",borderTop:"0.5px solid var(--border)"}}><button className="btn bo bsm" onClick={() => setLines([...lines,{product_id:"",product_name:"",qty:"",unit_cost:"",vat_rate:"20"}])}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Line</button><div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>Subtotal: {fmt(total)} · VAT: {fmt(vatTotal)}</div><div style={{fontSize:16,fontWeight:700}}>Total: {fmt(total+vatTotal)}</div></div></div></div><div className="ff"><button className="btn bo" onClick={() => setShowForm(false)}>Cancel</button><button className="btn bp" onClick={save} disabled={saving}>{saving?"Saving...":"Create PO"}</button></div></div>}
       {isMobile() ? (
         pos.length === 0 ? (
