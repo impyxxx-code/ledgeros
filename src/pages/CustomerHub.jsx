@@ -26,6 +26,10 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
   const [savingCN, setSavingCN] = useState(false);
   const [creditNotes, setCreditNotes] = useState([]);
   const [sending, setSending] = useState(null);
+  const [customerPrices, setCustomerPrices] = useState([]);
+  const [priceForm, setPriceForm] = useState({ product_id: "", custom_price: "" });
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => { if (pendingCustomer) { setSelId(pendingCustomer); onClearPending && onClearPending(); } }, [pendingCustomer]);
 
@@ -35,10 +39,50 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
   const custInvoices = useMemo(() => customer ? invoices.filter(i => i.customer === customer.name).sort((a, b) => (b.invoice_date || "").localeCompare(a.invoice_date || "")) : [], [customer, invoices]);
 
   useEffect(() => {
-    if (!customer || !token) { setCreditNotes([]); return; }
+    if (!customer || !token) { setCreditNotes([]); setCustomerPrices([]); return; }
     sb.get(token, "credit_notes", `customer_name=eq.${encodeURIComponent(customer.name)}&order=issue_date.desc`)
       .then(d => setCreditNotes(Array.isArray(d) ? d : [])).catch(() => setCreditNotes([]));
+    sb.get(token, "customer_prices", `contact_id=eq.${customer.id}&select=*`)
+      .then(d => setCustomerPrices(Array.isArray(d) ? d : [])).catch(() => setCustomerPrices([]));
   }, [customer, token]);
+
+  const isAdmin = profile?.role === "admin" || profile?.role === "manager";
+
+  const savePrice = async () => {
+    if (!priceForm.product_id || !priceForm.custom_price) return;
+    setSavingPrice(true);
+    const existing = customerPrices.find(p => p.product_id === priceForm.product_id);
+    if (existing) {
+      await sb.patch(token, "customer_prices", existing.id, { custom_price: parseFloat(priceForm.custom_price) });
+      setCustomerPrices(prev => prev.map(p => p.id === existing.id ? { ...p, custom_price: parseFloat(priceForm.custom_price) } : p));
+    } else {
+      const data = await sb.post(token, "customer_prices", { contact_id: customer.id, contact_name: customer.name, product_id: priceForm.product_id, custom_price: parseFloat(priceForm.custom_price) });
+      if (data && data[0]) setCustomerPrices(prev => [...prev, data[0]]);
+    }
+    const prod = products.find(p => p.id === priceForm.product_id);
+    logAudit(token, userId, "custom_price_set", "contact", customer.id, `Custom price for ${customer.name}: ${prod?.name || "product"} → ${fmt(parseFloat(priceForm.custom_price))}`);
+    toast.success("Custom price saved");
+    setPriceForm({ product_id: "", custom_price: "" });
+    setSavingPrice(false);
+  };
+  const deletePrice = async (cp) => {
+    const ok = await sb.del(token, "customer_prices", cp.id);
+    if (ok) { setCustomerPrices(prev => prev.filter(p => p.id !== cp.id)); toast.success("Custom price removed"); }
+    else toast.error("Couldn't remove. Try again.");
+  };
+
+  const whatsappCreditNote = (cn) => {
+    const msg = encodeURIComponent(`*${COMPANY.name} — Credit Note ${cn.cn_number}*\nHi ${customer.name},\nWe've raised credit note *${cn.cn_number}* dated ${fmtDate(cn.issue_date)} for *${fmt(cn.amount)}*${cn.reason ? ` (${cn.reason})` : ""}. This is credited to your account. Contact us on ${COMPANY.phone} for any queries. Thank you.`);
+    const clean = (customer.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
+    window.open(clean ? `https://wa.me/${clean}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
+  };
+  const printCreditNote = (cn) => {
+    const relInv = custInvoices.find(i => i.id === cn.invoice_id);
+    const w = window.open("", "_blank");
+    if (!w) { toast.warn("Allow pop-ups to print."); return; }
+    w.document.write(`<!DOCTYPE html><html><head><title>${escHtml(cn.cn_number)}</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:32px;color:#1e293b}.h{display:flex;justify-content:space-between;border-bottom:2px solid #201e1d;padding-bottom:16px;margin-bottom:20px}.co{font-size:20px;font-weight:700;color:#201e1d}.t{font-size:16px;font-weight:700;text-align:right;color:#7c3aed}.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:12px}.lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px}.val{font-size:13px;font-weight:600}.amt{background:#201e1d;color:#fff;border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}.amt b{font-size:18px}</style></head><body><div class="h"><div><div class="co">${escHtml(COMPANY.name)}</div><div style="font-size:11px;color:#64748b">VAT: ${escHtml(COMPANY.vatNumber || "")}</div></div><div><div class="t">CREDIT NOTE ${escHtml(cn.cn_number)}</div><div style="font-size:11px;color:#64748b;text-align:right">${fmtDate(cn.issue_date)}</div></div></div><div class="box"><div class="lbl">Customer</div><div class="val">${escHtml(cn.customer_name)}</div></div><div class="box"><div class="lbl">Related invoice</div><div class="val">${escHtml(relInv?.invoice_number || "—")}</div></div><div class="box"><div class="lbl">Reason</div><div class="val">${escHtml(cn.reason || "—")}</div></div><div class="amt"><span style="color:rgba(255,255,255,.6);font-size:10px;text-transform:uppercase;letter-spacing:.6px">Credit amount</span><b>${fmt(cn.amount)}</b></div></body></html>`);
+    w.document.close(); setTimeout(() => w.print(), 400);
+  };
 
   const k = useMemo(() => {
     const totalInvoiced = custInvoices.filter(i => i.status !== "draft").reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -231,7 +275,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
             <div className="ch"><div className="ct">Credit Notes</div><div className="cs">{creditNotes.length} for this customer</div></div>
             <div className="tw" style={{ overflowX: "auto" }}>
               <table style={{ minWidth: 480 }}>
-                <thead><tr><th>Number</th><th>Date</th><th style={{ textAlign: "right" }}>Amount</th><th>Reason</th><th>Status</th></tr></thead>
+                <thead><tr><th>Number</th><th>Date</th><th style={{ textAlign: "right" }}>Amount</th><th>Reason</th><th>Status</th><th style={{ textAlign: "right" }}>Actions</th></tr></thead>
                 <tbody>
                   {creditNotes.map(cn => (
                     <tr key={cn.id}>
@@ -240,13 +284,61 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
                       <td className="mono" style={{ textAlign: "right", fontWeight: 700 }}>{fmt(cn.amount)}</td>
                       <td style={{ fontSize: 12 }}>{cn.reason || "—"}</td>
                       <td><span className={"badge " + (cn.status === "applied" ? "b-green" : cn.status === "issued" ? "b-blue" : "b-gray")}>{cn.status}</span></td>
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", gap: 6 }}>
+                          <button className="btn bwa bsm" onClick={() => whatsappCreditNote(cn)} title="Send via WhatsApp">WhatsApp</button>
+                          <button className="btn bg2 bsm" onClick={() => printCreditNote(cn)} title="Print / PDF">Print</button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
-                  {creditNotes.length === 0 && <tr><td colSpan={5} className="empty">No credit notes — use “Credit Note” above to raise one.</td></tr>}
+                  {creditNotes.length === 0 && <tr><td colSpan={6} className="empty">No credit notes — use “Credit Note” above to raise one.</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Custom pricing (admin) */}
+          {isAdmin && (
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="ch" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div><div className="ct">Custom Pricing</div><div className="cs">Per-customer product prices for {customer.name}</div></div>
+                <button className="btn bo bsm" onClick={() => setShowPricing(v => !v)}>{showPricing ? "Hide" : "Add price"}</button>
+              </div>
+              <div style={{ padding: customerPrices.length || showPricing ? "12px 20px 16px" : "0" }}>
+                {customerPrices.length > 0 && (
+                  <div style={{ border: "1px solid var(--border)", borderRadius: "var(--rl)", overflow: "hidden", marginBottom: showPricing ? 12 : 0 }}>
+                    {customerPrices.map(cp => {
+                      const prod = products.find(p => p.id === cp.product_id);
+                      return (
+                        <div key={cp.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prod?.name || "Unknown product"}</div>
+                            <div style={{ fontSize: 11, color: "var(--text3)" }}>Default {fmt(prod?.sale_price || 0)} → <span style={{ color: "var(--blue)", fontWeight: 600 }}>Custom {fmt(cp.custom_price)}</span></div>
+                          </div>
+                          <button onClick={() => deletePrice(cp)} title="Remove custom price" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--red)", fontSize: 18, lineHeight: 1, padding: "2px 6px", flexShrink: 0 }}>×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {showPricing && (
+                  <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--rl)", padding: "14px 16px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: "var(--text2)" }}>Set a custom price for a product</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <select value={priceForm.product_id} onChange={e => setPriceForm(v => ({ ...v, product_id: e.target.value }))} style={{ flex: 2, minWidth: 160, padding: "8px 10px", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", fontSize: 13, background: "var(--white)", color: "var(--text)", outline: "none" }}>
+                        <option value="">Select product…</option>
+                        {products.filter(p => p.name && p.active !== false).sort((a, b) => a.name.localeCompare(b.name)).map(p => <option key={p.id} value={p.id}>{p.name} ({fmt(p.sale_price)})</option>)}
+                      </select>
+                      <input type="number" min="0" step="0.01" placeholder="Custom price £" value={priceForm.custom_price} onChange={e => setPriceForm(v => ({ ...v, custom_price: e.target.value }))} style={{ flex: 1, minWidth: 110, padding: "8px 10px", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", fontSize: 13, background: "var(--white)", color: "var(--text)", outline: "none", fontFamily: "var(--mono)" }} />
+                      <button className="btn bp bsm" onClick={savePrice} disabled={savingPrice || !priceForm.product_id || !priceForm.custom_price}>{savingPrice ? "Saving…" : "Save price"}</button>
+                    </div>
+                  </div>
+                )}
+                {!customerPrices.length && !showPricing && <div style={{ fontSize: 12, color: "var(--text3)", padding: "12px 0" }}>No custom prices — this customer pays standard list prices. Use “Add price” to override.</div>}
+              </div>
+            </div>
+          )}
         </>
       )}
 
