@@ -63,6 +63,13 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
     setSending(null);
   };
 
+  const whatsappInvoice = (inv) => {
+    const bal = inv.status === "paid" ? 0 : parseFloat(inv.balance != null ? inv.balance : inv.amount || 0);
+    const msg = encodeURIComponent(`*${COMPANY.name} — Invoice ${inv.invoice_number}*\nHi ${customer.name},\nInvoice *${inv.invoice_number}* dated ${fmtDate(inv.invoice_date)} — total ${fmt(inv.amount)}${bal > 0 ? `, *${fmt(bal)}* outstanding` : " (paid, thank you)"}.\n\nPayment: ${COMPANY.bankName || "Tide Bank"} · Sort ${COMPANY.sortCode || ""} · Acc ${COMPANY.accountNumber || ""} · Ref ${inv.invoice_number}.\nQueries: ${COMPANY.phone}. Thank you.`);
+    const clean = (customer.phone || "").replace(/\s+/g, "").replace(/^0/, "44");
+    window.open(clean ? `https://wa.me/${clean}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
+  };
+
   const printInvoice = (inv) => {
     const lines = parseLines(inv);
     const rows = lines.map(l => `<tr><td>${escHtml(l.description || "")}</td><td style="text-align:right">${escHtml(String(l.qty || 0))}</td><td style="text-align:right">${fmt(l.unit_price || 0)}</td><td style="text-align:right">${fmt((parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0))}</td></tr>`).join("");
@@ -206,6 +213,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
                           <div style={{ display: "inline-flex", gap: 6 }}>
                             <button className="btn bg2 bsm" onClick={() => setViewInvoice(inv)}>View</button>
                             <button className="btn bo bsm" disabled={!customer.email || sending === "inv-" + inv.id} onClick={() => emailInvoice(inv)} title="Email this invoice">{sending === "inv-" + inv.id ? "…" : "Email"}</button>
+                            <button className="btn bwa bsm" onClick={() => whatsappInvoice(inv)} title="Send via WhatsApp">WhatsApp</button>
                             <button className="btn bg2 bsm" onClick={() => printInvoice(inv)} title="Print / PDF">Print</button>
                           </div>
                         </td>
