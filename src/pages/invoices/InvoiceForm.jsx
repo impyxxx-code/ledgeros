@@ -41,7 +41,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const [mobPickerOpen, setMobPickerOpen] = useState(false);
   const [mobPickerSearch, setMobPickerSearch] = useState("");
 
-  const customers = localContacts.filter(c => c.type === "customer" || c.type === "both");
+  const customers = localContacts.filter(c => (c.type === "customer" || c.type === "both") && c.active !== false);
 
   const updateLine = (i, field, val) => {
     const next = [...lines];
@@ -624,10 +624,11 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
 
   // ── INVOICE FORM ───────────────────────────────────────────────────────────
   const mobView = isMobile();
-  const mobCusts = contacts.filter(c => c.type === "customer" || c.type === "both");
-  const mobRecent = products.slice(0, 6);
+  const mobCusts = contacts.filter(c => (c.type === "customer" || c.type === "both") && c.active !== false);
+  const sellableProducts = products.filter(p => p.active !== false);
+  const mobRecent = sellableProducts.slice(0, 6);
   const mobFiltered = mobPickerSearch
-    ? products.filter(p => p.name.toLowerCase().includes(mobPickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(mobPickerSearch.toLowerCase()))
+    ? sellableProducts.filter(p => p.name.toLowerCase().includes(mobPickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(mobPickerSearch.toLowerCase()))
     : mobRecent;
   const mobActiveLines = lines.filter(l => l.description);
 
@@ -933,7 +934,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
         {lines.map((l, i) => (
           <div key={`${i}-${l.product_id||"empty"}`} className="il-line">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={products} onSelect={async p => {
+              <SearchDropdown key={`line-${i}-${l.product_id||"empty"}`} placeholder="Search products..." items={sellableProducts} onSelect={async p => {
                       // Check for customer-specific price first, then do single atomic update
                       let customPrice = null;
                       const custName = f?.customer || f?.customer_name;

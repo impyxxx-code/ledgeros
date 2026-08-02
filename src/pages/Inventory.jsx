@@ -4,9 +4,10 @@ import { sb } from "../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement, getStockMovements } from "../lib/stock.js";
+import { toast } from "../lib/constants.js";
 import { MobileCardList, MobileCard, EmptyState, ModalPortal } from "../components/ui.jsx";
 
-export function Inventory({ products, setProducts, token, userId, profile }) {
+export function Inventory({ products, setProducts, invoices = [], token, userId, profile }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [invSearch, setInvSearch] = useState("");
@@ -35,6 +36,21 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
     setUpdatingId(null);
   };
 
+  // ── Archive / reactivate a product (admin only; history is always kept) ──
+  const [archivingId, setArchivingId] = useState(null);
+  const setProductActive = async (p, active) => {
+    setArchivingId(p.id);
+    const res = await sb.patch(token, "products", p.id, { active });
+    if (res) {
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, active } : x));
+      logAudit(token, userId, active ? "product_reactivated" : "product_archived", "product", p.id, `Product ${active ? "reactivated" : "archived"}: ${p.name}${p.code ? " (" + p.code + ")" : ""}`);
+      toast.success(active ? `"${p.name}" reactivated` : `"${p.name}" archived — hidden from active lists`);
+    } else {
+      toast.error(`Couldn't update "${p.name}". Please try again.`);
+    }
+    setArchivingId(null);
+  };
+
   // ── Per-product stock movement history ──
   const [historyProduct, setHistoryProduct] = useState(null);
   const [history, setHistory] = useState([]);
@@ -45,9 +61,14 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
     setHistory(m); setHistoryLoading(false);
   };
 
-  const lowStock = products.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
-  const outOfStock = products.filter(p => (p.stock_qty || 0) === 0);
+  const activeProducts = products.filter(p => p.active !== false);
+  const archivedCount = products.filter(p => p.active === false).length;
+  const lowStock = activeProducts.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
+  const outOfStock = activeProducts.filter(p => (p.stock_qty || 0) === 0);
   const filtered = products.filter(p => {
+    const isActive = p.active !== false;
+    if (stockFilter === "archived") return !isActive;   // archived view shows only inactive
+    if (!isActive) return false;                          // every other view hides archived
     if (stockFilter === "low") return p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
     if (stockFilter === "out") return (p.stock_qty || 0) === 0;
     return true;
@@ -85,7 +106,7 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
         </div>
         <div className="kpi-strip" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", position: "relative", zIndex: 1 }}>
           {[
-            { label: "Products", val: products.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all" },
+            { label: "Products", val: activeProducts.length, sub: "in catalogue", color: "rgba(255,255,255,.35)", accent: "#dd2b0f", filter: "all" },
             { label: "Low Stock", val: lowStock.length, sub: lowStock.length > 0 ? "need restocking" : "all levels ok", color: lowStock.length > 0 ? "#fca5a5" : "#86efac", accent: lowStock.length > 0 ? "#dc2626" : "#16a34a", filter: "low" },
             { label: "Stock Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.cost_price, 0)), sub: "at cost price", color: "rgba(255,255,255,.35)", accent: "#57534e" },
             { label: "Retail Value", val: fmt(products.reduce((s,p) => s+p.stock_qty*p.sale_price, 0)), sub: "at sale price", color: "#86efac", accent: "#16a34a" },
@@ -107,8 +128,8 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
 
       {/* Stock filter tabs */}
       <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#201e1d", borderBottom: "1px solid rgba(255,255,255,.10)", padding: "5px 36px", margin: "0 -28px 16px", flexWrap: "wrap" }}>
-        {[["all", "All Products", products.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length]].map(([v, l, cnt]) => (
-          <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : "#dd2b0f") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
+        {[["all", "All Products", activeProducts.length], ["low", "Low Stock", lowStock.length], ["out", "Out of Stock", outOfStock.length], ...(archivedCount > 0 ? [["archived", "Archived", archivedCount]] : [])].map(([v, l, cnt]) => (
+          <button key={v} onClick={() => setStockFilter(v)} style={{ padding: "5px 13px", borderRadius: 7, border: "none", background: stockFilter === v ? (v === "low" ? "#f59e0b" : v === "out" ? "#ef4444" : v === "archived" ? "#8a8580" : "#dd2b0f") : "transparent", color: stockFilter === v ? "#fff" : "rgba(255,255,255,.45)", fontSize: 12, fontWeight: stockFilter === v ? 700 : 500, cursor: "pointer", fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: stockFilter === v ? "0 2px 8px rgba(0,0,0,.2)" : "none" }}>
             {l} <span style={{ background: stockFilter === v ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.08)", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: stockFilter === v ? "#fff" : "rgba(255,255,255,.4)" }}>{cnt}</span>
           </button>
         ))}
@@ -195,7 +216,12 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
                 badge={<span className={"badge " + (isLow ? "b-red" : isRunning ? "b-amber" : "b-green")}>{isLow ? "Low Stock" : isRunning ? "Running Low" : "In Stock"}</span>}
                 footer={
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {profile?.role === "admin" && (p.active === false
+                        ? <button onClick={() => setProductActive(p, true)} disabled={archivingId === p.id} aria-label="Reactivate product" style={{ height: 40, padding: "0 14px", borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#16a34a", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--sans)", flexShrink: 0 }}>Reactivate</button>
+                        : <button onClick={() => setProductActive(p, false)} disabled={archivingId === p.id} aria-label="Archive product" title="Archive (make inactive)" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#8a8580", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>)}
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>In Stock</span>
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       {canEdit && <button aria-label="Decrease stock" onClick={() => updateStock(p, (p.stock_qty || 0) - 1)} disabled={updatingId === p.id} style={stepBtn}>−</button>}
                       <span className="mono" style={{ fontWeight: 700, fontSize: 17, minWidth: 44, textAlign: "center" }}>{p.stock_qty || 0}<span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500, marginLeft: 3, fontFamily: "var(--sans)" }}>{p.unit}</span></span>
@@ -212,7 +238,7 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
         <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{invSearch ? `${filtered.length} of ${products.length}` : filtered.length} product{filtered.length!==1?"s":""}</div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
           <table className="inventory-table" style={{minWidth:480}}>
-            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th></tr></thead>
+            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th>{profile?.role === "admin" && <th></th>}</tr></thead>
             <tbody>
               {filtered.map(p => {
                 const isEditing = editingQty[p.id] !== undefined;
@@ -252,10 +278,13 @@ export function Inventory({ products, setProducts, token, userId, profile }) {
                       )}
                     </td>
                     <td><span className={"badge "+(p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td>
+                    {profile?.role === "admin" && (p.active === false
+                      ? <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, true)} disabled={archivingId===p.id} title="Reactivate product" aria-label="Reactivate product" style={{ padding:"4px 10px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#16a34a",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"var(--sans)" }}>Reactivate</button></td>
+                      : <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, false)} disabled={archivingId===p.id} title="Archive (make inactive)" aria-label="Archive product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#8a8580",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#f5f5f4";e.currentTarget.style.color="#dc2626";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.color="#8a8580";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button></td>)}
                   </tr>
                 );
               })}
-              {filtered.length===0&&<tr><td colSpan={8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
+              {filtered.length===0&&<tr><td colSpan={profile?.role === "admin" ? 9 : 8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
             </tbody>
           </table>
         </div>
