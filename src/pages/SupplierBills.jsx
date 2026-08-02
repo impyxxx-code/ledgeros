@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, today, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
+import { postSupplierBillJournal, postSupplierPaymentJournal } from "../lib/journal.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
 
 // ── SUPPLIER BILLS / ACCOUNTS PAYABLE ───────────────────────────────────────
-export function SupplierBills({ contacts, setContacts, pos = [], token, userId, profile }) {
+export function SupplierBills({ contacts, setContacts, pos = [], accounts = [], token, userId, profile }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -62,6 +63,8 @@ export function SupplierBills({ contacts, setContacts, pos = [], token, userId, 
     if (data?.[0]) {
       setBills(prev => [data[0], ...prev]);
       logAudit(token, userId, "supplier_bill_created", "supplier_bill", data[0].id, `Bill ${f.bill_number || "(no ref)"} from ${sup?.name} — ${fmt(total)}`);
+      // GL: Dr COGS / Cr Accounts Payable (gross, matching the ledger's no-VAT-split convention)
+      postSupplierBillJournal(token, accounts, { bill_id: data[0].id, bill_number: f.bill_number || sup?.name, amount: total, date: f.bill_date });
       toast.success("Bill recorded");
     } else toast.error("Failed to save bill");
     setF({ supplier_id: "", bill_number: "", bill_date: today(), due_date: "", subtotal: "", vat: "", notes: "", po_id: "" });
@@ -87,6 +90,8 @@ export function SupplierBills({ contacts, setContacts, pos = [], token, userId, 
     await sb.patch(token, "supplier_bills", payBill.id, { amount_paid: newPaid, balance: newBal, status: newStatus });
     setBills(prev => prev.map(b => b.id === payBill.id ? { ...b, amount_paid: newPaid, balance: newBal, status: newStatus } : b));
     logAudit(token, userId, "supplier_bill_paid", "supplier_bill", payBill.id, `${fmt(applied)} paid to ${payBill.supplier_name} via ${payMethod} against ${payBill.bill_number || "bill"}`);
+    // GL: Dr Accounts Payable / Cr Cash
+    postSupplierPaymentJournal(token, accounts, { bill_id: payBill.id, bill_number: payBill.bill_number || payBill.supplier_name, amount: applied, date: payDate });
     setPaying(false); closePay();
     toast.success(newStatus === "paid" ? "Bill settled" : "Payment recorded");
   };
