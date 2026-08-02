@@ -22,10 +22,10 @@ select vault.create_secret('PASTE_YOUR_SUPABASE_ANON_KEY_HERE', 'reminders_invok
 -- To change it later:
 --   select vault.update_secret((select id from vault.secrets where name='reminders_invoke_key'), 'NEW_KEY');
 
--- Step 3: Schedule the nightly job (05:00 UTC = 06:00 UK during BST / 05:00 UK in winter).
+-- Step 3: Schedule the nightly job (08:00 UTC = 09:00 UK during BST / 08:00 UK in winter).
 select cron.schedule(
   'nightly-overdue-reminders',
-  '0 5 * * *',
+  '0 8 * * *',
   $$
   select net.http_post(
     url     := 'https://szcogfyrhlrsxnwepnea.supabase.co/functions/v1/send-reminders',
