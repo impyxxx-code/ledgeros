@@ -60,7 +60,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
   const bulkSendReminder = async () => {
     if (!selectedIds.size) return;
     setBulkLoading(true);
-    let sent = 0;
+    let sent = 0, devBlocked = false;
     for (const id of selectedIds) {
       const inv = invoices.find(i => i.id === id);
       if (!inv) continue;
@@ -72,9 +72,10 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
       if (result.success) {
         sent++;
         logAudit(token, userId, "reminder_sent", "invoice", id, `Reminder sent to ${cust.email} for ${inv.invoice_number}`);
-      }
+      } else if (result.dev) { devBlocked = true; }
     }
-    toast.success(`Reminder sent to ${sent} customer${sent > 1 ? "s" : ""}`);
+    if (devBlocked && !sent) toast.warn("Email only sends on the live site (arkos.uk) — nothing was sent from local dev.");
+    else toast.success(`Reminder sent to ${sent} customer${sent > 1 ? "s" : ""}`);
     setSelectedIds(new Set());
     setBulkLoading(false);
   };

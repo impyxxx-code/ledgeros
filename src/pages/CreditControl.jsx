@@ -128,7 +128,7 @@ export function CreditControl({ contacts, invoices, token, userId, profile }) {
     if (res.success) {
       toast.success(`Chase sent to ${d.contact.email}`);
       logAudit(token, userId, "chase_sent", "contact", d.contact.id || null, `Credit control chase to ${d.contact.email} — ${overdueLines.length} overdue, ${fmt(d.overdueTotal)}`);
-    } else toast.error("Failed to send. Please try again.");
+    } else toast[res.dev ? "warn" : "error"](res.error || "Failed to send. Please try again.");
     setSending(null);
   };
 
@@ -138,7 +138,7 @@ export function CreditControl({ contacts, invoices, token, userId, profile }) {
     const html = buildReminderEmailHtml(inv, inv._bal);
     const res = await sendEmail({ to: d.contact.email, subject: `Payment Reminder — ${inv.invoice_number} — ${COMPANY.name}`, html, token });
     if (res.success) { toast.success(`Reminder sent for ${inv.invoice_number}`); logAudit(token, userId, "reminder_sent", "invoice", inv.id, `Reminder to ${d.contact.email} for ${inv.invoice_number}`); }
-    else toast.error("Failed to send.");
+    else toast[res.dev ? "warn" : "error"](res.error || "Failed to send.");
     setSending(null);
   };
 
@@ -152,7 +152,7 @@ export function CreditControl({ contacts, invoices, token, userId, profile }) {
 
   const runBulk = async () => {
     setBulkRunning(true);
-    let sent = 0;
+    let sent = 0, devBlocked = false;
     for (const d of debtors) {
       if (d.overdueTotal <= 0 || !d.contact?.email) continue;
       const overdueLines = d.lines.filter(l => l._overdue);
@@ -160,8 +160,10 @@ export function CreditControl({ contacts, invoices, token, userId, profile }) {
       const html = buildCustomerChaseEmailHtml(d.name, rows, d.overdueTotal);
       const res = await sendEmail({ to: d.contact.email, subject: `Overdue Account — ${fmt(d.overdueTotal)} — ${COMPANY.name}`, html, token });
       if (res.success) { sent++; logAudit(token, userId, "chase_sent", "contact", d.contact.id || null, `Bulk chase to ${d.contact.email} — ${fmt(d.overdueTotal)}`); }
+      else if (res.dev) { devBlocked = true; }
     }
-    toast.success(`Chase sent to ${sent} customer${sent !== 1 ? "s" : ""}`);
+    if (devBlocked && !sent) toast.warn("Email only sends on the live site (arkos.uk) — nothing was sent from local dev.");
+    else toast.success(`Chase sent to ${sent} customer${sent !== 1 ? "s" : ""}`);
     setBulkRunning(false);
     setConfirmBulk(false);
   };

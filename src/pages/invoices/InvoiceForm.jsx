@@ -420,7 +420,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       html, token
     });
     if (result.success) toast.success("Delivery note emailed successfully");
-    else toast.error("Failed to send email. Please try again.");
+    else toast[result.dev ? "warn" : "error"](result.error || "Failed to send email. Please try again.");
   };
 
   const whatsappDN = (dn) => {

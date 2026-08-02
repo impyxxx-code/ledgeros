@@ -2,6 +2,12 @@
 import { escHtml, fmt, fmtDate } from "./utils.js";
 
 export const sendEmail = async ({ to, subject, html, token }) => {
+  // The /api/send-email serverless function only exists on the deployed site
+  // (Vercel). The local Vite dev server doesn't serve it, so a send here would
+  // 404 and look like a real failure. Short-circuit with a clear message.
+  if (import.meta.env.DEV) {
+    return { success: false, dev: true, error: "Email only sends on the live site (arkos.uk) — the send API isn't available in local dev. Nothing was sent." };
+  }
   try {
     const res = await fetch("/api/send-email", {
       method: "POST",

@@ -123,6 +123,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
       : `Invoice ${invoice.invoice_number} — ${COMPANY.name}`;
     const result = await sendEmail({ to: toEmail, subject, html, token });
     setEmailStatus(result.success ? "sent" : "error");
+    if (result.dev) toast.warn(result.error);
     setTimeout(() => setEmailStatus(null), 4000);
   };
 

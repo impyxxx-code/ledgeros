@@ -118,7 +118,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
     const html = buildInvoiceEmailHtml(inv, parseLines(inv), parseFloat(inv.subtotal || 0), parseFloat(inv.vat_total || 0), parseFloat(inv.amount || 0));
     const res = await sendEmail({ to: customer.email, subject: `Invoice ${inv.invoice_number} — ${COMPANY.name}`, html, token });
     if (res.success) { toast.success(`Invoice ${inv.invoice_number} emailed to ${customer.email}`); logAudit(token, userId, "invoice_resent", "invoice", inv.id, `${inv.invoice_number} re-sent to ${customer.email}`); }
-    else toast.error("Failed to send. Please try again.");
+    else toast[res.dev ? "warn" : "error"](res.error || "Failed to send. Please try again.");
     setSending(null);
   };
 
@@ -151,7 +151,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
     setSending("stmt");
     const res = await sendEmail({ to: customer.email, subject: `Account Statement — ${COMPANY.name}`, html: statementHtml(), token });
     if (res.success) { toast.success(`Statement emailed to ${customer.email}`); logAudit(token, userId, "statement_sent", "contact", customer.id, `Statement emailed to ${customer.email}`); }
-    else toast.error("Failed to send.");
+    else toast[res.dev ? "warn" : "error"](res.error || "Failed to send.");
     setSending(null);
   };
   const whatsappStatement = () => {
