@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
+import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { toast } from "../lib/constants.js";
@@ -11,7 +11,7 @@ import { ModalPortal, EmptyState } from "../components/ui.jsx";
 // │ Contacts                                                   │
 // │ Customer and supplier contact management                   │
 // └────────────────────────────────────────────────────────────┘
-export function Contacts({ contacts, setContacts, token, userId, invoices = [], products = [], profile, triggerNewContact, onTriggerContactHandled, onOpenCustomer }) {
+export function Contacts({ contacts, setContacts, token, userId, invoices = [], profile, triggerNewContact, onTriggerContactHandled, onOpenCustomer }) {
   const [tab, setTab] = useState("customer");
   const [contactView, setContactView] = useState("grid");
   const [viewContact, setViewContact] = useState(null);
@@ -23,42 +23,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
   const [contactFilter, setContactFilter] = useState("all"); // all | no-email | has-email
   const [ctSort, setCtSort] = useState({ field: "name", dir: "asc" });
   const ctSortToggle = (field) => setCtSort(s => ({ field, dir: s.field === field && s.dir === "asc" ? "desc" : "asc" }));
-  const [customerPrices, setCustomerPrices] = useState([]);
-  const [showPricing, setShowPricing] = useState(false);
-  const [priceForm, setPriceForm] = useState({ product_id: "", custom_price: "" });
-  const [savingPrice, setSavingPrice] = useState(false);
-
-  React.useEffect(() => {
-    if (viewContact) {
-      sb.get(token, "customer_prices", `contact_id=eq.${viewContact.id}&select=*`).then(d => {
-        if (Array.isArray(d)) setCustomerPrices(d);
-      });
-    }
-  }, [viewContact, token]);
-
   React.useEffect(() => {
     if (triggerNewContact) { setShowForm(true); onTriggerContactHandled && onTriggerContactHandled(); }
   }, [triggerNewContact]);
 
-  const savePrice = async () => {
-    if (!priceForm.product_id || !priceForm.custom_price) return;
-    setSavingPrice(true);
-    const existing = customerPrices.find(p => p.product_id === priceForm.product_id);
-    if (existing) {
-      await sb.patch(token, "customer_prices", existing.id, { custom_price: parseFloat(priceForm.custom_price) });
-      setCustomerPrices(prev => prev.map(p => p.id === existing.id ? { ...p, custom_price: parseFloat(priceForm.custom_price) } : p));
-    } else {
-      const data = await sb.post(token, "customer_prices", { contact_id: viewContact.id, contact_name: viewContact.name, product_id: priceForm.product_id, custom_price: parseFloat(priceForm.custom_price) });
-      if (data[0]) setCustomerPrices(prev => [...prev, data[0]]);
-    }
-    setPriceForm({ product_id: "", custom_price: "" });
-    setSavingPrice(false);
-  };
-
-  const deletePrice = async (id) => {
-    await fetch(`${SUPABASE_URL}/rest/v1/customer_prices?id=eq.${id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
-    setCustomerPrices(prev => prev.filter(p => p.id !== id));
-  };
   const [f, setF] = useState({ type: "customer", name: "", email: "", phone: "", address: "", city: "", postcode: "", vat_number: "", notes: "", credit_limit: "", credit_hold: false });
   const archivedCount = contacts.filter(c => c.active === false && (c.type === tab || c.type === "both")).length;
   const filtered = contacts.filter(c => {
@@ -206,50 +174,6 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
                 );
               })()}
             </div>
-            {/* Custom Pricing Section — admin only */}
-            {(profile?.role === "admin" || profile?.role === "manager") && viewContact.type !== "supplier" && (
-              <div style={{ padding:"0 24px 20px" }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
-                  <div style={{ fontSize:12,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".8px" }}>
-                    Custom Prices <span style={{ fontWeight:400,color:"var(--text3)" }}>({customerPrices.length})</span>
-                  </div>
-                  <button className="btn bo bsm" onClick={()=>setShowPricing(v=>!v)} style={{ fontSize:11 }}>
-                    {showPricing ? "Hide" : "Manage Prices"}
-                  </button>
-                </div>
-                {customerPrices.length > 0 && (
-                  <div style={{ border:"1px solid var(--border)",borderRadius:"var(--rl)",overflow:"hidden",marginBottom:12 }}>
-                    {customerPrices.map(cp => {
-                      const prod = products.find(p => p.id === cp.product_id);
-                      return (
-                        <div key={cp.id} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",borderBottom:"1px solid var(--border)",fontSize:13 }}>
-                          <div>
-                            <div style={{ fontWeight:600 }}>{prod?.name || "Unknown product"}</div>
-                            <div style={{ fontSize:11,color:"var(--text3)" }}>Default: {fmt(prod?.sale_price||0)} → <span style={{ color:"var(--blue)",fontWeight:600 }}>Custom: {fmt(cp.custom_price)}</span></div>
-                          </div>
-                          <button onClick={()=>deletePrice(cp.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--red)",fontSize:18,lineHeight:1,padding:"2px 6px" }}>×</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {showPricing && (
-                  <div style={{ background:"#f8fafd",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"14px 16px" }}>
-                    <div style={{ fontSize:12,fontWeight:600,marginBottom:10,color:"var(--text2)" }}>Add custom price for a product</div>
-                    <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-                      <select value={priceForm.product_id} onChange={e=>setPriceForm(v=>({...v,product_id:e.target.value}))} style={{ flex:2,minWidth:140,padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",outline:"none" }}>
-                        <option value="">Select product...</option>
-                        {products.filter(p=>p.name).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>(
-                          <option key={p.id} value={p.id}>{p.name} (£{p.sale_price})</option>
-                        ))}
-                      </select>
-                      <input type="number" placeholder="Custom price £" value={priceForm.custom_price} onChange={e=>setPriceForm(v=>({...v,custom_price:e.target.value}))} style={{ flex:1,minWidth:100,padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--r)",fontSize:13,background:"var(--white)",color:"var(--text)",outline:"none" }} />
-                      <button className="btn bp bsm" onClick={savePrice} disabled={savingPrice||!priceForm.product_id||!priceForm.custom_price}>{savingPrice?"Saving...":"Save Price"}</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
             <div className="modal-actions">
               <div style={{ display:"flex",gap:8 }}>
                 <button className="btn bo bsm" onClick={()=>{setEditingContact(viewContact);setF({...viewContact});setViewContact(null);setShowForm(true);}}>
