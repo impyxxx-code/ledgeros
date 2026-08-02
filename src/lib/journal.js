@@ -68,7 +68,38 @@ export const postPaymentJournal = async (token, accounts, { invoice_id, invoice_
   await bumpBalance(token, ar, -amount);
 };
 
-// Dr Cost of Goods Sold / Cr Accounts Payable — posted when a purchase order is created
+// Dr Cost of Goods Sold / Cr Accounts Payable — posted when a SUPPLIER BILL is
+// entered (recognises the payable at the point you're actually invoiced).
+export const postSupplierBillJournal = async (token, accounts, { bill_id, bill_number, amount, date }) => {
+  if (!amount || amount <= 0) return;
+  const cogs = findAccount(accounts, ACCOUNT_CODES.COGS);
+  const ap = findAccount(accounts, ACCOUNT_CODES.AP);
+  if (!cogs || !ap) return;
+  await insertEntries(token, [
+    { entry_date: date, account_id: cogs.id, debit: amount, credit: 0, description: `Bill ${bill_number || ""}`.trim(), source_type: "supplier_bill", source_id: bill_id },
+    { entry_date: date, account_id: ap.id, debit: 0, credit: amount, description: `Bill ${bill_number || ""}`.trim(), source_type: "supplier_bill", source_id: bill_id },
+  ]);
+  await bumpBalance(token, cogs, amount);
+  await bumpBalance(token, ap, amount);
+};
+
+// Dr Accounts Payable / Cr Cash — posted when a supplier bill is paid (full or partial)
+export const postSupplierPaymentJournal = async (token, accounts, { bill_id, bill_number, amount, date }) => {
+  if (!amount || amount <= 0) return;
+  const ap = findAccount(accounts, ACCOUNT_CODES.AP);
+  const cash = findAccount(accounts, ACCOUNT_CODES.CASH);
+  if (!ap || !cash) return;
+  await insertEntries(token, [
+    { entry_date: date, account_id: ap.id, debit: amount, credit: 0, description: `Supplier payment — ${bill_number || ""}`.trim(), source_type: "supplier_payment", source_id: bill_id },
+    { entry_date: date, account_id: cash.id, debit: 0, credit: amount, description: `Supplier payment — ${bill_number || ""}`.trim(), source_type: "supplier_payment", source_id: bill_id },
+  ]);
+  await bumpBalance(token, ap, -amount);
+  await bumpBalance(token, cash, -amount);
+};
+
+// Dr Cost of Goods Sold / Cr Accounts Payable — LEGACY: previously posted when a
+// purchase order was created. Superseded by postSupplierBillJournal (recognition
+// moved to the bill). Kept for reference; no longer called.
 export const postPurchaseJournal = async (token, accounts, { po_id, po_number, amount, date }) => {
   if (!amount || amount <= 0) return;
   const cogs = findAccount(accounts, ACCOUNT_CODES.COGS);
