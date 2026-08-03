@@ -9,6 +9,7 @@ import { InvoiceModal } from "../components/InvoiceModal.jsx";
 import { OverpaymentModal } from "../components/OverpaymentModal.jsx";
 import { EditInvoiceModal } from "./invoices/EditInvoiceModal.jsx";
 import { AgentDashboard } from "./AgentDashboard.jsx";
+import { DashboardHome } from "./DashboardHome.jsx";
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 
@@ -177,6 +178,10 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
     );
   }
 
+  return <DashboardHome accounts={accounts} invoices={invoices} setInvoices={setInvoices} contacts={contacts} products={products} profile={profile} setPage={setPage} setPendingFilter={setPendingFilter} token={token} userId={userId} />;
+
+  /* eslint-disable no-unreachable */
+  /* Legacy desktop dashboard retained below (unreachable) for reference on this branch — remove after sign-off. */
   return (
     <>
     <div>
