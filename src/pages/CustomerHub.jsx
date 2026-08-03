@@ -358,7 +358,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
       {showInvoiceForm && customer && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(10,14,26,.5)", overflowY: "auto", padding: isMobile() ? 0 : "24px 0" }} onClick={e => e.target === e.currentTarget && setShowInvoiceForm(false)}>
           <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 12px" }} onClick={e => e.stopPropagation()}>
-            <InvoiceForm contacts={contacts} products={products} accounts={accounts} token={token} userId={userId} invoices={invoices} initialCustomer={customer.name}
+            <InvoiceForm contacts={contacts} setContacts={setContacts} products={products} accounts={accounts} token={token} userId={userId} invoices={invoices} initialCustomer={customer.name}
               onSave={(inv) => { setInvoices(prev => [inv, ...prev]); }}
               onClose={() => setShowInvoiceForm(false)} />
           </div>
