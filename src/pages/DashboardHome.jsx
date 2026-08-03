@@ -111,7 +111,6 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
     { key: "cash", label: "Cash collected", value: M.cash, money: true, delta: null, deltaLabel: `${invoices.filter(i => i.payment_method === "cash").length} cash payments`, spark: sparks.cash, sc: "#7fe0a0", onClick: () => nav("paid") },
     { key: "out", label: "Outstanding", value: M.outstanding, money: true, delta: null, deltaLabel: `${M.pendingCount + M.overdueCount} open`, spark: sparks.outstanding, sc: "#ff9478", onClick: () => nav("overdue") },
     { key: "over", label: "Overdue", value: M.overdue, money: true, delta: null, deltaLabel: `${M.overdueCount} · chase`, spark: sparks.outstanding, sc: "#ff9478", danger: true, onClick: () => nav("overdue") },
-    { key: "dso", label: "DSO", value: M.dso, days: true, delta: null, deltaLabel: "avg days to collect", spark: sparks.outstanding, sc: "#ffc07a", onClick: () => setPage?.("credit-control") },
     { key: "rate", label: "Collection rate", value: M.collectionRate, pct: true, delta: null, deltaLabel: `${fmt(M.paid)} collected`, spark: sparks.collected, sc: "#7fe0a0", onClick: () => nav("paid") },
     { key: "avg", label: "Avg invoice", value: M.avgInvoice, money: true, delta: null, deltaLabel: "paid invoices", spark: sparks.revenue, sc: "rgba(255,255,255,.55)", onClick: () => nav("all") },
   ];
@@ -212,6 +211,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
     if (M.revTrend !== null) out.push({ c: "green", ico: TrendingUp, t: `Revenue ${M.revTrend >= 0 ? "up" : "down"} ${Math.abs(M.revTrend)}% vs last month`, s: `${fmt(M.thisMonth)} invoiced this month.` });
     if (topProducts[0] && M.totalRev > 0) { const share = Math.round(topProducts[0].revenue / topProducts.reduce((s, p) => s + p.revenue, M.totalRev * 0 + 1) * 100); out.push({ c: "blue", ico: Package, t: `${topProducts[0].name} leads product sales`, s: `Top SKU by revenue — keep it in stock.` }); }
     if (M.overdueCount > 0) { const top5 = custData.late.slice(0, 5).reduce((s, c) => s + c.overdue, 0); const pct = M.overdue > 0 ? Math.round(top5 / M.overdue * 100) : 0; out.push({ c: "danger", ico: Clock, t: `${M.overdueCount} invoices overdue (${fmt(M.overdue)})`, s: `Top 5 customers hold ${pct}% — chase those first.` }); }
+    if (M.dso > 0) { const c = M.dso > 45 ? "danger" : M.dso > 30 ? "amber" : "green"; out.push({ c, ico: Clock, t: `Money is owed ${M.dso} days on average`, s: `That's your DSO across open invoices — clearing the oldest brings it down.` }); }
     if (lowStock.length > 0) out.push({ c: "amber", ico: AlertTriangle, t: `${lowStock.length} products low on stock`, s: `At or below reorder point — restock to avoid stockouts.` });
     const dueSoon = invoices.filter(i => (i.status === "pending" || i.status === "partial") && i.due_date && (new Date(i.due_date) - now) / 86400000 <= 7 && (new Date(i.due_date) - now) >= 0);
     if (dueSoon.length) out.push({ c: "green", ico: Sparkles, t: `${fmt(dueSoon.reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0))} due within 7 days`, s: `${dueSoon.length} invoices reaching their due date soon.` });
@@ -296,7 +296,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
             <button onClick={() => setShowNotif(true)} aria-label="Notifications" style={{ ...frostBtn, position: "relative", padding: "8px 10px" }}><Bell size={15} />{notes.length > 0 && <span style={{ position: "absolute", top: 5, right: 6, width: 8, height: 8, borderRadius: "50%", background: RED, border: `2px solid ${INK}` }} />}</button>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", marginTop: 20, position: "relative", zIndex: 1 }} className="dh-kstrip">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", borderTop: "1px solid rgba(255,255,255,.08)", marginTop: 20, position: "relative", zIndex: 1 }} className="dh-kstrip">
           {kpis.map(k => <KpiCell key={k.key} k={k} />)}
         </div>
       </div>
@@ -476,8 +476,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
         onSaved={(f) => { if (f) setInvoices?.(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...f } : i)); sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices?.(d)); setEditInvoice(null); }} />}
 
       <style>{`
-        @media (max-width:1080px){ .dh-kstrip{grid-template-columns:repeat(4,1fr)!important} }
-        @media (max-width:1000px){ .dh-grid3{grid-template-columns:repeat(2,1fr)!important} }
+        @media (max-width:1000px){ .dh-kstrip{grid-template-columns:repeat(3,1fr)!important} .dh-grid3{grid-template-columns:repeat(2,1fr)!important} }
         @media (max-width:640px){ .dh-kstrip{grid-template-columns:repeat(2,1fr)!important} .dh-grid3{grid-template-columns:1fr!important} }
       `}</style>
     </>
@@ -497,8 +496,8 @@ function KpiCell({ k }) {
       onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.05)"; e.currentTarget.style.borderTopColor = RED; }}
       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderTopColor = "transparent"; }}>
       <div style={{ fontSize: 9.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".7px", color: "rgba(255,255,255,.42)", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{k.label}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 5, whiteSpace: "nowrap" }}>{display}</div>
-      <div style={{ fontSize: 10.5, display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ fontSize: 19, fontWeight: 800, color: "#fff", fontFamily: "var(--mono)", letterSpacing: "-.5px", marginBottom: 5 }}>{display}</div>
+      <div style={{ fontSize: 10.5, display: "flex", alignItems: "center", gap: 5 }}>
         {k.delta !== null && k.delta !== undefined && <span style={{ fontWeight: 700, color: k.delta >= 0 ? "#7fe0a0" : "#ff9478" }}>{k.delta >= 0 ? "▴" : "▾"} {Math.abs(k.delta)}%</span>}
         <span style={{ color: "rgba(255,255,255,.34)" }}>{k.deltaLabel}</span>
       </div>
