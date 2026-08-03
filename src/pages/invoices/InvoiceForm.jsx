@@ -14,7 +14,7 @@ import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 // │ InvoiceForm                                                │
 // │ Create new invoice form with line items and VAT            │
 // └────────────────────────────────────────────────────────────┘
-export function InvoiceForm({ contacts, products, accounts = [], token, userId, onSave, onClose, invoices = [], initialCustomer = "" }) {
+export function InvoiceForm({ contacts, setContacts, products, accounts = [], token, userId, onSave, onClose, invoices = [], initialCustomer = "" }) {
   const [f, setF] = useState({ customer: initialCustomer || "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [lines, setLines] = useState([{ description: "", qty: 1, unit_price: "", vat_rate: 20 }]);
   const [saving, setSaving] = useState(false);
@@ -29,6 +29,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const [creditOverride, setCreditOverride] = useState(false);
   const [capEmail, setCapEmail] = useState("");   // inline contact capture when a customer has neither email nor phone
   const [capPhone, setCapPhone] = useState("");
+  const [savingContact, setSavingContact] = useState(false);
   useEffect(() => { setCreditOverride(false); setCapEmail(""); setCapPhone(""); }, [f.customer]);
 
   const quickAddCustomer = async (name) => {
@@ -62,6 +63,26 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const onHold = !!selCust?.credit_hold;
   // Contact-details gate — a selected customer with neither email nor phone must get one before invoicing.
   const needsContact = !!selCust && !(selCust.email || "").trim() && !(selCust.phone || "").trim();
+
+  // Standalone save for the inline contact capture — persists to the record AND propagates to global state.
+  const saveContactInline = async () => {
+    if (!selCust) return;
+    const e = capEmail.trim(), p = capPhone.trim();
+    if (!e && !p) { toast.warn("Enter an email or a phone number."); return; }
+    if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { toast.error("That email doesn't look valid. Please check it."); return; }
+    if (p && p.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
+    setSavingContact(true);
+    const upd = {}; if (e) upd.email = e; if (p) upd.phone = p;
+    const patched = await sb.patch(token, "contacts", selCust.id, upd);
+    setSavingContact(false);
+    if (patched) {
+      setLocalContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c));
+      setContacts && setContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c));
+      logAudit(token, userId, "contact_updated", "contact", selCust.id, `Contact detail added for ${f.customer} at invoicing`);
+      toast.success(`Saved to ${f.customer}`);
+      setCapEmail(""); setCapPhone("");
+    } else toast.error("Couldn't save the contact detail. Please try again.");
+  };
   const custOpenBalance = invoices
     .filter(i => i.customer === f.customer && i.status !== "paid" && i.status !== "draft")
     .reduce((s, i) => { const b = parseFloat(i.balance); return s + (b > 0 ? b : parseFloat(i.amount || 0)); }, 0);
@@ -80,7 +101,7 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       if (p && p.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
       const upd = {}; if (e) upd.email = e; if (p) upd.phone = p;
       const patched = await sb.patch(token, "contacts", selCust.id, upd);
-      if (patched) { setLocalContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c)); logAudit(token, userId, "contact_updated", "contact", selCust.id, `Contact detail added for ${f.customer} at invoicing`); }
+      if (patched) { setLocalContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c)); setContacts && setContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c)); logAudit(token, userId, "contact_updated", "contact", selCust.id, `Contact detail added for ${f.customer} at invoicing`); }
       else { toast.error("Couldn't save the contact detail. Please try again."); return; }
     }
     if (creditBlocked && !creditOverride) {
@@ -917,7 +938,12 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
               <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", display: "block", marginBottom: 4 }}>Email</label><input type="email" value={capEmail} onChange={e => setCapEmail(e.target.value)} placeholder="email@example.com" style={{ width: "100%" }} /></div>
               <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", display: "block", marginBottom: 4 }}>Phone</label><input value={capPhone} onChange={e => setCapPhone(e.target.value)} placeholder="+44..." style={{ width: "100%" }} /></div>
             </div>
-            {submitted && !capEmail.trim() && !capPhone.trim() && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 6 }}>Enter an email or a phone number to continue.</div>}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 10 }}>
+              {submitted && !capEmail.trim() && !capPhone.trim()
+                ? <div style={{ fontSize: 11, color: "var(--red)" }}>Enter an email or a phone number to continue.</div>
+                : <div style={{ fontSize: 11, color: "var(--text3)" }}>Saves straight to {f.customer}.</div>}
+              <button type="button" className="btn bp bsm" onClick={saveContactInline} disabled={savingContact || (!capEmail.trim() && !capPhone.trim())}>{savingContact ? "Saving…" : "Save contact"}</button>
+            </div>
           </div>
         )}
         {f.customer && creditBlocked && (
