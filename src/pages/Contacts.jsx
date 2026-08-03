@@ -54,7 +54,14 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     return 0;
   });
   const save = async () => {
-    if (!f.name) return; setSaving(true);
+    if (!f.name) return;
+    // Require a way to reach customers — an email OR a phone (needed for invoices, statements, reminders).
+    const em = (f.email || "").trim(), ph = (f.phone || "").trim();
+    const isCust = f.type === "customer" || f.type === "both";
+    if (isCust && !em && !ph) { toast.warn("Add an email or phone number — it's needed to send invoices, statements and reminders."); return; }
+    if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast.error("That email doesn't look valid. Please check it."); return; }
+    if (ph && ph.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
+    setSaving(true);
     // Coerce credit fields so the numeric/boolean columns accept them.
     const payload = { ...f, credit_limit: parseFloat(f.credit_limit) || 0, credit_hold: !!f.credit_hold };
     if (editingContact) {
@@ -327,6 +334,7 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
             <div className="fgrp"><label>Name *</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Business name" /></div>
             <div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="email@example.com" /></div>
             <div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="+44..." /></div>
+            {(f.type === "customer" || f.type === "both") && <div className="fgrp" style={{ gridColumn: "1 / -1" }}><div style={{ fontSize: 11, color: (!f.email?.trim() && !f.phone?.trim()) ? "var(--amber-dk)" : "var(--text3)", marginTop: -4 }}>Enter at least an <strong>email</strong> or a <strong>phone number</strong> — required to send invoices, statements and reminders.</div></div>}
             <div className="fgrp"><label>Address</label><input value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div>
             <div className="fgrp"><label>City</label><input value={f.city} onChange={e => setF({ ...f, city: e.target.value })} /></div>
             <div className="fgrp"><label>Postcode</label><input value={f.postcode} onChange={e => setF({ ...f, postcode: e.target.value })} /></div>
