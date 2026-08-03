@@ -27,7 +27,9 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const [dnNotes, setDnNotes] = useState("");
   const [localContacts, setLocalContacts] = useState(contacts);
   const [creditOverride, setCreditOverride] = useState(false);
-  useEffect(() => { setCreditOverride(false); }, [f.customer]);
+  const [capEmail, setCapEmail] = useState("");   // inline contact capture when a customer has neither email nor phone
+  const [capPhone, setCapPhone] = useState("");
+  useEffect(() => { setCreditOverride(false); setCapEmail(""); setCapPhone(""); }, [f.customer]);
 
   const quickAddCustomer = async (name) => {
     const data = await sb.post(token, "contacts", { name, type: "customer", created_by: userId });
@@ -58,6 +60,8 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const selCust = localContacts.find(c => c.name === f.customer);
   const creditLimit = parseFloat(selCust?.credit_limit || 0);
   const onHold = !!selCust?.credit_hold;
+  // Contact-details gate — a selected customer with neither email nor phone must get one before invoicing.
+  const needsContact = !!selCust && !(selCust.email || "").trim() && !(selCust.phone || "").trim();
   const custOpenBalance = invoices
     .filter(i => i.customer === f.customer && i.status !== "paid" && i.status !== "draft")
     .reduce((s, i) => { const b = parseFloat(i.balance); return s + (b > 0 ? b : parseFloat(i.amount || 0)); }, 0);
@@ -68,6 +72,17 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
   const save = async () => {
     setSubmitted(true);
     if (!f.customer) return;
+    // Gate: capture email/phone for a customer that has neither, and save it back to their record.
+    if (needsContact) {
+      const e = capEmail.trim(), p = capPhone.trim();
+      if (!e && !p) { toast.warn(`Add an email or phone for ${f.customer} — needed to send and chase this invoice.`); return; }
+      if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { toast.error("That email doesn't look valid. Please check it."); return; }
+      if (p && p.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
+      const upd = {}; if (e) upd.email = e; if (p) upd.phone = p;
+      const patched = await sb.patch(token, "contacts", selCust.id, upd);
+      if (patched) { setLocalContacts(prev => prev.map(c => c.id === selCust.id ? { ...c, ...upd } : c)); logAudit(token, userId, "contact_updated", "contact", selCust.id, `Contact detail added for ${f.customer} at invoicing`); }
+      else { toast.error("Couldn't save the contact detail. Please try again."); return; }
+    }
     if (creditBlocked && !creditOverride) {
       toast.error(onHold
         ? `${f.customer} is on credit hold — tick “Authorise & override” to proceed.`
@@ -889,6 +904,22 @@ export function InvoiceForm({ contacts, products, accounts = [], token, userId, 
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
         <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} value={f.customer} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
+        {f.customer && needsContact && (
+          <div style={{ gridColumn: "1 / -1", borderRadius: "var(--r)", border: "1px solid var(--amber)", background: "var(--amber-lt)", padding: "12px 14px" }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+              <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--amber-dk)", marginBottom: 2 }}>No email or phone on file for {f.customer}</div>
+                <div style={{ fontSize: 12, color: "var(--text2)" }}>Add at least one so you can email, WhatsApp and chase this invoice — it's saved to the customer's record.</div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", display: "block", marginBottom: 4 }}>Email</label><input type="email" value={capEmail} onChange={e => setCapEmail(e.target.value)} placeholder="email@example.com" style={{ width: "100%" }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", display: "block", marginBottom: 4 }}>Phone</label><input value={capPhone} onChange={e => setCapPhone(e.target.value)} placeholder="+44..." style={{ width: "100%" }} /></div>
+            </div>
+            {submitted && !capEmail.trim() && !capPhone.trim() && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 6 }}>Enter an email or a phone number to continue.</div>}
+          </div>
+        )}
         {f.customer && creditBlocked && (
           <div style={{ gridColumn: "1 / -1", borderRadius: "var(--r)", border: "1px solid #fca5a5", background: "#fff5f5", padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
             <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</div>
