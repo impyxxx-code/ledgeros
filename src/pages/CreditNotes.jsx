@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
+import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, today, escHtml, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { COMPANY } from "../lib/constants.js";
@@ -17,13 +18,7 @@ export function CreditNotes({ contacts, invoices, setInvoices, profile, token, u
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   const save = async () => {
     if (!f.customer_id||!f.amount) return; setSaving(true);
-    const existing = await sb.get(token, "credit_notes", "select=cn_number&order=cn_number.desc&limit=1");
-    let nextNum = 1;
-    if (Array.isArray(existing) && existing.length > 0 && existing[0].cn_number) {
-      const lastNum = parseInt(String(existing[0].cn_number).replace("CN-", ""), 10);
-      if (!isNaN(lastNum)) nextNum = lastNum + 1;
-    }
-    const num = `CN-${String(nextNum).padStart(3,"0")}`;
+    const num = await nextDocNumber(token, { prefix: "CN", table: "credit_notes", column: "cn_number", width: 3 });
     const cust = customers.find(c => c.id===f.customer_id);
     const data = await sb.post(token,"credit_notes",{...f,cn_number:num,customer_name:cust?.name,amount:parseFloat(f.amount),status:"draft",created_by:userId});
     if (data[0]) { setCNs(prev => [data[0],...prev]); logAudit(token, userId, "credit_note_created", "credit_note", data[0].id, `${num} issued to ${cust?.name} — £${parseFloat(f.amount).toFixed(2)}${f.reason ? ' · ' + f.reason : ''}`); }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
+import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, today, isMobile, DEFAULT_REORDER } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement } from "../lib/stock.js";
@@ -31,7 +32,7 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
   const vatTotal = lines.reduce((s,l) => s+lineTotal(l)*(parseFloat(l.vat_rate)||0)/100,0);
   const save = async () => {
     if (!f.supplier_id) return; setSaving(true);
-    const num = `PO-${String(pos.length+1).padStart(3,"0")}`;
+    const num = await nextDocNumber(token, { prefix: "PO", table: "purchase_orders", column: "po_number", width: 3 });
     const sup = suppliers.find(s => s.id === f.supplier_id);
     const po = await sb.post(token, "purchase_orders", { ...f, po_number: num, supplier_name: sup?.name, total: total+vatTotal, created_by: userId });
     if (po[0]) { for (const l of lines) if (l.product_id) await sb.post(token, "purchase_order_lines", { po_id: po[0].id, product_id: l.product_id, product_name: l.product_name, qty: parseFloat(l.qty)||0, unit_cost: parseFloat(l.unit_cost)||0, vat_rate: parseFloat(l.vat_rate)||0, total: lineTotal(l) }); setPOs(prev => [po[0],...prev]); logAudit(token, userId, "purchase_created", "purchase_order", po[0].id, `${num} raised for ${sup?.name} — £${(total+vatTotal).toFixed(2)}`); /* GL is now recognised at the supplier bill (postSupplierBillJournal), not at PO creation */ }
@@ -64,7 +65,7 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
     if (items.length === 0) { toast.error("Select at least one product"); return; }
     setReorderSaving(true);
     const sup = suppliers.find(s => s.id === reorderSupplier);
-    const num = `PO-${String(pos.length + 1).padStart(3, "0")}`;
+    const num = await nextDocNumber(token, { prefix: "PO", table: "purchase_orders", column: "po_number", width: 3 });
     const poTotal = items.reduce((s, p) => s + (parseInt(reorderQty[p.id]) || 0) * (parseFloat(p.cost_price) || 0), 0);
     const po = await sb.post(token, "purchase_orders", { supplier_id: reorderSupplier, supplier_name: sup?.name, order_date: today(), notes: "Auto-generated from low-stock reorder", po_number: num, total: poTotal, created_by: userId });
     if (po?.[0]) {
