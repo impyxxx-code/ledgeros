@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
+import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, escHtml, today, isMobile } from "../lib/utils.js";
 import { COMPANY, toast } from "../lib/constants.js";
 import { logAudit } from "../lib/audit.js";
@@ -165,10 +166,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
   const saveCN = async () => {
     if (!cnForm.amount || !cnForm.reason) { toast.warn("Enter an amount and a reason."); return; }
     setSavingCN(true);
-    const existing = await sb.get(token, "credit_notes", "select=cn_number&order=cn_number.desc&limit=1");
-    let nextNum = 1;
-    if (Array.isArray(existing) && existing[0]?.cn_number) { const n = parseInt(String(existing[0].cn_number).replace("CN-", ""), 10); if (!isNaN(n)) nextNum = n + 1; }
-    const num = `CN-${String(nextNum).padStart(3, "0")}`;
+    const num = await nextDocNumber(token, { prefix: "CN", table: "credit_notes", column: "cn_number", width: 3 });
     const row = { customer_id: customer.id, customer_name: customer.name, invoice_id: cnForm.invoice_id || null, reason: cnForm.reason, amount: parseFloat(cnForm.amount), issue_date: cnForm.issue_date, cn_number: num, status: "draft", created_by: userId };
     const data = await sb.post(token, "credit_notes", row);
     if (data && data[0]) {

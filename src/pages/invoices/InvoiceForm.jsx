@@ -6,6 +6,7 @@ import { logAudit } from "../../lib/audit.js";
 import { logStockMovement } from "../../lib/stock.js";
 import { postInvoiceJournal } from "../../lib/journal.js";
 import { settleInvoice } from "../../lib/invoicing.js";
+import { nextDocNumber } from "../../lib/numbering.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -187,13 +188,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
       toast.error("Request timed out. Check your connection and try again.");
     }, 15000);
     try {
-      const existing = await sb.get(token, "invoices", "invoice_number=like.INV-*&select=invoice_number&order=invoice_number.desc&limit=1");
-      let nextNum = 1;
-      if (Array.isArray(existing) && existing.length > 0 && existing[0].invoice_number) {
-        const lastNum = parseInt(existing[0].invoice_number.replace("INV-", ""), 10);
-        if (!isNaN(lastNum)) nextNum = lastNum + 1;
-      }
-      const invoice_number = `INV-${String(nextNum).padStart(4, "0")}`;
+      const invoice_number = await nextDocNumber(token, { prefix: "INV", table: "invoices", column: "invoice_number", width: 4 });
       const inv = await sb.post(token, "invoices", {
         customer: f.customer, invoice_date: f.invoice_date, due_date: f.due_date || f.invoice_date || null,
         status: f.status,
