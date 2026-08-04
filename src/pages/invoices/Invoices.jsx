@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
+import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
 import { postPaymentJournal } from "../../lib/journal.js";
 import { settleInvoice, remainingBalance } from "../../lib/invoicing.js";
+import { deleteInvoiceCascade } from "../../lib/invoiceDelete.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -112,13 +113,24 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
   };
 
   const deleteInvoice = async (inv) => {
-    if (!confirm(`Delete ${inv.invoice_number} (${fmt(inv.amount)}) for ${inv.customer}?\n\nThis cannot be undone.`)) return;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/invoices?id=eq.${inv.id}`, { method: "DELETE", headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } });
-    if (res.ok || res.status === 204) {
+    if (!confirm(`Delete ${inv.invoice_number} (${fmt(inv.amount)}) for ${inv.customer}?\n\nThis permanently removes the invoice, reverses its ledger entries, and deletes any recorded payments. This cannot be undone.`)) return;
+    const res = await deleteInvoiceCascade({ token, invoiceId: inv.id });
+    if (res.ok) {
       setInvoices(prev => prev.filter(i => i.id !== inv.id));
       toast.success(`${inv.invoice_number} deleted`);
-      logAudit(token, userId, "invoice_deleted", "invoice", inv.id, `${inv.invoice_number} deleted — ${fmt(inv.amount)}`);
-    } else { toast.error("Failed to delete invoice"); }
+      logAudit(token, userId, "invoice_deleted", "invoice", inv.id, `${inv.invoice_number} deleted — ${fmt(inv.amount)} (reversed ${res.entries} ledger entr${res.entries === 1 ? "y" : "ies"}, ${res.payments} payment${res.payments === 1 ? "" : "s"})`);
+    } else if (res.blocked === "credit_notes") {
+      toast.error("Can't delete: this invoice has credit notes attached. Set it to Cancelled, or remove the credit note first.");
+    } else if (res.blocked === "customer_credits") {
+      toast.error("Can't delete: this invoice has customer credits attached. Set it to Cancelled instead.");
+    } else if (res.blocked === "not_found") {
+      setInvoices(prev => prev.filter(i => i.id !== inv.id));
+      toast.warn("That invoice no longer exists — the list has been refreshed.");
+    } else if (res.needsSql) {
+      toast.error("Ledger-safe delete isn't enabled yet. Ask your admin to run DELETE_INVOICE_CASCADE.sql in Supabase.");
+    } else {
+      toast.error(res.error || "Failed to delete invoice");
+    }
   };
 
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
