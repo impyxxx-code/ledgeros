@@ -3,6 +3,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
+import { logStockMovement } from "../../lib/stock.js";
 import { postInvoiceJournal } from "../../lib/journal.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
@@ -32,17 +33,84 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
   const [savingContact, setSavingContact] = useState(false);
   useEffect(() => { setCreditOverride(false); setCapEmail(""); setCapPhone(""); }, [f.customer]);
 
-  const quickAddCustomer = async (name) => {
-    const data = await sb.post(token, "contacts", { name, type: "customer", created_by: userId });
-    if (data[0]) {
-      setLocalContacts(prev => [...prev, data[0]]);
-      setF(prev => ({ ...prev, customer: name }));
-      logAudit(token, userId, "contact_created", "contact", data[0].id, `${name} quick-added from invoice form`);
-      toast.success(`${name} added as customer`);
-    } else { toast.error("Failed to create customer"); }
-  };
   const [mobPickerOpen, setMobPickerOpen] = useState(false);
   const [mobPickerSearch, setMobPickerSearch] = useState("");
+  // Quick-add modals — created inline from the invoice so you never leave the half-built invoice.
+  const [newCust, setNewCust] = useState(null);   // {name,email,phone,address,city,postcode} | null
+  const [newProd, setNewProd] = useState(null);   // {lineIndex,name,sale_price,code,unit,vat_rate,stock_qty} | null
+  const [savingNew, setSavingNew] = useState(false);
+  const [localProducts, setLocalProducts] = useState(products);
+
+  // Typing an unknown customer name opens a compact modal (prefilled) so the record is
+  // born with a contact channel — no separate gate round-trip.
+  const quickAddCustomer = (name) => setNewCust({ name: name || "", email: "", phone: "", address: "", city: "", postcode: "" });
+
+  const commitNewCustomer = async () => {
+    const nm = (newCust.name || "").trim();
+    const em = (newCust.email || "").trim(), ph = (newCust.phone || "").trim();
+    if (!nm) { toast.warn("Enter a customer name."); return; }
+    if (!em && !ph) { toast.warn("Add an email or a phone number — it's needed to send and chase invoices."); return; }
+    if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast.error("That email doesn't look valid. Please check it."); return; }
+    if (ph && ph.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
+    setSavingNew(true);
+    const body = { name: nm, type: "customer", created_by: userId };
+    if (em) body.email = em;
+    if (ph) body.phone = ph;
+    if ((newCust.address || "").trim()) body.address = newCust.address.trim();
+    if ((newCust.city || "").trim()) body.city = newCust.city.trim();
+    if ((newCust.postcode || "").trim()) body.postcode = newCust.postcode.trim();
+    const data = await sb.post(token, "contacts", body);
+    setSavingNew(false);
+    if (data && data[0]) {
+      setLocalContacts(prev => [...prev, data[0]]);
+      setContacts && setContacts(prev => [data[0], ...prev]);
+      setF(prev => ({ ...prev, customer: data[0].name }));
+      logAudit(token, userId, "contact_created", "contact", data[0].id, `${nm} quick-added from invoice form`);
+      toast.success(`${nm} added as customer`);
+      setNewCust(null);
+    } else { toast.error("Couldn't create the customer. Please try again."); }
+  };
+
+  // Typing an unknown product opens a modal so the new item gets a price/unit/VAT,
+  // then it drops straight into the line it was created from.
+  const quickAddProduct = (lineIndex, name) => setNewProd({ lineIndex, name: name || "", sale_price: "", code: "", unit: "unit", vat_rate: 20, stock_qty: "" });
+
+  const commitNewProduct = async () => {
+    const nm = (newProd.name || "").trim();
+    const price = parseFloat(newProd.sale_price);
+    if (!nm) { toast.warn("Enter a product name."); return; }
+    if (!(price >= 0)) { toast.warn("Enter a sale price (0 or more)."); return; }
+    setSavingNew(true);
+    const openQty = parseFloat(newProd.stock_qty) || 0;
+    const body = {
+      name: nm,
+      code: (newProd.code || "").trim() || null,
+      sale_price: price,
+      cost_price: 0,
+      vat_rate: parseFloat(newProd.vat_rate) || 20,
+      unit: (newProd.unit || "unit").trim() || "unit",
+      stock_qty: openQty,
+      created_by: userId,
+    };
+    const data = await sb.post(token, "products", body);
+    setSavingNew(false);
+    if (data && data[0]) {
+      const p = data[0];
+      setLocalProducts(prev => [...prev, p]);
+      const i = newProd.lineIndex;
+      if (i < 0) {
+        // Mobile: append as a new line (replace the blank first line if untouched).
+        const nl = { product_id: p.id, description: p.name || "", qty: 1, unit_price: p.sale_price ?? "", vat_rate: p.vat_rate ?? 20, unit: p.unit || "unit", custom_price_applied: false };
+        setLines(prev => prev[0]?.description === "" && !prev[0]?.product_id ? [nl] : [...prev, nl]);
+      } else {
+        setLines(prev => { const next = [...prev]; if (next[i]) next[i] = { ...next[i], product_id: p.id, description: p.name || "", unit_price: p.sale_price ?? "", vat_rate: p.vat_rate ?? 20, unit: p.unit || "unit", custom_price_applied: false, price_amended: false }; return next; });
+      }
+      logAudit(token, userId, "product_created", "product", p.id, `${nm} quick-added from invoice form · Sale £${price} · Stock ${openQty}`);
+      if (openQty > 0) logStockMovement(token, { product: p, delta: openQty, balance_after: openQty, reason: "opening", ref_type: "product", note: "Opening balance (quick-add)", userId });
+      toast.success(`${nm} added to catalogue`);
+      setNewProd(null);
+    } else { toast.error("Couldn't create the product. Please try again."); }
+  };
 
   const customers = localContacts.filter(c => (c.type === "customer" || c.type === "both") && c.active !== false);
 
@@ -506,6 +574,79 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
     setTimeout(() => { mobWin.print(); }, 800);
   };
 
+  // ── QUICK-ADD MODALS (customer / product) — mounted in both mobile & desktop form views ──
+  const qaOverlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 };
+  const qaSheet = { background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", boxShadow: "var(--sh2)", width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto" };
+  const qaLabel = { fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 5, display: "block" };
+  const qaInput = { width: "100%", background: "var(--white)", border: "0.5px solid var(--border2)", borderRadius: "var(--r)", padding: "9px 12px", fontSize: 13, color: "var(--text)", fontFamily: "var(--sans)", outline: "none" };
+  const quickAddModals = (
+    <>
+      {newCust && (
+        <ModalPortal>
+          <div style={qaOverlay} onMouseDown={e => { if (e.target === e.currentTarget) setNewCust(null); }}>
+            <div style={qaSheet}>
+              <div style={{ padding: "16px 20px", borderBottom: "0.5px solid var(--border)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>New customer</div>
+                  <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 1 }}>Adds to your customer list and selects it on this invoice.</div>
+                </div>
+                <button className="btn bo bsm" onClick={() => setNewCust(null)} aria-label="Close">✕</button>
+              </div>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div><label style={qaLabel}>Name *</label><input autoFocus style={qaInput} value={newCust.name} onChange={e => setNewCust({ ...newCust, name: e.target.value })} placeholder="Business or contact name" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div><label style={qaLabel}>Email</label><input style={qaInput} value={newCust.email} onChange={e => setNewCust({ ...newCust, email: e.target.value })} placeholder="name@company.com" /></div>
+                  <div><label style={qaLabel}>Phone</label><input style={qaInput} value={newCust.phone} onChange={e => setNewCust({ ...newCust, phone: e.target.value })} placeholder="07…" /></div>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--amber-dk)", marginTop: -6 }}>Enter at least an <strong>email</strong> or a <strong>phone</strong> — needed to send and chase invoices.</div>
+                <div><label style={qaLabel}>Address</label><input style={qaInput} value={newCust.address} onChange={e => setNewCust({ ...newCust, address: e.target.value })} placeholder="Street (optional)" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div><label style={qaLabel}>City</label><input style={qaInput} value={newCust.city} onChange={e => setNewCust({ ...newCust, city: e.target.value })} placeholder="(optional)" /></div>
+                  <div><label style={qaLabel}>Postcode</label><input style={qaInput} value={newCust.postcode} onChange={e => setNewCust({ ...newCust, postcode: e.target.value })} placeholder="(optional)" /></div>
+                </div>
+              </div>
+              <div style={{ padding: "14px 20px", borderTop: "0.5px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button className="btn bo" onClick={() => setNewCust(null)}>Cancel</button>
+                <button className="btn bp" onClick={commitNewCustomer} disabled={savingNew}>{savingNew ? "Saving…" : "Create customer"}</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+      {newProd && (
+        <ModalPortal>
+          <div style={qaOverlay} onMouseDown={e => { if (e.target === e.currentTarget) setNewProd(null); }}>
+            <div style={qaSheet}>
+              <div style={{ padding: "16px 20px", borderBottom: "0.5px solid var(--border)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>New product</div>
+                  <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 1 }}>Adds to your catalogue and drops it into this line.</div>
+                </div>
+                <button className="btn bo bsm" onClick={() => setNewProd(null)} aria-label="Close">✕</button>
+              </div>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div><label style={qaLabel}>Product name *</label><input autoFocus style={qaInput} value={newProd.name} onChange={e => setNewProd({ ...newProd, name: e.target.value })} placeholder="Product name" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div><label style={qaLabel}>Sale price (£) *</label><input style={qaInput} inputMode="decimal" value={newProd.sale_price} onChange={e => setNewProd({ ...newProd, sale_price: e.target.value })} placeholder="0.00" /></div>
+                  <div><label style={qaLabel}>Code / SKU</label><input style={qaInput} value={newProd.code} onChange={e => setNewProd({ ...newProd, code: e.target.value })} placeholder="(optional)" /></div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  <div><label style={qaLabel}>Unit</label><input style={qaInput} value={newProd.unit} onChange={e => setNewProd({ ...newProd, unit: e.target.value })} placeholder="unit" /></div>
+                  <div><label style={qaLabel}>VAT</label><select style={qaInput} value={newProd.vat_rate} onChange={e => setNewProd({ ...newProd, vat_rate: e.target.value })}><option value="20">20%</option><option value="5">5%</option><option value="0">Exempt</option></select></div>
+                  <div><label style={qaLabel}>Opening stock</label><input style={qaInput} inputMode="numeric" value={newProd.stock_qty} onChange={e => setNewProd({ ...newProd, stock_qty: e.target.value })} placeholder="0" /></div>
+                </div>
+              </div>
+              <div style={{ padding: "14px 20px", borderTop: "0.5px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button className="btn bo" onClick={() => setNewProd(null)}>Cancel</button>
+                <button className="btn bp" onClick={commitNewProduct} disabled={savingNew}>{savingNew ? "Saving…" : "Create product"}</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+    </>
+  );
+
   // ── SUCCESS SCREEN ─────────────────────────────────────────────────────────
   if (savedInvoice) {
     return (
@@ -661,7 +802,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
   // ── INVOICE FORM ───────────────────────────────────────────────────────────
   const mobView = isMobile();
   const mobCusts = contacts.filter(c => (c.type === "customer" || c.type === "both") && c.active !== false);
-  const sellableProducts = products.filter(p => p.active !== false);
+  const sellableProducts = localProducts.filter(p => p.active !== false);
   const mobRecent = sellableProducts.slice(0, 6);
   const mobFiltered = mobPickerSearch
     ? sellableProducts.filter(p => p.name.toLowerCase().includes(mobPickerSearch.toLowerCase()) || (p.code||"").toLowerCase().includes(mobPickerSearch.toLowerCase()))
@@ -698,6 +839,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
 
   if (mobView) return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)", paddingBottom:160 }}>
+      {quickAddModals}
       {/* ── IMPROVED HEADER — dark, shows running total ── */}
       <div style={{ background:"#201e1d", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:50, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -895,7 +1037,18 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
             </div>
             {!mobPickerSearch && <div style={{ padding:"0 16px 6px", fontSize:11, fontWeight:600, color:"var(--text3)", textTransform:"uppercase", letterSpacing:".6px" }}>Recent Products</div>}
             <div style={{ overflowY:"auto", flex:1, padding:"0 12px 16px" }}>
-              {mobFiltered.length === 0 && <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:13 }}>No products found</div>}
+              {mobFiltered.length === 0 && (
+                <div style={{ padding:"20px 8px", textAlign:"center" }}>
+                  <div style={{ color:"var(--text3)", fontSize:13, marginBottom: mobPickerSearch ? 12 : 0 }}>No products found</div>
+                  {mobPickerSearch && (
+                    <button onClick={() => { const n = mobPickerSearch; setMobPickerOpen(false); setMobPickerSearch(""); quickAddProduct(-1, n); }}
+                      style={{ width:"100%", background:"rgba(221,43,15,.08)", border:"1px solid rgba(221,43,15,.3)", borderRadius:"var(--rl)", padding:"12px 14px", cursor:"pointer", fontFamily:"var(--sans)", fontSize:13, fontWeight:600, color:"#ae1800", display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Create "{mobPickerSearch}" as new product
+                    </button>
+                  )}
+                </div>
+              )}
               {mobFiltered.map(p => {
                 const inBasket = lines.find(l => l.product_id === p.id);
                 return (
@@ -922,6 +1075,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
 
   return (
     <div className="card">
+      {quickAddModals}
       <div className="ch"><div><div className="ct">New VAT Invoice</div><div className="cs">Add line items with VAT rates</div></div><button className="btn bo bsm" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>
       <div className="fg">
         <div className="fgrp"><label style={{ color: submitted && !f.customer ? "var(--red)" : undefined }}>Customer *</label><SearchDropdown placeholder="Search customers..." items={customers} value={f.customer} onSelect={c => setF({ ...f, customer: c.name })} onCreateNew={quickAddCustomer} />{submitted && !f.customer && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>Please select a customer</div>}</div>
@@ -1018,7 +1172,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
                         };
                         return next;
                       });
-                    }} displayKey="name" value={l.description} />
+                    }} onCreateNew={(name) => quickAddProduct(i, name)} createLabel="product" displayKey="name" value={l.description} />
             </div>
             <input type="text" inputMode="numeric" className="il-input mono" value={String(l.qty ?? "")} onChange={e => updateLine(i, "qty", e.target.value)} />
             <div style={{ display:"flex",flexDirection:"column",gap:3 }}>

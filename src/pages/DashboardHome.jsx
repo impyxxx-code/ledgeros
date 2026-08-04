@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { AlertTriangle, Package, Clock, FileText, PauseCircle, RotateCcw, Bell, X, Plus, Users, ShoppingBag, ArrowRight, TrendingUp, Sparkles } from "lucide-react";
+import { AlertTriangle, Package, Clock, FileText, PauseCircle, RotateCcw, Bell, X, Plus, Users, ShoppingBag, ArrowRight, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, DEFAULT_REORDER } from "../lib/utils.js";
@@ -70,7 +70,13 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
     const avgInvoice = paidCount > 0 ? paid / paidCount : 0;
     const thisMonth = active.filter(i => monthKey(new Date(i.invoice_date || i.created_at)) === monthKey(now)).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
     const lastMonth = active.filter(i => monthKey(new Date(i.invoice_date || i.created_at)) === monthKey(now) - 1).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
-    const revTrend = lastMonth > 0 ? Math.round((thisMonth - lastMonth) / lastMonth * 100) : null;
+    // Trend compares rolling 30-day windows (not calendar months) so an early-in-the-month
+    // figure isn't measured against a full previous month (which read as a huge false drop).
+    const dayMs = 86400000;
+    const revBetween = (from, to) => active.reduce((s, i) => { const d = new Date(i.invoice_date || i.created_at); return (d > from && d <= to) ? s + parseFloat(i.amount || 0) : s; }, 0);
+    const rev30 = revBetween(new Date(now - 30 * dayMs), now);
+    const revPrev30 = revBetween(new Date(now - 60 * dayMs), new Date(now - 30 * dayMs));
+    const revTrend = revPrev30 > 0 ? Math.round((rev30 - revPrev30) / revPrev30 * 100) : null;
     // DSO — balance-weighted average age of the open receivables book (days money has been owed).
     let wSum = 0, bSum = 0;
     invoices.filter(i => i.status === "pending" || i.status === "overdue" || i.status === "partial").forEach(i => {
@@ -80,7 +86,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
       wSum += bal * days; bSum += bal;
     });
     const dso = bSum > 0 ? Math.round(wSum / bSum) : 0;
-    return { paid, cash, outstanding, overdue, totalRev, overdueCount, pendingCount, draftCount, partialCount, paidCount, collectionRate, avgInvoice, thisMonth, lastMonth, revTrend, dso };
+    return { paid, cash, outstanding, overdue, totalRev, overdueCount, pendingCount, draftCount, partialCount, paidCount, collectionRate, avgInvoice, thisMonth, lastMonth, rev30, revPrev30, revTrend, dso };
   }, [invoices, active]);
 
   const lowStock = useMemo(() => products.filter(p => (p.stock_qty ?? 0) <= (p.reorder_level || DEFAULT_REORDER)), [products]);
@@ -107,7 +113,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
 
   // ── KPI definitions ──
   const kpis = [
-    { key: "rev", label: "Revenue (mo)", value: M.thisMonth, money: true, delta: M.revTrend, deltaLabel: "vs last month", spark: sparks.revenue, sc: "rgba(255,255,255,.55)", onClick: () => nav("all") },
+    { key: "rev", label: "Revenue (mo)", value: M.thisMonth, money: true, delta: M.revTrend, deltaLabel: "vs prior 30d", spark: sparks.revenue, sc: "rgba(255,255,255,.55)", onClick: () => nav("all") },
     { key: "cash", label: "Cash collected", value: M.cash, money: true, delta: null, deltaLabel: `${invoices.filter(i => i.payment_method === "cash").length} cash payments`, spark: sparks.cash, sc: "#7fe0a0", onClick: () => nav("paid") },
     { key: "out", label: "Outstanding", value: M.outstanding, money: true, delta: null, deltaLabel: `${M.pendingCount + M.overdueCount} open`, spark: sparks.outstanding, sc: "#ff9478", onClick: () => nav("overdue") },
     { key: "over", label: "Overdue", value: M.overdue, money: true, delta: null, deltaLabel: `${M.overdueCount} · chase`, spark: sparks.outstanding, sc: "#ff9478", danger: true, onClick: () => nav("overdue") },
@@ -208,7 +214,7 @@ export function DashboardHome({ accounts = [], invoices = [], setInvoices, conta
   // ── AI insights (derived) ──
   const insights = useMemo(() => {
     const out = [];
-    if (M.revTrend !== null) out.push({ c: "green", ico: TrendingUp, t: `Revenue ${M.revTrend >= 0 ? "up" : "down"} ${Math.abs(M.revTrend)}% vs last month`, s: `${fmt(M.thisMonth)} invoiced this month.` });
+    if (M.revTrend !== null) out.push({ c: M.revTrend >= 0 ? "green" : "amber", ico: M.revTrend >= 0 ? TrendingUp : TrendingDown, t: `Revenue ${M.revTrend >= 0 ? "up" : "down"} ${Math.abs(M.revTrend)}% vs prior 30 days`, s: `${fmt(M.rev30)} in the last 30 days vs ${fmt(M.revPrev30)} the 30 before.` });
     if (topProducts[0] && M.totalRev > 0) { const share = Math.round(topProducts[0].revenue / topProducts.reduce((s, p) => s + p.revenue, M.totalRev * 0 + 1) * 100); out.push({ c: "blue", ico: Package, t: `${topProducts[0].name} leads product sales`, s: `Top SKU by revenue — keep it in stock.` }); }
     if (M.overdueCount > 0) { const top5 = custData.late.slice(0, 5).reduce((s, c) => s + c.overdue, 0); const pct = M.overdue > 0 ? Math.round(top5 / M.overdue * 100) : 0; out.push({ c: "danger", ico: Clock, t: `${M.overdueCount} invoices overdue (${fmt(M.overdue)})`, s: `Top 5 customers hold ${pct}% — chase those first.` }); }
     if (M.dso > 0) { const c = M.dso > 45 ? "danger" : M.dso > 30 ? "amber" : "green"; out.push({ c, ico: Clock, t: `Money is owed ${M.dso} days on average`, s: `That's your DSO across open invoices — clearing the oldest brings it down.` }); }
