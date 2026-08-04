@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../../lib/supabase.js";
-import { fmt, fmtDate } from "../../lib/utils.js";
+import { fmt, fmtDate, buildCsv } from "../../lib/utils.js";
 import { toast } from "../../lib/constants.js";
 
 const downloadCsv = (filename, header, rows) => {
-  const csv = header.join(",") + "\n" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.href = URL.createObjectURL(new Blob([buildCsv(header, rows)], { type: "text/csv" }));
   a.download = filename;
   a.click();
 };

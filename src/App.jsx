@@ -37,6 +37,7 @@ import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "./lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "./lib/utils.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "./lib/email.js";
 import { logAudit } from "./lib/audit.js";
+import { canViewPage } from "./lib/access.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "./components/ui.jsx";
 import { SearchDropdown } from "./components/SearchDropdown.jsx";
 import { CommandPalette } from "./components/CommandPalette.jsx";
@@ -1480,6 +1481,13 @@ const NAV = [
   { id: "settings", label: "Settings", adminOnly: true },
 ];
 
+// Pages that must not render for a confirmed non-admin, even when `page` is set
+// directly (nav hides them; the router used to render them regardless). Derived
+// from the adminOnly nav flags so it stays in sync. customer-hub is intentionally
+// excluded: agents reach it via the Contacts "Customer Hub →" action and it shows
+// only customer-scoped data they already have.
+const ADMIN_ONLY_PAGES = new Set(NAV.filter(n => n.adminOnly && n.id !== "customer-hub").map(n => n.id));
+
 const MOBILE_NAV = [
   { id: "dashboard", label: "Home" },
   { id: "invoices", label: "Invoices" },
@@ -2181,6 +2189,13 @@ export default function App() {
                   </div>
                   <SkeletonTable rows={6} cols={5} />
                 </div>
+              </div>
+            ) : !canViewPage(page, profile?.role, ADMIN_ONLY_PAGES) ? (
+              <div className="card" style={{ padding: 40, textAlign: "center", maxWidth: 460, margin: "40px auto" }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🔒</div>
+                <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Access restricted</div>
+                <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 20, lineHeight: 1.5 }}>This section is available to administrators only.</div>
+                <button className="btn bp" onClick={() => setPage("dashboard")}>Back to dashboard</button>
               </div>
             ) : (
               <>

@@ -128,7 +128,15 @@ export function Auth({ onAuth, sessionExpired }) {
               : "Your account is pending admin approval. You will be notified once approved.");
             setLoading(false); return;
           }
-        } catch (approvalErr) { console.warn("Approval check failed:", approvalErr); }
+        } catch (approvalErr) {
+          // Fail CLOSED: if we can't verify approval/role (network error, or the
+          // request being blocked), do not let the login proceed — otherwise an
+          // unapproved account could bypass the gate by forcing this check to fail.
+          console.warn("Approval check failed:", approvalErr);
+          setErr("Couldn't verify your account status. Please check your connection and try again.");
+          setLoading(false);
+          return;
+        }
         // ── MFA check ──
         let factors = [];
         try { const ur = await sb.mfaGetUser(d.access_token); factors = Array.isArray(ur.factors) ? ur.factors : []; } catch {}

