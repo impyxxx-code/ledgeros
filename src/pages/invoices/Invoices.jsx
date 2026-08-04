@@ -177,7 +177,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
   <div style="text-align:right"><div class="doc-title">DELIVERY</div><div class="doc-title">NOTE</div><div class="doc-num">${dn_number}</div><div class="inv-badge">📄 Invoice: ${inv.invoice_number}</div><div class="status-pill">${(inv.status||"pending").toUpperCase()}</div></div>
 </div>
 <div class="meta-grid">
-  <div class="meta-box dark"><div class="meta-lbl light">Deliver To</div><div class="meta-val large light">${escHtml(inv.customer)}</div>${address?"<div class=\"meta-val addr\">"+address+"</div>":""}</div>
+  <div class="meta-box dark"><div class="meta-lbl light">Deliver To</div><div class="meta-val large light">${escHtml(inv.customer)}</div>${address?"<div class=\"meta-val addr\">"+escHtml(address)+"</div>":""}</div>
   <div class="meta-sub">
     <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn_number}</div></div>
     <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${fmtDate(inv.invoice_date)}</div></div>
