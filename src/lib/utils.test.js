@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue, csvCell, buildCsv } from "./utils.js";
+import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue, csvCell, buildCsv, parseLines, parseUkDate } from "./utils.js";
 
 describe("fmt", () => {
   it("formats numbers as GBP currency", () => {
@@ -145,5 +145,49 @@ describe("buildCsv", () => {
   it("joins a header and rows with CRLF, every cell sanitised", () => {
     const out = buildCsv(["Name", "Amount"], [["=cmd", "10"], ["Smith, J", "-5"]]);
     expect(out).toBe(`"Name","Amount"\r\n"'=cmd","10"\r\n"Smith, J","-5"`);
+  });
+});
+
+// Audit item #15: a malformed lines string must never throw and blank a report.
+describe("parseLines", () => {
+  it("parses a JSON string of line items", () => {
+    expect(parseLines({ lines: '[{"qty":2}]' })).toEqual([{ qty: 2 }]);
+  });
+  it("passes through an already-parsed array", () => {
+    const arr = [{ qty: 1 }];
+    expect(parseLines({ lines: arr })).toBe(arr);
+  });
+  it("returns [] for malformed JSON instead of throwing", () => {
+    expect(parseLines({ lines: "{not json" })).toEqual([]);
+    expect(parseLines({ lines: "=SUM(A1)" })).toEqual([]);
+  });
+  it("returns [] for missing/empty/non-array lines and null invoice", () => {
+    expect(parseLines({ lines: null })).toEqual([]);
+    expect(parseLines({})).toEqual([]);
+    expect(parseLines({ lines: '{"not":"array"}' })).toEqual([]);
+    expect(parseLines(null)).toEqual([]);
+  });
+});
+
+// Audit item #17: UK statements are day-first; new Date() misreads them.
+describe("parseUkDate", () => {
+  const iso = (d) => d && `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  it("reads DD/MM/YYYY as day-first (not US month-first)", () => {
+    expect(iso(parseUkDate("06/07/2026"))).toBe("2026-07-06");   // 6 July, not 7 June
+    expect(iso(parseUkDate("13/06/2026"))).toBe("2026-06-13");   // would be Invalid Date via new Date()
+  });
+  it("accepts - and . separators and 2-digit years", () => {
+    expect(iso(parseUkDate("13-06-2026"))).toBe("2026-06-13");
+    expect(iso(parseUkDate("13.06.2026"))).toBe("2026-06-13");
+    expect(iso(parseUkDate("13/06/26"))).toBe("2026-06-13");
+  });
+  it("reads ISO YYYY-MM-DD unambiguously", () => {
+    expect(iso(parseUkDate("2026-06-13"))).toBe("2026-06-13");
+  });
+  it("returns null for empty or nonsense input", () => {
+    expect(parseUkDate("")).toBe(null);
+    expect(parseUkDate(null)).toBe(null);
+    expect(parseUkDate("not a date")).toBe(null);
+    expect(parseUkDate("45/45/2026")).toBe(null);
   });
 });

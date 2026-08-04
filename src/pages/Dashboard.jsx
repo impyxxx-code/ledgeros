@@ -18,12 +18,15 @@ import { DashboardHome } from "./DashboardHome.jsx";
 // │ Admin dashboard with KPIs, charts and AI insights          │
 // └────────────────────────────────────────────────────────────┘
 export function Dashboard({ accounts, invoices, setInvoices, contacts, setContacts, products, profile, setPage, setPendingFilter, allProfiles, token, userId }) {
-  const isAdmin = profile?.role === "admin";
-  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} accounts={accounts} />;
-
+  // All hooks must run before any conditional return (Rules of Hooks): `role` can
+  // flip null→admin once the profile loads, which changes the hook count and
+  // crashes React if the early return sits above these useState calls.
   const [viewInvoice, setViewInvoice] = useState(null);
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [editInvoice, setEditInvoice] = useState(null);
+  const [drill, setDrill] = useState(null); // { title, rows, cols, summary }
+  const isAdmin = profile?.role === "admin";
+  if (!isAdmin) return <AgentDashboard invoices={invoices} setInvoices={setInvoices} contacts={contacts} setContacts={setContacts} profile={profile} setPage={setPage} token={token} userId={userId} accounts={accounts} />;
 
   // ── Computed metrics ──
   const revenue = accounts.filter(a => a.type === "Revenue").reduce((s, a) => s + a.balance, 0);
@@ -74,9 +77,6 @@ export function Dashboard({ accounts, invoices, setInvoices, contacts, setContac
   const todayPaid = invoices.filter(i => i.status === "paid" && (i.invoice_date === todayStr || (i.created_at || "").startsWith(todayStr))).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const todayCount = invoices.filter(i => (i.invoice_date === todayStr || (i.created_at || "").startsWith(todayStr))).length;
   const avgInvoice = paidCount > 0 ? paid / paidCount : 0;
-
-  // ── Drill-down modal state ──
-  const [drill, setDrill] = useState(null); // { title, rows, cols, summary }
 
   const openDrill = (title, rows, cols, summary) => setDrill({ title, rows, cols, summary });
 

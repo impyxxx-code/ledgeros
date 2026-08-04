@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { fmt, fmtDate } from "../../lib/utils.js";
+import { fmt, fmtDate, parseLines } from "../../lib/utils.js";
 import { EmptyState } from "../../components/ui.jsx";
 
 // ── ADMIN REPORTS SUITE ───────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ export function ProductSalesTracker({ invoices, products, allProfiles }) {
   // Build product sales data from line items
   const productSales = {};
   rangedInvoices.forEach(inv => {
-    let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+    let lines = parseLines(inv);
     if (!lines || lines.length === 0) {
       lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
     }

@@ -58,17 +58,25 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
     if (!preview) return;
     setSaving(true);
     const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-    const summary = [];
+    const succeeded = [];   // full-shape allocs whose invoice actually persisted
+    const failed = [];      // invoice numbers whose update did NOT persist
 
-    for (const { inv, apply, newBalance, newStatus } of preview.allocs) {
-      // Update invoice
-      await sb.patch(token, "invoices", inv.id, {
-        amount_paid: (parseFloat(inv.amount) - newBalance),
-        balance: newBalance,
-        status: newStatus,
-        payment_method: method
-      });
-      // Insert payment row
+    for (const alloc of preview.allocs) {
+      const { inv, apply, newBalance, newStatus } = alloc;
+      // Only treat a row as paid if the invoice update actually persisted — a
+      // partial network/RLS failure must not report every row as paid.
+      let ok = false;
+      try {
+        const res = await sb.patch(token, "invoices", inv.id, {
+          amount_paid: (parseFloat(inv.amount) - newBalance),
+          balance: newBalance,
+          status: newStatus,
+          payment_method: method
+        });
+        ok = Array.isArray(res) && res.length > 0;
+      } catch { ok = false; }
+      if (!ok) { failed.push(inv.invoice_number); continue; }
+
       const payRow = {
         invoice_id: inv.id,
         invoice_number: inv.invoice_number,
@@ -81,11 +89,12 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
       };
       if (isUUID(userId)) payRow.recorded_by = userId;
       await sb.addPayment(token, payRow).catch(e => console.error(e));
-      summary.push({ invoice_number: inv.invoice_number, apply, newStatus });
+      succeeded.push(alloc);
     }
 
-    // If leftover — add to credit
-    if (preview.leftover > 0) {
+    // Bank the surplus as credit only on a clean run — on a partial failure the
+    // "surplus" is unreliable (money was meant for a row that didn't persist).
+    if (failed.length === 0 && preview.leftover > 0) {
       await sb.addCredit(token, {
         customer,
         amount: preview.leftover,
@@ -97,18 +106,21 @@ export function BulkPaymentModal({ customer: initialCustomer, invoices, contacts
     }
 
     await logAudit(token, userId, "bulk_payment", "customer", null,
-      `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} for ${customer} dated ${payDate} — ${preview.allocs.length} invoice(s) updated`
+      `Bulk payment of £${parseFloat(amount).toFixed(2)} via ${method} for ${customer} dated ${payDate} — ${succeeded.length} invoice(s) updated${failed.length ? `, ${failed.length} failed (${failed.join(", ")})` : ""}`
     );
 
+    const summary = succeeded.map(a => ({ invoice_number: a.inv.invoice_number, apply: a.apply, newStatus: a.newStatus }));
     const appliedTotal = summary.reduce((s,a)=>s+a.apply,0);
     if (appliedTotal > 0) postPaymentJournal(token, accounts, { invoice_id: null, invoice_number: `Bulk — ${customer}`, amount: appliedTotal, date: payDate });
     const custForReceipt = contacts.find(c => c.name === customer);
-    if (custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${customer}`, html: buildBulkReceiptEmailHtml(customer, parseFloat(amount), method, summary, preview.leftover), token }).catch(()=>{});
+    // Only email a receipt when the whole batch applied, so we never confirm money we didn't record.
+    if (failed.length === 0 && custForReceipt?.email) sendEmail({ to: custForReceipt.email, subject: `Payment Received — ${customer}`, html: buildBulkReceiptEmailHtml(customer, parseFloat(amount), method, summary, preview.leftover), token }).catch(()=>{});
 
     setSaving(false);
-    setSavedSummary({ allocs: summary, leftover: preview.leftover });
+    if (failed.length) toast.warn(`${succeeded.length} invoice(s) paid, ${failed.length} failed (${failed.join(", ")}). Please retry the failed one(s).`);
+    setSavedSummary({ allocs: summary, leftover: failed.length === 0 ? preview.leftover : 0 });
     setDone(true);
-    onComplete && onComplete(preview.allocs);
+    onComplete && onComplete(succeeded);   // parent marks ONLY the invoices that persisted
   };
 
   const fmt2 = (n) => "£" + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
