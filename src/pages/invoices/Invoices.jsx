@@ -4,6 +4,7 @@ import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml, buildReceiptEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
 import { postPaymentJournal } from "../../lib/journal.js";
+import { settleInvoice, remainingBalance } from "../../lib/invoicing.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -47,12 +48,22 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
   const bulkMarkPaid = async () => {
     if (!selectedIds.size) return;
     setBulkLoading(true);
+    let done = 0, failed = 0, payWarn = 0;
     for (const id of selectedIds) {
-      await sb.patch(token, "invoices", id, { status: "paid", payment_method: "cash" });
-      setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: "cash" } : i));
+      const inv = invoices.find(i => i.id === id);
+      if (!inv || inv.status === "paid") continue;
+      const res = await settleInvoice({ token, invoice: inv, payNow: remainingBalance(inv), method: "cash", accounts, userId, profile });
+      if (res.ok) {
+        done++;
+        if (res.paymentError) payWarn++;
+        setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: res.status, payment_method: "cash", amount_paid: res.amountPaid, balance: res.balance } : i));
+      } else { failed++; }
     }
-    logAudit(token, userId, "bulk_paid", "invoice", null, `${selectedIds.size} invoices marked paid in bulk`);
-    toast.success(`${selectedIds.size} invoice${selectedIds.size > 1 ? "s" : ""} marked as paid`);
+    if (done) logAudit(token, userId, "bulk_paid", "invoice", null, `${done} invoice${done !== 1 ? "s" : ""} marked paid in bulk`);
+    if (failed) toast.error(`${done} marked paid · ${failed} failed — please retry the rest`);
+    else if (done) toast.success(`${done} invoice${done !== 1 ? "s" : ""} marked as paid`);
+    else toast.warn("Nothing to mark paid (already settled).");
+    if (payWarn) toast.warn(`${payWarn} payment${payWarn !== 1 ? "s" : ""} recorded but a ledger row failed — check the Payments tab.`);
     setSelectedIds(new Set());
     setBulkLoading(false);
   };
@@ -88,15 +99,15 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
 
   const markPaid = async (id, method) => {
     const inv = invoices.find(i => i.id === id);
-    await sb.patch(token, "invoices", id, { status: "paid", payment_method: method || "cash", amount_paid: inv?.amount || 0, balance: 0 });
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: "paid", payment_method: method || "cash", amount_paid: i.amount, balance: 0 } : i));
+    if (!inv) return;
+    const res = await settleInvoice({ token, invoice: inv, payNow: remainingBalance(inv), method: method || "cash", accounts, userId, profile });
+    if (!res.ok) { toast.error(res.error || "Failed to mark invoice paid"); setPayingId(null); return; }
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: res.status, payment_method: method || "cash", amount_paid: res.amountPaid, balance: res.balance } : i));
     toast.success("Invoice marked as paid");
-    if (inv) {
-      logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(inv.amount)}`);
-      postPaymentJournal(token, accounts, { invoice_id: id, invoice_number: inv.invoice_number, amount: parseFloat(inv.amount) - parseFloat(inv.amount_paid||0), date: new Date().toISOString().slice(0,10) });
-      const cust = contacts.find(c => c.name === inv.customer);
-      if (cust?.email) sendEmail({ to: cust.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, inv.amount, method || "cash", 0), token }).catch(()=>{});
-    }
+    if (res.paymentError) toast.warn("Payment recorded but the ledger row failed — check the Payments tab.");
+    logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via ${method||"cash"} — ${fmt(res.pay)}`);
+    const cust = contacts.find(c => c.name === inv.customer);
+    if (cust?.email) sendEmail({ to: cust.email, subject: `Payment Received — ${inv.invoice_number} — ${COMPANY.name}`, html: buildReceiptEmailHtml(inv, res.pay, method || "cash", res.balance), token }).catch(()=>{});
     setPayingId(null); setPayMethod(prev => ({ ...prev, [id]: "" }));
   };
 
@@ -265,11 +276,21 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
         profile={profile}
         onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
         onStatusChange={async (id, status) => {
-          await sb.patch(token, "invoices", id, { status });
-          setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
-          setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
           const inv = invoices.find(i => i.id === id);
-          if (inv) logAudit(token, userId, "status_changed", "invoice", id, `${inv.invoice_number} status changed to ${status.toUpperCase()} for ${inv.customer}`);
+          if (status === "paid" && inv && inv.status !== "paid") {
+            // Marking paid via the status control must settle the invoice fully, not just flip the label.
+            const res = await settleInvoice({ token, invoice: inv, payNow: remainingBalance(inv), method: inv.payment_method || "cash", accounts, userId, profile });
+            if (!res.ok) { toast.error(res.error || "Failed to mark invoice paid"); return; }
+            setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: res.status, amount_paid: res.amountPaid, balance: res.balance } : i));
+            setViewInvoice(prev => prev?.id === id ? { ...prev, status: res.status, amount_paid: res.amountPaid, balance: res.balance } : prev);
+            if (res.paymentError) toast.warn("Payment recorded but the ledger row failed — check the Payments tab.");
+            logAudit(token, userId, "payment_received", "invoice", id, `${inv.invoice_number} marked paid via status change — ${fmt(res.pay)}`);
+          } else {
+            await sb.patch(token, "invoices", id, { status });
+            setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+            setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev);
+            if (inv) logAudit(token, userId, "status_changed", "invoice", id, `${inv.invoice_number} status changed to ${status.toUpperCase()} for ${inv.customer}`);
+          }
         }}
         onDuplicate={(inv) => {
           setViewInvoice(null);

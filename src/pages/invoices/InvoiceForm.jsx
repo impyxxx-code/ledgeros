@@ -5,6 +5,7 @@ import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailH
 import { logAudit } from "../../lib/audit.js";
 import { logStockMovement } from "../../lib/stock.js";
 import { postInvoiceJournal } from "../../lib/journal.js";
+import { settleInvoice } from "../../lib/invoicing.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -201,10 +202,22 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
         lines: JSON.stringify(lines.filter(l => l.description && l.description.trim() !== ""))
       });
       if (inv && inv[0]) {
-        const fullInv = { ...inv[0], lines };
+        let created = inv[0];
+        logAudit(token, userId, "invoice_created", "invoice", created.id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}${creditBlocked && creditOverride ? ` ⚠️ CREDIT OVERRIDE (${onHold ? "on hold" : "over limit"})` : ""}`);
+        if (f.status !== "draft") postInvoiceJournal(token, accounts, { invoice_id: created.id, invoice_number, amount: total, date: f.invoice_date });
+        // Created as "Paid" → settle it fully (payment row + payment journal + balance 0), so it isn't
+        // left marked paid while still carrying the full balance owing.
+        if (f.status === "paid") {
+          const res = await settleInvoice({ token, invoice: created, payNow: total, method: "cash", date: f.invoice_date, accounts, userId });
+          if (res.ok) {
+            created = { ...created, amount_paid: res.amountPaid, balance: res.balance, status: res.status, payment_method: "cash" };
+            if (res.paymentError) toast.warn("Invoice created & marked paid, but the payment ledger row failed — check the Payments tab.");
+          } else {
+            toast.warn("Invoice created, but marking it paid failed — open it and mark it paid.");
+          }
+        }
+        const fullInv = { ...created, lines };
         onSave(fullInv);
-        logAudit(token, userId, "invoice_created", "invoice", inv[0].id, `Invoice ${invoice_number} created for ${f.customer} — ${new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(total)}${creditBlocked && creditOverride ? ` ⚠️ CREDIT OVERRIDE (${onHold ? "on hold" : "over limit"})` : ""}`);
-        if (f.status !== "draft") postInvoiceJournal(token, accounts, { invoice_id: inv[0].id, invoice_number, amount: total, date: f.invoice_date });
         // Pre-fill DN fields from customer contact
         const cust = contacts.find(c => c.name === f.customer);
         setDnAddress([cust?.address, cust?.city, cust?.postcode].filter(Boolean).join(", "));
