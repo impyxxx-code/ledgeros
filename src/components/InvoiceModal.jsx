@@ -137,7 +137,17 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
       const res = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ to: savedPhone, message }),
+        body: JSON.stringify({
+          to: savedPhone,
+          message, // free-form fallback (in-window sends, or before the template is approved)
+          template: "reminder",
+          variables: {
+            "1": invoice.customer,
+            "2": invoice.invoice_number,
+            "3": fmt(balance),
+            "4": fmtDate(invoice.due_date),
+          },
+        }),
       });
       const data = await res.json();
       setWaReminderStatus(res.ok && data.success ? "sent" : "error");

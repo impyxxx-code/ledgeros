@@ -24,9 +24,19 @@ export default async function handler(req, res) {
   }
 
   // ── Validate input ────────────────────────────────────────────────────────
-  const { to, message } = req.body || {};
-  if (!to || !message) return res.status(400).json({ error: 'Missing: to, message' });
-  if (message.length > 4096) return res.status(400).json({ error: 'Message too long' });
+  // `message` = free-form text — only deliverable inside WhatsApp's 24h customer
+  // service window. `template` + `variables` = an approved Content template for
+  // business-initiated sends OUTSIDE that window (e.g. payment reminders). When a
+  // template SID is configured we prefer it (always deliverable); otherwise we
+  // fall back to free-form so nothing breaks before the template is approved.
+  const { to, message, template, variables } = req.body || {};
+  if (!to) return res.status(400).json({ error: 'Missing: to' });
+
+  const TEMPLATE_SIDS = { reminder: process.env.TWILIO_REMINDER_CONTENT_SID };
+  const contentSid = template ? TEMPLATE_SIDS[template] : null;
+
+  if (!contentSid && !message) return res.status(400).json({ error: 'Missing: message' });
+  if (message && message.length > 4096) return res.status(400).json({ error: 'Message too long' });
 
   // Normalise phone: "07801567209" → "whatsapp:+447801567209"
   const normPhone = normalisePhone(to);
@@ -66,11 +76,17 @@ export default async function handler(req, res) {
         Authorization  : `Basic ${encoded}`,
         'Content-Type' : 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        From : FROM_NUMBER,
-        To   : `whatsapp:${normPhone}`,
-        Body : message,
-      }).toString(),
+      body: (() => {
+        const params = { From: FROM_NUMBER, To: `whatsapp:${normPhone}` };
+        if (contentSid) {
+          // Approved template send — deliverable any time, no 24h-window limit.
+          params.ContentSid = contentSid;
+          if (variables && typeof variables === 'object') params.ContentVariables = JSON.stringify(variables);
+        } else {
+          params.Body = message;
+        }
+        return new URLSearchParams(params).toString();
+      })(),
     });
 
     if (twilioRes.ok) {
