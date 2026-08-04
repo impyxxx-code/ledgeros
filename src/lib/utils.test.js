@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER } from "./utils.js";
+import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue } from "./utils.js";
 
 describe("fmt", () => {
   it("formats numbers as GBP currency", () => {
@@ -76,5 +76,34 @@ describe("escHtml", () => {
 describe("DEFAULT_REORDER", () => {
   it("is a positive number", () => {
     expect(DEFAULT_REORDER).toBe(5);
+  });
+});
+
+describe("balanceDue", () => {
+  it("returns 0 for a fully paid invoice — even if a stale balance still says the full amount (the bug)", () => {
+    expect(balanceDue({ status: "paid", amount: 100, amount_paid: 100, balance: 0 })).toBe(0);
+    expect(balanceDue({ status: "paid", amount: 100, balance: 100 })).toBe(0); // stale balance ignored when paid
+    expect(balanceDue({ status: "paid", amount: 100 })).toBe(0);
+  });
+  it("returns the stored balance for a partial invoice", () => {
+    expect(balanceDue({ status: "partial", amount: 100, amount_paid: 60, balance: 40 })).toBe(40);
+  });
+  it("returns the full amount for a pending invoice with no payments", () => {
+    expect(balanceDue({ status: "pending", amount: 100 })).toBe(100);
+  });
+  it("derives amount − amount_paid when balance is absent (legacy invoices)", () => {
+    expect(balanceDue({ status: "pending", amount: 100, amount_paid: 30 })).toBe(70);
+    expect(balanceDue({ status: "partial", amount: 250, amount_paid: 100, balance: null })).toBe(150);
+  });
+  it("parses string numbers from the DB", () => {
+    expect(balanceDue({ status: "pending", amount: "100.00", amount_paid: "25" })).toBe(75);
+  });
+  it("clamps to [0, amount] against corrupt data", () => {
+    expect(balanceDue({ status: "partial", amount: 100, balance: -5 })).toBe(0);   // never negative
+    expect(balanceDue({ status: "pending", amount: 100, balance: 150 })).toBe(100); // never exceeds amount
+  });
+  it("returns 0 for a null/undefined invoice", () => {
+    expect(balanceDue(null)).toBe(0);
+    expect(balanceDue(undefined)).toBe(0);
   });
 });
