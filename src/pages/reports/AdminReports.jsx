@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
+import { computeCOGS } from "../../lib/reporting.js";
 import { COMPANY, LOGO, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
 import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
@@ -452,7 +453,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
         const revenue = filteredInv.reduce((s,i)=>s+parseFloat(i.amount_paid||0),0);
         const vat = filteredInv.filter(i=>i.status==="paid").reduce((s,i)=>s+(i.vat_total||0),0);
         const netRevenue = revenue - vat;
-        const cogs = products.reduce((s,p)=>s+(p.stock_qty||0)*(p.cost_price||0),0);
+        const cogs = computeCOGS(filteredInv, products);
         const grossProfit = netRevenue - cogs;
         const grossMargin = netRevenue > 0 ? Math.round((grossProfit/netRevenue)*100) : 0;
         const expenses = accounts.filter(a=>a.type==="Expense").reduce((s,a)=>s+a.balance,0);
@@ -494,7 +495,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
                     </div>
                   )}
                 </div>
-                <div style={{fontSize:11,color:"var(--text3)",marginTop:10}}>Note: Gross Profit/Net Profit/Expenses can't be compared period-over-period — Cost of Goods uses today's stock snapshot and Expenses use a running account balance, neither tracked historically by period yet.</div>
+                <div style={{fontSize:11,color:"var(--text3)",marginTop:10}}>Note: Cost of Goods Sold is the cost of goods on this period's invoices, recognised as they're paid (matching collected revenue). Net Profit still isn't comparable period-over-period — Operating Expenses use a running account balance, not tracked historically by period yet.</div>
               </div>
             )}
             <div className="card">
@@ -504,7 +505,7 @@ ${pcProducts.map(p=>`<tr><td>${escHtml(p.code||"—")}</td><td style="font-weigh
               <div className="rrow indent"><span>Less: VAT</span><span className="mono tr-c">({fmt(vat)})</span></div>
               <div className="rrow subtotal"><span>Net Revenue</span><span className="mono">{fmt(netRevenue)}</span></div>
               <div className="rs-title">Cost of Goods Sold</div>
-              <div className="rrow"><span>Stock Cost Value</span><span className="mono tr-c">({fmt(cogs)})</span></div>
+              <div className="rrow"><span>Cost of Sales</span><span className="mono tr-c">({fmt(cogs)})</span></div>
               <div className="rrow subtotal"><span style={{fontWeight:700}}>Gross Profit</span><span className="mono tg">{fmt(grossProfit)}</span></div>
               <div className="rrow indent"><span style={{color:"var(--text3)"}}>Gross Margin</span><span style={{color:"var(--green)",fontWeight:600}}>{grossMargin}%</span></div>
               <div className="rs-title">Operating Expenses</div>
