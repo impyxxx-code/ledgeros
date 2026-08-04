@@ -6,6 +6,24 @@ import { logAudit } from "../lib/audit.js";
 import { COMPANY } from "../lib/constants.js";
 import { EmptyState, MobileCard } from "../components/ui.jsx";
 
+const round2 = (n) => Math.round((parseFloat(n) || 0) * 100) / 100;
+
+// Work out how a credit note applies to its linked invoice. Only the portion that
+// fits the invoice's remaining balance reduces it (and gets recorded as a payment);
+// anything left over is `excess` to be banked as customer credit — never written to
+// the invoice's payment ledger (which would overstate collected/cash). With no
+// linked invoice the whole note is excess.
+export const computeCreditApplication = (cnAmount, inv) => {
+  const amt = round2(cnAmount);
+  if (!inv) return { applied: 0, excess: amt, actualPaid: null, balance: null, newStatus: null };
+  const prevPaid = parseFloat(inv.amount_paid || 0);
+  const invAmount = parseFloat(inv.amount || 0);
+  const applied = round2(Math.max(0, Math.min(amt, invAmount - prevPaid)));
+  const actualPaid = round2(prevPaid + applied);
+  const balance = round2(Math.max(0, invAmount - actualPaid));
+  return { applied, excess: round2(amt - applied), actualPaid, balance, newStatus: balance <= 0 ? "paid" : "partial" };
+};
+
 export function CreditNotes({ contacts, invoices, setInvoices, profile, token, userId }) {
   const [cns, setCNs] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -30,33 +48,42 @@ export function CreditNotes({ contacts, invoices, setInvoices, profile, token, u
     setCNs(prev => prev.map(c => c.id===cn.id?{...c,status:"issued"}:c));
     logAudit(token, userId, "credit_note_issued", "credit_note", cn.id, `${cn.cn_number} issued to ${cn.customer_name}`);
   };
-  // Apply a credit note — reduces the balance of its linked invoice (if any) and records it in the payment ledger
+  // Apply a credit note — reduces the balance of its linked invoice by only the
+  // portion that fits, records that portion (not the full note) in the payment
+  // ledger, and banks any leftover as available customer credit so it never vanishes.
   const applyCredit = async (cn) => {
     setApplyingId(cn.id);
     const cnAmount = parseFloat(cn.amount || 0);
     const inv = cn.invoice_id ? invoices.find(i => i.id === cn.invoice_id) : null;
+    const { applied, excess, actualPaid, balance, newStatus } = computeCreditApplication(cnAmount, inv);
     if (inv) {
-      const prevPaid = parseFloat(inv.amount_paid || 0);
-      const invAmount = parseFloat(inv.amount || 0);
-      const totalPaid = prevPaid + cnAmount;
-      const balance = Math.max(0, invAmount - totalPaid);
-      const actualPaid = Math.min(totalPaid, invAmount);
-      const newStatus = balance <= 0 ? "paid" : "partial";
       await sb.patch(token, "invoices", inv.id, { amount_paid: actualPaid, balance, status: newStatus });
-      const payRow = {
-        invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
-        amount: cnAmount, method: "credit_note",
-        payment_date: today(),
-        notes: `${cn.cn_number} applied${cn.reason ? ' · ' + cn.reason : ''}`,
-        recorded_by_name: profile?.full_name || "Admin"
-      };
-      if (isUUID(userId)) payRow.recorded_by = userId;
-      await sb.addPayment(token, payRow).catch(e => ({ error: e }));
+      if (applied > 0) {
+        const payRow = {
+          invoice_id: inv.id, invoice_number: inv.invoice_number, customer: inv.customer,
+          amount: applied, method: "credit_note",
+          payment_date: today(),
+          notes: `${cn.cn_number} applied${cn.reason ? ' · ' + cn.reason : ''}`,
+          recorded_by_name: profile?.full_name || "Admin"
+        };
+        if (isUUID(userId)) payRow.recorded_by = userId;
+        await sb.addPayment(token, payRow).catch(e => ({ error: e }));
+      }
       setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, amount_paid: actualPaid, balance, status: newStatus } : i));
+    }
+    // Anything the invoice couldn't absorb (or the whole note, if unlinked) becomes
+    // available customer credit — matches how overpayments are banked.
+    if (excess > 0) {
+      const creditCustomer = inv ? inv.customer : cn.customer_name;
+      await sb.addCredit(token, {
+        customer: creditCustomer, amount: excess, source_invoice: cn.cn_number,
+        status: "available", notes: `Unapplied balance of ${cn.cn_number}`,
+        created_by: profile?.full_name || "Admin"
+      }).catch(e => ({ error: e }));
     }
     await sb.patch(token,"credit_notes",cn.id,{status:"applied"});
     setCNs(prev => prev.map(c => c.id===cn.id?{...c,status:"applied"}:c));
-    logAudit(token, userId, "credit_note_applied", "credit_note", cn.id, `${cn.cn_number} applied to ${cn.customer_name}${inv ? ' against ' + inv.invoice_number : ''} — £${cnAmount.toFixed(2)}`);
+    logAudit(token, userId, "credit_note_applied", "credit_note", cn.id, `${cn.cn_number} applied to ${cn.customer_name}${inv ? ' against ' + inv.invoice_number : ''} — £${applied.toFixed(2)} applied${excess > 0 ? `, £${excess.toFixed(2)} to credit` : ''}`);
     setApplyingId(null);
   };
   const printCreditNote = (cn) => {
