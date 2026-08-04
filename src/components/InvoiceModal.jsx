@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase.js";
-import { fmt, fmtDate, escHtml } from "../lib/utils.js";
+import { fmt, fmtDate, escHtml, balanceDue } from "../lib/utils.js";
 import { COMPANY, LOGO, toast } from "../lib/constants.js";
 import { ModalPortal } from "./ui.jsx";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml } from "../lib/email.js";
@@ -54,7 +54,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
   const handlePrint = async () => {
     const invLines = lines;
     const sub = subtotal, vat = vatTotal, tot = total;
-    const bal = invoice.balance > 0 && invoice.balance < tot ? invoice.balance : tot;
+    const bal = balanceDue(invoice);
     let paymentsHtml = "";
     if (payments.length > 0) {
       const totalPaid = payments.reduce((s,p)=>s+parseFloat(p.amount||0),0);
@@ -230,7 +230,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                 {[
                   { label:"Invoice Total", val:fmt(invoice.amount), accent:"#dd2b0f" },
                   { label:"Amount Paid", val:fmt(invoice.amount_paid||0), accent:"#16a34a" },
-                  { label:"Balance Owing", val:fmt(Math.max(0,(invoice.balance||invoice.amount))), accent:invoice.balance>0?"#dc2626":"#16a34a" },
+                  { label:"Balance Owing", val:fmt(balanceDue(invoice)), accent:balanceDue(invoice)>0?"#dc2626":"#16a34a" },
                 ].map((k,i) => (
                   <div key={i} style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"var(--rl)",padding:"12px 16px",borderTop:`3px solid ${k.accent}`}}>
                     <div style={{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:6}}>{k.label}</div>
@@ -382,7 +382,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
                 ))}
               </div>
             )}
-            <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span></div>
+            <div className="inv-balance-box"><span className="inv-balance-lbl">Balance Due</span><span className="inv-balance-val mono">{fmt(balanceDue(invoice))}</span></div>
             {invoice.notes && (
               <div style={{ background:"#fef9ec",border:"1px solid #fcd34d",borderRadius:9,padding:"12px 14px",marginBottom:16 }}>
                 <div style={{ fontSize:9,fontWeight:700,color:"#92400e",textTransform:"uppercase",letterSpacing:".8px",marginBottom:4 }}>Notes</div>
@@ -601,7 +601,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
 
           <div className="inv-balance-box" style={{ padding: "9px 12px" }}>
             <span className="inv-balance-lbl" style={{ fontSize: 10 }}>Balance Due</span>
-            <span className="inv-balance-val" style={{ fontSize: 14 }}>{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span>
+            <span className="inv-balance-val" style={{ fontSize: 14 }}>{fmt(balanceDue(invoice))}</span>
           </div>
 
           {invoice.amount_paid > 0 && invoice.amount > 0 && (
@@ -628,7 +628,7 @@ export function InvoiceModal({ invoice, onClose, contacts = [], onStatusChange, 
           <div style={{ display: "flex", gap: 8, flex: 1, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span className={"badge " + sc.cls}>{sc.label}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt(invoice.balance > 0 && invoice.balance < total ? invoice.balance : total)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt(balanceDue(invoice))}</span>
               <span style={{ fontSize: 12, color: "var(--text3)" }}>· {invoice.invoice_number}</span>
             </div>
             <div style={{ display: "flex", gap: 8 }}>

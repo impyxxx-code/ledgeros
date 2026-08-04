@@ -17,6 +17,24 @@ export const fmtRelative = (d) => {
 };
 export const dueDelta = (d) => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
 export const today = () => new Date().toISOString().split("T")[0];
+
+// balanceDue: the outstanding amount to DISPLAY for an invoice.
+// - A "paid" invoice always shows 0 (fixes the old `balance>0 && balance<total ? balance : total`
+//   pattern that fell through to the full total when balance === 0).
+// - Otherwise prefer the stored `balance`; if it's absent, derive it from amount − amount_paid.
+// Uses the stored invoice `amount` (VAT-inclusive grand total), not a line-recomputed total, so
+// legacy invoices with no stored lines don't get inflated. Capped to [0, amount].
+export const balanceDue = (invoice) => {
+  if (!invoice) return 0;
+  if (invoice.status === "paid") return 0;
+  const amount = parseFloat(invoice.amount) || 0;
+  const paid = parseFloat(invoice.amount_paid) || 0;
+  const hasBal = invoice.balance !== null && invoice.balance !== undefined && invoice.balance !== "";
+  let bal = hasBal ? parseFloat(invoice.balance) : amount - paid;
+  if (isNaN(bal)) bal = amount - paid;
+  if (amount > 0) bal = Math.min(bal, amount);
+  return Math.max(0, bal);
+};
 export const escHtml = (s) => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
 // shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
