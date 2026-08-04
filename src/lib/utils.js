@@ -37,5 +37,20 @@ export const balanceDue = (invoice) => {
 };
 export const escHtml = (s) => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
+// ── CSV export safety ─────────────────────────────────────────────────────────
+// Renders one value as a safe CSV cell: neutralises formula-injection (a cell a
+// spreadsheet could execute) and always quotes/escapes so commas, quotes and
+// newlines can't break the row. A leading '=' or '@' — or '+'/'-' followed by a
+// non-number — is prefixed with a single quote so Excel/Sheets treat it as text.
+// Plain numbers (incl. negatives) and phone numbers like +44… are left untouched.
+export const csvCell = (v) => {
+  let s = v == null ? "" : String(v);
+  if (/^[=@\t\r]/.test(s) || /^[+-][^\d.]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+};
+// Build a full CSV document from a header row + data rows, each cell sanitised.
+export const buildCsv = (header, rows) =>
+  [header, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
+
 // shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
 export const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };

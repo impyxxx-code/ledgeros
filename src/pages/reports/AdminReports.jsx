@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { sb } from "../../lib/supabase.js";
-import { fmt, fmtDate, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
+import { fmt, fmtDate, escHtml, DEFAULT_REORDER, buildCsv } from "../../lib/utils.js";
 import { computeCOGS } from "../../lib/reporting.js";
 import { COMPANY, LOGO, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
@@ -43,9 +43,8 @@ const SUBTAB_ICONS = {
 };
 
 const downloadCsv = (filename, header, rows) => {
-  const csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.href = URL.createObjectURL(new Blob([buildCsv(header, rows)], { type: "text/csv" }));
   a.download = filename;
   a.click();
 };
