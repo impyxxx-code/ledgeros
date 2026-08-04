@@ -899,6 +899,29 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
         )}
       </div>
 
+      {/* ── CONTACT REQUIRED — capture email/phone for a customer that has neither (mobile) ── */}
+      {f.customer && needsContact && (
+        <div style={{ margin:"8px 12px 0", borderRadius:"var(--rl)", border:"1px solid var(--amber)", background:"var(--amber-lt)", padding:"12px 14px" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:10 }}>
+            <div style={{ fontSize:18, lineHeight:1, flexShrink:0 }}>⚠️</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"var(--amber-dk)", marginBottom:2 }}>No email or phone on file for {f.customer}</div>
+              <div style={{ fontSize:12, color:"var(--text2)", lineHeight:1.5 }}>Add at least one so you can send and chase this invoice — it saves to the customer's record.</div>
+            </div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div><label style={{ fontSize:11, fontWeight:600, color:"var(--text2)", display:"block", marginBottom:4 }}>Email</label><input type="email" inputMode="email" value={capEmail} onChange={e => setCapEmail(e.target.value)} placeholder="email@example.com" style={{ width:"100%" }} /></div>
+            <div><label style={{ fontSize:11, fontWeight:600, color:"var(--text2)", display:"block", marginBottom:4 }}>Phone</label><input type="tel" inputMode="tel" value={capPhone} onChange={e => setCapPhone(e.target.value)} placeholder="07..." style={{ width:"100%" }} /></div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginTop:10 }}>
+            {submitted && !capEmail.trim() && !capPhone.trim()
+              ? <div style={{ fontSize:11, color:"var(--red)" }}>Enter an email or a phone to continue.</div>
+              : <div style={{ fontSize:11, color:"var(--text3)" }}>Saves to {f.customer}.</div>}
+            <button type="button" className="btn bp bsm" onClick={saveContactInline} disabled={savingContact || (!capEmail.trim() && !capPhone.trim())}>{savingContact ? "Saving…" : "Save contact"}</button>
+          </div>
+        </div>
+      )}
+
       {/* ── CREDIT CONTROL WARNING ── */}
       {f.customer && creditBlocked && (
         <div style={{ margin:"8px 12px 0", borderRadius:"var(--rl)", border:"1px solid #fca5a5", background:"#fff5f5", padding:"12px 14px" }}>
