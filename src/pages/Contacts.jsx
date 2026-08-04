@@ -58,7 +58,13 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     // Require a way to reach customers — an email OR a phone (needed for invoices, statements, reminders).
     const em = (f.email || "").trim(), ph = (f.phone || "").trim();
     const isCust = f.type === "customer" || f.type === "both";
-    if (isCust && !em && !ph) { toast.warn("Add an email or phone number — it's needed to send invoices, statements and reminders."); return; }
+    if (isCust && !em && !ph) {
+      // Always require a channel on create. On edit, only block if the record
+      // already had one — i.e. don't let an edit STRIP the last email/phone — but
+      // don't nag when editing a legacy record that never had either.
+      const hadChannel = editingContact && ((editingContact.email || "").trim() || (editingContact.phone || "").trim());
+      if (!editingContact || hadChannel) { toast.warn("Add an email or phone number — it's needed to send invoices, statements and reminders."); return; }
+    }
     if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast.error("That email doesn't look valid. Please check it."); return; }
     if (ph && ph.replace(/\D/g, "").length < 7) { toast.error("That phone number doesn't look valid."); return; }
     setSaving(true);
