@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { fmt } from "../../lib/utils.js";
+import { fmt, parseLines } from "../../lib/utils.js";
 import { EmptyState } from "../../components/ui.jsx";
 
 // ┌────────────────────────────────────────────────────────────┐
@@ -22,7 +22,7 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
       : filteredInv.filter(i => i.created_by === agent.id);
     const productMap = {};
     agentInvs.forEach(inv => {
-      let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+      let lines = parseLines(inv);
       // Fallback for old invoices with no lines - use invoice description or customer
       if (!lines || lines.length === 0) {
         lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
@@ -42,7 +42,7 @@ export function AgentProductsReport({ invoices, allProfiles, period, filteredInv
   const globalProductMap = {};
   filteredInv.forEach(inv => {
     const agent = allProfiles.find(a => a.id === inv.created_by) || { full_name: "Other" };
-    let lines = inv.lines ? (typeof inv.lines === "string" ? JSON.parse(inv.lines) : inv.lines) : [];
+    let lines = parseLines(inv);
     if (!lines || lines.length === 0) lines = [{ description: inv.description || "Invoice " + inv.invoice_number, qty: 1, unit_price: inv.amount || 0 }];
     lines.forEach(l => {
       if (!l.description) return;

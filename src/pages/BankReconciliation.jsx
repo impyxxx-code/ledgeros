@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
-import { fmt, fmtDate, isMobile } from "../lib/utils.js";
+import { fmt, fmtDate, isMobile, parseUkDate } from "../lib/utils.js";
 import { toast } from "../lib/constants.js";
 import { logAudit } from "../lib/audit.js";
 
@@ -103,8 +103,8 @@ export function BankReconciliation({ token, userId }) {
       if (map.in >= 0 || map.out >= 0) amt = parseAmt(r[map.in]) - parseAmt(r[map.out]);
       else if (map.amount >= 0) amt = parseAmt(r[map.amount]);
       const rawDate = map.date >= 0 ? r[map.date] : "";
-      const d = rawDate ? new Date(rawDate) : null;
-      return { idx, date: d && !isNaN(d) ? d : null, dateStr: rawDate, desc: map.desc >= 0 ? r[map.desc] : "", amount: amt };
+      const d = parseUkDate(rawDate);   // UK day-first (DD/MM/YYYY) + ISO; null if unparseable
+      return { idx, date: d, dateStr: rawDate, desc: map.desc >= 0 ? r[map.desc] : "", amount: amt };
     }).filter(t => t.amount !== 0 || t.desc);
   }, [rows, map]);
 
