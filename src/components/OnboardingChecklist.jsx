@@ -6,7 +6,6 @@ export function OnboardingChecklist({ onClose, invoices, contacts, products, set
     { key: "customer", icon: "ti-users",          label: "Add your first customer",      done: contacts.length > 0,                      page: "contacts" },
     { key: "product",  icon: "ti-package",        label: "Add products to inventory",    done: products.length > 0,                      page: "inventory" },
     { key: "invoice",  icon: "ti-file-invoice",   label: "Create your first invoice",    done: invoices.length > 0,                      page: "invoices" },
-    { key: "delivery", icon: "ti-truck-delivery", label: "Send a delivery note",         done: false,                                    page: "delivery-notes" },
     { key: "report",   icon: "ti-chart-bar",      label: "Explore Reports",        done: false,                                    page: "admin-reports" },
   ];
   const completed = steps.filter(s => s.done).length;

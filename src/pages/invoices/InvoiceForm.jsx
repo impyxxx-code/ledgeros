@@ -280,30 +280,9 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
   };
 
   // Create delivery note from invoice
-  const createDeliveryNote = async () => {
-    if (!savedInvoice) return;
-    setCreatingDN(true);
-    const existing = await sb.get(token, "delivery_notes", "select=id");
-    const count = Array.isArray(existing) ? existing.length + 1 : 1;
-    const dn_number = `DN-${String(count).padStart(4, "0")}`;
-    const dnLines = (savedInvoice.lines || []).map(l => ({
-      description: l.description, qty: l.qty, unit: l.unit || "unit", product_id: l.product_id || null
-    }));
-    const cust = contacts.find(c => c.name === savedInvoice.customer);
-    await sb.post(token, "delivery_notes", {
-      dn_number, customer_name: savedInvoice.customer,
-      customer_id: cust?.id || null,
-      delivery_date: savedInvoice.invoice_date,
-      delivery_address: dnAddress,
-      driver: dnDriver, notes: dnNotes,
-      status: "pending",
-      invoice_ref: savedInvoice.invoice_number,
-      lines: JSON.stringify(dnLines),
-      created_by: userId
-    });
-    setCreatingDN(false);
-    setDnSaved({ dn_number, customer_name: savedInvoice.customer, delivery_date: savedInvoice.invoice_date, delivery_address: dnAddress, driver: dnDriver, notes: dnNotes, invoice_ref: savedInvoice.invoice_number, lines: JSON.stringify(dnLines) });
-  };
+  // Delivery notes are now print-only documents derived from the invoice (decision 4 Aug 2026:
+  // deliveries are always 1:1 with an invoice). We no longer persist a separate delivery_notes
+  // record — the driver's slip is printed/emailed/WhatsApp'd straight from the invoice below.
 
   const buildDNHtml = (dn, overdueSection = '') => {
     const dnLines = dn.lines ? (typeof dn.lines === "string" ? JSON.parse(dn.lines) : dn.lines) : [];
@@ -393,32 +372,32 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
       <div class="doc-title">DELIVERY</div>
       <div style="font-size:42px;font-weight:900;color:#e8edf4;letter-spacing:-2px;line-height:1">NOTE</div>
       <div class="doc-num">${dn.dn_number}</div>
-      ${dn.invoice_ref ? "<div class=\"inv-badge\">📄 Invoice: "+dn.invoice_ref+"</div>" : ""}
+      ${dn.invoice_ref ? "<div class=\"inv-badge\">📄 Invoice: "+escHtml(dn.invoice_ref)+"</div>" : ""}
       <div class="status-pill">${dn.status?.toUpperCase() || "PENDING"}</div>
     </div>
   </div>
 
   <!-- Driver strip -->
-  ${dn.driver ? "<div class=\"driver-strip\"><div class=\"driver-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"1\" y=\"3\" width=\"15\" height=\"13\"/><path d=\"M16 8h4l3 5v3h-7V8z\"/><circle cx=\"5.5\" cy=\"18.5\" r=\"2.5\"/><circle cx=\"18.5\" cy=\"18.5\" r=\"2.5\"/></svg></div><div><div class=\"driver-label\">Driver / Courier</div><div class=\"driver-name\">" + dn.driver + "</div></div></div>" : ""}
+  ${dn.driver ? "<div class=\"driver-strip\"><div class=\"driver-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"1\" y=\"3\" width=\"15\" height=\"13\"/><path d=\"M16 8h4l3 5v3h-7V8z\"/><circle cx=\"5.5\" cy=\"18.5\" r=\"2.5\"/><circle cx=\"18.5\" cy=\"18.5\" r=\"2.5\"/></svg></div><div><div class=\"driver-label\">Driver / Courier</div><div class=\"driver-name\">" + escHtml(dn.driver) + "</div></div></div>" : ""}
 
 
   <!-- Meta -->
   <div class="meta-grid">
     <div class="meta-box accent">
       <div class="meta-lbl light">Deliver To</div>
-      <div class="meta-val large light">${dn.customer_name}</div>
-      ${dn.delivery_address ? "<div class='meta-val addr' style='color:rgba(255,255,255,.55)'>"+dn.delivery_address+"</div>" : ""}
+      <div class="meta-val large light">${escHtml(dn.customer_name)}</div>
+      ${dn.delivery_address ? "<div class='meta-val addr' style='color:rgba(255,255,255,.55)'>"+escHtml(dn.delivery_address)+"</div>" : ""}
     </div>
     <div class="meta-sub-grid">
       <div class="meta-box"><div class="meta-lbl">DN Number</div><div class="meta-val">${dn.dn_number}</div></div>
       <div class="meta-box"><div class="meta-lbl">Date</div><div class="meta-val">${new Date(dn.delivery_date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div></div>
-      <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${dn.invoice_ref || "—"}</div></div>
+      <div class="meta-box"><div class="meta-lbl">Invoice Ref</div><div class="meta-val">${escHtml(dn.invoice_ref || "—")}</div></div>
       <div class="meta-box"><div class="meta-lbl">Items</div><div class="meta-val">${dnLines.length} line${dnLines.length !== 1 ? "s" : ""}</div></div>
     </div>
   </div>
 
   <!-- Notes -->
-  ${dn.notes ? "<div class=\"notes-box\"><div class=\"notes-lbl\">⚡ Delivery Instructions</div><div class=\"notes-val\">"+dn.notes+"</div></div>" : ""}
+  ${dn.notes ? "<div class=\"notes-box\"><div class=\"notes-lbl\">⚡ Delivery Instructions</div><div class=\"notes-val\">"+escHtml(dn.notes)+"</div></div>" : ""}
 
   <!-- Items table -->
   <div class="table-wrap">
@@ -433,7 +412,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
         </tr>
       </thead>
       <tbody>
-        ${dnLines.map(l => "<tr><td class=\"td-desc\">" + (l.description || "—") + "</td><td class=\"td-unit\">" + (l.unit || "unit") + "</td><td class=\"td-qty\">" + l.qty + "</td><td class=\"td-blank\">____</td><td class=\"td-blank\">____</td></tr>").join("")}
+        ${dnLines.map(l => "<tr><td class=\"td-desc\">" + escHtml(l.description || "—") + "</td><td class=\"td-unit\">" + escHtml(l.unit || "unit") + "</td><td class=\"td-qty\">" + escHtml(String(l.qty)) + "</td><td class=\"td-blank\">____</td><td class=\"td-blank\">____</td></tr>").join("")}
 
 
       </tbody>
@@ -444,7 +423,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
   ${overdueSection}
 
   <!-- Notes -->
-  ${dn.notes ? `<div style="background:#fef9ec;border:1px solid #fcd34d;border-radius:9px;padding:12px 16px;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Invoice Notes</div><div style="font-size:12px;color:#78350f;line-height:1.6">${dn.notes}</div></div>` : ""}
+  ${dn.notes ? `<div style="background:#fef9ec;border:1px solid #fcd34d;border-radius:9px;padding:12px 16px;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Invoice Notes</div><div style="font-size:12px;color:#78350f;line-height:1.6">${escHtml(dn.notes)}</div></div>` : ""}
   <!-- Signatures -->
   <div class="sig-section">
     <div>
@@ -751,16 +730,10 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
               </div>
             </div>
 
-            {/* Save to DB + share options */}
+            {/* Share the delivery note — print-only, no separate record kept */}
             <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Save & Share</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 12 }}>Share Delivery Note</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="btn bp" onClick={createDeliveryNote} disabled={creatingDN === true}
-                  style={{ background: "#0f172a" }}>
-                  {creatingDN === true
-                    ? <><div className="spin" style={{ width: 13, height: 13, borderWidth: 2 }} />Saving...</>
-                    : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Delivery Note</>}
-                </button>
                 <button className="btn bo" onClick={() => emailDN(buildQuickDN())}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email DN</button>
                 <button className="btn bwa" onClick={() => whatsappDN(buildQuickDN())}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp DN</button>
               </div>

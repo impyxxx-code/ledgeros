@@ -16,7 +16,6 @@ export function CommandPalette({ onClose, setPage, invoices, contacts, products 
     { icon: "ti-file-plus",      label: "Invoices",             action: () => setPage("invoices"),       tag: "Invoices" },
     { icon: "ti-user-plus",      label: "Contacts",             action: () => setPage("contacts"),       tag: "Contacts" },
     { icon: "ti-package",        label: "Inventory",            action: () => setPage("inventory"),      tag: "Inventory" },
-    { icon: "ti-truck-delivery", label: "Delivery Notes",       action: () => setPage("delivery-notes"), tag: "Delivery" },
     { icon: "ti-shopping-cart",  label: "Purchases",            action: () => setPage("purchases"),      tag: "Operations" },
     { icon: "ti-adjustments",    label: "Stock Adjustment",     action: () => setPage("stock-adj"),      tag: "Inventory" },
     { icon: "ti-upload",         label: "Import CSV",           action: () => setPage("import"),         tag: "Data" },

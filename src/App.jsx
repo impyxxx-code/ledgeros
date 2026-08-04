@@ -48,7 +48,7 @@ import { Purchases } from "./pages/Purchases.jsx";
 import { SupplierBills } from "./pages/SupplierBills.jsx";
 import { CreditNotes } from "./pages/CreditNotes.jsx";
 import { Inventory } from "./pages/Inventory.jsx";
-import { DeliveryNotes } from "./pages/DeliveryNotes.jsx";
+// DeliveryNotes standalone module retired 4 Aug 2026 — DN is now a print-from-invoice document
 import { BankingPage } from "./pages/BankingPage.jsx";
 import { CreditControl } from "./pages/CreditControl.jsx";
 import { VATReturn } from "./pages/reports/VATReturn.jsx";
@@ -1440,7 +1440,6 @@ const NAV_GROUPS = [
       { id: "bills",          label: "Bills", adminOnly: true },
       { id: "stock-adj",      label: "Stock In/Out", adminOnly: true },
       { id: "stock-take",     label: "Stock Take", adminOnly: true },
-      { id: "delivery-notes", label: "Delivery Notes" },
       { id: "import",         label: "Import", adminOnly: true },
     ]
   },
@@ -1478,7 +1477,6 @@ const NAV = [
   { id: "vat-return", label: "VAT Return", adminOnly: true },
   { id: "bank-recon", label: "Bank Reconciliation", adminOnly: true },
   { id: "import", label: "Import", adminOnly: true },
-  { id: "delivery-notes", label: "Delivery Notes" },
   { id: "settings", label: "Settings", adminOnly: true },
 ];
 
@@ -2003,7 +2001,7 @@ export default function App() {
             <nav className="topnav-nav">
               <div className={"topnav-navitem "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>Dashboard</div>
               {(() => {
-                const commercePages = ["invoices","contacts","customer-hub","statement","agent-report","delivery-notes","credits"];
+                const commercePages = ["invoices","contacts","customer-hub","statement","agent-report","credits"];
                 const overdueCount = invoices.filter(i=>i.status==="overdue").length;
                 return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
               })()}
@@ -2109,14 +2107,13 @@ export default function App() {
             const overdueCount = invoices.filter(i=>i.status==="overdue").length;
             const sections = {
               commerce: {
-                pages: ["invoices","contacts","customer-hub","statement","agent-report","delivery-notes","credits"],
+                pages: ["invoices","contacts","customer-hub","statement","agent-report","credits"],
                 tabs: [
                   { id:"invoices",       label:"Invoices",       badge: overdueCount > 0 ? overdueCount : null },
                   { id:"contacts",       label:"Customers" },
                   { id:"customer-hub",   label:"Customer Hub", adminOnly:true },
                   { id:"statement",      label:"Statements",     adminOnly:true },
                   { id:"agent-report",   label:"Agent Sales",    adminOnly:true },
-                  { id:"delivery-notes", label:"Delivery Notes" },
                   { id:"credits",        label:"Credits",        adminOnly:true },
                 ]
               },
@@ -2203,7 +2200,6 @@ export default function App() {
                 {page==="stock-adj"&&<StockAdjustment products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} />}
                 {page==="stock-take"&&<StockTake products={products} setProducts={setProducts} token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="agent-report"&&<AgentReport invoices={invoices} allProfiles={allProfiles} contacts={contacts} />}
-                {page==="delivery-notes"&&<DeliveryNotes contacts={contacts} products={products} token={auth.token} userId={auth.user.id} />}
                 {page==="settings"&&<Settings auth={auth} profile={profile} darkMode={darkMode} toggleDark={toggleDark} onSignOut={signOut} products={products} />}
                 {page==="banking"&&<BankingPage token={auth.token} userId={auth.user.id} profile={profile} />}
                 {page==="credit-control"&&<CreditControl contacts={contacts} invoices={invoices} token={auth.token} userId={auth.user.id} profile={profile} />}
@@ -2337,7 +2333,6 @@ export default function App() {
                   { label:"New Invoice", color:"#dd2b0f", action:() => { setPage("invoices"); setTriggerNewInvoice(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> },
                   { label:"Record Payment", color:"#16a34a", action:() => { setPage("invoices"); setPendingFilter("pending"); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
                   { label:"New Customer", color:"#f59e0b", action:() => { setPage("contacts"); setTriggerNewContact(t => t + 1); }, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> },
-                  { label:"Delivery Note", color:"#201e1d", action:() => setPage("delivery-notes"), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
                 ].map(a => (
                   <div key={a.label} role="button" tabIndex={0} onClick={() => { a.action(); setShowFabMenu(false); }} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){a.action();setShowFabMenu(false);}}}
                     style={{ background:"var(--white)", borderRadius:"var(--rl)", padding:"16px 14px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, boxShadow:"0 4px 20px rgba(0,0,0,.15)", cursor:"pointer", minHeight:80 }}>
@@ -2371,12 +2366,12 @@ export default function App() {
               )}
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
-                { label:"Commerce", color:"#dd2b0f", items:["customer-hub","statement","agent-report","credits","delivery-notes"] },
+                { label:"Commerce", color:"#dd2b0f", items:["customer-hub","statement","agent-report","credits"] },
                 { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","stock-take","import"] },
                 { label:"Finance", color:"#16a34a", items:["banking","credit-control","vat-return","bank-recon","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
               ] : [
-                { label:"My Tools", color:"#dd2b0f", items:["delivery-notes","agent-report"] },
+                { label:"My Tools", color:"#dd2b0f", items:["agent-report"] },
                 { label:"Account", color:"#8a8580", items:["settings"] },
               ]).map(group => {
                 const visItems = NAV.filter(n =>
