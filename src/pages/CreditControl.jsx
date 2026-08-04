@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
-import { fmt, fmtDate, isMobile } from "../lib/utils.js";
+import { fmt, fmtDate, isMobile, balanceDue } from "../lib/utils.js";
 import { COMPANY, toast } from "../lib/constants.js";
 import { logAudit } from "../lib/audit.js";
 import { sendEmail, buildReminderEmailHtml, buildCustomerChaseEmailHtml } from "../lib/email.js";
@@ -17,10 +17,14 @@ const daysOverdue = (inv) => {
   if (!due) return 0;
   return Math.max(0, Math.floor((Date.now() - new Date(due).getTime()) / DAY));
 };
-const openBalance = (inv) => {
-  if (inv.status === "paid" || inv.status === "draft") return 0;
-  const b = inv.balance != null ? parseFloat(inv.balance) : NaN;
-  return b > 0 ? b : parseFloat(inv.amount || 0);
+// What the customer still owes on an invoice. Delegates to balanceDue() so a
+// partially-paid invoice nets amount_paid even when the stored `balance` column
+// was never populated (legacy/imported rows) — the old fallback returned the full
+// amount, inflating aged debt and the chase-email totals. Draft and cancelled
+// invoices are never owed.
+export const openBalance = (inv) => {
+  if (!inv || inv.status === "draft" || inv.status === "cancelled") return 0;
+  return balanceDue(inv);
 };
 const BUCKETS = [
   { key: "current", label: "Not yet due", min: -Infinity, max: 0, color: "#57534e" },
