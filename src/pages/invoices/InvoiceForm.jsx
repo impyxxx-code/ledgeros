@@ -270,11 +270,6 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
     window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
-  const downloadInvoicePDF = () => {
-    const html = buildInvoiceHtml();
-    window.__ledgerosPrint && window.__ledgerosPrint(html);
-  };
-
   // Create delivery note from invoice
   // Delivery notes are now print-only documents derived from the invoice (decision 4 Aug 2026:
   // deliveries are always 1:1 with an invoice). We no longer persist a separate delivery_notes
