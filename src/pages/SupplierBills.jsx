@@ -3,6 +3,7 @@ import { sb } from "../lib/supabase.js";
 import { fmt, fmtDate, today, isMobile, escHtml } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
 import { postSupplierBillJournal, postSupplierPaymentJournal } from "../lib/journal.js";
+import { findDuplicateBill, computeBillPayment } from "../lib/supplierBills.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
@@ -53,8 +54,11 @@ export function SupplierBills({ contacts, setContacts, accounts = [], token, use
 
   const save = async () => {
     if (!f.supplier_id || subtotal <= 0) { toast.error("Pick a supplier and enter an amount"); return; }
-    setSaving(true);
     const sup = suppliers.find(s => s.id === f.supplier_id);
+    // Guard against entering the same supplier bill twice (doubles COGS + AP).
+    const dup = findDuplicateBill(bills, { supplier_id: f.supplier_id, bill_number: f.bill_number });
+    if (dup) { toast.error(`Bill "${f.bill_number}" from ${sup?.name || "this supplier"} is already recorded (${fmt(dup.total)}). Change the bill number if this is a different bill.`); return; }
+    setSaving(true);
     const row = {
       bill_number: f.bill_number || null, supplier_id: f.supplier_id, supplier_name: sup?.name,
       po_id: f.po_id || null, bill_date: f.bill_date, due_date: f.due_date || null,
@@ -79,12 +83,15 @@ export function SupplierBills({ contacts, setContacts, accounts = [], token, use
     if (!payBill) return;
     const amt = parseFloat(payAmt) || 0;
     if (amt <= 0) { toast.error("Enter an amount"); return; }
+    const calc = computeBillPayment(payBill, amt);
+    // Refuse overpayments rather than silently truncating the excess (there's no
+    // supplier-credit mechanism, so the old Math.min would just drop the money).
+    if (calc.overpay) { toast.error(`Payment ${fmt(amt)} exceeds the ${fmt(calc.balance)} balance — reduce the amount. Supplier overpayments aren't supported.`); return; }
     setPaying(true);
-    const bal = parseFloat(payBill.balance) || 0;
-    const applied = Math.min(amt, bal);
-    const newPaid = (parseFloat(payBill.amount_paid) || 0) + applied;
-    const newBal = Math.max(0, (parseFloat(payBill.total) || 0) - newPaid);
-    const newStatus = newBal <= 0 ? "paid" : "partial";
+    const applied = calc.applied;
+    const newPaid = calc.newPaid;
+    const newBal = calc.newBalance;
+    const newStatus = calc.newStatus;
     await sb.post(token, "supplier_bill_payments", {
       bill_id: payBill.id, supplier_name: payBill.supplier_name, amount: applied, method: payMethod,
       payment_date: payDate, recorded_by: userId, recorded_by_name: profile?.full_name || "Admin",

@@ -5,6 +5,7 @@ import { fmt, fmtDate, today, isMobile, DEFAULT_REORDER } from "../lib/utils.js"
 import { vatRateOf } from "../lib/reporting.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement } from "../lib/stock.js";
+import { buildReceipts, receivePurchaseOrder } from "../lib/goodsReceipt.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
@@ -104,35 +105,42 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
   const confirmReceive = async () => {
     if (!receivePO) return;
     setReceiving(true);
-    const localStock = {};          // product_id -> running stock (handles a product on >1 line)
-    const summary = [];
-    let allComplete = true;
-    for (const l of receiveLines) {
-      const ordered = parseFloat(l.qty) || 0;
-      const already = parseFloat(l.qty_received) || 0;
-      const now = Math.max(0, Math.min(parseInt(receiveInputs[l.id]) || 0, ordered - already)); // never over-receive
-      if (now > 0 && l.product_id) {
-        const prod = products.find(p => p.id === l.product_id);
-        if (prod) {
-          const base = localStock[l.product_id] != null ? localStock[l.product_id] : (parseFloat(prod.stock_qty) || 0);
-          const newQty = base + now;
-          localStock[l.product_id] = newQty;
-          await sb.patch(token, "products", l.product_id, { stock_qty: newQty });
-          setProducts && setProducts(prev => prev.map(p => p.id === l.product_id ? { ...p, stock_qty: newQty } : p));
-          logStockMovement(token, { product: prod, delta: now, balance_after: newQty, reason: "receipt", ref_type: "purchase_order", ref_id: receivePO.po_number, note: `Goods receipt`, userId });
-        }
-        await sb.patch(token, "purchase_order_lines", l.id, { qty_received: already + now });
-        summary.push(`${l.product_name || "item"} +${now}`);
-      }
-      if (already + now < ordered) allComplete = false;
+    // Build the clamped receipts payload and apply it atomically server-side.
+    // The RPC updates stock + qty_received + PO status in ONE transaction, so a
+    // failure can no longer leave phantom stock or a half-received PO.
+    const receipts = buildReceipts(receiveLines, receiveInputs);
+    if (receipts.length === 0) {
+      setReceiving(false);
+      closeReceive();
+      toast.success("Nothing to receive");
+      return;
     }
-    const newStatus = allComplete ? "received" : "partial";
-    await sb.patch(token, "purchase_orders", receivePO.id, { status: newStatus, received_date: today() });
-    setPOs(prev => prev.map(p => p.id === receivePO.id ? { ...p, status: newStatus, received_date: today() } : p));
+    const res = await receivePurchaseOrder({ token, poId: receivePO.id, receipts })
+      .catch(e => ({ ok: false, error: e?.message }));
+    if (!res.ok) {
+      setReceiving(false);
+      if (res.needsSql) toast.error("Goods receipt needs a database update — ask an admin to run RECEIVE_PURCHASE_ORDER.sql.");
+      else if (res.reason === "cancelled") toast.error("This PO is cancelled — nothing was received.");
+      else if (res.reason === "not_found") toast.error("Purchase order not found.");
+      else toast.error(res.error || "Couldn't record the receipt — nothing was changed.");
+      return;
+    }
+    // Success: stock, qty_received and status are already committed. Reflect the
+    // authoritative post-increment values in local state and log each movement.
+    const summary = [];
+    for (const ln of res.lines) {
+      if (ln.product_id && ln.new_stock != null) {
+        setProducts && setProducts(prev => prev.map(p => p.id === ln.product_id ? { ...p, stock_qty: ln.new_stock } : p));
+        const prod = products.find(p => p.id === ln.product_id);
+        if (prod) logStockMovement(token, { product: prod, delta: ln.applied, balance_after: ln.new_stock, reason: "receipt", ref_type: "purchase_order", ref_id: receivePO.po_number, note: "Goods receipt", userId });
+      }
+      summary.push(`${ln.product_name || "item"} +${ln.applied}`);
+    }
+    setPOs(prev => prev.map(p => p.id === receivePO.id ? { ...p, status: res.status, received_date: today() } : p));
     if (summary.length) logAudit(token, userId, "stock_received", "purchase_order", receivePO.id, `${receivePO.po_number} goods received: ${summary.join(", ")}`);
     setReceiving(false);
     closeReceive();
-    toast.success(summary.length === 0 ? "Nothing to receive" : newStatus === "received" ? "PO fully received — stock updated" : "Partial receipt recorded — stock updated");
+    toast.success(summary.length === 0 ? "Nothing to receive" : res.status === "received" ? "PO fully received — stock updated" : "Partial receipt recorded — stock updated");
   };
 
   const statusBadgeCls = (s) => s === "received" ? "b-green" : s === "partial" ? "b-amber" : s === "sent" ? "b-blue" : s === "cancelled" ? "b-red" : "b-gray";
