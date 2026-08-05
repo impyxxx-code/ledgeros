@@ -521,7 +521,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
                     <div style={{ padding:"12px 20px" }}>
                       <div style={{ fontSize:12, fontWeight:600, color:"var(--text2)", marginBottom:8 }}>Payment method</div>
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8 }}>
-                        {[["cash","Cash"],["card","Card"],["bank_transfer","Bank Transfer"]].map(([val,lbl]) => (
+                        {[["cash","Cash"],["card","Card"],["bank","Bank Transfer"]].map(([val,lbl]) => (
                           <div key={val} role="button" tabIndex={0} onClick={() => setMobMarkPaidMethod(val)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setMobMarkPaidMethod(val);}}
                             style={{ padding:"12px 10px", borderRadius:10, border:"2px solid "+(mobMarkPaidMethod===val?"var(--blue)":"var(--border)"), background:mobMarkPaidMethod===val?"var(--blue-lt)":"var(--white)", color:mobMarkPaidMethod===val?"var(--blue)":"var(--text2)", fontSize:13, fontWeight:600, textAlign:"center", cursor:"pointer", minHeight:44, display:"flex", alignItems:"center", justifyContent:"center" }}>
                             {lbl}
