@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { sb, SUPABASE_URL, SUPABASE_ANON_KEY } from "../../lib/supabase.js";
 import { fmt, fmtDate, fmtShort, fmtTime, fmtRelative, dueDelta, today, isMobile, escHtml, DEFAULT_REORDER } from "../../lib/utils.js";
+import { vatRateOf } from "../../lib/reporting.js";
 import { sendEmail, buildInvoiceEmailHtml, buildReminderEmailHtml, buildDNEmailHtml } from "../../lib/email.js";
 import { logAudit } from "../../lib/audit.js";
 import { logStockMovement } from "../../lib/stock.js";
@@ -89,7 +90,7 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
       code: (newProd.code || "").trim() || null,
       sale_price: price,
       cost_price: 0,
-      vat_rate: parseFloat(newProd.vat_rate) || 20,
+      vat_rate: vatRateOf(newProd),
       unit: (newProd.unit || "unit").trim() || "unit",
       stock_qty: openQty,
       created_by: userId,

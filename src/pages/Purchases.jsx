@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, today, isMobile, DEFAULT_REORDER } from "../lib/utils.js";
+import { vatRateOf } from "../lib/reporting.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement } from "../lib/stock.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
@@ -26,7 +27,7 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
       toast.success(`${name} added as supplier`);
     } else toast.error("Failed to create supplier");
   };
-  const updateLine = (i, field, val) => { const next = [...lines]; if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, product_name: p?.name||"", unit_cost: p?.cost_price||"", vat_rate: String(p?.vat_rate||20) }; } else next[i] = { ...next[i], [field]: val }; setLines(next); };
+  const updateLine = (i, field, val) => { const next = [...lines]; if (field === "product_id") { const p = products.find(x => x.id === val); next[i] = { ...next[i], product_id: val, product_name: p?.name||"", unit_cost: p?.cost_price||"", vat_rate: String(vatRateOf(p)) }; } else next[i] = { ...next[i], [field]: val }; setLines(next); };
   const lineTotal = (l) => (parseFloat(l.qty)||0)*(parseFloat(l.unit_cost)||0);
   const total = lines.reduce((s,l) => s+lineTotal(l),0);
   const vatTotal = lines.reduce((s,l) => s+lineTotal(l)*(parseFloat(l.vat_rate)||0)/100,0);

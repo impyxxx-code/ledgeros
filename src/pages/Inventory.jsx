@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, LabelList, PieChart, Pie, Cell, BarChart } from "recharts";
 import { sb } from "../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../lib/utils.js";
+import { vatRateOf } from "../lib/reporting.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement, getStockMovements } from "../lib/stock.js";
 import { toast } from "../lib/constants.js";
@@ -18,7 +19,7 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
 
   const save = async () => {
     if (!f.name) return; setSaving(true);
-    const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price)||0, sale_price: parseFloat(f.sale_price)||0, vat_rate: parseFloat(f.vat_rate)||20, stock_qty: parseFloat(f.stock_qty)||0, reorder_level: parseFloat(f.reorder_level)||0, created_by: userId });
+    const data = await sb.post(token, "products", { ...f, cost_price: parseFloat(f.cost_price)||0, sale_price: parseFloat(f.sale_price)||0, vat_rate: vatRateOf(f), stock_qty: parseFloat(f.stock_qty)||0, reorder_level: parseFloat(f.reorder_level)||0, created_by: userId });
     if (data[0]) { setProducts(prev => [data[0], ...prev]); logAudit(token, userId, "product_created", "product", data[0].id, `Product added: ${f.name} · Sale £${parseFloat(f.sale_price)||0} · Stock: ${parseFloat(f.stock_qty)||0}`); const openQty = parseFloat(f.stock_qty) || 0; if (openQty > 0) logStockMovement(token, { product: data[0], delta: openQty, balance_after: openQty, reason: "opening", ref_type: "product", note: "Opening balance", userId, userName: profile?.full_name }); }
     setF({ code: "", name: "", description: "", category: "", unit: "unit", cost_price: "", sale_price: "", vat_rate: "20", stock_qty: "", reorder_level: "" });
     setShowForm(false); setSaving(false);

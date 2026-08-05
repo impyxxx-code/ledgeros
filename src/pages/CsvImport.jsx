@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { sb } from "../lib/supabase.js";
 import { fmt, today } from "../lib/utils.js";
+import { vatRateOf } from "../lib/reporting.js";
 import { logAudit } from "../lib/audit.js";
 import { toast } from "../lib/constants.js";
 
@@ -146,7 +147,7 @@ export function CsvImport({ contacts, setContacts, products, setProducts, invoic
         const data = await sb.post(token, "products", {
           name: r.name, code: r.code || null, category: r.category || null,
           cost_price: parseFloat(r.cost_price) || 0, sale_price: parseFloat(r.sale_price) || 0,
-          vat_rate: parseFloat(r.vat_rate) || 20, stock_qty: parseFloat(r.stock_qty) || 0,
+          vat_rate: vatRateOf(r), stock_qty: parseFloat(r.stock_qty) || 0,
           reorder_level: parseFloat(r.reorder_level) || 0, unit: r.unit || "unit", created_by: userId,
         }).catch(() => null);
         if (data?.[0]) { success++; setProducts(prev => [data[0], ...prev]); } else failed++;
