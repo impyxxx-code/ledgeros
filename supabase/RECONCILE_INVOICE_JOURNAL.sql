@@ -30,10 +30,16 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+-- NOTE on types (confirmed against live schema):
+--   journal_entries.source_id  = TEXT  (app stores the invoice UUID as a string)
+--   journal_entries.account_id = UUID  (matches accounts.id)
+-- So ONLY source_id needs the ::text form (via v_id_text); account_id / accounts.id
+-- comparisons stay uuid=uuid. Mismatching these throws 42883 / 42804.
 declare
   v_inv        record;
   v_ar_id      uuid;
   v_sales_id   uuid;
+  v_id_text    text := p_invoice_id::text;
   v_old_amount numeric := 0;
   v_new_amount numeric := 0;
   v_reposted   boolean := false;
@@ -52,19 +58,19 @@ begin
   -- Old posted amount (AR debit already on the books for this invoice; 0 if none)
   select coalesce(sum(debit), 0) into v_old_amount
     from journal_entries
-   where source_type = 'invoice' and source_id = p_invoice_id and account_id = v_ar_id;
+   where source_type = 'invoice' and source_id = v_id_text and account_id = v_ar_id;
 
   -- 1) Reverse the existing invoice entries' balance effect, then delete them.
   update accounts a
      set balance = coalesce(a.balance, 0) - x.amt
     from (select account_id, sum(coalesce(debit, 0) + coalesce(credit, 0)) as amt
             from journal_entries
-           where source_type = 'invoice' and source_id = p_invoice_id
+           where source_type = 'invoice' and source_id = v_id_text
            group by account_id) x
    where a.id = x.account_id;
 
   delete from journal_entries
-   where source_type = 'invoice' and source_id = p_invoice_id;
+   where source_type = 'invoice' and source_id = v_id_text;
 
   -- 2) Re-post for the invoice's current state (create-time eligibility rules).
   v_new_amount := coalesce(v_inv.amount, 0);
@@ -73,8 +79,8 @@ begin
      and v_new_amount > 0 then
     insert into journal_entries (entry_date, account_id, debit, credit, description, source_type, source_id)
     values
-      (v_inv.invoice_date, v_ar_id,    v_new_amount, 0,            'Invoice ' || v_inv.invoice_number, 'invoice', p_invoice_id),
-      (v_inv.invoice_date, v_sales_id, 0,            v_new_amount, 'Invoice ' || v_inv.invoice_number, 'invoice', p_invoice_id);
+      (v_inv.invoice_date, v_ar_id,    v_new_amount, 0,            'Invoice ' || v_inv.invoice_number, 'invoice', v_id_text),
+      (v_inv.invoice_date, v_sales_id, 0,            v_new_amount, 'Invoice ' || v_inv.invoice_number, 'invoice', v_id_text);
     update accounts set balance = coalesce(balance, 0) + v_new_amount where id = v_ar_id;
     update accounts set balance = coalesce(balance, 0) + v_new_amount where id = v_sales_id;
     v_reposted := true;
