@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, escHtml, DEFAULT_REORDER, buildCsv } from "../../lib/utils.js";
-import { computeCOGS } from "../../lib/reporting.js";
+import { computeCOGS, vatRateOf } from "../../lib/reporting.js";
 import { COMPANY, LOGO, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
 import { ProductSalesTracker } from "./ProductSalesTracker.jsx";
@@ -57,6 +57,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const [tab, setTab] = useState("overview");
   const [pos, setPOs] = useState([]);
   const [poLines, setPoLines] = useState([]);
+  const [bills, setBills] = useState([]);   // supplier bills — authoritative source of input (reclaimable) VAT, matching the VAT Return
   const [pcCategory, setPcCategory] = useState("all");
   const [collAudit, setCollAudit] = useState([]);
   const [budgets, setBudgets] = useState([]);
@@ -68,6 +69,7 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
     if (!token) return;
     sb.get(token, "purchase_orders", "order=order_date.desc").then(d => Array.isArray(d) && setPOs(d));
     sb.get(token, "purchase_order_lines", "order=id.desc").then(d => Array.isArray(d) && setPoLines(d));
+    sb.get(token, "supplier_bills", "select=bill_number,supplier,bill_date,subtotal,vat,total&order=bill_date.desc&limit=2000").then(d => Array.isArray(d) && setBills(d));
     sb.get(token, "audit_log", "action=in.(reminder_sent,payment_received,part_payment,bulk_payment)&order=created_at.desc&limit=2000").then(d => Array.isArray(d) && setCollAudit(d));
     sb.get(token, "journal_entries", "order=entry_date.asc,created_at.asc&limit=5000").then(d => Array.isArray(d) && setJournal(d));
     loadBudgets();
@@ -118,29 +120,22 @@ export function AdminReports({ invoices, products, contacts, accounts, allProfil
   const productSales = products.map(p => ({ ...p, stockValue: (p.stock_qty||0)*(p.cost_price||0), retailValue: (p.stock_qty||0)*(p.sale_price||0), margin: p.sale_price > 0 ? Math.round(((p.sale_price-p.cost_price)/p.sale_price)*100) : 0 })).sort((a,b)=>b.stockValue-a.stockValue);
   const periodLabels = { week:"This Week", month:"This Month", quarter:"This Quarter", year:"This Year", all:"All Time" };
   // ── VAT Liability ──
-  const filterPOByPeriod = (po) => {
-    const d = new Date(po.order_date || po.created_at);
-    if (period === "week") return (now - d) < 7 * 86400000;
-    if (period === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    if (period === "quarter") return Math.floor(d.getMonth()/3) === Math.floor(now.getMonth()/3) && d.getFullYear() === now.getFullYear();
-    if (period === "year") return d.getFullYear() === now.getFullYear();
-    return true;
-  };
-  const filteredPOs = pos.filter(filterPOByPeriod);
-  const filteredPOIds = new Set(filteredPOs.map(p => p.id));
-  const filteredPOLines = poLines.filter(l => filteredPOIds.has(l.po_id));
   const outputVAT = filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => s + parseFloat(i.vat_total||0), 0);
-  const inputVAT = filteredPOLines.reduce((s,l) => s + (parseFloat(l.total)||0) * (parseFloat(l.vat_rate)||0) / 100, 0);
+  // Input (reclaimable) VAT comes from supplier BILLS actually received — the same
+  // source the VAT Return uses (Box 4) — not from purchase orders, so the two
+  // reports reconcile. (A PO is an order; VAT is reclaimable on the bill.)
+  const filteredBills = bills.filter(b => filterByPeriod({ invoice_date: b.bill_date }));
+  const inputVAT = filteredBills.reduce((s,b) => s + (parseFloat(b.vat)||0), 0);
   const netVAT = outputVAT - inputVAT;
   const outputVATByRate = [20,5,0].map(rate => ({
     rate,
     net: filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => {
       let lines = []; try { lines = typeof i.lines === "string" ? JSON.parse(i.lines) : (i.lines||[]); } catch {}
-      return s + (Array.isArray(lines) ? lines.filter(l=>(parseFloat(l.vat_rate)??20)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0),0) : 0);
+      return s + (Array.isArray(lines) ? lines.filter(l=>vatRateOf(l)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0),0) : 0);
     }, 0),
     vat: filteredInv.filter(i=>i.status!=="draft"&&i.status!=="cancelled").reduce((s,i) => {
       let lines = []; try { lines = typeof i.lines === "string" ? JSON.parse(i.lines) : (i.lines||[]); } catch {}
-      return s + (Array.isArray(lines) ? lines.filter(l=>(parseFloat(l.vat_rate)??20)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(rate/100),0) : 0);
+      return s + (Array.isArray(lines) ? lines.filter(l=>vatRateOf(l)===rate).reduce((ls,l)=>ls+(parseFloat(l.qty)||0)*(parseFloat(l.unit_price)||0)*(rate/100),0) : 0);
     }, 0),
   }));
   // ── VAT Exceptions ──
