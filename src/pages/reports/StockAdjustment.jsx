@@ -3,7 +3,9 @@ import { sb } from "../../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../../lib/utils.js";
 import { logAudit } from "../../lib/audit.js";
 import { logStockMovement } from "../../lib/stock.js";
-import { MobileCard } from "../../components/ui.jsx";
+import { MobileCard, TruncationNotice } from "../../components/ui.jsx";
+
+const ADJ_CAP = 30; // products shown before truncation
 
 // ── STOCK ADJUSTMENT ──────────────────────────────────────────────────────────
 
@@ -54,7 +56,7 @@ export function StockAdjustment({ products, setProducts, token, userId }) {
         {isMobile() ? (
           <div style={{ display:"flex", flexDirection:"column", gap:10, padding:12 }}>
             {filtered.length === 0 && <div style={{ padding:"24px", textAlign:"center", color:"var(--text3)", fontSize:13 }}>No products found</div>}
-            {filtered.slice(0, 30).map(p => {
+            {filtered.slice(0, ADJ_CAP).map(p => {
               const adj = adjustments[p.id] || "";
               const delta = parseInt(adj) || 0;
               const newQty = Math.max(0, (p.stock_qty || 0) + delta);
@@ -112,6 +114,7 @@ export function StockAdjustment({ products, setProducts, token, userId }) {
           {filtered.length === 0 && <tr><td colSpan={6} className="empty">No products found</td></tr>}
         </tbody></table></div>
         )}
+        <TruncationNotice shown={Math.min(filtered.length, ADJ_CAP)} total={filtered.length} noun="products" />
       </div>
     </div>
   );

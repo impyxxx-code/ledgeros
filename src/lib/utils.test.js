@@ -1,5 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue, csvCell, buildCsv, parseLines, parseUkDate } from "./utils.js";
+import { fmt, fmtDate, fmtShort, fmtRelative, dueDelta, escHtml, DEFAULT_REORDER, balanceDue, csvCell, buildCsv, parseLines, parseUkDate, truncationNotice } from "./utils.js";
+
+describe("truncationNotice", () => {
+  it("returns null when the full list is shown", () => {
+    expect(truncationNotice(30, 30, "products")).toBeNull();
+    expect(truncationNotice(50, 20, "rows")).toBeNull(); // shown >= total
+    expect(truncationNotice(0, 0)).toBeNull();
+  });
+  it("returns a 'Showing X of N' caption when truncated", () => {
+    expect(truncationNotice(30, 145, "products")).toBe("Showing 30 of 145 products — refine your search or export for the full set.");
+  });
+  it("defaults the noun to 'rows'", () => {
+    expect(truncationNotice(50, 200)).toMatch(/^Showing 50 of 200 rows/);
+  });
+  it("coerces non-numeric inputs safely", () => {
+    expect(truncationNotice(undefined, 10, "x")).toMatch(/Showing 0 of 10 x/);
+    expect(truncationNotice(5, undefined)).toBeNull();
+  });
+});
 
 describe("fmt", () => {
   it("formats numbers as GBP currency", () => {

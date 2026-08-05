@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../../lib/supabase.js";
 import { fmt, fmtDate, escHtml, isMobile } from "../../lib/utils.js";
+
+const VAT_BILL_CAP = 10000; // supplier bills fetched for the return; banner warns if hit
 import { COMPANY, toast } from "../../lib/constants.js";
 
 // ── VAT RETURN (MTD-style 9-box) ──────────────────────────────────────────────
@@ -24,13 +26,14 @@ export function VATReturn({ invoices = [], token }) {
   const [to, setTo] = useState(thisQ.to);
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [capped, setCapped] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    sb.get(token, "supplier_bills", "select=bill_number,supplier,bill_date,subtotal,vat,total&order=bill_date.desc&limit=2000")
-      .then(d => setBills(Array.isArray(d) ? d : []))
-      .catch(() => setBills([]))
+    sb.get(token, "supplier_bills", `select=bill_number,supplier,bill_date,subtotal,vat,total&order=bill_date.desc&limit=${VAT_BILL_CAP}`)
+      .then(d => { const arr = Array.isArray(d) ? d : []; setBills(arr); setCapped(arr.length >= VAT_BILL_CAP); })
+      .catch(() => { setBills([]); setCapped(false); })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -79,6 +82,12 @@ export function VATReturn({ invoices = [], token }) {
 
   return (
     <div>
+      {capped && !loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", marginBottom: 16, borderRadius: 8, background: "#fef3c7", border: "1px solid #fcd34d", color: "#92400e", fontSize: 12 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>This return uses the most recent {VAT_BILL_CAP.toLocaleString()} supplier bills. Older bills aren’t included, so Box 4 (input VAT) may be understated for earlier periods.</span>
+        </div>
+      )}
       <div className="page-hero" style={{ margin: "-26px -28px 20px -28px", background: "#201e1d", padding: "20px 24px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(221,43,15,.10) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ marginBottom: 16, position: "relative", zIndex: 1 }}>
