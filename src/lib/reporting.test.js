@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeCOGS } from "./reporting.js";
+import { computeCOGS, vatRateOf } from "./reporting.js";
 
 const PRODUCTS = [
   { id: "p1", name: "Widget", cost_price: 4, stock_qty: 1000 },   // huge stock — must NOT inflate COGS
@@ -62,5 +62,26 @@ describe("computeCOGS", () => {
     expect(computeCOGS([], PRODUCTS)).toBe(0);
     expect(computeCOGS(null, null)).toBe(0);
     expect(computeCOGS([{ amount: 0, amount_paid: 0, lines: "[]" }], PRODUCTS)).toBe(0);
+  });
+});
+
+// Audit P1 (VAT source of truth): a missing rate must default to 20, not vanish.
+describe("vatRateOf", () => {
+  it("returns an explicit rate", () => {
+    expect(vatRateOf({ vat_rate: 20 })).toBe(20);
+    expect(vatRateOf({ vat_rate: 5 })).toBe(5);
+    expect(vatRateOf({ vat_rate: "20" })).toBe(20);
+  });
+  it("preserves an explicit zero (zero-rated/exempt), NOT defaulting it to 20", () => {
+    expect(vatRateOf({ vat_rate: 0 })).toBe(0);
+    expect(vatRateOf({ vat_rate: "0" })).toBe(0);
+  });
+  it("defaults a missing/invalid rate to 20 (the old ?? 20 left it NaN → dropped)", () => {
+    expect(vatRateOf({})).toBe(20);
+    expect(vatRateOf({ vat_rate: null })).toBe(20);
+    expect(vatRateOf({ vat_rate: undefined })).toBe(20);
+    expect(vatRateOf({ vat_rate: "" })).toBe(20);
+    expect(vatRateOf({ vat_rate: "abc" })).toBe(20);
+    expect(vatRateOf(null)).toBe(20);
   });
 });

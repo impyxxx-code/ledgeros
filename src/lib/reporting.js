@@ -1,4 +1,15 @@
-// ── P&L reporting helpers ─────────────────────────────────────────────────────
+// ── P&L / VAT reporting helpers ───────────────────────────────────────────────
+
+// A line's VAT rate, defaulting a missing/invalid rate to 20% while preserving an
+// explicit 0 (zero-rated/exempt). The old `parseFloat(l.vat_rate) ?? 20` was buggy:
+// parseFloat returns NaN (not null/undefined) for a missing rate, and `??` doesn't
+// catch NaN — so `NaN === rate` was always false and those lines silently dropped
+// out of every VAT-rate bucket.
+export const vatRateOf = (line) => {
+  const r = parseFloat(line && line.vat_rate);
+  return Number.isFinite(r) ? r : 20;
+};
+
 
 // Cost of Goods SOLD for a set of invoices — the cost of the products actually
 // sold, read from each invoice's line items (qty × the product's cost_price).
