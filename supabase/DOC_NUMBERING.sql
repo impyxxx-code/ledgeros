@@ -38,22 +38,43 @@ values
 on conflict (prefix) do update
   set current_value = greatest(public.document_counters.current_value, excluded.current_value);
 
--- 3) Atomic allocator. UPDATE ... RETURNING locks the row, so concurrent callers
---    can never get the same value; values only ever increase (no reuse on delete).
+-- 3) Atomic, SELF-HEALING allocator. UPDATE ... RETURNING locks the counter row,
+--    so concurrent callers serialise and can never get the same value.
+--    Self-heal: before incrementing, take the greatest of the stored counter and
+--    the actual max number already in the series. This makes it impossible to ever
+--    hand back a number that already exists — even if a row was created OUTSIDE
+--    this counter (the client max+1 fallback when the RPC call failed, a CSV
+--    import, or a manual re-seed), which is what caused duplicate-key errors.
 create or replace function public.next_doc_number(p_prefix text, p_pad int default 4)
 returns text
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare v bigint;
+declare
+  v bigint;
+  m bigint := 0;
 begin
   insert into public.document_counters(prefix, current_value)
     values (p_prefix, 0) on conflict (prefix) do nothing;
+
+  -- Highest number already issued in this series (0 if none).
+  if p_prefix = 'INV' then
+    select coalesce(max((regexp_replace(invoice_number, '\D', '', 'g'))::bigint), 0) into m
+      from public.invoices        where invoice_number ~ '^INV-[0-9]+$';
+  elsif p_prefix = 'PO' then
+    select coalesce(max((regexp_replace(po_number, '\D', '', 'g'))::bigint), 0) into m
+      from public.purchase_orders where po_number      ~ '^PO-[0-9]+$';
+  elsif p_prefix = 'CN' then
+    select coalesce(max((regexp_replace(cn_number, '\D', '', 'g'))::bigint), 0) into m
+      from public.credit_notes    where cn_number      ~ '^CN-[0-9]+$';
+  end if;
+
   update public.document_counters
-    set current_value = current_value + 1, updated_at = now()
+    set current_value = greatest(current_value, m) + 1, updated_at = now()
     where prefix = p_prefix
     returning current_value into v;
+
   return p_prefix || '-' || lpad(v::text, p_pad, '0');
 end;
 $$;
