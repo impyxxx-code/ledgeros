@@ -6,6 +6,7 @@ import { logAudit } from "../../lib/audit.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
+import { reconcileStatus, resolveProductLine, fetchContractPrice, reconcileInvoiceJournal } from "../../lib/invoiceEdit.js";
 
 // ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
 
@@ -34,23 +35,42 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
   const save = async () => {
     setSaving(true);
     const validLines = lines.filter(l => l.description && l.unit_price);
+    const amountPaid = parseFloat(invoice.amount_paid || 0);
+    const newBalance = Math.max(0, total - amountPaid);
+    // Issue 1: status must follow the resulting balance, not stay frozen — a paid
+    // invoice edited upward still owes money; a partial edited down is settled.
+    const finalStatus = reconcileStatus({ userStatus: status, amountPaid, total });
     await sb.patch(token, "invoices", invoice.id, {
       customer,
       invoice_date: invoiceDate,
       due_date: dueDate || null,
-      status,
+      status: finalStatus,
       notes,
       lines: JSON.stringify(validLines),
       amount: total,
       subtotal,
       vat_total: vatTotal,
-      balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)),
+      balance: newBalance,
     });
-    const updatedFields = { customer, invoice_date: invoiceDate, due_date: dueDate || null, status, notes, lines: JSON.stringify(validLines), amount: total, subtotal, vat_total: vatTotal, balance: Math.max(0, total - parseFloat(invoice.amount_paid || 0)) };
+    const updatedFields = { customer, invoice_date: invoiceDate, due_date: dueDate || null, status: finalStatus, notes, lines: JSON.stringify(validLines), amount: total, subtotal, vat_total: vatTotal, balance: newBalance };
+
+    // Issue 2: the sale journal (Dr AR / Cr Sales) was posted at the old amount.
+    // Re-sync it atomically whenever the amount, status or date changed, so the
+    // GL / P&L / AR don't drift. Non-fatal: the edit itself already persisted.
+    const oldAmount = parseFloat(invoice.amount || 0);
+    const journalChanged = oldAmount !== total || invoice.status !== finalStatus || (invoice.invoice_date || "") !== (invoiceDate || "");
+    if (journalChanged) {
+      const jr = await reconcileInvoiceJournal({ token, invoiceId: invoice.id }).catch(e => ({ ok: false, error: e?.message }));
+      if (!jr.ok) {
+        if (jr.needsSql) toast.warn("Invoice saved, but the ledger wasn't re-synced — ask an admin to run RECONCILE_INVOICE_JOURNAL.sql.");
+        else toast.warn("Invoice saved, but the ledger journal couldn't be re-synced. Check the General Ledger.");
+      }
+    }
+
     const changes = [];
     if (invoice.customer !== customer) changes.push(`customer ${invoice.customer} → ${customer}`);
     if (parseFloat(invoice.amount) !== total) changes.push(`amount £${parseFloat(invoice.amount||0).toFixed(2)} → £${total.toFixed(2)}`);
-    if (invoice.status !== status) changes.push(`status ${invoice.status} → ${status}`);
+    if (invoice.status !== finalStatus) changes.push(`status ${invoice.status} → ${finalStatus}`);
     if ((invoice.due_date||"") !== (dueDate||"")) changes.push(`due date ${invoice.due_date||"none"} → ${dueDate||"none"}`);
     logAudit(token, userId, "invoice_edited", "invoice", invoice.id, `${invoice.invoice_number} edited${changes.length ? " — " + changes.join(", ") : " (no field changes detected)"}`);
     onSaved(updatedFields);
@@ -119,7 +139,13 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
             </div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 0.6fr 1fr 1fr 0.8fr 30px", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-                <SearchDropdown placeholder="Search products..." items={products} onSelect={p => { updateLine(i, "description", p.name); updateLine(i, "unit_price", p.sale_price || p.cost_price || ""); }} displayKey="name" value={l.description || ""} />
+                <SearchDropdown placeholder="Search products..." items={products} onSelect={async p => {
+                    // Issue 3: apply the product's VAT rate and any customer-specific
+                    // contract price on re-pick — matching how InvoiceForm creates lines.
+                    const customPrice = await fetchContractPrice({ token, contacts, customerName: customer, productId: p.id });
+                    const resolved = resolveProductLine(p, customPrice);
+                    setLines(prev => prev.map((ln, idx) => idx === i ? { ...ln, ...resolved } : ln));
+                  }} displayKey="name" value={l.description || ""} />
                 <input className="il-input mono" type="text" inputMode="numeric" value={String(l.qty ?? "")} onChange={e => updateLine(i, "qty", e.target.value)} />
                 <input className="il-input mono" type="text" inputMode="decimal" value={String(l.unit_price ?? "")} onChange={e => updateLine(i, "unit_price", e.target.value)} />
                 <select className="il-input" value={l.vat_rate} onChange={e => updateLine(i, "vat_rate", e.target.value)}>
