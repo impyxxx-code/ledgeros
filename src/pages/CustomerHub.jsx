@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
+import { activeCustomers } from "../lib/contacts.js";
 import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, escHtml, today, isMobile } from "../lib/utils.js";
 import { COMPANY, toast } from "../lib/constants.js";
@@ -53,7 +54,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
   useEffect(() => { if (pendingCustomer) { setSelId(pendingCustomer); onClearPending && onClearPending(); } }, [pendingCustomer]);
 
   const customer = contacts.find(c => c.id === selId) || null;
-  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+  const customers = activeCustomers(contacts);
 
   const custInvoices = useMemo(() => customer ? invoices.filter(i => i.customer === customer.name).sort((a, b) => (b.invoice_date || "").localeCompare(a.invoice_date || "")) : [], [customer, invoices]);
 

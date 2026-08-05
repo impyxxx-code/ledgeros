@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { sb } from "../../lib/supabase.js";
+import { activeCustomers } from "../../lib/contacts.js";
 import { fmt, fmtDate, escHtml } from "../../lib/utils.js";
 import { COMPANY, toast } from "../../lib/constants.js";
 import { sendEmail } from "../../lib/email.js";
@@ -13,7 +14,7 @@ import { sendEmail } from "../../lib/email.js";
 export function CustomerStatement({ contacts, invoices, token }) {
   const [selectedContact, setSelectedContact] = useState(null);
   const [query, setQuery] = useState("");
-  const customers = contacts.filter(c => c.type === "customer" || c.type === "both");
+  const customers = activeCustomers(contacts);
   const filtered = customers.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   const [showDropdown, setShowDropdown] = useState(false);
   const [creditBalance, setCreditBalance] = useState(0);

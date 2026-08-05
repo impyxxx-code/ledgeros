@@ -6,6 +6,7 @@ import { vatRateOf } from "../lib/reporting.js";
 import { logAudit } from "../lib/audit.js";
 import { logStockMovement } from "../lib/stock.js";
 import { buildReceipts, receivePurchaseOrder } from "../lib/goodsReceipt.js";
+import { activeSuppliers } from "../lib/contacts.js";
 import { EmptyState, MobileCard, ModalPortal } from "../components/ui.jsx";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { toast } from "../lib/constants.js";
@@ -17,7 +18,7 @@ export function Purchases({ contacts, setContacts, products, setProducts, accoun
   const [lines, setLines] = useState([{ product_id: "", product_name: "", qty: "", unit_cost: "", vat_rate: "20" }]);
   const [f, setF] = useState({ supplier_id: "", order_date: today(), expected_date: "", notes: "" });
   useEffect(() => { sb.get(token, "purchase_orders", "order=created_at.desc").then(d => Array.isArray(d) && setPOs(d)); }, [token]);
-  const suppliers = contacts.filter(c => c.type === "supplier" || c.type === "both");
+  const suppliers = activeSuppliers(contacts);
   const quickAddSupplier = async (name) => {
     if (!name.trim()) return;
     const data = await sb.post(token, "contacts", { name: name.trim(), type: "supplier", created_by: userId });

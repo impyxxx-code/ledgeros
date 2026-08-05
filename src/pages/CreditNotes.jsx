@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
+import { activeCustomers } from "../lib/contacts.js";
 import { nextDocNumber } from "../lib/numbering.js";
 import { fmt, fmtDate, today, escHtml, isMobile } from "../lib/utils.js";
 import { logAudit } from "../lib/audit.js";
@@ -32,7 +33,7 @@ export function CreditNotes({ contacts, invoices, setInvoices, profile, token, u
   const [f, setF] = useState({ customer_id: "", invoice_id: "", reason: "", amount: "", issue_date: today() });
   const [cnFilter, setCnFilter] = useState("all");
   useEffect(() => { sb.get(token,"credit_notes","order=created_at.desc").then(d => Array.isArray(d)&&setCNs(d)); }, [token]);
-  const customers = contacts.filter(c => c.type==="customer"||c.type==="both");
+  const customers = activeCustomers(contacts);
   const isUUID = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   const save = async () => {
     if (!f.customer_id||!f.amount) return; setSaving(true);

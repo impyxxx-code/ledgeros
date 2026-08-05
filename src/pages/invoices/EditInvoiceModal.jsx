@@ -7,6 +7,7 @@ import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx"
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 import { reconcileStatus, resolveProductLine, fetchContractPrice, reconcileInvoiceJournal } from "../../lib/invoiceEdit.js";
+import { customersForEdit } from "../../lib/contacts.js";
 
 // ── EDIT INVOICE MODAL ──────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export function EditInvoiceModal({ invoice, onClose, onSaved, contacts, products
               <label>Customer</label>
               <select value={customer} onChange={e => setCustomer(e.target.value)}>
                 <option value="">Select customer</option>
-                {contacts.filter(c => c.type === "customer" || c.type === "both").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {customersForEdit(contacts, invoice.customer).map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </div>
             <div className="fgrp">
