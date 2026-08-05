@@ -2,22 +2,40 @@ import React, { useState, useEffect } from "react";
 import { sb } from "../lib/supabase.js";
 import { SkeletonTable, MobileCard } from "../components/ui.jsx";
 import { fmt, escHtml, isMobile } from "../lib/utils.js";
+import { toast } from "../lib/constants.js";
+import { groupPaymentsByDate, paymentMethodTotals, unbankedCash, loadDepositDays, upsertDepositDay } from "../lib/banking.js";
+
+const ALL_CAP = 2000; // "All time" is capped; a visible banner shows when it truncates
 
 export function BankingPage({ token, userId, profile }) {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("week");
-  const [bankedDates, setBankedDates] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ledgeros_banked_dates") || "{}"); } catch { return {}; }
-  });
-  const [depositRefs, setDepositRefs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ledgeros_deposit_refs") || "{}"); } catch { return {}; }
-  });
+  const [bankedDates, setBankedDates] = useState({});
+  const [depositRefs, setDepositRefs] = useState({});
   const [editingRef, setEditingRef] = useState(null);
   const [refInput, setRefInput] = useState("");
+  const [capped, setCapped] = useState(false);
 
-  const saveBanked = (d) => { localStorage.setItem("ledgeros_banked_dates", JSON.stringify(d)); setBankedDates(d); };
-  const saveRefs = (d) => { localStorage.setItem("ledgeros_deposit_refs", JSON.stringify(d)); setDepositRefs(d); };
+  // Banked-day / deposit-ref state is shared server-side (was per-browser localStorage).
+  useEffect(() => {
+    if (!token) return;
+    loadDepositDays(token).then(({ banked, refs }) => { setBankedDates(banked); setDepositRefs(refs); });
+  }, [token]);
+
+  // Optimistic write-through to the server; revert + warn if the save fails.
+  const setBanked = async (d, banked) => {
+    const prev = bankedDates;
+    setBankedDates(b => { const nb = { ...b }; if (banked) nb[d] = true; else delete nb[d]; return nb; });
+    const res = await upsertDepositDay(token, { date: d, banked, userId });
+    if (!res.ok) { setBankedDates(prev); toast.error("Couldn't update banked status — check your connection and try again."); }
+  };
+  const setRef = async (d, ref) => {
+    const prev = depositRefs;
+    setDepositRefs(r => ({ ...r, [d]: ref }));
+    const res = await upsertDepositDay(token, { date: d, depositRef: ref, userId });
+    if (!res.ok) { setDepositRefs(prev); toast.error("Couldn't save the deposit reference — check your connection and try again."); }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -27,22 +45,15 @@ export function BankingPage({ token, userId, profile }) {
     if (period === "today") { fromDate = now.toISOString().split("T")[0]; }
     else if (period === "week") { const d = new Date(now); d.setDate(d.getDate() - 7); fromDate = d.toISOString().split("T")[0]; }
     else if (period === "month") { const d = new Date(now); d.setDate(d.getDate() - 30); fromDate = d.toISOString().split("T")[0]; }
-    const q = fromDate ? `created_at=gte.${fromDate}T00:00:00&order=created_at.desc` : `order=created_at.desc&limit=200`;
+    const q = fromDate ? `created_at=gte.${fromDate}T00:00:00&order=created_at.desc` : `order=created_at.desc&limit=${ALL_CAP}`;
     sb.get(token, "invoice_payments", q)
-      .then(d => setPayments(Array.isArray(d) ? d : []))
-      .catch(() => setPayments([]))
+      .then(d => { const arr = Array.isArray(d) ? d : []; setPayments(arr); setCapped(!fromDate && arr.length >= ALL_CAP); })
+      .catch(() => { setPayments([]); setCapped(false); })
       .finally(() => setLoading(false));
   }, [token, period]);
 
-  // Group by date
-  const byDate = {};
-  payments.forEach(p => {
-    const d = (p.created_at || p.payment_date || "").split("T")[0];
-    if (!d) return;
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(p);
-  });
-  const dates = Object.keys(byDate).sort((a,b) => b.localeCompare(a));
+  // Group by date (newest first)
+  const { byDate, dates } = groupPaymentsByDate(payments);
 
   const fmtDay = (d) => {
     const dt = new Date(d + "T12:00:00");
@@ -57,9 +68,9 @@ export function BankingPage({ token, userId, profile }) {
 
   // KPIs
   const total = payments.reduce((s,p)=>s+parseFloat(p.amount||0),0);
-  const byMethod = {};
-  payments.forEach(p => { const m=p.method||"cash"; byMethod[m]=(byMethod[m]||0)+parseFloat(p.amount||0); });
-  const unbanked = dates.filter(d=>!bankedDates[d]).reduce((s,d)=>s+byDate[d].reduce((ss,p)=>ss+parseFloat(p.amount||0),0),0);
+  const byMethod = paymentMethodTotals(payments);
+  // "Unbanked cash" = physical cash awaiting deposit only — excludes card / bank transfer.
+  const unbanked = unbankedCash(dates, byDate, bankedDates);
 
   // CSV export
   const exportCSV = () => {
@@ -153,6 +164,12 @@ export function BankingPage({ token, userId, profile }) {
         )}
       </div>
 
+      {capped && !loading && (
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",marginBottom:16,borderRadius:8,background:"#fef3c7",border:"1px solid #fcd34d",color:"#92400e",fontSize:12}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Showing the most recent {ALL_CAP.toLocaleString()} payments. Older records aren’t included in these totals — narrow the period, or export CSV for the full history.</span>
+        </div>
+      )}
       {loading ? (
         <div className="card" style={{overflow:"hidden"}}>
           <SkeletonTable rows={7} cols={8} />
@@ -247,11 +264,11 @@ export function BankingPage({ token, userId, profile }) {
                       <div style={{display:"flex",alignItems:"center",justifyContent:isMobile()?"space-between":"flex-end",gap:10}}>
                         <span style={{fontFamily:"var(--mono)",fontWeight:600,fontSize:14,color:"var(--text)"}}>{fmt(dayTotal)}</span>
                         {!isBanked ? (
-                          <button onClick={()=>{saveBanked({...bankedDates,[d]:true});}} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:isMobile()?13:11,cursor:"pointer",fontWeight:600,minHeight:isMobile()?44:"auto"}}>
+                          <button onClick={()=>setBanked(d, true)} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"none",background:"#16a34a",color:"#fff",fontSize:isMobile()?13:11,cursor:"pointer",fontWeight:600,minHeight:isMobile()?44:"auto"}}>
                             Mark banked
                           </button>
                         ) : (
-                          <button onClick={()=>{const nb={...bankedDates};delete nb[d];saveBanked(nb);}} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",fontSize:isMobile()?13:11,cursor:"pointer",minHeight:isMobile()?44:"auto"}}>
+                          <button onClick={()=>setBanked(d, false)} style={{padding:isMobile()?"10px 18px":"4px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text3)",fontSize:isMobile()?13:11,cursor:"pointer",minHeight:isMobile()?44:"auto"}}>
                             Unmark
                           </button>
                         )}
@@ -321,7 +338,7 @@ export function BankingPage({ token, userId, profile }) {
                         {editingRef === d ? (
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
                             <input value={refInput} onChange={e=>setRefInput(e.target.value)} placeholder="e.g. DEP-2026-0089" style={{padding:"3px 8px",border:"1px solid var(--blue)",borderRadius:5,fontSize:11,outline:"none",width:160,fontFamily:"var(--mono)"}} />
-                            <button onClick={()=>{saveRefs({...depositRefs,[d]:refInput});setEditingRef(null);}} style={{padding:"3px 10px",borderRadius:5,border:"none",background:"var(--blue)",color:"#fff",fontSize:11,cursor:"pointer"}}>Save</button>
+                            <button onClick={()=>{setRef(d, refInput);setEditingRef(null);}} style={{padding:"3px 10px",borderRadius:5,border:"none",background:"var(--blue)",color:"#fff",fontSize:11,cursor:"pointer"}}>Save</button>
                             <button onClick={()=>setEditingRef(null)} style={{padding:"3px 8px",borderRadius:5,border:"1px solid var(--border)",background:"var(--white)",fontSize:11,cursor:"pointer",color:"var(--text3)"}}>Cancel</button>
                           </div>
                         ) : (
