@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 import { fmt, fmtDate } from "../../lib/utils.js";
+import { TruncationNotice } from "../../components/ui.jsx";
+
+const AGENT_INV_CAP = 50; // invoice-detail rows shown before truncation
 
 // ── SALES BY AGENT ────────────────────────────────────────────────────────────
 
@@ -154,7 +157,7 @@ export function AgentReport({ invoices, allProfiles, contacts }) {
       <div className="card">
         <div className="ch"><div className="ct">Invoice Detail</div><div className="cs">{displayInvoices.length} records</div></div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}><table className="ar-table" style={{minWidth:420}}><thead><tr><th>Customer</th><th className="hm">Agent</th><th className="hm">Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-          {displayInvoices.slice(0, 50).map(inv => {
+          {displayInvoices.slice(0, AGENT_INV_CAP).map(inv => {
             const agent = allProfiles.find(a => a.id === inv.created_by);
             return <tr key={inv.id}>
               <td><div style={{ fontWeight: 600, fontSize: 13 }}>{inv.customer}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{inv.invoice_number}</div></td>
@@ -166,6 +169,7 @@ export function AgentReport({ invoices, allProfiles, contacts }) {
           })}
           {displayInvoices.length === 0 && <tr><td colSpan={5} className="empty">No invoices for this period</td></tr>}
         </tbody></table></div>
+        <TruncationNotice shown={Math.min(displayInvoices.length, AGENT_INV_CAP)} total={displayInvoices.length} noun="invoices" />
       </div>
     </div>
   );

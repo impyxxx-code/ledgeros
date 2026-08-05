@@ -3,7 +3,9 @@ import { sb } from "../../lib/supabase.js";
 import { fmt, DEFAULT_REORDER, isMobile } from "../../lib/utils.js";
 import { logAudit } from "../../lib/audit.js";
 import { logStockMovement } from "../../lib/stock.js";
-import { MobileCard } from "../../components/ui.jsx";
+import { MobileCard, TruncationNotice } from "../../components/ui.jsx";
+
+const ST_MOB_CAP = 60, ST_DESK_CAP = 100; // products shown before truncation (mobile / desktop)
 
 // ── STOCK TAKE / CYCLE COUNT ──────────────────────────────────────────────────
 
@@ -169,7 +171,7 @@ export function StockTake({ products, setProducts, token, userId, profile }) {
         {isMobile() ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
             {filtered.length === 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No products found</div>}
-            {filtered.slice(0, 60).map(p => {
+            {filtered.slice(0, ST_MOB_CAP).map(p => {
               const l = lineOf(p);
               return (
                 <MobileCard
@@ -200,7 +202,7 @@ export function StockTake({ products, setProducts, token, userId, profile }) {
             <table className="sa-table" style={{ minWidth: 560 }}>
               <thead><tr><th>Product</th><th>Category</th><th style={{ textAlign: "right" }}>System</th><th style={{ textAlign: "center" }}>Counted</th><th style={{ textAlign: "right" }}>Variance</th><th></th></tr></thead>
               <tbody>
-                {filtered.slice(0, 100).map(p => {
+                {filtered.slice(0, ST_DESK_CAP).map(p => {
                   const l = lineOf(p);
                   return (
                     <tr key={p.id} style={{ background: l.has && l.variance !== 0 ? "var(--bg)" : "transparent" }}>
@@ -220,6 +222,7 @@ export function StockTake({ products, setProducts, token, userId, profile }) {
             </table>
           </div>
         )}
+        <TruncationNotice shown={Math.min(filtered.length, isMobile() ? ST_MOB_CAP : ST_DESK_CAP)} total={filtered.length} noun="products" />
       </div>
 
       {/* Sticky action bar */}

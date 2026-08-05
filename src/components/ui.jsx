@@ -1,7 +1,20 @@
 import { createPortal } from "react-dom";
+import { truncationNotice } from "../lib/utils.js";
 
 // ── Modal Portal — renders overlays into document.body to escape overflow containers ──
 export const ModalPortal = ({ children }) => createPortal(children, document.body);
+
+// ── Truncation notice — shown under a list that's capped for display ──
+// Renders nothing when the full list is visible, so it's safe to drop in anywhere.
+export function TruncationNotice({ shown, total, noun = "rows" }) {
+  const text = truncationNotice(shown, total, noun);
+  if (!text) return null;
+  return (
+    <div style={{ padding: "8px 14px", fontSize: 12, color: "var(--text3)", background: "var(--bg)", borderTop: "1px solid var(--border)", textAlign: "center" }}>
+      {text}
+    </div>
+  );
+}
 
 // ┌────────────────────────────────────────────────────────────┐
 // │ SkeletonTable                                              │

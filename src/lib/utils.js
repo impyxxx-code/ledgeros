@@ -85,3 +85,13 @@ export const parseUkDate = (s) => {
 
 // shortName: strips namespace/category prefix — "VAPE:DISPOSABLES:HAYATI 6K" → "HAYATI 6K"
 export const shortName = (n) => { if (!n) return n; const p = n.split(":"); return p[p.length - 1].trim(); };
+
+// Caption for a list that's been truncated for display — returns null when the
+// full list is shown, so callers can render it unconditionally. Makes a capped
+// view explicit instead of silently dropping rows.
+export const truncationNotice = (shown, total, noun = "rows") => {
+  const s = Number(shown) || 0;
+  const t = Number(total) || 0;
+  if (t <= s) return null;
+  return `Showing ${s} of ${t} ${noun} — refine your search or export for the full set.`;
+};
