@@ -6,6 +6,7 @@ import { logAudit } from "../../lib/audit.js";
 import { postPaymentJournal } from "../../lib/journal.js";
 import { settleInvoice, remainingBalance } from "../../lib/invoicing.js";
 import { deleteInvoiceCascade } from "../../lib/invoiceDelete.js";
+import { buildReceiptHtml } from "../../lib/receiptPrint.js";
 import { ModalPortal, SkeletonTable, EmptyState } from "../../components/ui.jsx";
 import { SearchDropdown } from "../../components/SearchDropdown.jsx";
 import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
@@ -639,6 +640,7 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
                   <button onClick={()=>setViewInvoice(inv)} title="View" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--blue-lt)",background:"var(--blue-lt)",color:"var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
+                  <button onClick={()=>{ window.__ledgerosPrint && window.__ledgerosPrint(buildReceiptHtml(inv)); }} title="Print receipt" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid #bbf7d0",background:"#f0fdf4",color:"#166534",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
                   <button onClick={()=>printDNFromInvoice(inv)} title="Delivery note" className="bicon" style={{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"var(--text2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                   </button>
