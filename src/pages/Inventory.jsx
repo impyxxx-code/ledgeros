@@ -37,6 +37,39 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
     setUpdatingId(null);
   };
 
+  // ── Quick edit — inline pricing/details editor (admin + manager) ──
+  const [quickEditId, setQuickEditId] = useState(null);
+  const [qe, setQe] = useState({});
+  const [qeSaving, setQeSaving] = useState(false);
+  const openQuickEdit = (p) => {
+    setQuickEditId(p.id);
+    setQe({ code: p.code || "", name: p.name || "", category: p.category || "", unit: p.unit || "unit", cost_price: p.cost_price ?? "", sale_price: p.sale_price ?? "", vat_rate: String(p.vat_rate ?? "20"), stock_qty: p.stock_qty ?? 0, reorder_level: p.reorder_level ?? "" });
+  };
+  const saveQuickEdit = async (p) => {
+    if (!qe.name?.trim()) { toast.warn("Product name is required"); return; }
+    setQeSaving(true);
+    const patch = { code: qe.code, name: qe.name.trim(), category: qe.category, unit: qe.unit, cost_price: parseFloat(qe.cost_price) || 0, sale_price: parseFloat(qe.sale_price) || 0, vat_rate: vatRateOf(qe), stock_qty: Math.max(0, parseFloat(qe.stock_qty) || 0), reorder_level: parseFloat(qe.reorder_level) || 0 };
+    const res = await sb.patch(token, "products", p.id, patch);
+    if (res) {
+      const changes = [];
+      if ((parseFloat(p.sale_price) || 0) !== patch.sale_price) changes.push(`Sale ${fmt(p.sale_price || 0)} → ${fmt(patch.sale_price)}`);
+      if ((parseFloat(p.cost_price) || 0) !== patch.cost_price) changes.push(`Cost ${fmt(p.cost_price || 0)} → ${fmt(patch.cost_price)}`);
+      if (String(p.vat_rate ?? "") !== String(patch.vat_rate)) changes.push(`VAT ${p.vat_rate ?? 0}% → ${patch.vat_rate}%`);
+      const qtyDelta = patch.stock_qty - (parseFloat(p.stock_qty) || 0);
+      if (qtyDelta !== 0) changes.push(`Stock ${p.stock_qty || 0} → ${patch.stock_qty}`);
+      if ((p.name || "") !== patch.name) changes.push(`renamed "${p.name}" → "${patch.name}"`);
+      if ((parseFloat(p.reorder_level) || 0) !== patch.reorder_level) changes.push(`Reorder ${p.reorder_level || 0} → ${patch.reorder_level}`);
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, ...patch } : x));
+      logAudit(token, userId, "product_updated", "product", p.id, `Quick edit: ${patch.name}${changes.length ? " · " + changes.join(", ") : ""}`);
+      if (qtyDelta !== 0) logStockMovement(token, { product: p, delta: qtyDelta, balance_after: patch.stock_qty, reason: "manual", ref_type: "manual", note: "Quick edit", userId, userName: profile?.full_name });
+      toast.success(`"${patch.name}" updated`);
+      setQuickEditId(null);
+    } else {
+      toast.error("Couldn't save changes. Please try again.");
+    }
+    setQeSaving(false);
+  };
+
   // ── Archive / reactivate a product (admin only; history is always kept) ──
   const [archivingId, setArchivingId] = useState(null);
   const setProductActive = async (p, active) => {
@@ -62,6 +95,7 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
     setHistory(m); setHistoryLoading(false);
   };
 
+  const canManage = profile?.role === "admin" || profile?.role === "manager";
   const activeProducts = products.filter(p => p.active !== false);
   const archivedCount = products.filter(p => p.active === false).length;
   const lowStock = activeProducts.filter(p => p.stock_qty <= (p.reorder_level || DEFAULT_REORDER));
@@ -218,6 +252,7 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
                 footer={
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {canEdit && <button onClick={(e) => { e.stopPropagation(); openQuickEdit(p); }} aria-label="Quick edit product" title="Quick edit" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#2563eb", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>}
                       {profile?.role === "admin" && (p.active === false
                         ? <button onClick={() => setProductActive(p, true)} disabled={archivingId === p.id} aria-label="Reactivate product" style={{ height: 40, padding: "0 14px", borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#16a34a", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--sans)", flexShrink: 0 }}>Reactivate</button>
                         : <button onClick={() => setProductActive(p, false)} disabled={archivingId === p.id} aria-label="Archive product" title="Archive (make inactive)" style={{ width: 40, height: 40, borderRadius: "var(--rl)", border: "1px solid var(--border)", background: "var(--white)", color: "#8a8580", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>)}
@@ -239,7 +274,7 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
         <div style={{ padding:"8px 16px",fontSize:12,color:"var(--text3)",borderBottom:"1px solid var(--border)" }}>{invSearch ? `${filtered.length} of ${products.length}` : filtered.length} product{filtered.length!==1?"s":""}</div>
         <div className="tw" style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
           <table className="inventory-table" style={{minWidth:480}}>
-            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th>{profile?.role === "admin" && <th></th>}</tr></thead>
+            <thead><tr><th>Code</th><th>Product</th><th>Category</th><th className="hm">Cost</th><th>Sale Price</th><th>VAT</th><th>In Stock</th><th>Status</th>{canManage && <th></th>}</tr></thead>
             <tbody>
               {filtered.map(p => {
                 const isEditing = editingQty[p.id] !== undefined;
@@ -247,7 +282,8 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
                 const isLow = p.stock_qty <= (p.reorder_level || DEFAULT_REORDER);
                 const isOut = (p.stock_qty || 0) === 0;
                 return (
-                  <tr key={p.id} style={isOut ? { background: "rgba(239,68,68,.04)", borderLeft: "3px solid #ef4444" } : isLow ? { background: "rgba(245,158,11,.04)", borderLeft: "3px solid #f59e0b" } : {}}>
+                  <React.Fragment key={p.id}>
+                  <tr style={isOut ? { background: "rgba(239,68,68,.04)", borderLeft: "3px solid #ef4444" } : isLow ? { background: "rgba(245,158,11,.04)", borderLeft: "3px solid #f59e0b" } : {}}>
                     <td className="mono tm" style={{fontSize:12}}>{p.code||"—"}</td>
                     <td style={{fontWeight:500}}><span style={{display:"inline-flex",alignItems:"center",gap:7}}>{p.name}<button onClick={() => openHistory(p)} title="Stock history" style={{border:"none",background:"none",cursor:"pointer",color:"var(--text3)",display:"inline-flex",padding:2}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></button></span></td>
                     <td className="tm">{p.category||"—"}</td>
@@ -279,18 +315,51 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
                       )}
                     </td>
                     <td><span className={"badge "+(p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"b-red":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"b-amber":"b-green")}>{p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)?"Low Stock":p.stock_qty<=(p.reorder_level||DEFAULT_REORDER)*2?"Running Low":"In Stock"}</span></td>
-                    {profile?.role === "admin" && (p.active === false
-                      ? <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, true)} disabled={archivingId===p.id} title="Reactivate product" aria-label="Reactivate product" style={{ padding:"4px 10px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#16a34a",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"var(--sans)" }}>Reactivate</button></td>
-                      : <td style={{textAlign:"right"}}><button onClick={() => setProductActive(p, false)} disabled={archivingId===p.id} title="Archive (make inactive)" aria-label="Archive product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#8a8580",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#f5f5f4";e.currentTarget.style.color="#dc2626";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.color="#8a8580";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button></td>)}
+                    {canManage && (
+                      <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
+                        <button onClick={() => quickEditId === p.id ? setQuickEditId(null) : openQuickEdit(p)} title="Quick edit — price, stock, details" aria-label="Quick edit product" style={{ width:26,height:26,borderRadius:6,border:"1px solid " + (quickEditId===p.id ? "#2563eb" : "var(--border)"),background: quickEditId===p.id ? "#eff6ff" : "var(--white)",color: quickEditId===p.id ? "#2563eb" : "#8a8580",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",marginRight: profile?.role === "admin" ? 6 : 0 }} onMouseEnter={e=>{e.currentTarget.style.color="#2563eb";e.currentTarget.style.borderColor="#2563eb";}} onMouseLeave={e=>{if(quickEditId!==p.id){e.currentTarget.style.color="#8a8580";e.currentTarget.style.borderColor="var(--border)";}}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        {profile?.role === "admin" && (p.active === false
+                          ? <button onClick={() => setProductActive(p, true)} disabled={archivingId===p.id} title="Reactivate product" aria-label="Reactivate product" style={{ padding:"4px 10px",borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#16a34a",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"var(--sans)" }}>Reactivate</button>
+                          : <button onClick={() => setProductActive(p, false)} disabled={archivingId===p.id} title="Archive (make inactive)" aria-label="Archive product" style={{ width:26,height:26,borderRadius:6,border:"1px solid var(--border)",background:"var(--white)",color:"#8a8580",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center" }} onMouseEnter={e=>{e.currentTarget.style.background="#f5f5f4";e.currentTarget.style.color="#dc2626";e.currentTarget.style.borderColor="#dc2626";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--white)";e.currentTarget.style.color="#8a8580";e.currentTarget.style.borderColor="var(--border)";}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>)}
+                      </td>
+                    )}
                   </tr>
+                  {quickEditId === p.id && (
+                    <tr>
+                      <td colSpan={canManage ? 9 : 8} style={{ background: "#faf9f8", borderLeft: "3px solid #dd2b0f", padding: "14px 16px" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".8px", color: "var(--text3)", marginBottom: 10 }}>Quick Edit — {p.name}</div>
+                        <ProductQuickEditForm qe={qe} setQe={setQe} saving={qeSaving} onSave={() => saveQuickEdit(p)} onCancel={() => setQuickEditId(null)} />
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
-              {filtered.length===0&&<tr><td colSpan={profile?.role === "admin" ? 9 : 8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
+              {filtered.length===0&&<tr><td colSpan={canManage ? 9 : 8} className="empty">{invSearch ? `No products found for "${invSearch}"` : "No products yet"}</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
       )}
+
+      {quickEditId && isMobile() && (() => { const qp = products.find(x => x.id === quickEditId); return qp ? (
+        <ModalPortal>
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setQuickEditId(null)} style={{ alignItems: "center" }}>
+            <div style={{ background: "var(--white)", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 8px 40px rgba(0,0,0,.12)", overflow: "hidden", borderTop: "3px solid #dd2b0f", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+              <div style={{ background: "#201e1d", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Quick Edit</div>
+                  <div style={{ fontSize: 12, color: "#8aa0b8", marginTop: 2 }}>{qp.name}</div>
+                </div>
+                <button onClick={() => setQuickEditId(null)} style={{ background: "none", border: "none", color: "#8aa0b8", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ padding: 20, overflowY: "auto" }}>
+                <ProductQuickEditForm qe={qe} setQe={setQe} saving={qeSaving} onSave={() => saveQuickEdit(qp)} onCancel={() => setQuickEditId(null)} />
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      ) : null; })()}
 
       {historyProduct && (
         <ModalPortal>
@@ -332,3 +401,27 @@ export function Inventory({ products, setProducts, invoices = [], token, userId,
     </div>
   );
 }
+
+// ── Quick edit form (shared: desktop inline row + mobile sheet) ──
+function ProductQuickEditForm({ qe, setQe, onSave, onCancel, saving }) {
+  return (
+    <div onKeyDown={e => { if (e.key === "Enter" && e.target.tagName !== "SELECT" && e.target.tagName !== "BUTTON") onSave(); if (e.key === "Escape") onCancel(); }}>
+      <div className="fg3">
+        <div className="fgrp"><label>Name *</label><input value={qe.name} onChange={e => setQe(v => ({ ...v, name: e.target.value }))} autoFocus /></div>
+        <div className="fgrp"><label>Code</label><input value={qe.code} onChange={e => setQe(v => ({ ...v, code: e.target.value }))} placeholder="SKU001" /></div>
+        <div className="fgrp"><label>Category</label><input value={qe.category} onChange={e => setQe(v => ({ ...v, category: e.target.value }))} placeholder="e.g. Vapes, Pods..." /></div>
+        <div className="fgrp"><label>Unit</label><select value={qe.unit} onChange={e => setQe(v => ({ ...v, unit: e.target.value }))}><option>unit</option><option>pack</option><option>box</option><option>kg</option><option>litre</option></select></div>
+        <div className="fgrp"><label>Cost Price (£)</label><input type="number" step="0.01" min="0" value={qe.cost_price} onChange={e => setQe(v => ({ ...v, cost_price: e.target.value }))} placeholder="0.00" /></div>
+        <div className="fgrp"><label>Sale Price (£)</label><input type="number" step="0.01" min="0" value={qe.sale_price} onChange={e => setQe(v => ({ ...v, sale_price: e.target.value }))} placeholder="0.00" /></div>
+        <div className="fgrp"><label>VAT Rate</label><select value={qe.vat_rate} onChange={e => setQe(v => ({ ...v, vat_rate: e.target.value }))}><option value="20">20% Standard</option><option value="5">5% Reduced</option><option value="0">0% Exempt</option></select></div>
+        <div className="fgrp"><label>Stock Qty</label><input type="number" min="0" value={qe.stock_qty} onChange={e => setQe(v => ({ ...v, stock_qty: e.target.value }))} placeholder="0" /></div>
+        <div className="fgrp"><label>Reorder Level</label><input type="number" min="0" value={qe.reorder_level} onChange={e => setQe(v => ({ ...v, reorder_level: e.target.value }))} placeholder="0" /></div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+        <button className="btn bo bsm" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn bp bsm" onClick={onSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
+      </div>
+    </div>
+  );
+}
+
