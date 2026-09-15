@@ -23,7 +23,7 @@ export async function nextDocNumber(token, { prefix, table, column, width = 4 })
 
   // 2) Fallback: current max + 1.
   try {
-    const rows = await sb.get(token, table, `select=${column}&order=${column}.desc&limit=1`);
+    const rows = await sb.get(token, table, `select=${column}&${column}=like.${prefix}-*&order=${column}.desc&limit=1`);
     let n = 1;
     if (Array.isArray(rows) && rows[0] && rows[0][column]) {
       const last = parseInt(String(rows[0][column]).replace(/\D/g, ""), 10);
