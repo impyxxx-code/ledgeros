@@ -33,9 +33,15 @@ prospect-database/
 │   ├── merge_dedupe.py          ← raw batches → master.json + master.csv
 │   └── build_workbook.py        ← master → 13-sheet XLSX
 └── output/
-    ├── master.csv               ← flat Excel-compatible CSV
+    ├── master.csv               ← flat Excel-compatible CSV (all fields)
+    ├── outreach_plan.csv        ← contactable prospects, WhatsApp-first then email
+    ├── prospects_directory.html ← browsable/filterable directory (open in a browser)
     └── ARKHAM_RETAIL_prospects_<region>.xlsx
 ```
+
+`outreach_plan.csv` lists every prospect with a direct contact channel, ordered
+WhatsApp (UK mobile → `wa.me` click-to-chat link) first, then email, then
+landline. Regenerate it alongside the workbook after each merge.
 
 ## Pipeline
 
