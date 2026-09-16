@@ -88,6 +88,10 @@ def norm_domain(url: str) -> str:
     return u.split("/")[0].split("?")[0]
 
 
+def norm_addr(s: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).split())
+
+
 def canon_category(raw: str) -> str:
     raw = (raw or "").strip()
     if raw in CATEGORIES:
@@ -196,6 +200,13 @@ def dedupe(records):
                 matched = m; break
             if np_ and np_ == m_np and nn and m_nn and similar(nn, m_nn) > 0.85 and not multi_site:
                 matched = m; break
+            # same multi-site chain, same town, same/contained street address
+            # (two collectors often record one branch with different name suffixes)
+            if multi_site and norm_name(rec.get("parent_company")) == norm_name(m.get("parent_company")) \
+                    and (rec.get("town") or "").lower() == (m.get("town") or "").lower():
+                a, b = norm_addr(rec.get("address1")), norm_addr(m.get("address1"))
+                if a and b and (a in b or b in a):
+                    matched = m; break
             if nn and nn == m_nn and rec.get("town") and m.get("town") \
                     and rec["town"].lower() == m["town"].lower() and not (npc and m_npc) and not multi_site:
                 matched = m; break

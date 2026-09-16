@@ -102,60 +102,89 @@ def rng(colname):
     return f"{AP}!${L}$2:${L}${last}"
 
 
+# each metric: (label, live formula, python snapshot of the same criterion)
 metrics = [
-    ("TOTAL PROSPECTS", f"=COUNTA({rng('Record ID')})"),
-    ("PHONE AVAILABLE", f"=COUNTIF({rng('Main Phone')},\"?*\")"),
-    ("EMAIL AVAILABLE", f"=SUMPRODUCT(--(({rng('General Email')}<>\"\")+({rng('Sales Email')}<>\"\")+({rng('Purchasing Email')}<>\"\")>0))"),
-    ("WEBSITE AVAILABLE", f"=COUNTIF({rng('Website')},\"?*\")"),
-    ("PHONE VERIFIED (OFFICIAL SITE)", f"=COUNTIF({rng('Phone Status')},\"Verified on official website\")"),
-    ("EMAIL PUBLICLY LISTED", f"=COUNTIF({rng('Email Status')},\"Publicly Listed\")+COUNTIF({rng('Email Status')},\"Verified\")"),
-    ("COMPANIES HOUSE VERIFIED", f"=COUNTIF({rng('Companies House Checked')},\"Yes\")"),
-    ("REQUIRES VERIFICATION", f"=COUNTIF({rng('Verification Status')},\"Requires Verification\")"),
-    ("DUPLICATE REVIEW REQUIRED", f"=COUNTIF({rng('Duplicate Review')},\"?*\")"),
-    ("MULTI-SITE LOCATIONS", f"=COUNTIF({rng('Parent Company')},\"?*\")"),
-    ("HIGH PRIORITY LEADS", f"=COUNTIF({rng('Lead Priority')},\"High\")"),
-    ("MEDIUM PRIORITY LEADS", f"=COUNTIF({rng('Lead Priority')},\"Medium\")"),
+    ("TOTAL PROSPECTS", f"=COUNTA({rng('Record ID')})",
+     sum(1 for x in ROWS if x["Record ID"])),
+    ("PHONE AVAILABLE", f"=COUNTIF({rng('Main Phone')},\"?*\")",
+     sum(1 for x in ROWS if x["Main Phone"])),
+    ("EMAIL AVAILABLE", f"=SUMPRODUCT(--(({rng('General Email')}<>\"\")+({rng('Sales Email')}<>\"\")+({rng('Purchasing Email')}<>\"\")>0))",
+     sum(1 for x in ROWS if x["General Email"] or x["Sales Email"] or x["Purchasing Email"])),
+    ("WEBSITE AVAILABLE", f"=COUNTIF({rng('Website')},\"?*\")",
+     sum(1 for x in ROWS if x["Website"])),
+    ("PHONE VERIFIED (OFFICIAL SITE)", f"=COUNTIF({rng('Phone Status')},\"Verified on official website\")",
+     sum(1 for x in ROWS if x["Phone Status"] == "Verified on official website")),
+    ("EMAIL PUBLICLY LISTED", f"=COUNTIF({rng('Email Status')},\"Publicly Listed\")+COUNTIF({rng('Email Status')},\"Verified\")",
+     sum(1 for x in ROWS if x["Email Status"] in ("Publicly Listed", "Verified"))),
+    ("COMPANIES HOUSE VERIFIED", f"=COUNTIF({rng('Companies House Checked')},\"Yes\")",
+     sum(1 for x in ROWS if x["Companies House Checked"] == "Yes")),
+    ("REQUIRES VERIFICATION", f"=COUNTIF({rng('Verification Status')},\"Requires Verification\")",
+     sum(1 for x in ROWS if x["Verification Status"] == "Requires Verification")),
+    ("DUPLICATE REVIEW REQUIRED", f"=COUNTIF({rng('Duplicate Review')},\"?*\")",
+     sum(1 for x in ROWS if x["Duplicate Review"])),
+    ("MULTI-SITE LOCATIONS", f"=COUNTIF({rng('Parent Company')},\"?*\")",
+     sum(1 for x in ROWS if x["Parent Company"])),
+    ("HIGH PRIORITY LEADS", f"=COUNTIF({rng('Lead Priority')},\"High\")",
+     sum(1 for x in ROWS if x["Lead Priority"] == "High")),
+    ("MEDIUM PRIORITY LEADS", f"=COUNTIF({rng('Lead Priority')},\"Medium\")",
+     sum(1 for x in ROWS if x["Lead Priority"] == "Medium")),
 ]
 r = 5
 dash.cell(row=r, column=2, value="KEY METRICS").font = Font(name="Arial", bold=True, size=11)
-for i, (label, formula) in enumerate(metrics):
+dash.cell(row=r, column=3, value="LIVE").font = Font(name="Arial", bold=True, size=9, color="808080")
+dash.cell(row=r, column=4, value=f"SNAPSHOT {TODAY}").font = Font(name="Arial", bold=True, size=9, color="808080")
+for i, (label, formula, snap) in enumerate(metrics):
     rr = r + 1 + i
     lc = dash.cell(row=rr, column=2, value=label)
     vc = dash.cell(row=rr, column=3, value=formula)
+    sc = dash.cell(row=rr, column=4, value=snap)
     lc.font = BODY_FONT
     vc.font = Font(name="Arial", bold=True, size=10)
+    sc.font = Font(name="Arial", size=10, color="808080")
     lc.border = BORDER
     vc.border = BORDER
-    vc.number_format = "#,##0"
+    sc.border = BORDER
+    vc.number_format = sc.number_format = "#,##0"
     if i % 2 == 0:
         lc.fill = ALT_FILL
         vc.fill = ALT_FILL
+        sc.fill = ALT_FILL
 
 cats = ["Vape Shop", "Convenience Store", "Petrol Station / Forecourt", "Off-Licence",
         "Tobacco Specialist", "Newsagent", "Independent Supermarket",
         "Smoke / Shisha Shop", "Cash & Carry", "Other Relevant Retail"]
-dash.cell(row=r, column=5, value="BY CATEGORY").font = Font(name="Arial", bold=True, size=11)
+dash.cell(row=r, column=6, value="BY CATEGORY").font = Font(name="Arial", bold=True, size=11)
 for i, cat in enumerate(cats):
     rr = r + 1 + i
-    lc = dash.cell(row=rr, column=5, value=cat)
-    vc = dash.cell(row=rr, column=6, value=f"=COUNTIF({rng('Business Category')},\"{cat}\")")
+    lc = dash.cell(row=rr, column=6, value=cat)
+    vc = dash.cell(row=rr, column=7, value=f"=COUNTIF({rng('Business Category')},\"{cat}\")")
+    sc = dash.cell(row=rr, column=8, value=sum(1 for x in ROWS if x["Business Category"] == cat))
     lc.font, vc.font = BODY_FONT, Font(name="Arial", bold=True, size=10)
-    lc.border = vc.border = BORDER
+    sc.font = Font(name="Arial", size=10, color="808080")
+    lc.border = vc.border = sc.border = BORDER
     if i % 2 == 0:
-        lc.fill = vc.fill = ALT_FILL
+        lc.fill = vc.fill = sc.fill = ALT_FILL
 
 towns = sorted({row["Town / City"] for row in ROWS if row["Town / City"]})
-dash.cell(row=r, column=8, value="BY TOWN / CITY").font = Font(name="Arial", bold=True, size=11)
-for i, t in enumerate(towns[:28]):
+dash.cell(row=r, column=10, value="BY TOWN / CITY").font = Font(name="Arial", bold=True, size=11)
+for i, t in enumerate(towns[:34]):
     rr = r + 1 + i
-    lc = dash.cell(row=rr, column=8, value=t)
-    vc = dash.cell(row=rr, column=9, value=f"=COUNTIF({rng('Town / City')},\"{t}\")")
+    lc = dash.cell(row=rr, column=10, value=t)
+    vc = dash.cell(row=rr, column=11, value=f"=COUNTIF({rng('Town / City')},\"{t}\")")
+    sc = dash.cell(row=rr, column=12, value=sum(1 for x in ROWS if x["Town / City"] == t))
     lc.font, vc.font = BODY_FONT, Font(name="Arial", bold=True, size=10)
-    lc.border = vc.border = BORDER
+    sc.font = Font(name="Arial", size=10, color="808080")
+    lc.border = vc.border = sc.border = BORDER
     if i % 2 == 0:
-        lc.fill = vc.fill = ALT_FILL
+        lc.fill = vc.fill = sc.fill = ALT_FILL
 
-for col, w in {"A": 3, "B": 34, "C": 12, "D": 3, "E": 28, "F": 10, "G": 3, "H": 24, "I": 10}.items():
+dash.cell(row=r + 14, column=2,
+          value="LIVE column recalculates from ALL PROSPECTS when opened in Excel/Sheets; "
+                "SNAPSHOT is the static count at generation time. If they differ, the data was edited."
+          ).font = Font(name="Arial", italic=True, size=9, color="808080")
+
+for col, w in {"A": 3, "B": 34, "C": 10, "D": 14, "E": 3, "F": 28, "G": 8, "H": 12,
+               "I": 3, "J": 24, "K": 8, "L": 12}.items():
     dash.column_dimensions[col].width = w
 
 # ---------------- ALL PROSPECTS ----------------
@@ -175,7 +204,7 @@ sheets = [
     ("SUPERMARKETS", lambda r: r["Business Category"] in ("Independent Supermarket", "Cash & Carry")),
     ("CHAINS - MULTI-SITE", lambda r: bool(r["Parent Company"]) or r["Independent / Chain"] in
         ("Multi-Site Independent", "Regional Chain", "National Chain")),
-    ("MISSING CONTACT INFO", lambda r: not r["Main Phone"] or not (r["General Email"] or r["Sales Email"] or r["Purchasing Email"])),
+    ("MISSING CONTACT INFO", lambda r: not r["Main Phone"] and not (r["General Email"] or r["Sales Email"] or r["Purchasing Email"])),
     ("DUPLICATE REVIEW", lambda r: bool(r["Duplicate Review"])),
 ]
 for name, pred in sheets:
