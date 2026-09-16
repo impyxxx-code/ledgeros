@@ -271,7 +271,7 @@
   "number_of_locations": null,
   "parent_company": "A G Parfett & Sons Ltd",
   "website": "https://www.parfetts.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/pages/parfetts-cash-carry-Halifax/253069908059088",
   "instagram": "",
   "other_social": "",
   "address1": "Shay Lane",
@@ -318,6 +318,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "postcode HX3 6RA cross-check"
+   },
+   {
+    "url": "https://www.facebook.com/pages/parfetts-cash-carry-Halifax/253069908059088",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
@@ -345,11 +351,11 @@
   "address2": "",
   "town": "Batley",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "WF17 8FU",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01924 950730",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -385,6 +391,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "store listing cross-check"
+   },
+   {
+    "url": "https://www.zabihah.com/restaurants/0f599a87-6f7b-4975-b72e-9dc85109c413/abu-bakr-supermarket-batley-west-yorkshire",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone"
    }
   ],
   "website_checked": true,
@@ -412,7 +424,7 @@
   "address2": "Beeston",
   "town": "Leeds",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "LS11 5HY",
   "region": "Yorkshire & Humber",
   "country": "England",
   "phone": "",
@@ -452,13 +464,19 @@
     "type": "Other",
     "date": "2026-09-16",
     "info_obtained": "store list including 259 Dewsbury Road (via search results)"
+   },
+   {
+    "url": "https://find-open.co.uk/leeds/abubakr-supermarket-2223114",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode"
    }
   ],
   "website_checked": true,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "duplicate_review": "Duplicate Review Required",
   "record_id": "WY-0007",
   "location_id": "ABUBAKRGRO-02"
@@ -709,7 +727,7 @@
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
-  "sales_email": "",
+  "sales_email": "sales@cheapasmokes.com",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -741,11 +759,17 @@
     "type": "Yell",
     "date": "2026-09-16",
     "info_obtained": "listing confirmation"
+   },
+   {
+    "url": "https://www.cheapasmokes.com/pages/contact-us",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email (sales)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0011",
@@ -771,8 +795,8 @@
   "postcode": "LS1 6LQ",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "0113 244 5556",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -802,6 +826,12 @@
     "type": "News / Trade Press",
     "date": "2026-09-16",
     "info_obtained": "opening announcement, Thornton's Arcade location (via search results)"
+   },
+   {
+    "url": "https://www.cgarsltd.co.uk/cigar-shops/CGars_Leeds_1.html",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "phone"
    }
   ],
   "website_checked": false,
@@ -896,7 +926,7 @@
   "address2": "Dewsbury Road",
   "town": "Leeds",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "LS11 8LU",
   "region": "Yorkshire & Humber",
   "country": "England",
   "phone": "0113 228 6446",
@@ -924,6 +954,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "name, unit addresses, phone, website (via search results)"
+   },
+   {
+    "url": "https://www.misterwhat.co.uk/company/2740902-gt-news-leeds",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode"
    }
   ],
   "website_checked": false,
@@ -1145,7 +1181,7 @@
   "country": "England",
   "phone": "01274 668800",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "mssbradford01@gmail.com",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -1174,11 +1210,17 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address Florence Street BD3 8EX, phone (search snippet)"
+   },
+   {
+    "url": "https://www.facebook.com/p/Manchester-SuperStore-Bradford-100066139307711/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "email"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0018",
@@ -1204,8 +1246,8 @@
   "postcode": "WF17 7PJ",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01924 939128",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -1235,13 +1277,19 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "website URL seen in search results (fetch blocked)"
+   },
+   {
+    "url": "https://m.yelp.com/biz/mullaco-foods-batley",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "phone"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0019",
   "location_id": "MULLACO-01"
  },
@@ -1255,7 +1303,7 @@
   "number_of_locations": 3,
   "parent_company": "Mullaco",
   "website": "https://mullaco.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/mullaco.supermarket/",
   "instagram": "",
   "other_social": "",
   "address1": "",
@@ -1290,13 +1338,19 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "minimarket postcode WF12 9LX"
+   },
+   {
+    "url": "https://www.facebook.com/mullaco.supermarket/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0020",
   "location_id": "MULLACO-02"
  },
@@ -1383,7 +1437,7 @@
   "number_of_locations": null,
   "parent_company": "SMKD",
   "website": "https://smkd.com/vape-shop-locator/smkd-halifax-vape-shop-market-street/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/SmkdVapeShop/",
   "instagram": "",
   "other_social": "",
   "address1": "31-32 Market Street",
@@ -1395,7 +1449,7 @@
   "country": "England",
   "phone": "",
   "phone_status": "Not Found",
-  "email": "",
+  "email": "info@smkd.com",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -1428,9 +1482,9 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0022",
   "location_id": "SMKD-01"
  },
@@ -1444,7 +1498,7 @@
   "number_of_locations": null,
   "parent_company": "SMKD",
   "website": "https://smkd.com/vape-shop-locator/smkd-hebden-bridge-vape-shop-west-end/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/SmkdVapeShop/",
   "instagram": "",
   "other_social": "",
   "address1": "",
@@ -1485,13 +1539,19 @@
     "type": "Companies House",
     "date": "2026-09-16",
     "info_obtained": "company number, status, incorporation date, registered office (via search snippet)"
+   },
+   {
+    "url": "https://www.facebook.com/SmkdVapeShop/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (brand facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": true,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0023",
   "location_id": "SMKD-02"
  },
@@ -1505,7 +1565,7 @@
   "number_of_locations": null,
   "parent_company": "SMKD",
   "website": "https://smkd.com",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/SmkdVapeShop/",
   "instagram": "",
   "other_social": "",
   "address1": "Ridings Shopping Centre",
@@ -1558,6 +1618,12 @@
     "type": "Companies House",
     "date": "2026-09-16",
     "info_obtained": "company number, status, incorporation date, registered office (via search snippet)"
+   },
+   {
+    "url": "https://www.facebook.com/SmkdVapeShop/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (brand facebook)"
    }
   ],
   "website_checked": false,
@@ -1666,7 +1732,7 @@
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
-  "sales_email": "",
+  "sales_email": "wholesale@singkeefoods.co.uk",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -1698,11 +1764,17 @@
     "type": "Companies House",
     "date": "2026-09-16",
     "info_obtained": "registered name and company number (via search results)"
+   },
+   {
+    "url": "https://singkeefoods.com/gb/contact-us",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email (wholesale)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
   "data_confidence": "Medium",
   "record_id": "WY-0026",
@@ -1795,8 +1867,8 @@
   "postcode": "WF10 4RS",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01977 278353",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Not Found",
@@ -2124,8 +2196,8 @@
   "postcode": "HX1 1TA",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01422 320223",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -2155,6 +2227,12 @@
     "type": "Yell",
     "date": "2026-09-16",
     "info_obtained": "address, postcode"
+   },
+   {
+    "url": "https://directory.birminghampost.co.uk/company/9f1f3f6a595c8b843e37df17c5426f35",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "phone"
    }
   ],
   "website_checked": false,
@@ -2182,7 +2260,7 @@
   "address2": "Gledhow",
   "town": "Leeds",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "LS8 4BU",
   "region": "Yorkshire & Humber",
   "country": "England",
   "phone": "",
@@ -2216,13 +2294,19 @@
     "type": "Other",
     "date": "2026-09-16",
     "info_obtained": "group profile referencing Leeds BP Gledhow Service Station"
+   },
+   {
+    "url": "https://www.192.com/atoz/business/leeds-ls8/petrol-service-stations/b-p-gledhow-service-station/b2cc5ed266e9de6ac0fa2b011faef822e624c3ac/ml/",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0034",
   "location_id": "VALLIFOREC-01"
  },
@@ -2303,7 +2387,7 @@
   "number_of_locations": 7,
   "parent_company": "Vaparama",
   "website": "https://www.vaparama.co.uk",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/p/Vaparama-100063743672150/",
   "instagram": "",
   "other_social": "",
   "address1": "73-75 Station Lane",
@@ -2317,8 +2401,8 @@
   "phone_status": "Not Found",
   "email": "",
   "email_type": "",
-  "email_status": "Not Found",
-  "sales_email": "",
+  "email_status": "Publicly Listed",
+  "sales_email": "shop@vaparama.co.uk",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -2344,11 +2428,17 @@
     "type": "Companies House",
     "date": "2026-09-16",
     "info_obtained": "parent company details (via search snippet)"
+   },
+   {
+    "url": "https://www.vaparama.co.uk/contact/",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email (brand), social (brand facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
   "data_confidence": "Medium",
   "record_id": "WY-0036",
@@ -2437,7 +2527,7 @@
   "number_of_locations": 7,
   "parent_company": "Vaparama",
   "website": "https://www.vaparama.co.uk",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/p/Vaparama-100063743672150/",
   "instagram": "",
   "other_social": "",
   "address1": "Britannia House, 31 Warrengate",
@@ -2451,8 +2541,8 @@
   "phone_status": "Not Found",
   "email": "",
   "email_type": "",
-  "email_status": "Not Found",
-  "sales_email": "",
+  "email_status": "Publicly Listed",
+  "sales_email": "shop@vaparama.co.uk",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -2478,13 +2568,19 @@
     "type": "Companies House",
     "date": "2026-09-16",
     "info_obtained": "parent company details (via search snippet)"
+   },
+   {
+    "url": "https://www.vaparama.co.uk/contact/",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email (brand), social (brand facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0038",
   "location_id": "VAPARAMA-03"
  },
@@ -2505,7 +2601,7 @@
   "address2": "",
   "town": "Castleford",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "WF10 1BA",
   "region": "Yorkshire & Humber",
   "country": "England",
   "phone": "01977 516062",
@@ -2633,11 +2729,11 @@
   "address2": "",
   "town": "Bradford",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "BD4 9QJ",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01274 270773",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -2673,7 +2769,7 @@
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0041",
   "location_id": "WEAREVAPES-01"
  },
@@ -2821,7 +2917,7 @@
   "country": "England",
   "phone": "01274 572661",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "info@worldwidefoods.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -2850,11 +2946,17 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address 607 Great Horton Road BD7 4ED, phone (search snippet)"
+   },
+   {
+    "url": "https://worldwidefoods.co.uk/contact-us/",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
   "data_confidence": "Medium",
   "record_id": "WY-0044",
@@ -3376,7 +3478,7 @@
   "country": "England",
   "phone": "01535 213920",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "info@azeemsvapeshop.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -3415,7 +3517,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
   "data_confidence": "Medium",
   "record_id": "WY-0053",
@@ -3724,8 +3826,8 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "http://www.cutpricebarrys.co.uk/",
-  "facebook": "",
-  "instagram": "",
+  "facebook": "https://www.facebook.com/p/Barrys-Cash-Carry-61550239916577/",
+  "instagram": "https://www.instagram.com/barryscashandcarry/",
   "other_social": "",
   "address1": "163 King Cross Road",
   "address2": "",
@@ -3777,6 +3879,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address, email"
+   },
+   {
+    "url": "https://www.instagram.com/barryscashandcarry/",
+    "type": "Instagram",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook, instagram)"
    }
   ],
   "website_checked": false,
@@ -3797,19 +3905,19 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.batleybargaincentre.com/",
-  "facebook": "",
-  "instagram": "",
+  "facebook": "https://www.facebook.com/p/Batley-bargain-centre-100089268260696/",
+  "instagram": "https://www.instagram.com/batleybargainscentre/",
   "other_social": "",
   "address1": "",
   "address2": "",
   "town": "Batley",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "WF17 5DA",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
-  "email": "",
+  "phone": "01924 475600",
+  "phone_status": "Verified directory",
+  "email": "javorange@yahoo.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -3832,13 +3940,19 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "business name, town, product mix (from search result snippet)"
+   },
+   {
+    "url": "https://www.misterwhat.co.uk/company/550608-batley-bargain-centre-batley",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone, email, social (facebook, instagram)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0060",
   "location_id": "WY-0060-01"
  },
@@ -3852,8 +3966,8 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.beerritz.co.uk/",
-  "facebook": "",
-  "instagram": "",
+  "facebook": "https://www.facebook.com/beerritz/",
+  "instagram": "https://www.instagram.com/beerritzleeds/",
   "other_social": "https://x.com/beerritzleeds",
   "address1": "14 Weetwood Lane",
   "address2": "Far Headingley",
@@ -3867,7 +3981,7 @@
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
-  "sales_email": "",
+  "sales_email": "sales@beerritz.co.uk",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -3903,7 +4017,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0061",
@@ -4578,18 +4692,18 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.casparsbottleshop.com/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/casparsbottleshop/",
   "instagram": "",
   "other_social": "",
   "address1": "65 Potternewton Lane",
   "address2": "Chapel Allerton",
   "town": "Leeds",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "LS7 3LW",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "0113 237 4554",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -4619,6 +4733,12 @@
     "type": "News / Trade Press",
     "date": "2026-09-16",
     "info_obtained": "listing among Leeds bottle shops (via search results)"
+   },
+   {
+    "url": "https://leeds.cylex-uk.co.uk/company/caspar's-bottle-shop-26660090.html",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone, social (facebook)"
    }
   ],
   "website_checked": false,
@@ -4777,8 +4897,8 @@
   "postcode": "BD6 1PQ",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01274 723454",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Not Found",
@@ -4808,6 +4928,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address 48 Holroyd Hill BD6 1PQ (search snippet)"
+   },
+   {
+    "url": "https://www.locaji.co.uk/west-yorkshire/bradford/costcutter/1616/",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "phone"
    }
   ],
   "website_checked": false,
@@ -4838,9 +4964,9 @@
   "postcode": "HX2 7NB",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
-  "email": "",
+  "phone": "01422 835350",
+  "phone_status": "Verified directory",
+  "email": "cotehillhalifax@gmail.com",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -4879,7 +5005,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0077",
@@ -5369,9 +5495,9 @@
   "postcode": "WF1 4JZ",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
-  "email": "",
+  "phone": "01924 781869",
+  "phone_status": "Verified directory",
+  "email": "Hoa1@hotmail.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -5416,7 +5542,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": true,
   "data_confidence": "Medium",
   "record_id": "WY-0086",
@@ -5487,7 +5613,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://getplugged.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/p/Get-Plugged-61559687350403/",
   "instagram": "",
   "other_social": "",
   "address1": "Bradford Road",
@@ -5528,13 +5654,19 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "website URL seen in search results (fetch blocked)"
+   },
+   {
+    "url": "https://www.facebook.com/p/Get-Plugged-61559687350403/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0088",
   "location_id": "WY-0088-01"
  },
@@ -5768,7 +5900,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://halalsweets.company.site/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/halalsweetscompany/",
   "instagram": "",
   "other_social": "",
   "address1": "",
@@ -5780,7 +5912,7 @@
   "country": "England",
   "phone": "",
   "phone_status": "Not Found",
-  "email": "",
+  "email": "support@halalsweetscompany.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -5803,13 +5935,19 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "business description, Bradford base (search snippet; fetch blocked)"
+   },
+   {
+    "url": "https://halalsweetscompany.co.uk/",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email, social (facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0093",
   "location_id": "WY-0093-01"
  },
@@ -6001,11 +6139,11 @@
   "address2": "",
   "town": "South Elmsall",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "WF9 2AL",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01977 647969",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -6035,13 +6173,19 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "directory listing cross-check"
+   },
+   {
+    "url": "https://find-open.co.uk/south-elmsall/house-of-vapour-1803096",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0097",
   "location_id": "WY-0097-01"
  },
@@ -6178,7 +6322,7 @@
   "parent_company": "",
   "website": "https://www.javidsupermarket.co.uk/",
   "facebook": "",
-  "instagram": "",
+  "instagram": "https://www.instagram.com/javidsupermarket/",
   "other_social": "",
   "address1": "177-179 Bradford Road",
   "address2": "Fartown",
@@ -6224,6 +6368,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "phone 01484 517411"
+   },
+   {
+    "url": "https://www.instagram.com/javidsupermarket/",
+    "type": "Instagram",
+    "date": "2026-09-16",
+    "info_obtained": "social (instagram)"
    }
   ],
   "website_checked": false,
@@ -6323,7 +6473,7 @@
   "country": "England",
   "phone": "0113 277 5757",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "info@kasabeeston.com",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -6362,7 +6512,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0102",
@@ -6680,7 +6830,7 @@
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
-  "sales_email": "",
+  "sales_email": "sales@latitudewine.co.uk",
   "purchasing_email": "",
   "contact_name": "",
   "contact_position": "",
@@ -6706,11 +6856,17 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "website confirmation (via search results; direct fetch blocked by proxy)"
+   },
+   {
+    "url": "https://latitudewine.co.uk/pages/contact-us",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email (sales)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0108",
@@ -7081,11 +7237,11 @@
   "address2": "Ravensthorpe",
   "town": "Dewsbury",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "WF13 3JE",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01924 461300",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Not Found",
@@ -7109,13 +7265,19 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "store existence and area (symbol group locator, seen in search results)"
+   },
+   {
+    "url": "https://directory.gazettelive.co.uk/company/999b46611b8a8afc4d77d779e9c8dcf7",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0115",
   "location_id": "WY-0115-01"
  },
@@ -7240,7 +7402,7 @@
   "parent_company": "",
   "website": "https://martinez.co.uk/",
   "facebook": "",
-  "instagram": "",
+  "instagram": "https://www.instagram.com/martinezwines/",
   "other_social": "https://x.com/martinezwines",
   "address1": "35 The Grove",
   "address2": "",
@@ -7280,6 +7442,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address cross-check (search result)"
+   },
+   {
+    "url": "https://www.instagram.com/martinezwines/",
+    "type": "Instagram",
+    "date": "2026-09-16",
+    "info_obtained": "social (instagram)"
    }
   ],
   "website_checked": false,
@@ -7539,11 +7707,11 @@
   "address2": "Boothtown",
   "town": "Halifax",
   "county": "West Yorkshire",
-  "postcode": "",
+  "postcode": "HX3 6EE",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "07843 846154",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Website Found",
@@ -7573,13 +7741,19 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "location area (Boothtown, Halifax)"
+   },
+   {
+    "url": "https://www.yelp.com/biz/mount-vapes-halifax-halifax",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "postcode, phone"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
   "email_checked": false,
   "companies_house_checked": false,
-  "data_confidence": "Low",
+  "data_confidence": "Medium",
   "record_id": "WY-0123",
   "location_id": "WY-0123-01"
  },
@@ -7654,7 +7828,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.nisalocally.co.uk/stores/west-yorkshire/knottingley",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/NisaLocalPinewoodPlaceKnottingley/",
   "instagram": "",
   "other_social": "",
   "address1": "12-14 Pinewood Place",
@@ -7701,6 +7875,12 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "store finder presence (seen in search results; fetch blocked)"
+   },
+   {
+    "url": "https://www.facebook.com/NisaLocalPinewoodPlaceKnottingley/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
@@ -7959,7 +8139,7 @@
   "country": "England",
   "phone": "01274 739500",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "info@pakeezah.com",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -7988,11 +8168,17 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address 91 Edderthorpe Street BD3 9UD (search snippet)"
+   },
+   {
+    "url": "https://www.hotfrog.co.uk/company/1097305308241920/pakeezah-superstore/bradford/beverages",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "email"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0130",
@@ -8008,7 +8194,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.phantomvapes.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/61578393599194/",
   "instagram": "",
   "other_social": "",
   "address1": "17 Slaithwaite Road",
@@ -8043,6 +8229,12 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "address, postcode (from search result snippet of own site)"
+   },
+   {
+    "url": "https://www.facebook.com/61578393599194/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
@@ -8521,7 +8713,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://smkd.com/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/SmkdVapeShop/",
   "instagram": "",
   "other_social": "",
   "address1": "Unit 7, Bradford Chamber Business Park",
@@ -8568,6 +8760,12 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "phone 01274 270303, email info@smkd.com, closure status (via search extraction)"
+   },
+   {
+    "url": "https://www.facebook.com/SmkdVapeShop/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": true,
@@ -8598,8 +8796,8 @@
   "postcode": "HX5 9AA",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01422 648232",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Not Found",
@@ -8629,6 +8827,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "listing confirmation"
+   },
+   {
+    "url": "https://www.mylocalservices.co.uk/SPAR+Huddersfield+Road-Elland-3135599.html",
+    "type": "Directory",
+    "date": "2026-09-16",
+    "info_obtained": "phone"
    }
   ],
   "website_checked": false,
@@ -8659,8 +8863,8 @@
   "postcode": "WF1 2LE",
   "region": "Yorkshire & Humber",
   "country": "England",
-  "phone": "",
-  "phone_status": "Not Found",
+  "phone": "01924 822641",
+  "phone_status": "Verified directory",
   "email": "",
   "email_type": "",
   "email_status": "Not Found",
@@ -8716,7 +8920,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://savecobradford.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/savecobradford/",
   "instagram": "",
   "other_social": "",
   "address1": "Carter Gear Works, Thornbury Road",
@@ -8763,6 +8967,12 @@
     "type": "Official Website",
     "date": "2026-09-16",
     "info_obtained": "official webshop, product range (search snippet; fetch blocked)"
+   },
+   {
+    "url": "https://www.facebook.com/savecobradford/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook)"
    }
   ],
   "website_checked": false,
@@ -9027,7 +9237,7 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://www.smoke-king.co.uk/",
-  "facebook": "",
+  "facebook": "https://www.facebook.com/smokekinguk/",
   "instagram": "",
   "other_social": "",
   "address1": "Unit E2, Otley Mills",
@@ -9039,7 +9249,7 @@
   "country": "England",
   "phone": "0113 217 7723",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "enquiries@smoke-king.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -9074,11 +9284,17 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "full address cross-check (via search results)"
+   },
+   {
+    "url": "https://www.smoke-king.co.uk/pages/contact",
+    "type": "Official Website",
+    "date": "2026-09-16",
+    "info_obtained": "email, social (facebook)"
    }
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0148",
@@ -9521,8 +9737,8 @@
   "number_of_locations": 1,
   "parent_company": "",
   "website": "https://sukiscashandcarry.co.uk/",
-  "facebook": "",
-  "instagram": "",
+  "facebook": "https://www.facebook.com/sukiscashandcarry/",
+  "instagram": "https://www.instagram.com/sukiscashandcarrybradford/",
   "other_social": "https://nextdoor.co.uk/pages/sukis-cash-carry-wholesalers/",
   "address1": "Garnett Street",
   "address2": "Off Leeds Road",
@@ -9580,6 +9796,12 @@
     "type": "Directory",
     "date": "2026-09-16",
     "info_obtained": "address, phone, hours"
+   },
+   {
+    "url": "https://www.facebook.com/sukiscashandcarry/",
+    "type": "Facebook",
+    "date": "2026-09-16",
+    "info_obtained": "social (facebook, instagram)"
    }
   ],
   "website_checked": true,
@@ -10619,7 +10841,7 @@
   "country": "England",
   "phone": "07809 655738",
   "phone_status": "Verified directory",
-  "email": "",
+  "email": "info@vapenationeshop.co.uk",
   "email_type": "",
   "email_status": "Website Found",
   "sales_email": "",
@@ -10652,7 +10874,7 @@
   ],
   "website_checked": false,
   "phone_checked": false,
-  "email_checked": false,
+  "email_checked": true,
   "companies_house_checked": false,
   "data_confidence": "Medium",
   "record_id": "WY-0174",
