@@ -1,7 +1,6 @@
--- Seed: West Yorkshire pilot prospects (generated from master.json)
--- Idempotent: keyed on external_ref (record_id). Safe to re-run.
--- Contacts de-duplicated per prospect on (kind, value) so linking cannot
--- violate the (prospect_id, kind, value) unique constraint.
+-- Seed: UK retail prospects (generated from master.json by build_seed.py)
+-- Idempotent: keyed on external_ref. Contacts de-duped per prospect on (kind, value).
+-- Re-run after collecting a new region to insert only the new rows.
 begin;
 insert into public.prospects (external_ref, business_name, trading_name, legal_company_name, category, subcategory, independent_or_chain, number_of_locations, parent_company, website, address1, address2, town, county, postcode, region, country, companies_house_number, company_status, registered_company_name, incorporation_date, product_categories, existing_vape_brands, notes, data_confidence, lead_priority, stage, source_url) values ('WY-0001', '1865 Cigars (Huddersfield)', '1865 Cigars', NULL, 'Tobacco Specialist', 'Cigar and tobacco specialist', 'Regional Chain', 7, '1865 Cigars', 'https://1865cigars.com/', 'Sheffield House, 13 Cross Church Street', 'Town Centre', 'Huddersfield', 'West Yorkshire', 'HD1 2PY', 'Yorkshire & Humber', 'England', NULL, NULL, NULL, NULL, 'cigars; pipe tobacco; cigarillos; smoking accessories', NULL, 'Yorkshire/North West cigar retail group with location pages for Sheffield, Manchester, Pudsey, Rotherham, Oldham and Halifax as well as Huddersfield; location count approximate from site location pages. Phone and email shown on the business''s own web pages surfaced in search results.', 'Medium', 'High', 'New', 'https://1865cigars.com/locations/sheffield/tobacconist-in-sheffield/') on conflict (external_ref) do nothing;
 insert into public.prospect_contacts (prospect_ref, kind, label, value) values ('WY-0001', 'phone', 'landline', '01484 530457') on conflict do nothing;

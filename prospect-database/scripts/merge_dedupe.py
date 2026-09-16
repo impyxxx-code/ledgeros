@@ -103,9 +103,15 @@ def similar(a: str, b: str) -> float:
     return SequenceMatcher(None, a, b).ratio()
 
 
-def load_raw():
-    records = []
+def load_raw(skip=frozenset()):
+    """Load raw batches whose relative path is not already in `skip` (batches
+    already absorbed into the durable master). Returns (records, seen_batches)."""
+    records, seen = [], []
     for path in sorted((BASE / "data").glob(RAW_GLOB)):
+        rel = str(path.relative_to(BASE / "data"))
+        seen.append(rel)
+        if rel in skip:
+            continue
         with open(path) as f:
             batch = json.load(f)
         if not isinstance(batch, list):
@@ -116,7 +122,7 @@ def load_raw():
                 continue
             r["_batch"] = path.stem
             records.append(r)
-    return records
+    return records, seen
 
 
 def best_source_rank(rec) -> int:
@@ -176,8 +182,19 @@ def merge_into(master, dup):
     return master
 
 
-def dedupe(records):
+def dedupe(records, seed=None):
+    """Deduplicate raw records. When `seed` (the existing durable master) is
+    given, records match and merge INTO those existing masters — which keep
+    their record_id and every enriched field (merge_into fills blanks only) —
+    so re-running never disturbs already-issued IDs or prior enrichment."""
     masters = []
+    for m in (seed or []):
+        m = dict(m)
+        m["_nn"] = norm_name(m.get("business_name"))
+        m["_np"] = norm_phone(m.get("phone"))
+        m["_npc"] = norm_postcode(m.get("postcode"))
+        m["_nd"] = norm_domain(m.get("website"))
+        masters.append(m)
     for rec in records:
         rec["category"] = canon_category(rec.get("category"))
         nn = norm_name(rec.get("business_name"))
@@ -365,18 +382,39 @@ def to_row(rec, rid, loc_id):
     }
 
 
-def main():
-    records = load_raw()
-    print(f"Loaded {len(records)} raw records")
-    masters = dedupe(records)
-    print(f"After dedupe: {len(masters)} master records "
-          f"({len(records) - len(masters)} merged)")
+def next_ref_number(masters):
+    n = 0
+    for m in masters:
+        mm = re.search(r"(\d+)$", m.get("record_id") or "")
+        if mm:
+            n = max(n, int(mm.group(1)))
+    return n + 1
 
-    # assign IDs; group multi-site under parent
+
+def main():
+    master_path = BASE / "data" / "master.json"
+    merged_path = BASE / "data" / "merged_batches.json"
+    existing = json.load(open(master_path)) if master_path.exists() else []
+    merged = set(json.load(open(merged_path))) if merged_path.exists() else set()
+
+    records, seen = load_raw(skip=merged)
+    print(f"Loaded {len(records)} raw records from new batches "
+          f"({len(seen) - len(merged)} new of {len(seen)} total)")
+    masters = dedupe(records, seed=existing)
+    new_count = len(masters) - len(existing)
+    print(f"Master: {len(masters)} records ({len(existing)} existing + {new_count} new)")
+
+    json.dump(sorted(seen), open(merged_path, "w"), indent=1)
+
+    # existing records keep their record_id; only genuinely new ones get a fresh ref
+    ref_n = next_ref_number(masters)
     masters.sort(key=lambda r: (r.get("parent_company") or "~", r.get("business_name", ""), r.get("town", "")))
     parent_counters, rows, out_records = {}, [], []
-    for i, rec in enumerate(masters, 1):
-        rid = f"WY-{i:04d}"
+    for rec in masters:
+        rid = rec.get("record_id")
+        if not rid:
+            rid = f"UK-{ref_n:06d}"
+            ref_n += 1
         parent = rec.get("parent_company", "")
         if parent:
             parent_counters[parent] = parent_counters.get(parent, 0) + 1
