@@ -121,13 +121,34 @@ create trigger prospects_touch before update on public.prospects
 
 -- 6) resolve prospect_ref -> prospect_id after a seed/import ----------------
 create or replace function public.link_prospect_contacts()
-returns void language sql security definer set search_path = public as $$
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  -- Link each unlinked contact to its prospect by external_ref, but assign only
+  -- ONE row per (prospect, kind, value) so the unique constraint can't be
+  -- violated when two source fields (e.g. email and sales_email) hold the same
+  -- value. Any exact duplicates are dropped rather than linked.
+  with ranked as (
+    select pc.id, p.id as pid,
+           row_number() over (partition by p.id, pc.kind, pc.value order by pc.id) as rn
+      from public.prospect_contacts pc
+      join public.prospects p on p.external_ref = pc.prospect_ref
+     where pc.prospect_id is null
+  )
   update public.prospect_contacts pc
-     set prospect_id = p.id
-    from public.prospects p
+     set prospect_id = r.pid
+    from ranked r
+   where pc.id = r.id
+     and r.rn = 1
+     and not exists (
+       select 1 from public.prospect_contacts x
+        where x.prospect_id = r.pid and x.kind = pc.kind and x.value = pc.value
+     );
+
+  delete from public.prospect_contacts pc
+   using public.prospects p
    where pc.prospect_id is null
      and pc.prospect_ref = p.external_ref;
-$$;
+end $$;
 grant execute on function public.link_prospect_contacts() to authenticated;
 
 -- 7) convert a won prospect into a customer contact -------------------------
