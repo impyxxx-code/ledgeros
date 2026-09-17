@@ -1,4 +1,7 @@
 [
+ "regions/birmingham-black-country/raw/birmingham-city.json",
+ "regions/birmingham-black-country/raw/dudley-sandwell.json",
+ "regions/birmingham-black-country/raw/wolverhampton-walsall.json",
  "regions/greater-manchester/raw/bolton-bury-wigan.json",
  "regions/greater-manchester/raw/manchester-salford-trafford.json",
  "regions/greater-manchester/raw/stockport-oldham-rochdale-tameside.json",
