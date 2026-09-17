@@ -4,6 +4,7 @@
  "regions/birmingham-black-country/raw/wolverhampton-walsall.json",
  "regions/cheshire/raw/cheshire.json",
  "regions/county-durham/raw/county-durham-batch1.json",
+ "regions/coventry-warwickshire/raw/coventry-warwickshire-batch1.json",
  "regions/cumbria/raw/cumbria-batch1.json",
  "regions/greater-manchester/raw/bolton-bury-wigan.json",
  "regions/greater-manchester/raw/manchester-salford-trafford.json",
@@ -20,6 +21,7 @@
  "regions/scotland-central/raw/edinburgh-east.json",
  "regions/scotland-central/raw/glasgow-west.json",
  "regions/south-yorkshire/raw/south-yorkshire.json",
+ "regions/staffordshire/raw/staffordshire-batch1.json",
  "regions/teesside/raw/teesside-batch1.json",
  "regions/tyne-and-wear/raw/newcastle-gateshead-batch1.json",
  "regions/tyne-and-wear/raw/sunderland-southtyneside-batch1.json",
@@ -28,5 +30,6 @@
  "regions/west-yorkshire/raw/chains-multisite.json",
  "regions/west-yorkshire/raw/kirklees.json",
  "regions/west-yorkshire/raw/leeds.json",
- "regions/west-yorkshire/raw/wakefield.json"
+ "regions/west-yorkshire/raw/wakefield.json",
+ "regions/worcs-hereford-shrops/raw/worcs-hereford-shrops-batch1.json"
 ]
