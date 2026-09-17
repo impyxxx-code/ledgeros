@@ -61,7 +61,9 @@ def main():
             if c == "number_of_locations":
                 return str(val) if (val and str(val).isdigit()) else "NULL"
             if c == "incorporation_date":
-                return q(val) if val else "NULL"
+                # date column: only emit a full ISO date; partial values (e.g.
+                # "2018-05" from a press report) go to NULL, kept in notes instead.
+                return q(val) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(val or "")) else "NULL"
             return q(val)
         L.append(f"insert into public.prospects ({', '.join(PCOLS)}) values "
                  f"({', '.join(cell(c) for c in PCOLS)}) on conflict (external_ref) do nothing;")

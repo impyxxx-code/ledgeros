@@ -32,6 +32,7 @@ def main():
     run("export_master_csv.py")
     run("build_workbook.py")
     run("build_outreach.py")
+    run("build_directory.py")
     run("build_seed.py")
     print("\nAll artifacts rebuilt.")
 
