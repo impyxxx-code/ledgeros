@@ -134,22 +134,22 @@
   {
    "slug": "bristol-gloucs",
    "name": "South West — Bristol & Gloucestershire",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "somerset-wilts",
    "name": "South West — Somerset & Wiltshire (Bath, Swindon, Taunton)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "dorset",
    "name": "South West — Dorset (Bournemouth, Poole, Weymouth)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "devon-cornwall",
    "name": "South West — Devon & Cornwall (Plymouth, Exeter, Torbay, Truro)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "kent",
