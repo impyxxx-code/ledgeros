@@ -34,22 +34,22 @@
   {
    "slug": "lancashire",
    "name": "North West — Lancashire (Preston, Blackburn, Blackpool, Burnley, Bolton area)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "cheshire",
    "name": "North West — Cheshire (Chester, Warrington, Crewe, Macclesfield)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "cumbria",
    "name": "North West — Cumbria (Carlisle, Barrow, Kendal)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "tyne-and-wear",
    "name": "North East — Tyne & Wear (Newcastle, Sunderland, Gateshead, South Shields)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "county-durham",
