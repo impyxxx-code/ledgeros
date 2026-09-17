@@ -194,12 +194,12 @@
   {
    "slug": "wales-south",
    "name": "Wales — South (Cardiff, Swansea, Newport, Valleys)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "wales-north-mid",
    "name": "Wales — North & Mid (Wrexham, Bangor, Aberystwyth)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "scotland-central",
@@ -209,17 +209,17 @@
   {
    "slug": "scotland-north-east",
    "name": "Scotland — North East (Aberdeen, Dundee, Perth, Inverness)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "scotland-south-west",
    "name": "Scotland — South & West (Ayr, Dumfries, Paisley, islands)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "northern-ireland",
    "name": "Northern Ireland (Belfast, Derry, Lisburn, Newry)",
-   "status": "in_progress"
+   "status": "done"
   }
  ]
 }
