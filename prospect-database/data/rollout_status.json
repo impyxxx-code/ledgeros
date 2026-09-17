@@ -179,17 +179,17 @@
   {
    "slug": "london-north",
    "name": "London — North & East boroughs",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "london-south",
    "name": "London — South & West boroughs",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "london-central",
    "name": "London — Central & Inner boroughs",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "wales-south",
