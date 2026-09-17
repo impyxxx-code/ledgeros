@@ -1,4 +1,7 @@
 [
+ "regions/greater-manchester/raw/bolton-bury-wigan.json",
+ "regions/greater-manchester/raw/manchester-salford-trafford.json",
+ "regions/greater-manchester/raw/stockport-oldham-rochdale-tameside.json",
  "regions/humber/raw/humber.json",
  "regions/north-yorkshire/raw/north-yorkshire.json",
  "regions/south-yorkshire/raw/south-yorkshire.json",
