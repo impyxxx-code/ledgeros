@@ -116,6 +116,28 @@ def main():
                 "Website": r.get("website", ""), "Data Confidence": r.get("data_confidence", "Low"),
                 "Record ID": r["record_id"]} for r in land])
 
+    # 3b) Landline split per region (one file per rep patch) ---------------
+    region_dir = OUT / "landline_by_region"
+    region_dir.mkdir(exist_ok=True)
+    land_cols = ["Region", "Category", "Priority", "Business Name", "Town", "County",
+                 "Postcode", "Landline", "Website", "Data Confidence", "Record ID"]
+    by_region = defaultdict(list)
+    for r in land:
+        by_region[r.get("region", "") or "Unknown"].append(r)
+
+    def slug(s):
+        return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+    region_counts = []
+    for region, rs in sorted(by_region.items()):
+        rows = [{"Region": r.get("region", ""), "Category": r.get("category", ""), "Priority": r["_prio"],
+                 "Business Name": r["business_name"], "Town": r.get("town", ""), "County": r.get("county", ""),
+                 "Postcode": r.get("postcode", ""), "Landline": r.get("phone", ""),
+                 "Website": r.get("website", ""), "Data Confidence": r.get("data_confidence", "Low"),
+                 "Record ID": r["record_id"]} for r in rs]
+        write_csv(region_dir / f"landline_{slug(region)}.csv", land_cols, rows)
+        region_counts.append((region, len(rs)))
+
     # 4) Email --------------------------------------------------------------
     eml = [r for r in recs if emails(r)]
     eml.sort(key=lambda r: (CATW.get(r.get("category"), 9), PW.get(r["_prio"], 3), r["business_name"]))
@@ -129,9 +151,11 @@ def main():
 
     print(f"WhatsApp:      {len(wa)}")
     print(f"Key accounts:  {len(ka)} brands ({sum(x['Locations in DB'] for x in ka)} locations)")
-    print(f"Landline:      {len(land)}")
+    print(f"Landline:      {len(land)}  (split into {len(region_counts)} per-region files)")
+    for region, c in sorted(region_counts, key=lambda x: -x[1]):
+        print(f"    {region}: {c}")
     print(f"Email:         {len(eml)}")
-    print(f"Wrote 4 worklists to {OUT}")
+    print(f"Wrote worklists to {OUT}")
 
 
 if __name__ == "__main__":
