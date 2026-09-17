@@ -29,7 +29,7 @@
   {
    "slug": "merseyside",
    "name": "North West — Merseyside (Liverpool, Wirral, St Helens, Southport)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "lancashire",
@@ -204,7 +204,7 @@
   {
    "slug": "scotland-central",
    "name": "Scotland — Central Belt (Glasgow, Edinburgh, Stirling, Falkirk)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "scotland-north-east",
