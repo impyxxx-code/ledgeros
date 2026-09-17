@@ -154,27 +154,27 @@
   {
    "slug": "kent",
    "name": "South East — Kent (Maidstone, Canterbury, Medway, Dover)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "surrey",
    "name": "South East — Surrey (Guildford, Woking, Croydon fringe)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "sussex",
    "name": "South East — East & West Sussex (Brighton, Crawley, Eastbourne, Worthing)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "hampshire",
    "name": "South East — Hampshire (Southampton, Portsmouth, Basingstoke)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "berks-oxon-bucks",
    "name": "South East — Berkshire, Oxfordshire, Buckinghamshire (Reading, Oxford, Milton Keynes)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "london-north",
