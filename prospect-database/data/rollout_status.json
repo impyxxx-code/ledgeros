@@ -29,17 +29,17 @@
   {
    "slug": "merseyside",
    "name": "North West — Merseyside (Liverpool, Wirral, St Helens, Southport)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "lancashire",
    "name": "North West — Lancashire (Preston, Blackburn, Blackpool, Burnley, Bolton area)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "cheshire",
    "name": "North West — Cheshire (Chester, Warrington, Crewe, Macclesfield)",
-   "status": "pending"
+   "status": "in_progress"
   },
   {
    "slug": "cumbria",
@@ -204,7 +204,7 @@
   {
    "slug": "scotland-central",
    "name": "Scotland — Central Belt (Glasgow, Edinburgh, Stirling, Falkirk)",
-   "status": "in_progress"
+   "status": "done"
   },
   {
    "slug": "scotland-north-east",
