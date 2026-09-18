@@ -18,11 +18,26 @@ export function whatsappLink(phone) {
   return d.startsWith("07") && d.length === 11 ? `https://wa.me/44${d.slice(1)}` : null;
 }
 
-// Load the full pipeline in one call: prospects + their contacts, newest activity first.
+// Page through a table in 1000-row batches. PostgREST caps every response at
+// `max-rows` (1000 on Supabase by default), so a bare `limit=5000` silently
+// returns only the first 1000 — we must offset-paginate to get every row.
+// The base query MUST carry a stable `order=` for offset paging to be correct.
+async function getAll(token, table, baseQuery, pageSize = 1000) {
+  const out = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await sb.get(token, table, `${baseQuery}&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page) || page.length === 0) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
+// Load the full pipeline: every prospect + all their contacts (both paginated).
 export async function loadProspects(token) {
   const [prospects, contacts] = await Promise.all([
-    sb.get(token, "prospects", "order=lead_priority.asc,business_name.asc&limit=5000"),
-    sb.get(token, "prospect_contacts", "select=prospect_id,kind,label,value&limit=20000"),
+    getAll(token, "prospects", "order=lead_priority.asc,business_name.asc"),
+    getAll(token, "prospect_contacts", "select=prospect_id,kind,label,value&order=prospect_id.asc"),
   ]);
   const byId = {};
   (Array.isArray(prospects) ? prospects : []).forEach((p) => { p.contacts = []; byId[p.id] = p; });
