@@ -162,6 +162,14 @@ function Card({ p, onClick }) {
   const S = STYLES;
   const chan = channelOf(p);
   const dot = { WhatsApp: "📱", Email: "✉", Phone: "☎", None: "—" }[chan];
+  // Primary reachable contact, shown on the card so reps can dial/message without opening it.
+  const mobile = mobileOf(p);
+  const landline = (phonesOf(p).find((c) => c.label !== "mobile") || {}).value;
+  const email = emailsOf(p)[0];
+  const contact = mobile
+    ? { icon: "📱", value: mobile }
+    : landline ? { icon: "☎", value: landline }
+      : email ? { icon: "✉", value: email } : null;
   return (
     <div style={S.card} onClick={onClick}>
       <div style={S.cardTop}>
@@ -170,6 +178,9 @@ function Card({ p, onClick }) {
       </div>
       <div style={S.cardName}>{p.business_name}</div>
       <div style={S.cardMeta}>{p.category} · {p.town || "—"}</div>
+      {contact
+        ? <div style={S.cardContact}>{contact.icon} <span style={S.cardContactVal}>{contact.value}</span></div>
+        : <div style={S.cardNoContact}>no direct contact</div>}
       {p.next_action_date && <div style={S.cardDue}>Next: {fmtDate(p.next_action_date)}</div>}
     </div>
   );
@@ -391,6 +402,9 @@ const STYLES = {
   cardChan: { fontSize: 13 },
   cardName: { fontWeight: 700, fontSize: 13.5, lineHeight: 1.25 },
   cardMeta: { fontSize: 11.5, color: "var(--muted,#778)", marginTop: 2 },
+  cardContact: { fontSize: 12, marginTop: 5, color: "var(--ink,#161b19)", fontVariantNumeric: "tabular-nums" },
+  cardContactVal: { fontWeight: 600 },
+  cardNoContact: { fontSize: 11, marginTop: 5, color: "var(--muted,#aab)", fontStyle: "italic" },
   cardDue: { fontSize: 11, color: "#b4520a", marginTop: 4 },
   prio: { fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5 },
   badge: { fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5 },
