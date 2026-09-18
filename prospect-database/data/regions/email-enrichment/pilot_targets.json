@@ -1,0 +1,322 @@
+[
+ {
+  "record_id": "UK-002156",
+  "business_name": "4 Vape Havant",
+  "town": "Havant",
+  "county": "Hampshire",
+  "website": "https://4vape.co.uk/shops/havant/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001681",
+  "business_name": "Bargain Booze",
+  "town": "Kingswood",
+  "county": "Bristol",
+  "website": "https://kingswood-city-of-bristol.cylex-uk.co.uk/company/bargain-booze-15693099.html",
+  "category": "Off-Licence"
+ },
+ {
+  "record_id": "UK-000550",
+  "business_name": "Turmeaus Tobacconist - Mayfair",
+  "town": "London",
+  "county": "Greater London",
+  "website": "https://www.turmeaus.co.uk/",
+  "category": "Tobacco Specialist"
+ },
+ {
+  "record_id": "WY-0012",
+  "business_name": "C.Gars Leeds (Dominique London)",
+  "town": "Leeds",
+  "county": "West Yorkshire",
+  "website": "https://www.cgarsltd.co.uk/",
+  "category": "Tobacco Specialist"
+ },
+ {
+  "record_id": "UK-002173",
+  "business_name": "Ecigwizard - Banbury",
+  "town": "Banbury",
+  "county": "Oxfordshire",
+  "website": "https://www.ecigwizard.com/pages/ecigwizard-banbury",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002175",
+  "business_name": "Evapo Ashford",
+  "town": "Ashford",
+  "county": "Kent",
+  "website": "https://evapo.co.uk/vape-shops/ashford",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001725",
+  "business_name": "Evapo Bournemouth",
+  "town": "Bournemouth",
+  "county": "Dorset",
+  "website": "https://evapo.co.uk/vape-shops/bournemouth",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001734",
+  "business_name": "Flavour Vapour Plymouth",
+  "town": "Plymouth",
+  "county": "Devon",
+  "website": "https://www.flavourvapour.co.uk/stores?store=15",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001742",
+  "business_name": "I Love Vapour - Leighton Buzzard",
+  "town": "Leighton Buzzard",
+  "county": "Bedfordshire",
+  "website": "https://www.ilovevapour.com/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001090",
+  "business_name": "Londis - Penfolds",
+  "town": "Morpeth",
+  "county": "Northumberland",
+  "website": "https://www.londis.co.uk/our-stores/londis-penfolds",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-002207",
+  "business_name": "Coldean Local Store",
+  "town": "Brighton",
+  "county": "East Sussex",
+  "website": "https://www.londis.co.uk/our-stores/coldean-local-store",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-001771",
+  "business_name": "My Vape Store Paignton",
+  "town": "Paignton",
+  "county": "Devon",
+  "website": "https://www.myvapestore.co.uk",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001457",
+  "business_name": "Nisa Local Gainsborough (High Street)",
+  "town": "Gainsborough",
+  "county": "Lincolnshire",
+  "website": "https://www.nisalocally.co.uk/stores/lincolnshire/gainsborough/48-high-st",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-001802",
+  "business_name": "Premier Convenience Store (Cadge Road)",
+  "town": "Norwich",
+  "county": "Norfolk",
+  "website": "https://www.premier-stores.co.uk/our-stores/premier-convenience-store-9",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-001807",
+  "business_name": "Premier Broadwey Store",
+  "town": "Weymouth",
+  "county": "Dorset",
+  "website": "https://www.premier-stores.co.uk/our-stores/broadwey-store",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-001484",
+  "business_name": "QCig Vapes - Long Eaton",
+  "town": "Long Eaton",
+  "county": "Derbyshire",
+  "website": "https://www.qcig.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-000722",
+  "business_name": "SPAR Harington Road",
+  "town": "Formby",
+  "county": "Merseyside",
+  "website": "https://www.spar.co.uk/store-locator/hal27302-spar-harington-road",
+  "category": "Convenience Store"
+ },
+ {
+  "record_id": "UK-001828",
+  "business_name": "Spa Vapes",
+  "town": "Cheltenham",
+  "county": "Gloucestershire",
+  "website": "https://spavapes.co.uk/shop-locations/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-000323",
+  "business_name": "The E-Cig Store (Timperley, Trafford)",
+  "town": "Altrincham",
+  "county": "Greater Manchester",
+  "website": "https://theecig.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001843",
+  "business_name": "Vape Shop Outlet Norwich",
+  "town": "Norwich",
+  "county": "Norfolk",
+  "website": "https://www.vapeshop.co.uk/pages/vape-shop-outlet-norwich",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002575",
+  "business_name": "Total Vapour - Newtownabbey",
+  "town": "Newtownabbey",
+  "county": "County Antrim",
+  "website": "https://www.totalvapour.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002254",
+  "business_name": "Totally Wicked Shoreham",
+  "town": "Shoreham-by-Sea",
+  "county": "West Sussex",
+  "website": "https://www.totallywicked-eliquid.co.uk/stores/shoreham-by-sea-e-ecig-store",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001130",
+  "business_name": "VPZ Ashington",
+  "town": "Ashington",
+  "county": "Northumberland",
+  "website": "https://www.vpz.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-000991",
+  "business_name": "VPZ North Shields",
+  "town": "North Shields",
+  "county": "Tyne and Wear",
+  "website": "https://www.vpz.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002270",
+  "business_name": "The Canterbury Vape",
+  "town": "Canterbury",
+  "county": "Kent",
+  "website": "https://vapeandjuice.co.uk/pages/the-canterbury-vape",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001138",
+  "business_name": "Vape Suite Middlesbrough",
+  "town": "Middlesbrough",
+  "county": "Teesside",
+  "website": "https://www.vapesuite.co.uk/stores/vape-store-middlesbrough",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001516",
+  "business_name": "Vapers Place",
+  "town": "Corby",
+  "county": "Northamptonshire",
+  "website": "https://vapersplace.co.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001899",
+  "business_name": "Vapour Generation",
+  "town": "Kingswood",
+  "county": "Bristol",
+  "website": "https://www.vapourgeneration.co.uk/pages/kingswood",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-000328",
+  "business_name": "Worldwide Foods (Cheetham Hill)",
+  "town": "Manchester",
+  "county": "Greater Manchester",
+  "website": "https://worldwidefoods.co.uk/",
+  "category": "Independent Supermarket"
+ },
+ {
+  "record_id": "UK-000999",
+  "business_name": "Anarchy Vapes",
+  "town": "Newcastle upon Tyne",
+  "county": "Tyne and Wear",
+  "website": "https://www.anarchyvapes.com",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002646",
+  "business_name": "CASC Whisky & Cigar Shop",
+  "town": "Aberdeen",
+  "county": "Aberdeen City",
+  "website": "https://www.cascnation.com/",
+  "category": "Tobacco Specialist"
+ },
+ {
+  "record_id": "UK-002654",
+  "business_name": "Conspiracy Lounge Cardiff",
+  "town": "Cardiff",
+  "county": "Cardiff",
+  "website": "https://conspiracylounge.co.uk/cardiff/",
+  "category": "Smoke / Shisha Shop"
+ },
+ {
+  "record_id": "UK-002352",
+  "business_name": "Flybox Aldershot",
+  "town": "Aldershot",
+  "county": "Hampshire",
+  "website": "https://flybox.uk/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002365",
+  "business_name": "Ice Liquor",
+  "town": "Hove",
+  "county": "East Sussex",
+  "website": "https://www.iceliquor.co.uk/",
+  "category": "Off-Licence"
+ },
+ {
+  "record_id": "UK-001990",
+  "business_name": "Lounge 33",
+  "town": "Luton",
+  "county": "Bedfordshire",
+  "website": "https://lounge-33.co.uk/",
+  "category": "Smoke / Shisha Shop"
+ },
+ {
+  "record_id": "UK-001176",
+  "business_name": "Only The Vape - Darlington",
+  "town": "Darlington",
+  "county": "County Durham",
+  "website": "https://onlythevape.com/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-002399",
+  "business_name": "Savana Lounge",
+  "town": "Guildford",
+  "county": "Surrey",
+  "website": "https://savanalounge.co.uk/",
+  "category": "Smoke / Shisha Shop"
+ },
+ {
+  "record_id": "UK-002046",
+  "business_name": "TOHO Norwich",
+  "town": "Norwich",
+  "county": "Norfolk",
+  "website": "https://tohonorwich.com/",
+  "category": "Smoke / Shisha Shop"
+ },
+ {
+  "record_id": "UK-002435",
+  "business_name": "The Vaping Shop Sittingbourne",
+  "town": "Sittingbourne",
+  "county": "Kent",
+  "website": "https://www.thevaping.shop/",
+  "category": "Vape Shop"
+ },
+ {
+  "record_id": "UK-001377",
+  "business_name": "Vape Up",
+  "town": "Newcastle-under-Lyme",
+  "county": "Staffordshire",
+  "website": "https://www.vape-up.co.uk/contact-us",
+  "category": "Vape Shop"
+ }
+]

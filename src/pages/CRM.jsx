@@ -21,6 +21,8 @@ export function CRM({ token, setPage }) {
   const [fPrio, setFPrio] = useState("");
   const [fChan, setFChan] = useState("");
   const [fTown, setFTown] = useState("");
+  const [fRegion, setFRegion] = useState("");
+  const [view, setView] = useState("board"); // "board" | "accounts"
   const [selected, setSelected] = useState(null);
 
   const reload = async () => {
@@ -33,6 +35,7 @@ export function CRM({ token, setPage }) {
 
   const cats = useMemo(() => [...new Set(prospects.map((p) => p.category).filter(Boolean))].sort(), [prospects]);
   const towns = useMemo(() => [...new Set(prospects.map((p) => p.town).filter(Boolean))].sort(), [prospects]);
+  const regions = useMemo(() => [...new Set(prospects.map((p) => p.region).filter(Boolean))].sort(), [prospects]);
   const summary = useMemo(() => summarise(prospects), [prospects]);
 
   const match = (p) => {
@@ -40,6 +43,7 @@ export function CRM({ token, setPage }) {
     if (fPrio && p.lead_priority !== fPrio) return false;
     if (fChan && channelOf(p) !== fChan) return false;
     if (fTown && p.town !== fTown) return false;
+    if (fRegion && p.region !== fRegion) return false;
     if (q) {
       const hay = `${p.business_name} ${p.town} ${p.postcode} ${p.category} ${p.parent_company || ""}`.toLowerCase();
       if (!q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
@@ -82,10 +86,17 @@ export function CRM({ token, setPage }) {
           ["High priority", summary.byPriority.High || 0],
           ["📱 WhatsApp", summary.whatsapp],
           ["✉ Email", summary.email],
+          ["Multi-site brands", summary.brands],
           ["Due today", summary.dueToday],
         ].map(([l, n]) => (
           <div key={l} style={S.stat}><b style={S.statN}>{n}</b><span style={S.statL}>{l}</span></div>
         ))}
+      </div>
+
+      {/* view toggle */}
+      <div style={S.tabs}>
+        <button style={{ ...S.tab, ...(view === "board" ? S.tabOn : {}) }} onClick={() => setView("board")}>Pipeline</button>
+        <button style={{ ...S.tab, ...(view === "accounts" ? S.tabOn : {}) }} onClick={() => setView("accounts")}>Key Accounts</button>
       </div>
 
       {/* filters */}
@@ -94,15 +105,18 @@ export function CRM({ token, setPage }) {
         <select style={S.sel} value={fCat} onChange={(e) => setFCat(e.target.value)}><option value="">All categories</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</select>
         <select style={S.sel} value={fPrio} onChange={(e) => setFPrio(e.target.value)}><option value="">All priorities</option>{PRIORITIES.map((c) => <option key={c} value={c}>{c}</option>)}</select>
         <select style={S.sel} value={fChan} onChange={(e) => setFChan(e.target.value)}><option value="">All channels</option>{["WhatsApp", "Email", "Phone", "None"].map((c) => <option key={c} value={c}>{c}</option>)}</select>
+        <select style={S.sel} value={fRegion} onChange={(e) => setFRegion(e.target.value)}><option value="">All regions</option>{regions.map((c) => <option key={c} value={c}>{c}</option>)}</select>
         <select style={S.sel} value={fTown} onChange={(e) => setFTown(e.target.value)}><option value="">All towns</option>{towns.map((c) => <option key={c} value={c}>{c}</option>)}</select>
-        {(q || fCat || fPrio || fChan || fTown) && <button style={S.clear} onClick={() => { setQ(""); setFCat(""); setFPrio(""); setFChan(""); setFTown(""); }}>Clear</button>}
+        {(q || fCat || fPrio || fChan || fTown || fRegion) && <button style={S.clear} onClick={() => { setQ(""); setFCat(""); setFPrio(""); setFChan(""); setFTown(""); setFRegion(""); }}>Clear</button>}
         <span style={S.count}>{filtered.length} of {prospects.length}</span>
       </div>
 
       {loading ? <div style={S.loading}>Loading pipeline…</div>
         : prospects.length === 0
           ? <EmptyState icon="👥" title="No prospects yet" sub="Run the seed (supabase/seed_prospects.sql) or import to populate the pipeline." />
-          : (
+          : view === "accounts"
+            ? <KeyAccounts items={filtered} onSelect={setSelected} />
+            : (
             <>
               <div style={S.boardWrap}>
                 <div style={S.board}>
@@ -148,6 +162,14 @@ function Card({ p, onClick }) {
   const S = STYLES;
   const chan = channelOf(p);
   const dot = { WhatsApp: "📱", Email: "✉", Phone: "☎", None: "—" }[chan];
+  // Primary reachable contact, shown on the card so reps can dial/message without opening it.
+  const mobile = mobileOf(p);
+  const landline = (phonesOf(p).find((c) => c.label !== "mobile") || {}).value;
+  const email = emailsOf(p)[0];
+  const contact = mobile
+    ? { icon: "📱", value: mobile }
+    : landline ? { icon: "☎", value: landline }
+      : email ? { icon: "✉", value: email } : null;
   return (
     <div style={S.card} onClick={onClick}>
       <div style={S.cardTop}>
@@ -156,7 +178,69 @@ function Card({ p, onClick }) {
       </div>
       <div style={S.cardName}>{p.business_name}</div>
       <div style={S.cardMeta}>{p.category} · {p.town || "—"}</div>
+      {contact
+        ? <div style={S.cardContact}>{contact.icon} <span style={S.cardContactVal}>{contact.value}</span></div>
+        : <div style={S.cardNoContact}>no direct contact</div>}
       {p.next_action_date && <div style={S.cardDue}>Next: {fmtDate(p.next_action_date)}</div>}
+    </div>
+  );
+}
+
+// Key Accounts view: multi-site brands (>=2 locations) for the land-and-expand play.
+function KeyAccounts({ items, onSelect }) {
+  const S = STYLES;
+  const [open, setOpen] = useState({});
+  const groups = useMemo(() => {
+    const m = {};
+    for (const p of items) {
+      const k = (p.parent_company || "").trim();
+      if (!k) continue;
+      (m[k] = m[k] || []).push(p);
+    }
+    return Object.entries(m)
+      .filter(([, rs]) => rs.length >= 2)
+      .map(([name, rs]) => ({
+        name, rs,
+        cats: [...new Set(rs.map((r) => r.category).filter(Boolean))],
+        won: rs.filter((r) => r.stage === "Won").length,
+      }))
+      .sort((a, b) => b.rs.length - a.rs.length || a.name.localeCompare(b.name));
+  }, [items]);
+
+  if (groups.length === 0) return <div style={S.loading}>No multi-site brands match the current filters.</div>;
+  const totalLoc = groups.reduce((n, g) => n + g.rs.length, 0);
+  return (
+    <div>
+      <div style={S.kaIntro}>{groups.length} multi-site brands · {totalLoc} locations — win the head office once, roll out across the estate.</div>
+      <div style={S.kaList}>
+        {groups.map((g) => (
+          <div key={g.name} style={S.kaGroup}>
+            <div style={S.kaHead} onClick={() => setOpen((o) => ({ ...o, [g.name]: !o[g.name] }))}>
+              <span style={S.kaCaret}>{open[g.name] ? "▾" : "▸"}</span>
+              <span style={S.kaName}>{g.name}</span>
+              <span style={S.kaLoc}>{g.rs.length} locations</span>
+              <span style={S.kaMeta}>{g.cats.join(", ")}</span>
+              {g.won > 0 && <span style={{ ...S.badge, ...stageBadge("Won") }}>{g.won} won</span>}
+            </div>
+            {open[g.name] && (
+              <div style={S.kaBody}>
+                {g.rs.map((p) => {
+                  const chan = channelOf(p);
+                  const dot = { WhatsApp: "📱", Email: "✉", Phone: "☎", None: "—" }[chan];
+                  return (
+                    <div key={p.id} style={S.kaRow} onClick={() => onSelect(p)}>
+                      <span style={S.kaRowChan} title={chan}>{dot}</span>
+                      <span style={S.kaRowName}>{p.business_name}</span>
+                      <span style={S.kaRowTown}>{[p.town, p.region].filter(Boolean).join(" · ") || "—"}</span>
+                      <span style={{ ...S.badge, ...stageBadge(p.stage) }}>{p.stage}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -284,6 +368,22 @@ const STYLES = {
   stat: { paddingRight: 22, marginRight: 22, borderRight: "1px solid var(--border,#e3e6e3)" },
   statN: { display: "block", fontSize: 20, fontWeight: 800, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" },
   statL: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted,#667)" },
+  tabs: { display: "flex", gap: 4, marginBottom: 14 },
+  tab: { padding: "7px 16px", border: "1px solid var(--border,#ccd)", background: "var(--surface,#fff)", color: "var(--muted,#667)", borderRadius: 8, font: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  tabOn: { background: "var(--accent,#0f6e64)", color: "#fff", borderColor: "var(--accent,#0f6e64)" },
+  kaIntro: { fontSize: 13, color: "var(--muted,#667)", marginBottom: 12 },
+  kaList: { display: "flex", flexDirection: "column", gap: 8 },
+  kaGroup: { border: "1px solid var(--border,#e3e6e3)", borderRadius: 10, overflow: "hidden", background: "var(--surface,#fff)" },
+  kaHead: { display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", cursor: "pointer", flexWrap: "wrap" },
+  kaCaret: { color: "var(--muted,#889)", fontSize: 11, width: 10 },
+  kaName: { fontWeight: 700, fontSize: 14 },
+  kaLoc: { fontSize: 12, fontWeight: 700, color: "#b4520a", background: "#fbe6d3", padding: "2px 9px", borderRadius: 999, fontVariantNumeric: "tabular-nums" },
+  kaMeta: { fontSize: 12, color: "var(--muted,#778)" },
+  kaBody: { borderTop: "1px solid var(--border,#e3e6e3)", background: "var(--surface-2,#f4f6f4)", padding: 6, display: "flex", flexDirection: "column", gap: 4 },
+  kaRow: { display: "flex", gap: 10, alignItems: "center", padding: "7px 10px", background: "var(--surface,#fff)", border: "1px solid var(--border,#e3e6e3)", borderRadius: 7, cursor: "pointer", fontSize: 13 },
+  kaRowChan: { fontSize: 13, width: 16 },
+  kaRowName: { fontWeight: 600 },
+  kaRowTown: { color: "var(--muted,#889)", marginLeft: "auto", fontSize: 12 },
   filters: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 16 },
   search: { flex: "1 1 220px", minWidth: 180, padding: "8px 12px", border: "1px solid var(--border,#ccd)", borderRadius: 8, font: "inherit", fontSize: 14 },
   sel: { padding: "7px 10px", border: "1px solid var(--border,#ccd)", borderRadius: 8, font: "inherit", fontSize: 13, background: "var(--surface,#fff)" },
@@ -302,6 +402,9 @@ const STYLES = {
   cardChan: { fontSize: 13 },
   cardName: { fontWeight: 700, fontSize: 13.5, lineHeight: 1.25 },
   cardMeta: { fontSize: 11.5, color: "var(--muted,#778)", marginTop: 2 },
+  cardContact: { fontSize: 12, marginTop: 5, color: "var(--ink,#161b19)", fontVariantNumeric: "tabular-nums" },
+  cardContactVal: { fontWeight: 600 },
+  cardNoContact: { fontSize: 11, marginTop: 5, color: "var(--muted,#aab)", fontStyle: "italic" },
   cardDue: { fontSize: 11, color: "#b4520a", marginTop: 4 },
   prio: { fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5 },
   badge: { fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5 },

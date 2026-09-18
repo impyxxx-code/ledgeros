@@ -18,11 +18,26 @@ export function whatsappLink(phone) {
   return d.startsWith("07") && d.length === 11 ? `https://wa.me/44${d.slice(1)}` : null;
 }
 
-// Load the full pipeline in one call: prospects + their contacts, newest activity first.
+// Page through a table in 1000-row batches. PostgREST caps every response at
+// `max-rows` (1000 on Supabase by default), so a bare `limit=5000` silently
+// returns only the first 1000 — we must offset-paginate to get every row.
+// The base query MUST carry a stable `order=` for offset paging to be correct.
+async function getAll(token, table, baseQuery, pageSize = 1000) {
+  const out = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await sb.get(token, table, `${baseQuery}&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page) || page.length === 0) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
+// Load the full pipeline: every prospect + all their contacts (both paginated).
 export async function loadProspects(token) {
   const [prospects, contacts] = await Promise.all([
-    sb.get(token, "prospects", "order=lead_priority.asc,business_name.asc&limit=5000"),
-    sb.get(token, "prospect_contacts", "select=prospect_id,kind,label,value&limit=20000"),
+    getAll(token, "prospects", "order=lead_priority.asc,business_name.asc"),
+    getAll(token, "prospect_contacts", "select=prospect_id,kind,label,value&order=prospect_id.asc"),
   ]);
   const byId = {};
   (Array.isArray(prospects) ? prospects : []).forEach((p) => { p.contacts = []; byId[p.id] = p; });
@@ -68,14 +83,18 @@ export async function convertToCustomer(token, prospectId) {
 
 // Pipeline summary for the dashboard strip.
 export function summarise(prospects) {
-  const s = { total: prospects.length, byStage: {}, byPriority: {}, whatsapp: 0, email: 0, dueToday: 0 };
+  const s = { total: prospects.length, byStage: {}, byPriority: {}, whatsapp: 0, email: 0, dueToday: 0, brands: 0 };
   const today = new Date().toISOString().slice(0, 10);
+  const parentCounts = {};
   for (const p of prospects) {
     s.byStage[p.stage] = (s.byStage[p.stage] || 0) + 1;
     s.byPriority[p.lead_priority] = (s.byPriority[p.lead_priority] || 0) + 1;
     if (mobileOf(p)) s.whatsapp++;
     if (emailsOf(p).length) s.email++;
     if (p.next_action_date && p.next_action_date <= today && !["Won", "Lost", "Do-Not-Contact"].includes(p.stage)) s.dueToday++;
+    const parent = (p.parent_company || "").trim();
+    if (parent) parentCounts[parent] = (parentCounts[parent] || 0) + 1;
   }
+  s.brands = Object.values(parentCounts).filter((n) => n >= 2).length; // multi-site brands
   return s;
 }

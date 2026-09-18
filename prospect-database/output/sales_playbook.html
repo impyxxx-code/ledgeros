@@ -1,0 +1,246 @@
+<title>ARKHAM Sales Playbook</title>
+<style>
+:root{
+  --bg:#f2f5f4; --surface:#ffffff; --surface-2:#eaefed; --ink:#14201e; --muted:#5a6a66;
+  --faint:#8a9691; --border:#e0e6e3;
+  --teal:#0e7c6b; --teal-soft:#d5ebe6; --amber:#c9781a; --amber-soft:#f6e5cd;
+  --wa:#1f8b34; --wa-soft:#d9efdd; --email:#0e7c6b; --land:#5a6a66;
+  --shadow:0 1px 2px rgba(15,30,25,.05),0 3px 12px rgba(15,30,25,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101615; --surface:#171e1d; --surface-2:#1f2827; --ink:#e8efec; --muted:#93a09b;
+  --faint:#6a7570; --border:#2a3432;
+  --teal:#46c9b4; --teal-soft:#0f312c; --amber:#e8a14a; --amber-soft:#352610;
+  --wa:#48c25f; --wa-soft:#132e1a; --email:#46c9b4; --land:#93a09b;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 3px 14px rgba(0,0,0,.28);
+}}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#171e1d; --surface-2:#1f2827; --ink:#e8efec; --muted:#93a09b;
+  --faint:#6a7570; --border:#2a3432;
+  --teal:#46c9b4; --teal-soft:#0f312c; --amber:#e8a14a; --amber-soft:#352610;
+  --wa:#48c25f; --wa-soft:#132e1a; --email:#46c9b4; --land:#93a09b;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 3px 14px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);margin:0;
+  font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3,.disp{font-family:"Archivo","IBM Plex Sans",system-ui,sans-serif;letter-spacing:-.02em;text-wrap:balance}
+a{color:var(--teal);text-decoration:none}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:14px}
+.brand{font-family:"Archivo";font-weight:800;font-size:1.15rem}
+.brand .r{color:var(--teal)}
+.tagline{color:var(--muted);font-size:.8rem;border-left:1px solid var(--border);padding-left:14px}
+.theme-btn{margin-left:auto;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+  border-radius:8px;padding:5px 11px;font:inherit;font-size:.75rem;cursor:pointer}
+
+section{padding-block:26px;border-bottom:1px solid var(--border)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal);margin:0 0 4px}
+h2{font-size:1.4rem;font-weight:800;margin:0 0 4px}
+.lead{color:var(--muted);max-width:64ch;margin:0}
+
+/* hero tiles */
+.hero{padding-block:30px 26px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:18px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+.tile .n{font-family:"Archivo";font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.tile .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
+.tile .s{font-size:.78rem;color:var(--faint);margin-top:2px}
+.tile.accent{border-color:transparent;background:linear-gradient(160deg,var(--teal-soft),var(--surface))}
+.tile.accent .n{color:var(--teal)}
+
+/* waves */
+.waves{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+.wave{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 16px 18px;position:relative;overflow:hidden}
+.wave .step{font-family:"Archivo";font-weight:800;font-size:.78rem;letter-spacing:.05em;color:var(--faint)}
+.wave h3{font-size:1.05rem;margin:2px 0 6px}
+.wave .big{font-family:"Archivo";font-weight:800;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.wave .desc{font-size:.84rem;color:var(--muted);margin-top:6px}
+.wave .rail{position:absolute;left:0;top:0;bottom:0;width:4px}
+.wave.wa .rail{background:var(--wa)} .wave.wa .big{color:var(--wa)}
+.wave.em .rail{background:var(--email)} .wave.em .big{color:var(--email)}
+.wave.la .rail{background:var(--land)} .wave.la .big{color:var(--land)}
+.wave.ka{background:linear-gradient(160deg,var(--amber-soft),var(--surface))}
+.wave.ka .rail{background:var(--amber)} .wave.ka .big{color:var(--amber)}
+.chip{display:inline-block;font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--muted);margin-top:10px}
+
+/* charts */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+@media(max-width:720px){.two{grid-template-columns:1fr;gap:22px}}
+.bars{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.bar{display:grid;grid-template-columns:132px 1fr 44px;align-items:center;gap:10px;font-size:.82rem}
+.bar .lbl{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:16px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.bar .fill{height:100%;border-radius:5px;background:var(--teal)}
+.bar.hot .fill{background:var(--amber)}
+.bar .val{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace}
+@media(max-width:420px){.bar{grid-template-columns:104px 1fr 38px}}
+
+/* key accounts */
+.katable{width:100%;border-collapse:collapse;margin-top:14px;font-size:.85rem}
+.katable th,.katable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+.katable th{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:600}
+.katable td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber)}
+.katable tr:hover td{background:var(--surface-2)}
+.ka-wrap{overflow-x:auto}
+
+/* kpi + actions */
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
+.flow .k{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:.82rem;font-weight:600}
+.flow .arrow{color:var(--faint)}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.act{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+  border-left:4px solid var(--teal);border-radius:10px;padding:13px 15px}
+.act .num{font-family:"Archivo";font-weight:800;color:var(--teal);font-size:1.1rem;line-height:1.3}
+.act .t{font-weight:600}
+.act .d{font-size:.84rem;color:var(--muted);margin-top:1px}
+footer{padding-block:22px 40px;color:var(--faint);font-size:.76rem}
+.note{background:var(--teal-soft);color:var(--ink);border-radius:10px;padding:11px 14px;font-size:.83rem;margin-top:16px}
+</style>
+
+<header class="top"><div class="wrap hrow">
+  <span class="brand">ARKHAM <span class="r">RETAIL</span></span>
+  <span class="tagline">UK Trade Sales Playbook · 2,762-prospect database</span>
+  <button class="theme-btn" id="theme" type="button">◐ Theme</button>
+</div></header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">The asset</p>
+    <h2>A national list of shops that already sell your categories.</h2>
+    <p class="lead">2,762 real UK retail buyers — vape, tobacco, convenience and forecourt — collected region by region, deduped and quality-checked. 1,226 are reachable directly today, no gatekeeper. This is the plan to turn that list into stockists.</p>
+    <div class="tiles">
+      <div class="tile accent"><div class="n">2,762</div><div class="k">Prospects</div><div class="s">44 UK regions</div></div>
+      <div class="tile"><div class="n">1,226</div><div class="k">Contactable now</div><div class="s">44% of the list</div></div>
+      <div class="tile"><div class="n">1,434</div><div class="k">Vape shops</div><div class="s">52% — your core fit</div></div>
+      <div class="tile"><div class="n">182</div><div class="k">Multi-site brands</div><div class="s">952 locations</div></div>
+      <div class="tile"><div class="n">1,603</div><div class="k">Independents</div><div class="s">owner-operated, fast yes</div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The play · work hottest channel first</p>
+    <h2>Three outreach waves + a key-account track</h2>
+    <p class="lead">The order is deliberate: start where replies are fastest and cheapest, run the big landline pool as routed field/telesales work, and run the multi-site brands as a separate high-value track in parallel.</p>
+    <div class="waves">
+      <div class="wave wa"><span class="rail"></span>
+        <div class="step">WAVE 1 · THIS WEEK</div><h3>WhatsApp blitz</h3>
+        <div class="big">188</div>
+        <div class="desc">Direct mobiles — these <em>are</em> the owners. 158 are vape shops, so one tailored message fits nearly all. Highest reply rate, lowest cost, instant. Your fastest cash.</div>
+        <span class="chip">wa.me links ready</span>
+      </div>
+      <div class="wave em"><span class="rail"></span>
+        <div class="step">WAVE 2</div><h3>Email intro</h3>
+        <div class="big">107</div>
+        <div class="desc">Genuinely published trade addresses. Send a proper line card + pricing. Small list, low effort — knock it out alongside Wave 1.</div>
+        <span class="chip">no guessed addresses</span>
+      </div>
+      <div class="wave la"><span class="rail"></span>
+        <div class="step">WAVE 3</div><h3>Landline routes</h3>
+        <div class="big">949</div>
+        <div class="desc">The bulk. Feed to callers/reps as regional day-routes — the list is spread evenly, so a rep can do a city a day. Vape shops first, then shisha/tobacco, off-licence, convenience.</div>
+        <span class="chip">region → category ordered</span>
+      </div>
+      <div class="wave ka"><span class="rail"></span>
+        <div class="step">PARALLEL · KEY ACCOUNTS</div><h3>Land &amp; expand</h3>
+        <div class="big">182</div>
+        <div class="desc">Multi-site brands over 952 locations. One won head-office = 20–60 stores. Assign your best closer — this is where the outsized revenue is, not the telesales queue.</div>
+        <span class="chip">separate pipeline</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The shape of the list</p>
+    <h2>Where the fit is strongest</h2>
+    <div class="two">
+      <div>
+        <h3 style="font-size:.95rem;margin:0">By category</h3>
+        <div class="bars" id="cats"></div>
+      </div>
+      <div>
+        <h3 style="font-size:.95rem;margin:0">By region</h3>
+        <div class="bars" id="regs"></div>
+      </div>
+    </div>
+    <div class="note"><strong>Read it this way:</strong> vape shops are half the database and the overwhelming majority of your WhatsApp-reachable owners — so the vape-shop segment is where speed and spend should concentrate first. Everything else is expansion.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Key accounts · the multiplier</p>
+    <h2>Biggest multi-site targets</h2>
+    <p class="lead">Win the brand once, roll out across its estate. Ordered by locations captured in the database.</p>
+    <div class="ka-wrap"><table class="katable">
+      <thead><tr><th>Brand</th><th>Locations</th><th>Type</th><th>Category</th></tr></thead>
+      <tbody id="ka"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Run it in LedgerOS</p>
+    <h2>From list to pipeline to customer</h2>
+    <p class="lead">Every prospect is already loaded in your CRM. Work it as one pipeline and let a won deal become a customer with no re-keying.</p>
+    <div class="flow">
+      <span class="k">New</span><span class="arrow">→</span>
+      <span class="k">Contacted</span><span class="arrow">→</span>
+      <span class="k">Engaged</span><span class="arrow">→</span>
+      <span class="k">Sampled</span><span class="arrow">→</span>
+      <span class="k">Quoted</span><span class="arrow">→</span>
+      <span class="k" style="border-color:var(--teal);color:var(--teal)">Won → Customer</span>
+    </div>
+    <div class="note"><strong>Measure the funnel, not just calls:</strong> contact rate → reply rate → sample/quote rate → conversion → <strong>stores activated</strong> (count stores, not accounts — that's the multi-site multiplier). Track cost-per-activated-store by channel; WhatsApp will almost certainly win, telling you where to double down. Honour opt-outs via the suppression list — it survives every re-import, so a “no” stays a “no.”</div>
+  </section>
+
+  <section style="border-bottom:none">
+    <p class="eyebrow">Do this week</p>
+    <h2>Three moves</h2>
+    <div class="actions">
+      <div class="act"><span class="num">1</span><div><div class="t">Fire the WhatsApp wave at the 158 vape-shop mobiles.</div><div class="d">Fastest revenue in the entire dataset. Warm, personal, instant replies — use the ready-made worklist and wa.me links.</div></div></div>
+      <div class="act"><span class="num">2</span><div><div class="t">Split the 182 multi-site brands into a key-accounts pipeline.</div><div class="d">Assign an owner. Each won HQ is worth dozens of stores — don’t let these sit in the general queue.</div></div></div>
+      <div class="act"><span class="num">3</span><div><div class="t">Regionalise the 949 landlines into rep day-routes.</div><div class="d">Vape shops first, a city per rep per day. The worklist is already ordered region → category → town.</div></div></div>
+    </div>
+  </section>
+
+  <footer>
+    Built from the ARKHAM UK prospect master (2,762 records, all 44 regions). Contact data from public sources — verify before B2B outreach. No phones or emails were invented; blanks are genuinely unknown. Worklists: WhatsApp (188) · Key accounts (182) · Landline routes (949) · Email (107).
+  </footer>
+</main>
+
+<script>
+(function(){
+  var cats=[["Vape Shop",1434,1],["Convenience Store",428,0],["Off-Licence",275,0],["Smoke / Shisha",152,0],
+    ["Indep. Supermarket",138,0],["Cash & Carry",106,0],["Newsagent",93,0],["Forecourt",72,0],["Tobacco Spec.",60,0]];
+  var regs=[["North West",331],["South East",323],["West Midlands",302],["Yorkshire & Humber",296],
+    ["East Midlands",286],["East of England",253],["North East",237],["South West",228],
+    ["Scotland",170],["London",143],["Wales",127],["N. Ireland",66]];
+  var ka=[["VPZ",66,"National chain","Vape Shop"],["Premier (Booker)",59,"Symbol group","Convenience"],
+    ["Londis",33,"Symbol group","Convenience"],["Totally Wicked",30,"National chain","Vape Shop"],
+    ["SPAR",27,"Symbol group","Convenience"],["Evapo",48,"National chain","Vape Shop"],
+    ["Nisa",24,"Symbol group","Convenience"],["One Stop",14,"Symbol group","Convenience"]];
+  function bars(el,rows,max){el.innerHTML=rows.map(function(r){
+    var w=Math.max(1.5,(r[1]/max)*100);
+    return '<div class="bar'+(r[2]?' hot':'')+'"><span class="lbl">'+r[0]+'</span>'+
+      '<span class="track"><span class="fill" style="width:'+w.toFixed(1)+'%"></span></span>'+
+      '<span class="val">'+r[1].toLocaleString()+'</span></div>';}).join("");}
+  bars(document.getElementById("cats"),cats,1434);
+  bars(document.getElementById("regs"),regs,331);
+  document.getElementById("ka").innerHTML=ka.map(function(r){
+    return '<tr><td>'+r[0]+'</td><td class="n">'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>';}).join("");
+  // theme toggle (per-viewer convenience)
+  var root=document.documentElement, btn=document.getElementById("theme");
+  try{var t=localStorage.getItem("arkham_theme"); if(t)root.setAttribute("data-theme",t);}catch(e){}
+  btn.addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme");
+    var next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"));
+    root.setAttribute("data-theme",next);
+    try{localStorage.setItem("arkham_theme",next);}catch(e){}
+  });
+})();
+</script>
