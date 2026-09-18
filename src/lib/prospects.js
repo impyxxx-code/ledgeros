@@ -68,14 +68,18 @@ export async function convertToCustomer(token, prospectId) {
 
 // Pipeline summary for the dashboard strip.
 export function summarise(prospects) {
-  const s = { total: prospects.length, byStage: {}, byPriority: {}, whatsapp: 0, email: 0, dueToday: 0 };
+  const s = { total: prospects.length, byStage: {}, byPriority: {}, whatsapp: 0, email: 0, dueToday: 0, brands: 0 };
   const today = new Date().toISOString().slice(0, 10);
+  const parentCounts = {};
   for (const p of prospects) {
     s.byStage[p.stage] = (s.byStage[p.stage] || 0) + 1;
     s.byPriority[p.lead_priority] = (s.byPriority[p.lead_priority] || 0) + 1;
     if (mobileOf(p)) s.whatsapp++;
     if (emailsOf(p).length) s.email++;
     if (p.next_action_date && p.next_action_date <= today && !["Won", "Lost", "Do-Not-Contact"].includes(p.stage)) s.dueToday++;
+    const parent = (p.parent_company || "").trim();
+    if (parent) parentCounts[parent] = (parentCounts[parent] || 0) + 1;
   }
+  s.brands = Object.values(parentCounts).filter((n) => n >= 2).length; // multi-site brands
   return s;
 }
