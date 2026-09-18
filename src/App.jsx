@@ -2013,7 +2013,7 @@ export default function App() {
             <nav className="topnav-nav">
               <div className={"topnav-navitem "+(page==="dashboard"?"active":"")} onClick={() => setPage("dashboard")}>Dashboard</div>
               {(() => {
-                const commercePages = ["invoices","contacts","customer-hub","statement","agent-report","credits"];
+                const commercePages = ["invoices","contacts","crm","customer-hub","statement","agent-report","credits"];
                 const overdueCount = invoices.filter(i=>i.status==="overdue").length;
                 return <div className={"topnav-navitem "+(commercePages.includes(page)?"active":"")} onClick={() => setPage("invoices")}>Commerce{overdueCount>0&&<span className="topnav-navbadge">{overdueCount}</span>}</div>;
               })()}
@@ -2119,10 +2119,11 @@ export default function App() {
             const overdueCount = invoices.filter(i=>i.status==="overdue").length;
             const sections = {
               commerce: {
-                pages: ["invoices","contacts","customer-hub","statement","agent-report","credits"],
+                pages: ["invoices","contacts","crm","customer-hub","statement","agent-report","credits"],
                 tabs: [
                   { id:"invoices",       label:"Invoices",       badge: overdueCount > 0 ? overdueCount : null },
                   { id:"contacts",       label:"Customers" },
+                  { id:"crm",            label:"CRM / Prospects", adminOnly:true },
                   { id:"customer-hub",   label:"Customer Hub", adminOnly:true },
                   { id:"statement",      label:"Statements",     adminOnly:true },
                   { id:"agent-report",   label:"Agent Sales",    adminOnly:true },
@@ -2386,7 +2387,7 @@ export default function App() {
               )}
               {/* Grouped nav sections */}
               {(profile?.role==="admin" ? [
-                { label:"Commerce", color:"#dd2b0f", items:["customer-hub","statement","agent-report","credits"] },
+                { label:"Commerce", color:"#dd2b0f", items:["crm","customer-hub","statement","agent-report","credits"] },
                 { label:"Operations", color:"#201e1d", items:["inventory","purchases","bills","stock-adj","stock-take","import"] },
                 { label:"Finance", color:"#16a34a", items:["banking","credit-control","vat-return","bank-recon","admin-reports","analytics"] },
                 { label:"Settings", color:"#8a8580", items:["settings"] },
