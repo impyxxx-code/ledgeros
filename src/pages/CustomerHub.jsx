@@ -361,6 +361,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
           <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 12px" }} onClick={e => e.stopPropagation()}>
             <InvoiceForm contacts={contacts} setContacts={setContacts} products={products} accounts={accounts} token={token} userId={userId} invoices={invoices} initialCustomer={customer.name}
               onSave={(inv) => { setInvoices(prev => [inv, ...prev]); }}
+              onEdit={(inv) => { setShowInvoiceForm(false); setEditInvoice(inv); }}
               onClose={() => setShowInvoiceForm(false)} />
           </div>
         </div>

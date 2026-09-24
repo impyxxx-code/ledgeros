@@ -18,7 +18,7 @@ import { COMPANY, LOGO, JSPDF_URL, toast } from "../../lib/constants.js";
 // │ InvoiceForm                                                │
 // │ Create new invoice form with line items and VAT            │
 // └────────────────────────────────────────────────────────────┘
-export function InvoiceForm({ contacts, setContacts, products, accounts = [], token, userId, onSave, onClose, invoices = [], initialCustomer = "" }) {
+export function InvoiceForm({ contacts, setContacts, products, accounts = [], token, userId, onSave, onClose, onEdit, invoices = [], initialCustomer = "" }) {
   const [f, setF] = useState({ customer: initialCustomer || "", invoice_date: today(), due_date: "", status: "pending", notes: "" });
   const [docType, setDocType] = useState("invoice");   // "invoice" | "receipt" — receipts are instant paid sales (RCT-xxxx)
   const [rctMethod, setRctMethod] = useState("cash");
@@ -666,6 +666,19 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
               </div>
             </button>
 
+            {/* Edit this invoice — reopens it in the editor via the parent */}
+            {onEdit && (
+              <button onClick={() => { onEdit(savedInvoice); onClose(); }} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", background:"var(--white)", border:"2px solid var(--border2)", borderRadius:12, padding:"14px 20px", cursor:"pointer", fontFamily:"var(--sans)", marginBottom:16 }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--white)"}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <div style={{ textAlign:"left" }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>Edit this invoice</div>
+                  <div style={{ fontSize:11, color:"var(--text3)", marginTop:1 }}>Change customer, lines or amounts</div>
+                </div>
+              </button>
+            )}
+
             {/* Step label */}
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 16 }}>Print Documents</div>
 
@@ -701,14 +714,25 @@ export function InvoiceForm({ contacts, setContacts, products, accounts = [], to
                 <span style={{ marginRight: 6 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>Delivery Note Details <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — updates the DN print)</span>
               </div>
 
-              {/* Items preview */}
+              {/* Order details — enlarged so what was invoiced is obvious at a glance */}
               <div style={{ marginBottom: 12 }}>
-                {(savedInvoice.lines || []).map((l, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: i < (savedInvoice.lines.length - 1) ? "0.5px solid var(--border)" : "none" }}>
-                    <span style={{ fontSize: 12, fontWeight: 500 }}>{l.description}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#dd2b0f" }}>× {l.qty}</span>
-                  </div>
-                ))}
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".7px", marginBottom: 8 }}>Order details</div>
+                {(savedInvoice.lines || []).map((l, i) => {
+                  const lineAmt = (parseFloat(l.qty) || 0) * (parseFloat(l.unit_price) || 0);
+                  return (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: i < (savedInvoice.lines.length - 1) ? "1px solid var(--border)" : "none" }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{l.description}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: "#dd2b0f" }}>× {l.qty}</span>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", fontFamily: "var(--mono)", minWidth: 74, textAlign: "right" }}>{fmt(lineAmt)}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, marginTop: 2, borderTop: "2px solid var(--border)" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".5px" }}>Total</span>
+                  <span style={{ fontSize: 19, fontWeight: 800, color: "var(--text)", fontFamily: "var(--mono)" }}>{fmt(savedInvoice.amount)}</span>
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
