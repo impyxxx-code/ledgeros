@@ -9,6 +9,7 @@ import { sendEmail, buildInvoiceEmailHtml } from "../lib/email.js";
 import { SearchDropdown } from "../components/SearchDropdown.jsx";
 import { InvoiceModal } from "../components/InvoiceModal.jsx";
 import { InvoiceForm } from "./invoices/InvoiceForm.jsx";
+import { EditInvoiceModal } from "./invoices/EditInvoiceModal.jsx";
 import { EmptyState } from "../components/ui.jsx";
 
 // ── CUSTOMER HUB (360) ────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
   const [query, setQuery] = useState("");
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
+  const [editInvoice, setEditInvoice] = useState(null);
   const [showCN, setShowCN] = useState(false);
   const [cnForm, setCnForm] = useState({ invoice_id: "", amount: "", reason: "", issue_date: today() });
   const [savingCN, setSavingCN] = useState(false);
@@ -367,8 +369,26 @@ export function CustomerHub({ contacts, setContacts, invoices, setInvoices, prod
       {/* View / re-send an invoice */}
       {viewInvoice && (
         <InvoiceModal invoice={viewInvoice} onClose={() => setViewInvoice(null)} contacts={contacts} token={token} profile={profile}
+          onEdit={(inv) => { setEditInvoice(inv); setViewInvoice(null); }}
           onStatusChange={async (id, status) => { await sb.patch(token, "invoices", id, { status }); setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i)); setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev); }}
           onLogPartPay={(inv, amt, method, newBal) => logAudit(token, userId, "part_payment", "invoice", inv.id, `${inv.invoice_number} — ${fmt(amt)} via ${method}. Remaining ${fmt(newBal)}`)} />
+      )}
+
+      {/* Edit an invoice (admin) — same action the Invoices list offers */}
+      {editInvoice && (
+        <EditInvoiceModal
+          invoice={editInvoice}
+          onClose={() => setEditInvoice(null)}
+          contacts={contacts}
+          products={products}
+          token={token}
+          userId={userId}
+          onSaved={(updatedFields) => {
+            if (updatedFields) setInvoices(prev => prev.map(i => i.id === editInvoice.id ? { ...i, ...updatedFields } : i));
+            sb.get(token, "invoices", "order=created_at.desc&limit=1000").then(d => Array.isArray(d) && setInvoices(d));
+            setEditInvoice(null);
+          }}
+        />
       )}
 
       {/* Inline credit note */}
