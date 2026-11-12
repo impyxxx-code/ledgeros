@@ -53,6 +53,36 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
     if (ctSort.field === "revenue") return m * ((a.total_revenue || 0) - (b.total_revenue || 0));
     return 0;
   });
+  // ── Export the current (filtered + sorted) contact list as a CSV file — opens in Excel / Google Sheets ──
+  const exportCSV = () => {
+    const stats = {};
+    (invoices || []).forEach(inv => {
+      const s = stats[inv.customer] || (stats[inv.customer] = { count: 0, revenue: 0, outstanding: 0 });
+      s.count++;
+      s.revenue += parseFloat(inv.amount || 0);
+      if (inv.status !== "paid") s.outstanding += parseFloat(inv.balance ?? inv.amount ?? 0) || 0;
+    });
+    const cols = ["Name", "Type", "Email", "Phone", "Address", "City", "Postcode", "VAT Number", "Credit Limit", "Credit Hold", "Status", "Invoices", "Revenue", "Outstanding", "Notes"];
+    const esc = (v) => { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const rows = sortedContacts.map(c => {
+      const s = stats[c.name] || { count: 0, revenue: 0, outstanding: 0 };
+      return [
+        c.name, c.type, c.email || "", c.phone || "", c.address || "", c.city || "", c.postcode || "", c.vat_number || "",
+        c.credit_limit ?? "", c.credit_hold ? "Yes" : "No", c.active === false ? "Archived" : "Active",
+        s.count, s.revenue.toFixed(2), s.outstanding.toFixed(2), c.notes || ""
+      ].map(esc).join(",");
+    });
+    const csv = [cols.join(","), ...rows].join("\r\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (tab === "supplier" ? "suppliers-" : "customers-") + (contactFilter !== "all" ? contactFilter + "-" : "") + new Date().toISOString().split("T")[0] + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success(sortedContacts.length + " contact" + (sortedContacts.length !== 1 ? "s" : "") + " exported to CSV");
+    logAudit(token, userId, "contacts_exported", "contact", null, sortedContacts.length + " " + tab + " contacts exported to CSV");
+  };
   const save = async () => {
     if (!f.name) return;
     // Require a way to reach customers — an email OR a phone (needed for invoices, statements, reminders).
@@ -245,6 +275,10 @@ export function Contacts({ contacts, setContacts, token, userId, invoices = [], 
               <button onClick={() => setContactView("grid")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "grid" ? "#dd2b0f" : "rgba(255,255,255,.15)"), background: contactView === "grid" ? "#dd2b0f" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
               <button onClick={() => setContactView("list")} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid " + (contactView === "list" ? "#dd2b0f" : "rgba(255,255,255,.15)"), background: contactView === "list" ? "#dd2b0f" : "rgba(255,255,255,.07)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
             </div>
+            <button onClick={exportCSV} title="Download the contacts currently shown as a CSV file" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.1)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--sans)" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
             <button onClick={() => { setShowForm(!showForm); setF({ ...f, type: tab }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
               Add {tab === "customer" ? "Customer" : "Supplier"}
