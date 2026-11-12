@@ -215,6 +215,29 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
     window.__ledgerosPrint && window.__ledgerosPrint(html);
   };
 
+  // ── Export the current (filtered) list as a CSV file — opens in Excel / Google Sheets ──
+  const exportCSV = () => {
+    const cols = ["Invoice", "Customer", "Date", "Due Date", "Amount", "Amount Paid", "Balance", "Status", "Payment Method", "Agent"];
+    const esc = (v) => { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const agentName = (inv) => { const a = allProfiles.find(p => p.id === inv.created_by); return a ? (a.full_name || a.email || "") : ""; };
+    const money = (v) => (parseFloat(v) || 0).toFixed(2);
+    const rows = filtered.map(inv => [
+      inv.invoice_number, inv.customer, inv.invoice_date || "", inv.due_date || "",
+      money(inv.amount), money(inv.amount_paid), money(inv.status === "paid" ? 0 : (inv.balance ?? inv.amount)),
+      inv.status || "", inv.payment_method || "", agentName(inv)
+    ].map(esc).join(","));
+    const csv = [cols.join(","), ...rows].join("\r\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "invoices-" + (filterStatus !== "all" ? filterStatus + "-" : "") + new Date().toISOString().split("T")[0] + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success(filtered.length + " invoice" + (filtered.length !== 1 ? "s" : "") + " exported to CSV");
+    logAudit(token, userId, "invoices_exported", "invoice", null, filtered.length + " invoices exported to CSV");
+  };
+  
   const totals = {
     paid: invoices.reduce((s, i) => s + parseFloat(i.amount_paid || 0), 0),
     pending: invoices.filter(i => i.status === "pending").reduce((s, i) => s + parseFloat(i.balance || i.amount || 0), 0),
@@ -383,6 +406,11 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Bulk Payment
             </button>}
+            <button onClick={exportCSV} title="Download the invoices currently shown as a CSV file" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.1)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--sans)" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+            
             <button onClick={() => setShowForm(!showForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #dd2b0f", background: "#dd2b0f", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Invoice
