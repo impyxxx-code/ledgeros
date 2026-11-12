@@ -369,7 +369,13 @@ export function Invoices({ invoices, setInvoices, contacts, setContacts, product
       {/* ── Invoices Page Header ── */}
       {isMobile() ? (
         <div style={{ margin: "-12px -12px 0", padding: "16px 16px 12px", background: "#0f172a" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Invoices</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Invoices</div>
+            <button onClick={exportCSV} title="Download the invoices currently shown as a CSV file" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.1)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--sans)" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
           <div style={{ position: "relative" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search invoices..." style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 12, height: 44, border: "1px solid rgba(255,255,255,.15)", borderRadius: 10, fontSize: 14, outline: "none", color: "#fff", background: "rgba(255,255,255,.07)", fontFamily: "var(--sans)" }} />
